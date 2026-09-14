@@ -1,0 +1,18 @@
+Microduck kinematic rig, colour variants, default pose, and the
+`microduck.glb` / `kinematics.json` assets in this folder (and the copies
+under /public/robot/mjlab) are taken from the official in-browser
+simulator:
+
+  https://huggingface.co/spaces/pollen-robotics/microduck-simulator
+
+which itself uses the MJCF / mesh export from pollen-robotics/microduck_rl.
+
+Pollen Robotics software is Apache-2.0. Mechanical and electronic design
+files are not open hardware. This landing page is unofficial.
+
+Files kept as close to upstream as possible:
+
+  duck.js        three.js rig (GLB + kinematics.json)
+  variants.js    Cream / Graphite / Lavender / Sky materials
+  constants.js   joint names, default pose, policy interface
+  signed.js      no-op stand-in for the Space JWT helper

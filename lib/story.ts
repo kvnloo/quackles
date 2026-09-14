@@ -48,6 +48,12 @@ export const STORY = [
     body: "Calibrated from the press photos. Pick a shell — the 15 motors, the camera, and the 50 Hz loop underneath do not change.",
   },
   {
+    id: "play",
+    kicker: "The story becomes the twin",
+    title: "Scroll far enough and you are in the sim.",
+    body: "Same meshes. Same 14 joints. Same ONNX policies at 50 Hz. This is the official Microduck playground — MuJoCo compiled to WebAssembly — not a keyframed walk cycle. WASD to steer. Space to reset.",
+  },
+  {
     id: "cta",
     kicker: "Apache-2.0 software  ·  $399 intro",
     title: "Train in sim. Waddle in reality.",

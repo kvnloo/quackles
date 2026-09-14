@@ -48,6 +48,15 @@ export const COLORWAYS = [
 export type ColorwayId = (typeof COLORWAYS)[number]["id"];
 export type Colorway = (typeof COLORWAYS)[number];
 
+/** Official simulator variant keys (pollen-robotics/microduck-simulator). */
+export const COLORWAY_TO_VARIANT: Record<ColorwayId, "classic" | "charcoal" | "purple" | "blue"> =
+  {
+    cream: "classic",
+    graphite: "charcoal",
+    lavender: "purple",
+    sky: "blue",
+  };
+
 export function getColorway(id: ColorwayId): Colorway {
   return COLORWAYS.find((c) => c.id === id) ?? COLORWAYS[0];
 }

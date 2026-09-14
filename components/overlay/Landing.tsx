@@ -1,11 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { ExperienceProvider } from "@/components/providers/ExperienceProvider";
+import { ExperienceProvider, useExperience } from "@/components/providers/ExperienceProvider";
 import { NavBar } from "@/components/overlay/NavBar";
 import { StoryOverlay } from "@/components/overlay/StoryOverlay";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
+import { SimulatorFrame } from "@/components/sim/SimulatorFrame";
 
 const DuckStage = dynamic(
   () => import("@/components/duck/DuckStage").then((module) => module.DuckStage),
@@ -50,6 +51,17 @@ function Marquee() {
   );
 }
 
+function Grain() {
+  const { progress } = useExperience();
+  const play = Math.min(1, Math.max(0, (progress - 0.78) / 0.1));
+  return (
+    <div
+      className="grain pointer-events-none fixed inset-0 z-10"
+      style={{ opacity: 1 - play }}
+    />
+  );
+}
+
 function AppShell() {
   return (
     <>
@@ -60,7 +72,8 @@ function AppShell() {
           <DuckStage />
         </CanvasGuard>
       </div>
-      <div className="grain pointer-events-none fixed inset-0 z-10" />
+      <SimulatorFrame />
+      <Grain />
       <main id="top" className="relative z-20">
         <StoryOverlay />
       </main>
