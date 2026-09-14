@@ -12,11 +12,11 @@ const DuckCanvas = dynamic(
 
 function Hatch() {
   const { ready } = useExperience();
+  if (ready) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background transition-opacity duration-700"
-      style={{ opacity: ready ? 0 : 1, pointerEvents: ready ? "none" : "auto" }}
-      aria-hidden={ready}
+      className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background"
+      aria-hidden
     >
       <div className="text-center">
         <div className="mx-auto mb-5 size-16 rounded-full border-2 border-[color:var(--accent-trim)] border-t-transparent animate-spin" />

@@ -13,6 +13,7 @@ import {
 import Lenis from "lenis";
 import { POSES, poseAt, type Pose } from "@/lib/pose";
 import { COLORWAYS, type ColorwayId } from "@/lib/colorways";
+import { detectWebGL } from "@/lib/webgl";
 
 type Experience = {
   progress: number;
@@ -22,6 +23,8 @@ type Experience = {
   setColorway: (id: ColorwayId) => void;
   ready: boolean;
   setReady: (v: boolean) => void;
+  webgl: boolean | null;
+  setWebgl: (v: boolean) => void;
   reducedMotion: boolean;
   mobile: boolean;
   sectionCount: number;
@@ -35,6 +38,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState(0);
   const [colorway, setColorway] = useState<ColorwayId>(COLORWAYS[0].id);
   const [ready, setReady] = useState(false);
+  const [webgl, setWebgl] = useState<boolean | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mobile, setMobile] = useState(false);
 
@@ -51,6 +55,17 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     return () => {
       mq.removeEventListener("change", sync);
       widthMq.removeEventListener("change", sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    const probe = window.setTimeout(() => {
+      setWebgl(detectWebGL());
+    }, 0);
+    const failsafe = window.setTimeout(() => setReady(true), 800);
+    return () => {
+      window.clearTimeout(probe);
+      window.clearTimeout(failsafe);
     };
   }, []);
 
@@ -96,11 +111,13 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       setColorway,
       ready,
       setReady,
+      webgl,
+      setWebgl,
       reducedMotion,
       mobile,
       sectionCount: POSES.length,
     }),
-    [progress, colorway, ready, reducedMotion, mobile]
+    [progress, colorway, ready, webgl, reducedMotion, mobile]
   );
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;
