@@ -10,7 +10,7 @@ export function NavBar() {
   const { colorway, setColorway, progress } = useExperience();
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-40">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-[60]">
       <div className="flex items-center justify-between gap-3 px-4 py-4 md:px-8">
         <a
           href="#top"

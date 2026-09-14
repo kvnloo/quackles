@@ -121,7 +121,40 @@
   }
 }
 
+@keyframes hatch-dismiss {
+  0% {
+    opacity: 1;
+    visibility: visible;
+    z-index: 50;
+  }
+  55% {
+    opacity: 1;
+    visibility: visible;
+    z-index: 50;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    z-index: -1;
+  }
+}
+
+.hatch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  pointer-events: none;
+  animation: hatch-dismiss 0.9s ease-in forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .hatch-overlay {
+    animation-duration: 0.01s;
+  }
   .animate-\[marquee_32s_linear_infinite\] {
     animation: none;
   }

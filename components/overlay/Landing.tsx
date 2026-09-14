@@ -1,23 +1,20 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { ExperienceProvider, useExperience } from "@/components/providers/ExperienceProvider";
+import { ExperienceProvider } from "@/components/providers/ExperienceProvider";
 import { NavBar } from "@/components/overlay/NavBar";
 import { StoryOverlay } from "@/components/overlay/StoryOverlay";
+import { CanvasGuard } from "@/components/duck/CanvasGuard";
+import { DuckFallback } from "@/components/duck/DuckFallback";
 
-const DuckCanvas = dynamic(
-  () => import("@/components/duck/DuckCanvas").then((m) => m.DuckCanvas),
+const DuckStage = dynamic(
+  () => import("@/components/duck/DuckStage").then((module) => module.DuckStage),
   { ssr: false }
 );
 
 function Hatch() {
-  const { ready } = useExperience();
-  if (ready) return null;
   return (
-    <div
-      className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background"
-      aria-hidden
-    >
+    <div className="hatch-overlay" aria-hidden>
       <div className="text-center">
         <div className="mx-auto mb-5 size-16 rounded-full border-2 border-[color:var(--accent-trim)] border-t-transparent animate-spin" />
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
@@ -59,7 +56,9 @@ function AppShell() {
       <Hatch />
       <NavBar />
       <div className="fixed inset-0 z-0">
-        <DuckCanvas />
+        <CanvasGuard fallback={<DuckFallback />}>
+          <DuckStage />
+        </CanvasGuard>
       </div>
       <div className="grain pointer-events-none fixed inset-0 z-10" />
       <main id="top" className="relative z-20">

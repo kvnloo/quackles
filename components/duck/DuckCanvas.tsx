@@ -1,9 +1,8 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { poseAt } from "@/lib/pose";
-import { detectWebGL } from "@/lib/webgl";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 import { CanvasGuard } from "./CanvasGuard";
 import { DuckFallback } from "./DuckFallback";
@@ -12,20 +11,13 @@ import { DuckScene } from "./DuckScene";
 export function DuckCanvas() {
   const { setReady, setWebgl, colorway, progress, reducedMotion, mobile } =
     useExperience();
-  const [supported] = useState<boolean>(detectWebGL);
   const pose = poseAt(progress);
   const dpr =
     typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio, 1.75);
 
-  const fallback = <DuckFallback />;
-
-  if (!supported) {
-    return fallback;
-  }
-
   return (
     <CanvasGuard
-      fallback={fallback}
+      fallback={<DuckFallback />}
       onError={() => {
         setWebgl(false);
         setReady(true);
