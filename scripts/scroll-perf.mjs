@@ -145,7 +145,7 @@ async function main() {
   // Let the first GLB compile settle.
   await new Promise((r) => setTimeout(r, 700));
 
-  const scrollToProgress = async (p, settleMs = 280) => {
+  const scrollToProgress = async (p, settleMs = 520) => {
     await page.evaluate((next) => {
       const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
       window.scrollTo(0, total * next);
@@ -208,6 +208,11 @@ async function main() {
   };
 
   const heroPath = await shot(LABEL === "before" ? "hero-before" : "hero");
+  await scrollToProgress(0.5, 520);
+  const explodePath = await shot(LABEL === "before" ? "explode-before" : "explode");
+  await scrollToProgress(0.92, 520);
+  const jumpPath = await shot(LABEL === "before" ? "jump-before" : "jump");
+  await scrollToProgress(0, 360);
 
   const recorded = await page.evaluate(async () => {
     const frames = [];
@@ -299,10 +304,7 @@ async function main() {
   const explodeP = peakOf("explode") ?? 0.34;
   const jumpP = peakOf("jump") ?? 0.66;
 
-  await scrollToProgress(explodeP, 380);
-  const explodePath = await shot(LABEL === "before" ? "explode-before" : "explode");
-  await scrollToProgress(jumpP, 380);
-  const jumpPath = await shot(LABEL === "before" ? "jump-before" : "jump");
+  // explode/jump stills were captured before the recording pass
 
   const dprCap = pageFacts.canvasCssWidth
     ? pageFacts.canvasWidth / pageFacts.canvasCssWidth
