@@ -5,6 +5,7 @@ import { ExperienceProvider, useExperience } from "@/components/providers/Experi
 import { PosterNav } from "@/components/poster/PosterNav";
 import { PosterBack, PosterFront } from "@/components/poster/PosterChrome";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
+import { ThemeSlider } from "@/components/poster/ThemeSlider";
 import { StoryOverlay } from "@/components/overlay/StoryOverlay";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
@@ -48,10 +49,10 @@ function DuckSlot() {
     <div
       className="absolute z-[18] overflow-hidden"
       style={{
-        top: `${16 * (1 - t)}%`,
-        left: `${16 * (1 - t)}%`,
-        right: `${2 * (1 - t)}%`,
-        bottom: `${28.2 * (1 - t)}%`,
+        top: `${14 * (1 - t)}%`,
+        left: `${26 * (1 - t)}%`,
+        right: `${3 * (1 - t)}%`,
+        bottom: `${31.6 * (1 - t)}%`,
         transform: "none",
       }}
     >
@@ -77,6 +78,7 @@ function AppShell() {
         <PosterHeroCopy />
         <SimulatorFrame />
         <PaperGrain />
+        <ThemeSlider />
       </div>
       <main id="top" className="poster-story">
         <StoryOverlay />

@@ -10,7 +10,7 @@ import { DuckFallback } from "./DuckFallback";
 import { DuckScene } from "./DuckScene";
 
 export function DuckCanvas() {
-  const { setReady, setWebgl, colorway, poseRef, reducedMotion, mobile, progress } =
+  const { setReady, setWebgl, colorway, poseRef, reducedMotion, mobile, progress, theme } =
     useExperience();
   const dpr =
     typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio, 1.75);
@@ -29,7 +29,7 @@ export function DuckCanvas() {
       <div className="h-full w-full transition-opacity duration-500" style={{ opacity }}>
         <Canvas
           className="h-full w-full"
-          camera={{ position: [0.4, 0.21, 0.42], fov: 30, near: 0.02, far: 12 }}
+          camera={{ position: [0.46, 0.14, 0.82], fov: 26, near: 0.02, far: 12 }}
           dpr={dpr}
           shadows
           gl={{
@@ -38,9 +38,10 @@ export function DuckCanvas() {
             failIfMajorPerformanceCaveat: false,
             powerPreference: "default",
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.12,
+            toneMappingExposure: theme.lights.exposure,
           }}
-          onCreated={() => {
+          onCreated={({ gl }) => {
+            gl.setClearColor(0x000000, 0);
             setWebgl(true);
             setReady(true);
           }}
@@ -51,6 +52,7 @@ export function DuckCanvas() {
               colorway={colorway}
               mobile={mobile}
               reducedMotion={reducedMotion}
+              theme={theme}
             />
           </Suspense>
         </Canvas>

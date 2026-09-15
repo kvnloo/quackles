@@ -6,6 +6,7 @@ import { useRef, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import type { ColorwayId } from "@/lib/colorways";
 import type { Pose } from "@/lib/pose";
+import type { PaperTheme } from "@/lib/theme";
 import { OfficialDuck, OfficialFlock } from "./OfficialDuck";
 
 function CameraRig({ poseRef }: { poseRef: MutableRefObject<Pose> }) {
@@ -36,21 +37,22 @@ function CameraRig({ poseRef }: { poseRef: MutableRefObject<Pose> }) {
   return null;
 }
 
-function Lights() {
+function Lights({ theme }: { theme: PaperTheme }) {
+  const L = theme.lights;
   return (
     <>
-      <ambientLight intensity={0.62} color="#f3ece2" />
-      <hemisphereLight args={["#f6f0e6", "#b7ad93", 0.58]} />
+      <ambientLight intensity={L.ambientIntensity} color={L.ambient} />
+      <hemisphereLight args={[L.hemiSky, L.hemiGround, L.hemiIntensity]} />
       <directionalLight
         position={[0.7, 1.5, 0.35]}
-        intensity={1.85}
-        color="#fff8ee"
+        intensity={L.keyIntensity}
+        color={L.key}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0003}
       />
-      <directionalLight position={[-0.9, 0.4, 0.15]} intensity={0.42} color="#2f5bff" />
-      <directionalLight position={[0.15, 0.25, -0.8]} intensity={0.38} color="#ffffff" />
+      <directionalLight position={[-0.9, 0.4, 0.15]} intensity={L.rimIntensity} color={L.rim} />
+      <directionalLight position={[0.15, 0.25, -0.8]} intensity={L.fillIntensity} color={L.fill} />
     </>
   );
 }
@@ -75,27 +77,30 @@ export function DuckScene({
   poseRef,
   colorway,
   reducedMotion,
+  theme,
 }: {
   poseRef: MutableRefObject<Pose>;
   colorway: ColorwayId;
   mobile: boolean;
   reducedMotion: boolean;
+  theme: PaperTheme;
 }) {
   const duckPose = useRef(poseRef.current);
   useFrame(() => {
     duckPose.current = poseRef.current;
   });
+  const L = theme.lights;
 
   return (
     <>
-      <Lights />
+      <Lights theme={theme} />
       <CameraRig poseRef={poseRef} />
 
       <Gate
         poseRef={poseRef}
         showWhen={(p) => p.explode < 0.55 && p.play < 0.45 && p.flock < 0.72}
       >
-        <group position={[0.03, 0, 0]}>
+        <group position={[0.02, 0, 0]}>
           <OfficialDuck poseRef={duckPose} colorway={colorway} reducedMotion={reducedMotion} />
         </group>
       </Gate>
@@ -106,12 +111,12 @@ export function DuckScene({
 
       <ContactShadows
         position={[0, -0.01, 0]}
-        opacity={0.28}
+        opacity={L.shadowOpacity}
         scale={1.4}
         blur={2.2}
         far={0.45}
         resolution={512}
-        color="#6a5a40"
+        color={L.shadow}
       />
     </>
   );

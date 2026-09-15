@@ -48,9 +48,9 @@ STANDING.left_knee = 0.28;
 STANDING.right_knee = -0.28;
 STANDING.left_ankle = -0.12;
 STANDING.right_ankle = 0.12;
-STANDING.neck_pitch = 0.48;
-STANDING.head_pitch = 0.22;
-STANDING.head_yaw = -0.38;
+STANDING.neck_pitch = 0.28;
+STANDING.head_pitch = 0.14;
+STANDING.head_yaw = -0.18;
 
 async function makeRig(variant: string) {
   const kinematics = await loadKinematics(`${MODEL_DIR}/kinematics.json`);

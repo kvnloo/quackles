@@ -199,13 +199,16 @@ export async function buildRig(k, opts = {}) {
     const roughness = spec.roughness ?? 0.5;
     const metalness = spec.metalness ?? 0.0;
     const opacity = spec.opacity ?? 1;
-    const key = `${color.join(",")}|${roughness}|${metalness}|${opacity}`;
+    const key = `${color.join(",")}|${roughness}|${metalness}|${opacity}|${spec.clearcoat ?? 0}|${spec.clearcoatRoughness ?? 0.45}`;
     const cached = matCache.get(key);
     if (cached) return cached;
-    const m = new THREE.MeshStandardMaterial({
+    const m = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(...color),
       roughness,
       metalness,
+      clearcoat: spec.clearcoat ?? 0,
+      clearcoatRoughness: spec.clearcoatRoughness ?? 0.45,
+      envMapIntensity: spec.envMapIntensity ?? 0.7,
       transparent: opacity < 1,
       opacity,
     });

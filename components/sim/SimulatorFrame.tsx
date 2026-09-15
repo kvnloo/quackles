@@ -20,7 +20,7 @@ export function SimulatorFrame() {
 
   return (
     <div
-      className="absolute z-[28] overflow-hidden bg-[#efe8dc] transition-[opacity,box-shadow] duration-500"
+      className="absolute z-[28] overflow-hidden bg-[color:var(--paper)] transition-[opacity,box-shadow] duration-500"
       style={{
         opacity: t > 0.02 ? 1 : 0,
         visibility: t > 0.05 ? "visible" : "hidden",
@@ -40,13 +40,13 @@ export function SimulatorFrame() {
           data-lenis-prevent
           title="Try Micro Duck — official MuJoCo physics and RL policies"
           src={TRY_MICRODUCK}
-          className="h-full w-full border-0 bg-[#efe8dc]"
+          className="h-full w-full border-0 bg-[color:var(--paper)]"
           allow="camera; gamepad; autoplay; fullscreen; clipboard-read; clipboard-write"
           referrerPolicy="no-referrer-when-downgrade"
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-[#efe8dc] px-6">
+        <div className="flex h-full w-full items-center justify-center bg-[color:var(--paper)] px-6">
           <a
             href={TRY_MICRODUCK_HOME}
             target="_blank"

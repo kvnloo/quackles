@@ -15,14 +15,14 @@ const AMBER_YELLOW = { color: [1.0, 0.413, 0.007], roughness: 0.4, metalness: 0.
 const BRIGHT_ORANGE = { color: [1.0, 0.144, 0.008], roughness: 0.45, metalness: 0.0 }; // #ff7a2f
 const AMBER = { color: [0.847, 0.339, 0.022], roughness: 0.45, metalness: 0.0 };       // #eda63e
 const CLEAN_YELLOW = { color: [1.0, 0.608, 0.021], roughness: 0.4, metalness: 0.0 };   // #ffd23f
-const CREAM = { color: [0.78, 0.73, 0.64], roughness: 0.52, metalness: 0.0 };          // weathered poster cream
-const GRAPHITE_SHELL = { color: [0.028, 0.028, 0.032], roughness: 0.48, metalness: 0.18 };
+const CREAM = { color: [0.78, 0.73, 0.64], roughness: 0.58, metalness: 0.0, clearcoat: 0.22, clearcoatRoughness: 0.48 };
+const GRAPHITE_SHELL = { color: [0.028, 0.028, 0.032], roughness: 0.42, metalness: 0.18, clearcoat: 0.18, clearcoatRoughness: 0.28 };
 const MUTED_BEAK = { color: [0.42, 0.36, 0.3], roughness: 0.5, metalness: 0.0 };
-const FOOT_PAD = { color: [0.72, 0.32, 0.03], roughness: 0.55, metalness: 0.0 };
-const DARK = { color: [0.012, 0.012, 0.014], roughness: 0.55, metalness: 0.3 };        // #1d1d1f
-const GRAY = { color: [0.256, 0.256, 0.279], roughness: 0.5, metalness: 0.35 };        // #8b8b90
-// Camera-lens eye: very dark blue-black, glossy like coated glass.
-const LENS = { color: [0.01, 0.012, 0.02], roughness: 0.05, metalness: 0.0 };
+const FOOT_PAD = { color: [0.16, 0.14, 0.13], roughness: 0.58, metalness: 0.05 };
+const DARK = { color: [0.012, 0.012, 0.014], roughness: 0.55, metalness: 0.3 };
+const GRAY = { color: [0.256, 0.256, 0.279], roughness: 0.5, metalness: 0.35 };
+const LENS = { color: [0.01, 0.012, 0.02], roughness: 0.05, metalness: 0.0, clearcoat: 0.7, clearcoatRoughness: 0.08 };
+const POSTER_FOOT = { color: [0.12, 0.11, 0.11], roughness: 0.5, metalness: 0.08 };
 
 // Per-variant colours.
 const WARM_GRAY = { color: [0.328, 0.312, 0.283], roughness: 0.35, metalness: 0.0 };      // #9b9892
@@ -69,7 +69,7 @@ export const VARIANTS = {
     bodyShell: CREAM,
     sideShells: CREAM,
     legShells: GRAPHITE_SHELL,
-    feet: CREAM,
+    feet: POSTER_FOOT,
     soles: FOOT_PAD,
     hips: GRAY,
     mechDark: DARK,
@@ -257,13 +257,16 @@ export const materialHookFor = (v) => {
 // and repeated switches share GPU material instances.
 const matCache = new Map();
 function matFor(spec) {
-  const key = `${spec.color.join(",")}|${spec.roughness ?? 0.5}|${spec.metalness ?? 0}`;
+  const key = `${spec.color.join(",")}|${spec.roughness ?? 0.5}|${spec.metalness ?? 0}|${spec.clearcoat ?? 0}|${spec.clearcoatRoughness ?? 0.45}`;
   let m = matCache.get(key);
   if (!m) {
-    m = new THREE.MeshStandardMaterial({
+    m = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(...spec.color),
       roughness: spec.roughness ?? 0.5,
       metalness: spec.metalness ?? 0.0,
+      clearcoat: spec.clearcoat ?? 0,
+      clearcoatRoughness: spec.clearcoatRoughness ?? 0.45,
+      envMapIntensity: spec.envMapIntensity ?? 0.7,
     });
     matCache.set(key, m);
   }
@@ -302,11 +305,19 @@ function driveFades() {
     f.mat.color.lerpColors(f.fromColor, f.toColor, e);
     f.mat.roughness = f.fromRough + (f.toRough - f.fromRough) * e;
     f.mat.metalness = f.fromMetal + (f.toMetal - f.fromMetal) * e;
+    if ("clearcoat" in f.mat) {
+      f.mat.clearcoat = f.fromCoat + (f.toCoat - f.fromCoat) * e;
+      f.mat.clearcoatRoughness = f.fromCoatR + (f.toCoatR - f.fromCoatR) * e;
+    }
     const cur = mesh.material;
     if (cur !== f.mat && cur?.color) {
       cur.color.copy(f.mat.color);
       cur.roughness = f.mat.roughness;
       cur.metalness = f.mat.metalness;
+      if ("clearcoat" in cur) {
+        cur.clearcoat = f.mat.clearcoat;
+        cur.clearcoatRoughness = f.mat.clearcoatRoughness;
+      }
     }
     if (x >= 1) {
       fades.delete(mesh);
@@ -339,6 +350,10 @@ export function applyVariant(rig, variant) {
     m.color.copy(from.color);
     m.roughness = from.roughness;
     m.metalness = from.metalness;
+    if ("clearcoat" in m) {
+      m.clearcoat = from.clearcoat ?? 0;
+      m.clearcoatRoughness = from.clearcoatRoughness ?? 0.45;
+    }
     fades.set(o, {
       mat: m,
       spec,
@@ -348,6 +363,10 @@ export function applyVariant(rig, variant) {
       toRough: target.roughness,
       fromMetal: from.metalness,
       toMetal: target.metalness,
+      fromCoat: from.clearcoat ?? 0,
+      toCoat: target.clearcoat ?? 0,
+      fromCoatR: from.clearcoatRoughness ?? 0.45,
+      toCoatR: target.clearcoatRoughness ?? 0.45,
       start: performance.now() / 1000,
     });
     o.material = m;

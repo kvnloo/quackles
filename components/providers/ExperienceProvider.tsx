@@ -2,11 +2,13 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type MutableRefObject,
   type ReactNode,
 } from "react";
@@ -14,6 +16,15 @@ import Lenis from "lenis";
 import { POSES, poseAt, type Pose } from "@/lib/pose";
 import { COLORWAYS, type ColorwayId } from "@/lib/colorways";
 import { detectWebGL } from "@/lib/webgl";
+import {
+  applyThemeCss,
+  DEFAULT_THEME_T,
+  getThemeSnapshot,
+  persistTheme,
+  subscribeTheme,
+  themeAt,
+  type PaperTheme,
+} from "@/lib/theme";
 
 type Experience = {
   progress: number;
@@ -28,6 +39,9 @@ type Experience = {
   reducedMotion: boolean;
   mobile: boolean;
   sectionCount: number;
+  themeT: number;
+  setThemeT: (t: number) => void;
+  theme: PaperTheme;
 };
 
 const ExperienceContext = createContext<Experience | null>(null);
@@ -41,6 +55,16 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   const [webgl, setWebgl] = useState<boolean | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const themeT = useSyncExternalStore(subscribeTheme, getThemeSnapshot, () => DEFAULT_THEME_T);
+  const theme = useMemo(() => themeAt(themeT), [themeT]);
+
+  const setThemeT = useCallback((t: number) => {
+    persistTheme(t);
+  }, []);
+
+  useEffect(() => {
+    applyThemeCss(theme, themeT);
+  }, [theme, themeT]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -116,8 +140,11 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       reducedMotion,
       mobile,
       sectionCount: POSES.length,
+      themeT,
+      setThemeT,
+      theme,
     }),
-    [progress, colorway, ready, webgl, reducedMotion, mobile]
+    [progress, colorway, ready, webgl, reducedMotion, mobile, themeT, setThemeT, theme]
   );
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;
