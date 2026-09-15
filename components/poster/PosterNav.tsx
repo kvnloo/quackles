@@ -2,7 +2,7 @@
 
 import { LINKS } from "@/lib/story";
 import { POSTER } from "@/lib/poster";
-import { ThemeSlider } from "@/components/poster/ThemeSlider";
+import { ThemeControl } from "@/components/poster/ThemeControl";
 
 export function PosterNav() {
   return (
@@ -18,10 +18,10 @@ export function PosterNav() {
           </a>
         ))}
       </nav>
-      <ThemeSlider />
       <a href={LINKS.store} target="_blank" rel="noreferrer" className="nav-cta">
         {POSTER.cta}
       </a>
+      <ThemeControl />
     </header>
   );
 }

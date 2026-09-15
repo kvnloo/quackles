@@ -39,7 +39,7 @@ function Studio({
     }
 
     const t = getThemeSnapshot();
-    if (Math.abs(t - lastTheme.current) > 0.004) {
+    if (Math.abs(t - lastTheme.current) > 0.001) {
       lastTheme.current = t;
       const L = lightsAt(t);
       gl.setClearColor(L.bg, 1);
@@ -64,12 +64,12 @@ function Studio({
 
   return (
     <>
-      <ambientLight ref={amb} intensity={0.82} color="#f4eee4" />
-      <directionalLight ref={key} position={[0.55, 1.2, 0.45]} intensity={1.55} color="#fff8ee" />
-      <directionalLight ref={fill} position={[-0.6, 0.35, 0.2]} intensity={0.32} color="#ffffff" />
+      <ambientLight ref={amb} intensity={0.58} color="#4d4dff" />
+      <directionalLight ref={key} position={[0.55, 1.2, 0.45]} intensity={1.32} color="#f2f2f2" />
+      <directionalLight ref={fill} position={[-0.6, 0.35, 0.2]} intensity={0.62} color="#0000f2" />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
         <planeGeometry args={[8, 8]} />
-        <meshBasicMaterial ref={floor} color="#efe8dc" />
+        <meshBasicMaterial ref={floor} color="#0000f2" />
       </mesh>
     </>
   );

@@ -1,10 +1,10 @@
-# Note for the theme-slider / CSS-match agent
+# Note for the theme / CSS-match agent
 
-The first frame is no longer a CSS composite. Do not put the bust image, CSS orb, HTML plinths, or arch back on top of the hero.
+The first frame is the R3F duck on a sticky stage, not a CSS composite. Do not put the bust image, CSS orb, HTML plinths, or arch back on top of the hero.
 
-- Still: `public/poster/frame-{white,cobalt,dark}.jpg` from `blender/build_poster.py`
-- HTML only: wordmark, nav, CTA, kicker, headline, specs, coords, manifesto, stamps, globe caption, plinth/footer type, theme slider
-- Slider (white → cobalt → dark) stays; it crossfades those three plates via `plateWeights()` in `lib/theme.ts`
-- Later chapters (explode / jump / live duck) still fade in with `--p` after the hero still
+- Theme is **exactly three states**: White / Poster / Dark (default Poster = cobalt `#0000f2` on paper `#f2f2f2`)
+- `ThemeControl` lerps CSS vars + 3D lights over 360ms via `animateThemeTo` / `applyThemeT` / `lightsAt`
+- Tokens were pulled from the live Hermes Agent site, not from memory
+- Later chapters (explode / jump) still fade in with `--p` after the hero still
 
 If you need to touch theme tokens, keep `applyThemeT` / `plateWeights` / `PosterPlates`. Rebuild stills with the blender README, not with CSS set dressing.

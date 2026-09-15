@@ -1,6 +1,6 @@
 # Microduck — Tiny duck. Big waddle.
 
-Fan-made **mobile product page** for [Microduck](https://github.com/pollen-robotics/microduck). One well-lit 3D product shot, HTML type and specs, then two scroll beats: **Explode** and **Jump**. Quiet cream / cobalt, optional paper→cobalt→ink slider.
+Fan-made **mobile product page** for [Microduck](https://github.com/pollen-robotics/microduck). One well-lit 3D product shot, HTML type and specs, then two scroll beats: **Explode** and **Jump**. Three studio finishes — White, Poster (cobalt), Dark — with a 360ms lerp.
 
 Desktop layout is deferred — the live site is a 430px phone column.
 

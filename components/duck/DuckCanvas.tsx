@@ -48,7 +48,7 @@ export function DuckCanvas() {
       }}
       onCreated={({ gl }) => {
         gl.shadowMap.enabled = false;
-        gl.setClearColor(0xefe8dc, 1);
+        gl.setClearColor(0x0000f2, 1);
         setWebgl(true);
         setReady(true);
         const q = ensureProbe();
