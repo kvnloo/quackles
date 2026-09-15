@@ -113,11 +113,15 @@ export function PosterFront() {
           Robotics
         </p>
       </div>
-      <div className="poster-plinth poster-plinth-side">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assetPath("/poster/hands.jpg")} alt="" className="poster-hands" />
-        <div className="poster-hands-ink" />
-      </div>
+      <div
+        className="poster-plinth poster-plinth-side"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgb(47 91 255 / 0.15), rgb(47 91 255 / 0.35)), url("${assetPath("/poster/hands.jpg")}")`,
+          backgroundSize: "220% auto",
+          backgroundPosition: "12% 100%",
+          backgroundColor: "#2f5bff",
+        }}
+      />
       <div className="poster-plinth poster-plinth-right">
         <p className="max-w-[8rem] font-label text-[10px] font-semibold uppercase leading-[1.28] tracking-[0.16em] text-[color:var(--cobalt)]">
           {POSTER.footer.map((line) => (

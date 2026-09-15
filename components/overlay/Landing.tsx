@@ -46,7 +46,7 @@ function DuckSlot() {
   const t = Math.min(1, progress / 0.14);
   return (
     <div
-      className="absolute z-[12] overflow-hidden"
+      className="absolute z-[18] overflow-hidden"
       style={{
         top: `${16 * (1 - t)}%`,
         left: `${16 * (1 - t)}%`,
