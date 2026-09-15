@@ -41,7 +41,7 @@ function Studio({
   const look = useRef(new THREE.Vector3());
   const lastFov = useRef(-1);
   const lastTheme = useRef(-1);
-  const floor = useRef<THREE.MeshStandardMaterial>(null);
+  const floor = useRef<THREE.MeshBasicMaterial>(null);
   const key = useRef<THREE.DirectionalLight>(null);
   const fill = useRef<THREE.DirectionalLight>(null);
   const rim = useRef<THREE.DirectionalLight>(null);
@@ -104,9 +104,9 @@ function Studio({
       <directionalLight ref={key} position={[0.72, 1.45, 0.62]} intensity={2.35} color="#f7f7ff" />
       <directionalLight ref={fill} position={[-0.82, 0.48, 0.38]} intensity={0.78} color="#0000f2" />
       <directionalLight ref={rim} position={[-0.18, 0.72, -0.92]} intensity={1.35} color="#7a7aff" />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]} receiveShadow={false}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
         <planeGeometry args={[8, 8]} />
-        <meshStandardMaterial ref={floor} color="#0000f2" roughness={0.92} metalness={0} envMapIntensity={0.35} />
+        <meshBasicMaterial ref={floor} color="#0000f2" />
       </mesh>
     </>
   );
