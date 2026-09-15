@@ -22,11 +22,10 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Microduck — Tiny duck. Big waddle.",
   description:
-    "A 3D scrollytelling landing page for Microduck, the 25 cm open-source-software biped from Pollen Robotics. Fifteen motors, a grasping beak, trained in sim.",
+    "A 25 cm biped from Pollen Robotics. Fifteen motors, a grasping beak, trained in sim. Product film with anatomy and get-up.",
   openGraph: {
     title: "Microduck — Tiny duck. Big waddle.",
-    description:
-      "Scroll a 3D duck through walk, grab, recover, and roller-skate, then into Try Micro Duck.",
+    description: "Product shot, exploded anatomy, and a get-up — then pre-order.",
     type: "website",
   },
 };
@@ -35,6 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
+      data-tone="paper"
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>

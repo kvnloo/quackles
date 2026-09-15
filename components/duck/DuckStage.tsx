@@ -18,7 +18,7 @@ export function DuckStage() {
   useEffect(() => {
     const id = window.setTimeout(() => {
       setWebgl(supported);
-      setReady(true);
+      if (!supported) setReady(true);
     }, 0);
     return () => window.clearTimeout(id);
   }, [supported, setReady, setWebgl]);
