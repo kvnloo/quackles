@@ -20,7 +20,7 @@ export function ThemeSlider() {
         max={100}
         step={1}
         value={Math.round(t * 100)}
-        aria-label="Studio plate, white to cobalt to dark"
+        aria-label="Studio, white to cobalt to dark"
         aria-valuetext={themeLabel(t)}
         onChange={(e) => setT(Number(e.target.value) / 100)}
       />

@@ -1,4 +1,4 @@
-import { LINKS, STORY } from "@/lib/story";
+import { STORY } from "@/lib/story";
 
 export function PosterBeats() {
   return (
@@ -19,22 +19,8 @@ export function PosterBeats() {
                   {section.kicker}
                   <span />
                 </p>
-                <h2>
-                  {section.title.split("\n").map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
-                </h2>
+                <h2>{section.title}</h2>
                 <p className="beat-body">{section.body}</p>
-                {section.id === STORY[STORY.length - 1]?.id ? (
-                  <div className="beat-cta">
-                    <a className="btn-solid" href={LINKS.store} target="_blank" rel="noreferrer">
-                      Pre-order $399
-                    </a>
-                    <a className="btn-ghost" href={LINKS.github} target="_blank" rel="noreferrer">
-                      GitHub
-                    </a>
-                  </div>
-                ) : null}
               </div>
             )}
           </section>

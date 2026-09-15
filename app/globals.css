@@ -120,6 +120,13 @@ html[data-tone="ink"] {
     overscroll-behavior-y: none;
     touch-action: pan-y;
   }
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
   body {
     @apply text-foreground;
     background: var(--paper-deep);
@@ -141,7 +148,6 @@ html[data-tone="ink"] {
   max-width: 430px;
   margin-inline: auto;
   background: var(--paper);
-  contain: layout;
 }
 
 .poster-stage {
@@ -154,7 +160,6 @@ html[data-tone="ink"] {
   overflow: hidden;
   background: var(--paper);
   z-index: 1;
-  contain: layout paint;
 }
 
 .stage-bg {
@@ -168,10 +173,7 @@ html[data-tone="ink"] {
   position: absolute;
   inset: 0;
   z-index: 8;
-  contain: layout paint;
   pointer-events: none;
-  /* First frame is the Blender still; live duck after the hero beat. */
-  opacity: clamp(0, calc((var(--p, 0) - 0.08) * 8), 1);
 }
 
 .duck-canvas {
@@ -179,6 +181,25 @@ html[data-tone="ink"] {
   width: 100%;
   height: 100%;
   filter: none !important;
+}
+
+.hatch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  pointer-events: none;
+}
+
+.hatch-overlay p {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--cobalt);
 }
 
 .poster-story {
@@ -241,11 +262,24 @@ html[data-tone="ink"] {
 
 .theme-slider-wrap {
   pointer-events: auto;
-  margin-left: auto;
-  width: 88px;
+  position: absolute;
+  right: 14px;
+  top: 46px;
+  z-index: 72;
+  width: 122px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.theme-slider-label {
+  letter-spacing: 0.18em;
 }
 
 .theme-slider {
@@ -286,7 +320,7 @@ html[data-tone="ink"] {
 
 .nav-cta {
   pointer-events: auto;
-  margin-left: 8px;
+  margin-left: auto;
   border: 1px solid var(--cobalt);
   padding: 5px 8px;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -304,7 +338,6 @@ html[data-tone="ink"] {
   z-index: 22;
   padding-inline: 18px;
   pointer-events: none;
-  contain: layout paint;
   opacity: clamp(0, calc(1 - var(--p, 0) * 4.4), 1);
 }
 
@@ -339,20 +372,33 @@ html[data-tone="ink"] {
   color: var(--cobalt);
 }
 
-.hero-copy h1 span,
-.beat-card h2 span {
+.hero-copy h1 span {
   display: block;
 }
 
-.hero-copy ul {
+.hero-specs {
   margin-top: 1.35rem;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.45;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  display: grid;
+  grid-template-columns: max-content max-content;
+  column-gap: 1.4rem;
+  row-gap: 0.45rem;
+  max-width: 11rem;
+}
+
+.hero-specs dt {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-size: 1.15rem;
+  line-height: 1;
   color: var(--ink);
+}
+
+.hero-specs dd {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 72%, transparent);
 }
 
 .story-beats {
@@ -364,7 +410,6 @@ html[data-tone="ink"] {
   display: flex;
   align-items: flex-start;
   padding-top: 4.5rem;
-  contain: layout;
 }
 
 .beat-hero {
@@ -380,9 +425,6 @@ html[data-tone="ink"] {
   margin: 0 16px 32px;
   max-width: 14.5rem;
   padding: 4px 2px 8px;
-  background: transparent;
-  border: none;
-  contain: layout paint;
 }
 
 .beat-card h2 {
@@ -402,35 +444,6 @@ html[data-tone="ink"] {
   color: color-mix(in srgb, var(--ink) 80%, transparent);
 }
 
-.beat-cta {
-  margin-top: 18px;
-  pointer-events: auto;
-}
-
-.btn-solid,
-.btn-ghost {
-  display: block;
-  margin-top: 10px;
-  padding: 9px 10px;
-  text-align: center;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.btn-solid {
-  background: var(--cobalt);
-  color: var(--paper);
-  border: 1px solid var(--cobalt);
-}
-
-.btn-ghost {
-  border: 1px solid var(--cobalt);
-  color: var(--cobalt);
-}
-
 .duck-fallback {
   display: flex;
   height: 100%;
@@ -440,189 +453,8 @@ html[data-tone="ink"] {
   background: var(--paper);
 }
 
-.duck-fallback img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center bottom;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .hero-copy,
-  .poster-plates,
-  .poster-marks {
+  .hero-copy {
     opacity: 1;
   }
-}
-
-.hero-coords,
-.hero-manifesto {
-  margin-top: 1.1rem;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 8px;
-  font-weight: 600;
-  line-height: 1.45;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.hero-coords span,
-.hero-manifesto span,
-.poster-right-stamp span,
-.poster-globe p span,
-.poster-footer-copy p span {
-  display: block;
-}
-
-.hero-manifesto {
-  margin-top: 0.85rem;
-  max-width: 7.5rem;
-  color: color-mix(in srgb, var(--ink) 78%, transparent);
-}
-
-.theme-slider-wrap {
-  pointer-events: auto;
-  position: absolute;
-  right: 14px;
-  top: 46px;
-  z-index: 72;
-  width: 122px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.theme-slider-label {
-  letter-spacing: 0.18em;
-}
-
-.poster-plates {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: var(--paper);
-  opacity: clamp(0, calc(1 - (var(--p, 0) - 0.02) * 6), 1);
-}
-
-.poster-plate {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center bottom;
-  pointer-events: none;
-}
-
-.poster-marks {
-  position: absolute;
-  inset: 0;
-  z-index: 16;
-  pointer-events: none;
-  opacity: clamp(0, calc(1 - (var(--p, 0) - 0.02) * 6), 1);
-}
-
-.poster-right-stamp {
-  position: absolute;
-  right: 12px;
-  top: 46%;
-  max-width: 7.6rem;
-  text-align: right;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 8px;
-  font-weight: 600;
-  line-height: 1.38;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--cobalt);
-}
-
-.poster-globe {
-  position: absolute;
-  right: 6%;
-  top: 54%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-.poster-globe-icon {
-  width: 34px;
-  height: 34px;
-  color: var(--cobalt);
-}
-
-.poster-globe p {
-  max-width: 4.8rem;
-  text-align: center;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 8px;
-  font-weight: 600;
-  line-height: 1.32;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--cobalt);
-}
-
-.poster-plinth-copy {
-  position: absolute;
-  left: 16%;
-  bottom: 7%;
-}
-
-.poster-plinth-title {
-  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
-  font-size: 1.85rem;
-  line-height: 0.8;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-}
-
-.poster-plinth-rule {
-  display: block;
-  width: 2px;
-  height: 32px;
-  margin-top: 8px;
-  background: var(--cobalt);
-}
-
-.poster-plinth-sub {
-  margin-top: 8px;
-  max-width: 6.5rem;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--ink) 70%, transparent);
-}
-
-.poster-footer-copy {
-  position: absolute;
-  right: 4%;
-  bottom: 4%;
-  text-align: right;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.28;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--cobalt);
-}
-
-.poster-year {
-  margin-top: 12px;
-  font-size: 9px;
-  letter-spacing: 0.22em;
 }

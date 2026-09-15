@@ -8,7 +8,7 @@ import { DuckFallback } from "./DuckFallback";
 
 const LiveCanvas = dynamic(
   () => import("./DuckCanvas").then((module) => module.DuckCanvas),
-  { ssr: false }
+  { ssr: false },
 );
 
 export function DuckStage() {

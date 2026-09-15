@@ -1,4 +1,5 @@
 import { POSTER } from "@/lib/poster";
+import { SPECS } from "@/lib/story";
 
 export function PosterHeroCopy() {
   return (
@@ -12,21 +13,14 @@ export function PosterHeroCopy() {
           <span key={line}>{line}</span>
         ))}
       </h1>
-      <ul>
-        {POSTER.specs.map((line) => (
-          <li key={line}>{line}</li>
+      <dl className="hero-specs">
+        {SPECS.map((spec) => (
+          <div key={spec.label}>
+            <dt>{spec.value}</dt>
+            <dd>{spec.label}</dd>
+          </div>
         ))}
-      </ul>
-      <p className="hero-coords">
-        {POSTER.coords.map((line) => (
-          <span key={line}>{line}</span>
-        ))}
-      </p>
-      <p className="hero-manifesto">
-        {POSTER.manifesto.map((line) => (
-          <span key={line}>{line}</span>
-        ))}
-      </p>
+      </dl>
     </div>
   );
 }
