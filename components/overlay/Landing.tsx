@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { ExperienceProvider, useExperience } from "@/components/providers/ExperienceProvider";
 import { PosterNav } from "@/components/poster/PosterNav";
-import { PosterChrome } from "@/components/poster/PosterChrome";
+import { PosterBack, PosterFront } from "@/components/poster/PosterChrome";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { StoryOverlay } from "@/components/overlay/StoryOverlay";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
@@ -48,10 +48,11 @@ function DuckSlot() {
     <div
       className="absolute z-[12] overflow-hidden"
       style={{
-        top: `${18 * (1 - t)}%`,
-        left: `${18 * (1 - t)}%`,
-        right: `${7 * (1 - t)}%`,
-        bottom: `${23 * (1 - t)}%`,
+        top: `${12 * (1 - t)}%`,
+        left: `${16 * (1 - t)}%`,
+        right: `${6 * (1 - t)}%`,
+        bottom: `${22 * (1 - t)}%`,
+        transform: `translateY(${(1 - t) * 7}vh)`,
       }}
     >
       <CanvasGuard fallback={<DuckFallback />}>
@@ -70,8 +71,9 @@ function AppShell() {
       <div className="poster-stage">
         <Hatch />
         <PosterNav />
+        <PosterBack />
         <DuckSlot />
-        <PosterChrome />
+        <PosterFront />
         <PosterHeroCopy />
         <SimulatorFrame />
         <PaperGrain />

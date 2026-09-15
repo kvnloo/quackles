@@ -41,7 +41,7 @@ export function PosterNav() {
           href={LINKS.store}
           target="_blank"
           rel="noreferrer"
-          className="pointer-events-auto ml-auto mt-[2px] border border-[color:var(--cobalt)] px-[8px] py-[5px] font-label text-[8px] font-semibold uppercase tracking-[0.18em] text-[color:var(--cobalt)]"
+          className="pointer-events-auto ml-auto mt-[2px] whitespace-nowrap border border-[color:var(--cobalt)] px-[8px] py-[5px] font-label text-[8px] font-semibold uppercase tracking-[0.16em] text-[color:var(--cobalt)]"
         >
           {POSTER.cta}
         </a>

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { POSTER } from "@/lib/poster";
 import { assetPath } from "@/lib/paths";
 import { useExperience } from "@/components/providers/ExperienceProvider";
@@ -38,22 +39,32 @@ function Leaf() {
   );
 }
 
-export function PosterChrome() {
+function Fade({
+  children,
+  className,
+  z,
+}: {
+  children: ReactNode;
+  className: string;
+  z: number;
+}) {
   const { progress } = useExperience();
-  const fade = Math.max(0, 1 - Math.max(0, progress - 0.04) * 3.6);
-
+  const fade = Math.max(0, 1 - Math.max(0, progress - 0.02) * 6);
   return (
-    <div
-      className="pointer-events-none absolute inset-0 z-[16] overflow-hidden"
-      style={{ opacity: fade }}
-      aria-hidden
-    >
+    <div className={className} style={{ opacity: fade, zIndex: z }} aria-hidden>
+      {children}
+    </div>
+  );
+}
+
+export function PosterBack() {
+  return (
+    <Fade className="pointer-events-none absolute inset-0 overflow-hidden" z={8}>
       <div className="poster-arch" />
       <div className="poster-blue-frame" />
       <div className="poster-leaf">
         <Leaf />
       </div>
-
       <div className="poster-bust">
         <CropMarks className="absolute inset-0" />
         <div className="poster-bust-ink">
@@ -69,7 +80,13 @@ export function PosterChrome() {
           ))}
         </p>
       </div>
+    </Fade>
+  );
+}
 
+export function PosterFront() {
+  return (
+    <Fade className="pointer-events-none absolute inset-0 overflow-hidden" z={16}>
       <div className="poster-globe">
         <Globe />
         <p>
@@ -80,11 +97,9 @@ export function PosterChrome() {
           ))}
         </p>
       </div>
-
       <div className="poster-orb-wrap">
         <div className="poster-orb" />
       </div>
-
       <div className="poster-plinth poster-plinth-main">
         <p className="font-display text-[1.7rem] leading-[0.82] tracking-tight text-[color:var(--ink)]">
           {POSTER.plinth[0]}
@@ -92,16 +107,16 @@ export function PosterChrome() {
           {POSTER.plinth[1]}
         </p>
         <span className="mt-2 block h-8 w-[2px] bg-[color:var(--cobalt)]" />
-        <p className="mt-2 max-w-[7rem] font-label text-[9px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]/70">
-          {POSTER.plinthSub}
+        <p className="mt-2 max-w-[6.5rem] font-label text-[9px] font-semibold uppercase leading-[1.35] tracking-[0.16em] text-[color:var(--ink)]/70">
+          Pollen
+          <br />
+          Robotics
         </p>
       </div>
-
       <div className="poster-plinth poster-plinth-side">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={assetPath("/poster/hands.jpg")} alt="" className="poster-hands" />
       </div>
-
       <div className="poster-plinth poster-plinth-right">
         <p className="max-w-[8rem] font-label text-[10px] font-semibold uppercase leading-[1.28] tracking-[0.16em] text-[color:var(--cobalt)]">
           {POSTER.footer.map((line) => (
@@ -114,6 +129,6 @@ export function PosterChrome() {
           {`//  ${POSTER.year}`}
         </p>
       </div>
-    </div>
+    </Fade>
   );
 }
