@@ -18,7 +18,7 @@ const CLEAN_YELLOW = { color: [1.0, 0.608, 0.021], roughness: 0.4, metalness: 0.
 const CREAM = { color: [0.78, 0.73, 0.64], roughness: 0.52, metalness: 0.0 };          // weathered poster cream
 const GRAPHITE_SHELL = { color: [0.028, 0.028, 0.032], roughness: 0.48, metalness: 0.18 };
 const MUTED_BEAK = { color: [0.42, 0.36, 0.3], roughness: 0.5, metalness: 0.0 };
-const FOOT_PAD = { color: [0.84, 0.38, 0.04], roughness: 0.48, metalness: 0.0 };
+const FOOT_PAD = { color: [0.72, 0.32, 0.03], roughness: 0.55, metalness: 0.0 };
 const DARK = { color: [0.012, 0.012, 0.014], roughness: 0.55, metalness: 0.3 };        // #1d1d1f
 const GRAY = { color: [0.256, 0.256, 0.279], roughness: 0.5, metalness: 0.35 };        // #8b8b90
 // Camera-lens eye: very dark blue-black, glossy like coated glass.

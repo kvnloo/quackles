@@ -23,6 +23,7 @@ export function SimulatorFrame() {
       className="absolute z-[28] overflow-hidden bg-[#efe8dc] transition-[opacity,box-shadow] duration-500"
       style={{
         opacity: t > 0.02 ? 1 : 0,
+        visibility: t > 0.02 ? "visible" : "hidden",
         top: `${top}%`,
         right: `${right}%`,
         bottom: `${bottom}%`,

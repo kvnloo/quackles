@@ -13,17 +13,23 @@ function CameraRig({ poseRef }: { poseRef: MutableRefObject<Pose> }) {
   const look = useRef(new THREE.Vector3());
   const lookTarget = useRef(new THREE.Vector3());
   const desired = useRef(new THREE.Vector3());
+  const primed = useRef(false);
 
   useFrame(() => {
     const p = poseRef.current;
     desired.current.set(p.camPos[0], p.camPos[1], p.camPos[2]);
     lookTarget.current.set(p.lookAt[0], p.lookAt[1], p.lookAt[2]);
-    const snap = 0.22;
-    camera.position.lerp(desired.current, snap);
-    look.current.lerp(lookTarget.current, snap);
+    if (!primed.current) {
+      camera.position.copy(desired.current);
+      look.current.copy(lookTarget.current);
+      primed.current = true;
+    } else {
+      camera.position.lerp(desired.current, 0.18);
+      look.current.lerp(lookTarget.current, 0.18);
+    }
     camera.lookAt(look.current);
     const persp = camera as THREE.PerspectiveCamera;
-    persp.fov = lerp(persp.fov, p.fov, snap);
+    persp.fov = p.fov;
     persp.updateProjectionMatrix();
   });
 
@@ -89,7 +95,7 @@ export function DuckScene({
         poseRef={poseRef}
         showWhen={(p) => p.explode < 0.55 && p.play < 0.45 && p.flock < 0.72}
       >
-        <group position={[0.04, 0, 0.02]}>
+        <group position={[0.03, 0, 0]}>
           <OfficialDuck poseRef={duckPose} colorway={colorway} reducedMotion={reducedMotion} />
         </group>
       </Gate>
