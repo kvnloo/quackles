@@ -1,0 +1,73 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  deploy:
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Resolve Pages base path
+        id: base
+        run: |
+          NAME="${GITHUB_REPOSITORY#*/}"
+          OWNER="${GITHUB_REPOSITORY_OWNER}"
+          if [ "$NAME" = "${OWNER}.github.io" ]; then
+            echo "path=" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=/${NAME}" >> "$GITHUB_OUTPUT"
+          fi
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+      - id: deploy
+        uses: actions/deploy-pages@v4

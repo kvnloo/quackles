@@ -1,7 +1,7 @@
 export const STORY = [
   {
     id: "hero",
-    kicker: "Unofficial scrollytelling · Pollen Robotics",
+    kicker: "Unofficial product film · Pollen Robotics",
     title: "Tiny duck.\nBig waddle.",
     body: "A 25 cm biped with 15 motors, a grasping beak, and a neural policy loop running at 50 Hz. Playable out of the box. Yours to retrain.",
   },
@@ -49,9 +49,9 @@ export const STORY = [
   },
   {
     id: "play",
-    kicker: "The story becomes the twin",
-    title: "Scroll far enough and you are in the sim.",
-    body: "Same meshes. Same 14 joints. Same ONNX policies at 50 Hz. This is the official Microduck playground — MuJoCo compiled to WebAssembly — not a keyframed walk cycle. WASD to steer. Space to reset.",
+    kicker: "The product shot becomes the twin",
+    title: "Scroll into the real sim.",
+    body: "This is Try Micro Duck: official MuJoCo physics and official RL policies in your browser. WASD to walk. Open the camera and your hands are solid in the scene — pet it, slap it, knock it over. It gets back up.",
   },
   {
     id: "cta",

@@ -3,14 +3,19 @@
 import { buttonVariants } from "@/components/ui/button";
 import { COLORWAYS } from "@/lib/colorways";
 import { LINKS } from "@/lib/story";
+import { playMorph } from "@/lib/sim/morph";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 import { cn } from "@/lib/utils";
 
 export function NavBar() {
   const { colorway, setColorway, progress } = useExperience();
+  const morph = playMorph(progress);
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-[60]">
+    <header
+      className="pointer-events-none fixed inset-x-0 top-0 z-[60] transition-opacity duration-500"
+      style={{ opacity: Math.max(0, 1 - morph * 0.85) }}
+    >
       <div className="flex items-center justify-between gap-3 px-4 py-4 md:px-8">
         <a
           href="#top"

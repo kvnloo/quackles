@@ -132,16 +132,16 @@ export function StoryOverlay() {
                 {section.id === "play" && (
                   <div className="mt-6 space-y-4">
                     <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                      WASD steer · M legs/rollers · G grab · Space reset
+                      WASD walk · camera for hands · pet, slap, recover
                     </p>
                     <a
-                      href={LINKS.simulator}
+                      href={LINKS.tryBrowser}
                       target="_blank"
                       rel="noreferrer"
                       className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
                     >
                       <Cpu className="size-3.5" />
-                      Open simulator in a new tab
+                      Open Try Micro Duck
                     </a>
                   </div>
                 )}
@@ -221,19 +221,28 @@ $ robotctl update     # signed, reversible`}
                         Official product page
                       </a>
                       <a
-                        href={LINKS.simulator}
+                        href={LINKS.tryBrowser}
                         target="_blank"
                         rel="noreferrer"
                         className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
                       >
                         <Cpu className="size-3.5" />
-                        Browser simulator
+                        Try Micro Duck
                       </a>
                     </div>
                     <p className="max-w-md text-[11px] leading-relaxed text-muted-foreground">
-                      Fan-made 3D scrollytelling page. The duck you scrolled is the official
-                      kinematics + GLB from the Hugging Face simulator; the last chapters embed that
-                      playground. Microduck is a product of Pollen Robotics. Software is Apache-2.0;
+                      Fan-made 3D scrollytelling page. The opening shot is the official
+                      Microduck mesh. Scroll the features; the last chapters morph into{" "}
+                      <a
+                        className="underline underline-offset-2"
+                        href={LINKS.tryBrowser}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Try Micro Duck
+                      </a>{" "}
+                      — official MuJoCo physics and RL policies, with optional camera hands.
+                      Microduck is a product of Pollen Robotics. Software is Apache-2.0;
                       mechanical and electronic design files are not open hardware. Facts from the{" "}
                       <a
                         className="underline underline-offset-2"

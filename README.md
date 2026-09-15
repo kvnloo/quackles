@@ -1,24 +1,8 @@
 # Microduck — Tiny duck. Big waddle.
 
-A fan-made **3D scrollytelling landing page** for [Microduck](https://github.com/pollen-robotics/microduck), the 25 cm biped from Pollen Robotics (Hugging Face’s Bordeaux robotics team).
+Fan-made **3D scrollytelling** for [Microduck](https://github.com/pollen-robotics/microduck). It opens on a studio product shot of the official mesh, scrolls through the features, then **morphs into [Try Micro Duck](https://trymicroduck.com/)** — the real in-browser twin (official MuJoCo physics + RL policies, optional camera hands).
 
-Scroll the page: the official robot mesh walks, explodes into parts, picks something up, falls over, gets back up, puts skates on, lines up in the four colourways, then **morphs into the official in-browser simulator**.
-
-This is not the official product site. Hardware facts come from the [press kit](https://pollen-robotics.com/microduck/press-kit/). Software is Apache-2.0; the mechanical and electronic design files are **not** open hardware.
-
-## Don’t reinvent the wheel
-
-The 3D duck is not a procedural stand-in. It is the official kinematic rig from the Hugging Face simulator:
-
-| Piece | Source |
-| --- | --- |
-| `duck.js` rig + `microduck.glb` + `kinematics.json` | [pollen-robotics/microduck-simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator) |
-| Cream / Graphite / Lavender / Sky materials | `variants.js` from that same Space |
-| Exploded anatomy chapter | [`@crazygl/hero-scroll-assemble-product`](https://crazygl.com/hero/scroll-assemble-product) pointed at the official GLB |
-| Last chapters | iframe of the official MuJoCo WASM + ONNX playground |
-| Smooth scroll | `lenis` (same family as a lot of the 3D landings in the flock) |
-
-Vendored simulator files live in `vendor/microduck-simulator/` with a `NOTICE`. The GLB is ~1.3 MB in `public/robot/mjlab/`.
+This is not the official product site. Hardware facts come from the [press kit](https://pollen-robotics.com/microduck/press-kit/). Software is Apache-2.0; mechanical and electronic design files are **not** open hardware.
 
 ## Run locally
 
@@ -29,16 +13,28 @@ npm run dev
 
 Open [http://localhost:43217](http://localhost:43217).
 
-Machines without WebGL get a flat SVG likeness and the story still scrolls; the simulator iframe still loads at the end.
+Machines without WebGL get a flat SVG likeness; the Try Micro Duck iframe still loads at the end.
+
+## GitHub Pages
+
+The app is a static export (`next build` → `out/`). `.github/workflows/pages.yml` deploys on every push to `main`, on a nightly cron, and on manual dispatch. Lint and typecheck run as parallel jobs, then deploy.
+
+Enable **Settings → Pages → GitHub Actions**. After the first green run the site is:
+
+```text
+https://<github-username>.github.io/<repo>/
+```
+
+If the repo is named `<username>.github.io`, it deploys at the domain root.
 
 ## Stack
 
-Next.js (App Router) · React Three Fiber · Drei · Lenis · CrazyGL scroll-assemble · Tailwind v4 · shadcn/ui
+Next.js (static export) · React Three Fiber · official Microduck GLB/kinematics · CrazyGL scroll-assemble · Lenis · Try Micro Duck iframe
 
 ## Official links
 
 - Product: https://pollen-robotics.com/microduck/
-- Store: https://store.pollen-robotics.com/collections/microduck
+- Try it: https://trymicroduck.com/
+- Hugging Face playground: https://huggingface.co/spaces/pollen-robotics/microduck-simulator
 - Runtime: https://github.com/pollen-robotics/microduck
 - Training: https://github.com/pollen-robotics/microduck_rl
-- Simulator: https://huggingface.co/spaces/pollen-robotics/microduck-simulator

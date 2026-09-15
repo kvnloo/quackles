@@ -1,12 +1,13 @@
 "use client";
 
+import { assetPath } from "@/lib/paths";
 import "@crazygl/hero-scroll-assemble-product/style.css";
 import ScrollAssembleProduct from "@crazygl/hero-scroll-assemble-product";
 
 export function AssembleHero() {
   return (
     <ScrollAssembleProduct
-      productModel="/robot/mjlab/microduck.glb"
+      productModel={assetPath("/robot/mjlab/microduck.glb")}
       heading="Helmet head. Serious internals."
       subheading="The official mesh, exploded with CrazyGL’s scroll-assemble hero — visor camera, 8×8 ToF, stacked neck servos, RK3566 in the trunk."
       layout="content-left"

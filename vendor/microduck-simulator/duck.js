@@ -16,7 +16,8 @@ export const MESH_VERSION = "11";
 // robot_walk.xml by tools/mjcf_to_kinematics.py). robot/v1.5/ and
 // robot/alpha/ stay on disk for reference but the code no longer
 // targets them.
-export const MODEL_DIR = "/robot/mjlab";
+const BASE = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_PATH) || "";
+export const MODEL_DIR = `${BASE}/robot/mjlab`;
 
 // On a private HF Space, asset requests carry the ?__sign JWT (auth
 // cookies may be blocked in the hub iframe). Identity everywhere else.

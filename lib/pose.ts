@@ -48,12 +48,13 @@ function pose(partial: Partial<Pose>): Pose {
 // Camera units are metres — the official mesh is the real 25 cm robot.
 export const POSES: Pose[] = [
   pose({
-    duckRotation: [0, 0.38, 0],
-    headPitch: 0.18,
-    beak: 0.22,
-    camPos: [0.4, 0.2, 0.5],
-    lookAt: [0.03, 0.145, 0],
-    fov: 28,
+    duckRotation: [0, 0.46, 0],
+    headPitch: 0.2,
+    beak: 0.16,
+    walkAmp: 0,
+    camPos: [0.36, 0.18, 0.48],
+    lookAt: [0.02, 0.14, 0],
+    fov: 26,
   }),
   pose({
     duckRotation: [0, 0.12, 0],
@@ -119,19 +120,19 @@ export const POSES: Pose[] = [
     fov: 30,
   }),
   pose({
-    duckRotation: [0, 0.22, 0],
-    play: 1,
-    camPos: [0.55, 0.42, 1.25],
-    lookAt: [0, 0.12, 0],
-    fov: 38,
+    duckRotation: [0, 0.28, 0],
+    play: 0.55,
+    camPos: [0.34, 0.2, 0.52],
+    lookAt: [0.04, 0.13, 0],
+    fov: 32,
   }),
   pose({
-    duckRotation: [0, 0.3, 0],
+    duckRotation: [0, 0.22, 0],
     play: 1,
-    beak: 0.28,
-    camPos: [0.6, 0.48, 1.4],
-    lookAt: [0, 0.12, 0],
-    fov: 36,
+    beak: 0.2,
+    camPos: [0.28, 0.18, 0.42],
+    lookAt: [0.06, 0.12, 0],
+    fov: 34,
   }),
 ];
 

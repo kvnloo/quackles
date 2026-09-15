@@ -7,6 +7,7 @@ import { StoryOverlay } from "@/components/overlay/StoryOverlay";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
 import { SimulatorFrame } from "@/components/sim/SimulatorFrame";
+import { playMorph } from "@/lib/sim/morph";
 
 const DuckStage = dynamic(
   () => import("@/components/duck/DuckStage").then((module) => module.DuckStage),
@@ -27,6 +28,8 @@ function Hatch() {
 }
 
 function Marquee() {
+  const { progress } = useExperience();
+  const morph = playMorph(progress);
   const bits = [
     "15 motors",
     "25 cm",
@@ -38,7 +41,10 @@ function Marquee() {
     "sim2real",
   ];
   return (
-    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 overflow-hidden border-t border-border/60 bg-background/40 py-2 backdrop-blur-md">
+    <div
+      className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 overflow-hidden border-t border-border/60 bg-background/40 py-2 backdrop-blur-md transition-opacity duration-500"
+      style={{ opacity: 1 - morph }}
+    >
       <div className="flex w-max animate-[marquee_32s_linear_infinite] gap-10 px-6 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
         {[...bits, ...bits].map((b, i) => (
           <span key={`${b}-${i}`} className="flex items-center gap-10">
@@ -53,11 +59,11 @@ function Marquee() {
 
 function Grain() {
   const { progress } = useExperience();
-  const play = Math.min(1, Math.max(0, (progress - 0.78) / 0.1));
+  const morph = playMorph(progress);
   return (
     <div
       className="grain pointer-events-none fixed inset-0 z-10"
-      style={{ opacity: 1 - play }}
+      style={{ opacity: 1 - morph }}
     />
   );
 }

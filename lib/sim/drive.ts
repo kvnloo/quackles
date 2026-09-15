@@ -29,7 +29,8 @@ export function driveRig(rig: any, pose: Pose, time: number, reducedMotion: bool
   setJoint(rig, JOINT_NAMES[2], lerp(d[2], sit.left_hip_pitch, fold) + hipL);
   setJoint(rig, JOINT_NAMES[3], lerp(d[3], sit.left_knee, fold) + kneeL);
   setJoint(rig, JOINT_NAMES[4], lerp(d[4], sit.left_ankle, fold) - hipL * 0.4);
-  setJoint(rig, JOINT_NAMES[5], lerp(d[5], sit.neck_pitch, fold * 0.45) + (pose.neckPitch - 0.12));
+  const breathe = reducedMotion ? 0 : Math.sin(time * 1.25) * 0.018 * (1 - walk);
+  setJoint(rig, JOINT_NAMES[5], lerp(d[5], sit.neck_pitch, fold * 0.45) + (pose.neckPitch - 0.12) + breathe);
   setJoint(rig, JOINT_NAMES[6], lerp(d[6], sit.head_pitch, fold * 0.4) + (pose.headPitch - 0.22));
   setJoint(rig, JOINT_NAMES[7], pose.headYaw);
   setJoint(rig, JOINT_NAMES[8], d[8] + pose.headYaw * 0.25);

@@ -3,6 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import * as THREE from "three";
+import { playMorph } from "@/lib/sim/morph";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 import { CanvasGuard } from "./CanvasGuard";
 import { DuckFallback } from "./DuckFallback";
@@ -13,7 +14,7 @@ export function DuckCanvas() {
     useExperience();
   const dpr =
     typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio, 1.75);
-  const fade = Math.min(1, Math.max(0, (progress - 0.78) / 0.1));
+  const fade = playMorph(progress);
   const explodeFade = Math.min(1, Math.max(0, (poseRef.current.explode - 0.12) / 0.4));
   const opacity = Math.max(0, 1 - Math.max(fade, explodeFade * 0.92));
 
