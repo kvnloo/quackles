@@ -54,7 +54,7 @@ export function driveRig(rig: any, pose: Pose, time: number, reducedMotion: bool
   placer.rotation.y = -Math.PI / 2 + pose.duckRotation[1];
   placer.rotation.z = pose.duckRotation[2];
   placer.position.x = pose.duckPosition[0];
-  placer.position.y = pose.duckPosition[1] + hop * 0.16 - pose.crouch * 0.016;
+  placer.position.y = pose.duckPosition[1] + hop * 0.22 - pose.crouch * 0.016;
   placer.position.z = pose.duckPosition[2];
   placer.scale.setScalar(pose.duckScale);
 }

@@ -366,7 +366,7 @@ html[data-tone="ink"] {
   margin-top: 8px;
   max-width: 12.5rem;
   font-family: var(--font-fraunces), ui-serif, Georgia, serif;
-  font-size: 2.85rem;
+  font-size: 2.5rem;
   line-height: 0.86;
   letter-spacing: -0.04em;
   color: var(--cobalt);
