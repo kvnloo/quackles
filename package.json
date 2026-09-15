@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --port 43217 --hostname 0.0.0.0",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:scroll": "node scripts/scroll-perf.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -35,6 +36,7 @@
     "@types/three": "^0.186.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "puppeteer-core": "^24.15.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
