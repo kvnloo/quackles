@@ -2,149 +2,101 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type MutableRefObject,
   type ReactNode,
 } from "react";
 import Lenis from "lenis";
-import { POSES, poseAt, type Pose } from "@/lib/pose";
-import { COLORWAYS, type ColorwayId } from "@/lib/colorways";
-import { detectWebGL } from "@/lib/webgl";
-import {
-  applyThemeCss,
-  DEFAULT_THEME_T,
-  getThemeSnapshot,
-  persistTheme,
-  subscribeTheme,
-  themeAt,
-  type PaperTheme,
-} from "@/lib/theme";
+import { poseAt, poseAtInto, type Pose } from "@/lib/pose";
+import { publishPose } from "@/lib/probe";
 
 type Experience = {
-  progress: number;
   progressRef: MutableRefObject<number>;
   poseRef: MutableRefObject<Pose>;
-  colorway: ColorwayId;
-  setColorway: (id: ColorwayId) => void;
+  lenisRef: MutableRefObject<Lenis | null>;
   ready: boolean;
   setReady: (v: boolean) => void;
   webgl: boolean | null;
   setWebgl: (v: boolean) => void;
   reducedMotion: boolean;
-  mobile: boolean;
-  sectionCount: number;
-  themeT: number;
-  setThemeT: (t: number) => void;
-  theme: PaperTheme;
 };
 
 const ExperienceContext = createContext<Experience | null>(null);
 
+function applyProgress(
+  progressRef: MutableRefObject<number>,
+  poseRef: MutableRefObject<Pose>,
+  next: number,
+) {
+  progressRef.current = next;
+  poseAtInto(poseRef.current, next);
+  publishPose(next, poseRef.current);
+  document.documentElement.style.setProperty("--p", next.toFixed(4));
+}
+
 export function ExperienceProvider({ children }: { children: ReactNode }) {
   const progressRef = useRef(0);
   const poseRef = useRef<Pose>(poseAt(0));
-  const [progress, setProgress] = useState(0);
-  const [colorway, setColorway] = useState<ColorwayId>(COLORWAYS[0].id);
+  const lenisRef = useRef<Lenis | null>(null);
   const [ready, setReady] = useState(false);
   const [webgl, setWebgl] = useState<boolean | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [mobile, setMobile] = useState(false);
-  const themeT = useSyncExternalStore(subscribeTheme, getThemeSnapshot, () => DEFAULT_THEME_T);
-  const theme = useMemo(() => themeAt(themeT), [themeT]);
-
-  const setThemeT = useCallback((t: number) => {
-    persistTheme(t);
-  }, []);
-
-  useEffect(() => {
-    applyThemeCss(theme, themeT);
-  }, [theme, themeT]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const widthMq = window.matchMedia("(max-width: 767px)");
-    const sync = () => {
-      setReducedMotion(mq.matches);
-      setMobile(widthMq.matches);
-    };
+    const sync = () => setReducedMotion(mq.matches);
     sync();
     mq.addEventListener("change", sync);
-    widthMq.addEventListener("change", sync);
-    return () => {
-      mq.removeEventListener("change", sync);
-      widthMq.removeEventListener("change", sync);
-    };
-  }, []);
-
-  useEffect(() => {
-    const probe = window.setTimeout(() => {
-      setWebgl(detectWebGL());
-    }, 0);
-    const failsafe = window.setTimeout(() => setReady(true), 800);
-    return () => {
-      window.clearTimeout(probe);
-      window.clearTimeout(failsafe);
-    };
+    return () => mq.removeEventListener("change", sync);
   }, []);
 
   useEffect(() => {
     const lenis = new Lenis({
-      lerp: reducedMotion ? 1 : 0.085,
+      autoRaf: false,
+      lerp: reducedMotion ? 1 : 0.14,
       smoothWheel: !reducedMotion,
+      syncTouch: true,
+      touchMultiplier: 1.15,
+      respectReducedMotion: true,
     });
-
-    let lastUi = 0;
-    const onScroll = ({ progress: p }: { progress: number }) => {
-      const next = Math.min(1, Math.max(0, p));
-      progressRef.current = next;
-      poseRef.current = poseAt(next);
-      const now = performance.now();
-      if (now - lastUi > 32) {
-        lastUi = now;
-        setProgress(next);
-      }
-    };
-
-    lenis.on("scroll", onScroll);
+    lenisRef.current = lenis;
+    window.__QUACKLES_LENIS__ = lenis;
+    lenis.on("scroll", (instance) => {
+      applyProgress(progressRef, poseRef, instance.progress);
+    });
+    applyProgress(progressRef, poseRef, 0);
 
     let raf = 0;
-    const loop = (t: number) => {
-      lenis.raf(t);
+    const loop = (time: number) => {
+      if (!window.__QUACKLES_LENIS_FROM_R3F__) lenis.raf(time);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(raf);
+      if (window.__QUACKLES_LENIS__ === lenis) window.__QUACKLES_LENIS__ = undefined;
       lenis.destroy();
+      lenisRef.current = null;
     };
   }, [reducedMotion]);
 
   const value = useMemo(
     () => ({
-      progress,
       progressRef,
       poseRef,
-      colorway,
-      setColorway,
+      lenisRef,
       ready,
       setReady,
       webgl,
       setWebgl,
       reducedMotion,
-      mobile,
-      sectionCount: POSES.length,
-      themeT,
-      setThemeT,
-      theme,
     }),
-    [progress, colorway, ready, webgl, reducedMotion, mobile, themeT, setThemeT, theme]
+    [ready, webgl, reducedMotion],
   );
 
   return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;

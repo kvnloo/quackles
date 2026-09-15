@@ -1,62 +1,64 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { addEffect, Canvas } from "@react-three/fiber";
+import { Suspense, useEffect } from "react";
 import * as THREE from "three";
-import { playMorph } from "@/lib/sim/morph";
 import { useExperience } from "@/components/providers/ExperienceProvider";
-import { CanvasGuard } from "./CanvasGuard";
-import { DuckFallback } from "./DuckFallback";
+import { ensureProbe } from "@/lib/probe";
 import { DuckScene } from "./DuckScene";
 
+function LenisBridge() {
+  const { lenisRef } = useExperience();
+
+  useEffect(() => {
+    window.__QUACKLES_LENIS_FROM_R3F__ = true;
+    const unsub = addEffect((time) => {
+      lenisRef.current?.raf(time);
+    });
+    return () => {
+      window.__QUACKLES_LENIS_FROM_R3F__ = false;
+      unsub();
+    };
+  }, [lenisRef]);
+
+  return null;
+}
+
 export function DuckCanvas() {
-  const { setReady, setWebgl, colorway, poseRef, reducedMotion, mobile, progress, theme } =
-    useExperience();
-  const dpr =
-    typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio, 1.75);
-  const fade = playMorph(progress);
-  const explodeFade = Math.min(1, Math.max(0, (poseRef.current.explode - 0.12) / 0.4));
-  const opacity = Math.max(0, 1 - Math.max(fade, explodeFade * 0.92));
+  const { setReady, setWebgl, poseRef, progressRef, reducedMotion } = useExperience();
 
   return (
-    <CanvasGuard
-      fallback={<DuckFallback />}
-      onError={() => {
-        setWebgl(false);
+    <Canvas
+      className="duck-canvas"
+      style={{ pointerEvents: "none", width: "100%", height: "100%", display: "block" }}
+      camera={{ position: [0.52, 0.24, 1.12], fov: 32, near: 0.02, far: 16 }}
+      dpr={[1, 1.5]}
+      frameloop="always"
+      shadows={false}
+      resize={{ scroll: false, debounce: { resize: 250, scroll: 0 } }}
+      gl={{
+        antialias: false,
+        alpha: false,
+        stencil: false,
+        depth: true,
+        failIfMajorPerformanceCaveat: false,
+        powerPreference: "high-performance",
+        toneMapping: THREE.NoToneMapping,
+        toneMappingExposure: 1,
+      }}
+      onCreated={({ gl }) => {
+        gl.shadowMap.enabled = false;
+        gl.setClearColor(0xefe8dc, 1);
+        setWebgl(true);
         setReady(true);
+        const q = ensureProbe();
+        if (q) q.ready = true;
       }}
     >
-      <div className="h-full w-full transition-opacity duration-500" style={{ opacity }}>
-        <Canvas
-          className="h-full w-full"
-          camera={{ position: [0.58, 0.132, 0.46], fov: 27, near: 0.02, far: 12 }}
-          dpr={dpr}
-          shadows
-          gl={{
-            antialias: true,
-            alpha: true,
-            failIfMajorPerformanceCaveat: false,
-            powerPreference: "default",
-            toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: theme.lights.exposure,
-          }}
-          onCreated={({ gl }) => {
-            gl.setClearColor(0x000000, 0);
-            setWebgl(true);
-            setReady(true);
-          }}
-        >
-          <Suspense fallback={null}>
-            <DuckScene
-              poseRef={poseRef}
-              colorway={colorway}
-              mobile={mobile}
-              reducedMotion={reducedMotion}
-              theme={theme}
-            />
-          </Suspense>
-        </Canvas>
-      </div>
-    </CanvasGuard>
+      <LenisBridge />
+      <Suspense fallback={null}>
+        <DuckScene poseRef={poseRef} progressRef={progressRef} reducedMotion={reducedMotion} />
+      </Suspense>
+    </Canvas>
   );
 }
