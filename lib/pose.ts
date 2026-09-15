@@ -73,6 +73,14 @@ export const POSES: Pose[] = [
     lookAt: [0.04, 0.2, 0],
     fov: 34,
   }),
+  pose({
+    duckPosition: [0.08, 0, 0.02],
+    duckRotation: [0.02, 0.62, 0.02],
+    jump: 0,
+    camPos: [0.48, 0.2, 1.04],
+    lookAt: [0.04, 0.12, 0.02],
+    fov: 32,
+  }),
 ];
 
 export function clamp01(v: number) {

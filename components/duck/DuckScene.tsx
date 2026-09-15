@@ -1,30 +1,49 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, type MutableRefObject } from "react";
+import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { Pose } from "@/lib/pose";
-import { ensureProbe, pushGlFrame } from "@/lib/probe";
+import { poseAtInto } from "@/lib/pose";
+import { publishPose, pushGlFrame } from "@/lib/probe";
+import { readScrollProgress } from "@/lib/scroll";
 import { getThemeSnapshot, lightsAt } from "@/lib/theme";
 import { OfficialDuck } from "./OfficialDuck";
 
-function Studio({ poseRef }: { poseRef: MutableRefObject<Pose> }) {
-  const { camera, gl } = useThree();
+function ScrollBinder({
+  poseRef,
+  progressRef,
+}: {
+  poseRef: MutableRefObject<Pose>;
+  progressRef: MutableRefObject<number>;
+}) {
+  const { camera, gl, invalidate } = useThree();
   const look = useRef(new THREE.Vector3());
   const lastFov = useRef(-1);
   const lastTheme = useRef(-1);
-  const floor = useRef<THREE.MeshStandardMaterial>(null);
-  const key = useRef<THREE.DirectionalLight>(null);
-  const fill = useRef<THREE.DirectionalLight>(null);
-  const amb = useRef<THREE.AmbientLight>(null);
+
+  useEffect(() => {
+    window.__QUACKLES_INVALIDATE__ = invalidate;
+    const bump = () => invalidate();
+    window.addEventListener("scroll", bump, { passive: true });
+    window.addEventListener("resize", bump, { passive: true });
+    invalidate();
+    return () => {
+      window.removeEventListener("scroll", bump);
+      window.removeEventListener("resize", bump);
+    };
+  }, [invalidate]);
 
   useFrame((_, delta) => {
+    const p = readScrollProgress();
+    progressRef.current = p;
+    poseAtInto(poseRef.current, p);
     const pose = poseRef.current;
     camera.position.set(pose.camPos[0], pose.camPos[1], pose.camPos[2]);
     look.current.set(pose.lookAt[0], pose.lookAt[1], pose.lookAt[2]);
     camera.lookAt(look.current);
     const persp = camera as THREE.PerspectiveCamera;
-    if (Math.abs(pose.fov - lastFov.current) > 0.05) {
+    if (Math.abs(pose.fov - lastFov.current) > 0.04) {
       persp.fov = pose.fov;
       persp.updateProjectionMatrix();
       lastFov.current = pose.fov;
@@ -35,50 +54,42 @@ function Studio({ poseRef }: { poseRef: MutableRefObject<Pose> }) {
       lastTheme.current = t;
       const L = lightsAt(t);
       gl.setClearColor(L.bg, 1);
-      gl.toneMappingExposure = L.exposure;
-      if (amb.current) {
-        amb.current.color.set(L.ambient);
-        amb.current.intensity = L.ambientIntensity;
-      }
-      if (key.current) {
-        key.current.color.set(L.key);
-        key.current.intensity = L.keyIntensity;
-      }
-      if (fill.current) {
-        fill.current.color.set(L.fill);
-        fill.current.intensity = L.fillIntensity;
-      }
-      if (floor.current) floor.current.color.set(L.bg);
     }
 
-    const q = ensureProbe();
-    if (q) pushGlFrame(delta, q.progress, pose);
+    publishPose(p, pose);
+    pushGlFrame(delta, p, pose);
+
+    if (pose.jump > 0.02 || (typeof window !== "undefined" && window.__QUACKLES_RECORD__)) {
+      invalidate();
+    }
   });
 
+  return null;
+}
+
+function Lights() {
   return (
     <>
-      <ambientLight ref={amb} intensity={0.82} color="#f4eee4" />
-      <directionalLight ref={key} position={[0.55, 1.2, 0.45]} intensity={1.55} color="#fff8ee" />
-      <directionalLight ref={fill} position={[-0.6, 0.35, 0.2]} intensity={0.32} color="#ffffff" />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
-        <planeGeometry args={[6, 6]} />
-        <meshStandardMaterial ref={floor} color="#efe8dc" roughness={0.94} metalness={0} />
-      </mesh>
+      <ambientLight intensity={0.78} color="#f4eee4" />
+      <directionalLight position={[0.55, 1.15, 0.4]} intensity={1.45} color="#fff8ee" />
     </>
   );
 }
 
 export function DuckScene({
   poseRef,
+  progressRef,
   reducedMotion,
 }: {
   poseRef: MutableRefObject<Pose>;
+  progressRef: MutableRefObject<number>;
   reducedMotion: boolean;
 }) {
   return (
     <>
-      <Studio poseRef={poseRef} />
-      <group position={[0.02, 0, 0]}>
+      <Lights />
+      <ScrollBinder poseRef={poseRef} progressRef={progressRef} />
+      <group position={[0.03, 0, 0]}>
         <OfficialDuck poseRef={poseRef} reducedMotion={reducedMotion} />
       </group>
     </>

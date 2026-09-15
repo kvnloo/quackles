@@ -1,41 +1,24 @@
 "use client";
 
-import { addEffect, Canvas } from "@react-three/fiber";
-import { Suspense, useEffect } from "react";
+import { Canvas } from "@react-three/fiber";
+import { Suspense } from "react";
 import * as THREE from "three";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 import { ensureProbe } from "@/lib/probe";
 import { DuckScene } from "./DuckScene";
 
-function LenisBridge() {
-  const { lenisRef } = useExperience();
-
-  useEffect(() => {
-    window.__QUACKLES_LENIS_FROM_R3F__ = true;
-    const unsub = addEffect((time) => {
-      lenisRef.current?.raf(time);
-    });
-    return () => {
-      window.__QUACKLES_LENIS_FROM_R3F__ = false;
-      unsub();
-    };
-  }, [lenisRef]);
-
-  return null;
-}
-
 export function DuckCanvas() {
-  const { setReady, setWebgl, poseRef, reducedMotion } = useExperience();
+  const { setReady, setWebgl, poseRef, progressRef, reducedMotion } = useExperience();
 
   return (
     <Canvas
       className="duck-canvas"
-      style={{ pointerEvents: "none" }}
-      camera={{ position: [0.5, 0.22, 1.08], fov: 32, near: 0.02, far: 12 }}
-      dpr={[1, 1.5]}
-      frameloop="always"
+      style={{ pointerEvents: "none", width: "100%", height: "100%", display: "block" }}
+      camera={{ position: [0.4, 0.155, 0.66], fov: 27, near: 0.02, far: 12 }}
+      dpr={1}
+      frameloop="demand"
       shadows={false}
-      resize={{ scroll: false }}
+      resize={{ scroll: false, debounce: { resize: 250, scroll: 0 } }}
       gl={{
         antialias: false,
         alpha: false,
@@ -44,11 +27,12 @@ export function DuckCanvas() {
         failIfMajorPerformanceCaveat: false,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.08,
+        toneMappingExposure: 1.05,
       }}
       onCreated={({ gl, invalidate }) => {
-        gl.setClearColor(0xefe8dc, 1);
+        gl.setPixelRatio(1);
         gl.shadowMap.enabled = false;
+        gl.setClearColor(0xefe8dc, 1);
         setWebgl(true);
         setReady(true);
         const q = ensureProbe();
@@ -57,9 +41,8 @@ export function DuckCanvas() {
         invalidate();
       }}
     >
-      <LenisBridge />
       <Suspense fallback={null}>
-        <DuckScene poseRef={poseRef} reducedMotion={reducedMotion} />
+        <DuckScene poseRef={poseRef} progressRef={progressRef} reducedMotion={reducedMotion} />
       </Suspense>
     </Canvas>
   );
