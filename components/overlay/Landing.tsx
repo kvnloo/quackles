@@ -48,10 +48,10 @@ function DuckSlot() {
     <div
       className="absolute z-[12] overflow-hidden"
       style={{
-        top: `${18 * (1 - t)}%`,
-        left: `${18 * (1 - t)}%`,
-        right: `${3 * (1 - t)}%`,
-        bottom: `${26.5 * (1 - t)}%`,
+        top: `${16 * (1 - t)}%`,
+        left: `${16 * (1 - t)}%`,
+        right: `${2 * (1 - t)}%`,
+        bottom: `${28.2 * (1 - t)}%`,
         transform: "none",
       }}
     >
