@@ -186,12 +186,33 @@ html[data-tone="ink"] {
   background: var(--paper);
 }
 
+.poster-plates {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--paper);
+  opacity: clamp(0, calc(1 - (var(--p, 0) - 0.02) * 6), 1);
+}
+
+.poster-plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  pointer-events: none;
+  filter: none !important;
+  image-rendering: auto;
+}
+
 .duck-slot {
   position: absolute;
   inset: 0;
   z-index: 8;
   pointer-events: none;
-  opacity: 1 !important;
+  opacity: clamp(0, calc((var(--p, 0) - 0.08) * 8), 1);
 }
 
 .duck-canvas {
@@ -199,6 +220,7 @@ html[data-tone="ink"] {
   width: 100%;
   height: 100%;
   filter: none !important;
+  image-rendering: auto;
 }
 
 .hatch-overlay {

@@ -5,6 +5,7 @@ import { ExperienceProvider, useExperience } from "@/components/providers/Experi
 import { PosterNav } from "@/components/poster/PosterNav";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { PosterBeats } from "@/components/poster/PosterBeats";
+import { PosterPlates } from "@/components/poster/PosterChrome";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
 
@@ -28,6 +29,7 @@ function AppShell() {
     <div className="phone-shell">
       <div className="poster-stage">
         <div className="stage-bg" aria-hidden />
+        <PosterPlates />
         <Hatch />
         <div className="duck-slot">
           <CanvasGuard fallback={<DuckFallback />}>

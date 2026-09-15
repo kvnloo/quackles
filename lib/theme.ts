@@ -24,6 +24,12 @@ export type SceneLights = {
   keyIntensity: number;
   fill: string;
   fillIntensity: number;
+  rim: string;
+  rimIntensity: number;
+  hemiSky: string;
+  hemiGround: string;
+  hemiIntensity: number;
+  envIntensity: number;
   exposure: number;
   bg: string;
 };
@@ -139,35 +145,53 @@ export function paletteAt(t: number): Palette {
 }
 
 const LIGHT_WHITE: SceneLights = {
-  ambient: "#f2f2f2",
-  ambientIntensity: 0.88,
-  key: "#ffffff",
-  keyIntensity: 1.5,
-  fill: "#c8c8ff",
-  fillIntensity: 0.28,
-  exposure: 1.08,
+  ambient: "#f4f1ea",
+  ambientIntensity: 0.38,
+  key: "#fff7ee",
+  keyIntensity: 2.65,
+  fill: "#c5ccff",
+  fillIntensity: 0.62,
+  rim: "#8f9dff",
+  rimIntensity: 1.15,
+  hemiSky: "#fffaf4",
+  hemiGround: "#d8d4cc",
+  hemiIntensity: 0.72,
+  envIntensity: 1.05,
+  exposure: 1.16,
   bg: PAPER.paper,
 };
 
 const LIGHT_POSTER: SceneLights = {
-  ambient: "#4d4dff",
-  ambientIntensity: 0.58,
-  key: "#f2f2f2",
-  keyIntensity: 1.32,
+  ambient: "#3d3dff",
+  ambientIntensity: 0.32,
+  key: "#f7f7ff",
+  keyIntensity: 2.35,
   fill: "#0000f2",
-  fillIntensity: 0.62,
-  exposure: 1.04,
+  fillIntensity: 0.78,
+  rim: "#7a7aff",
+  rimIntensity: 1.35,
+  hemiSky: "#9a9aff",
+  hemiGround: "#0000c2",
+  hemiIntensity: 0.48,
+  envIntensity: 0.88,
+  exposure: 1.1,
   bg: COBALT.paper,
 };
 
 const LIGHT_DARK: SceneLights = {
-  ambient: "#12124a",
-  ambientIntensity: 0.32,
-  key: "#c8c8ff",
-  keyIntensity: 1.12,
-  fill: "#0000f2",
-  fillIntensity: 0.5,
-  exposure: 0.96,
+  ambient: "#10103a",
+  ambientIntensity: 0.22,
+  key: "#e4e6ff",
+  keyIntensity: 2.05,
+  fill: "#2a2aff",
+  fillIntensity: 0.55,
+  rim: "#6666f6",
+  rimIntensity: 1.55,
+  hemiSky: "#3a3a80",
+  hemiGround: "#000018",
+  hemiIntensity: 0.28,
+  envIntensity: 0.62,
+  exposure: 1.02,
   bg: INK.paper,
 };
 
@@ -179,6 +203,12 @@ function mixLights(a: SceneLights, b: SceneLights, t: number): SceneLights {
     keyIntensity: mixNum(a.keyIntensity, b.keyIntensity, t),
     fill: mixHex(a.fill, b.fill, t),
     fillIntensity: mixNum(a.fillIntensity, b.fillIntensity, t),
+    rim: mixHex(a.rim, b.rim, t),
+    rimIntensity: mixNum(a.rimIntensity, b.rimIntensity, t),
+    hemiSky: mixHex(a.hemiSky, b.hemiSky, t),
+    hemiGround: mixHex(a.hemiGround, b.hemiGround, t),
+    hemiIntensity: mixNum(a.hemiIntensity, b.hemiIntensity, t),
+    envIntensity: mixNum(a.envIntensity, b.envIntensity, t),
     exposure: mixNum(a.exposure, b.exposure, t),
     bg: mixHex(a.bg, b.bg, t),
   };

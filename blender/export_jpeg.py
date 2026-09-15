@@ -21,7 +21,7 @@ def main() -> None:
             continue
         im = Image.open(png).convert("RGB")
         jpg = PUBLIC / f"frame-{plate}.jpg"
-        im.save(jpg, "JPEG", quality=92, optimize=True)
+        im.save(jpg, "JPEG", quality=95, optimize=True, subsampling=0)
         public_png = PUBLIC / f"frame-{plate}.png"
         im.save(public_png, "PNG", optimize=True)
         print("wrote", jpg, jpg.stat().st_size, "and", public_png.name)

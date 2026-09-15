@@ -24,6 +24,13 @@ declare module "@/vendor/microduck-simulator/variants.js" {
   export function applyVariant(rig: unknown, variant: string | unknown): void;
 }
 
+declare module "three/addons/environments/RoomEnvironment.js" {
+  import type { Scene } from "three";
+  export class RoomEnvironment extends Scene {
+    dispose(): void;
+  }
+}
+
 declare module "@/vendor/microduck-simulator/constants.js" {
   export const JOINT_NAMES: string[];
   export const DEFAULT_POSE: Float32Array;

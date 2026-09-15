@@ -1,13 +1,34 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, type MutableRefObject } from "react";
+import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { Pose } from "@/lib/pose";
 import { poseAtInto } from "@/lib/pose";
 import { publishPose, pushGlFrame } from "@/lib/probe";
 import { getThemeSnapshot, lightsAt } from "@/lib/theme";
 import { OfficialDuck } from "./OfficialDuck";
+
+function StudioIbl() {
+  const { gl, scene } = useThree();
+
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const room = new RoomEnvironment();
+    const rt = pmrem.fromScene(room, 0.04);
+    scene.environment = rt.texture;
+    scene.environmentIntensity = 0.88;
+    room.dispose();
+    return () => {
+      scene.environment = null;
+      rt.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+
+  return null;
+}
 
 function Studio({
   poseRef,
@@ -16,14 +37,16 @@ function Studio({
   poseRef: MutableRefObject<Pose>;
   progressRef: MutableRefObject<number>;
 }) {
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const look = useRef(new THREE.Vector3());
   const lastFov = useRef(-1);
   const lastTheme = useRef(-1);
-  const floor = useRef<THREE.MeshBasicMaterial>(null);
+  const floor = useRef<THREE.MeshStandardMaterial>(null);
   const key = useRef<THREE.DirectionalLight>(null);
   const fill = useRef<THREE.DirectionalLight>(null);
+  const rim = useRef<THREE.DirectionalLight>(null);
   const amb = useRef<THREE.AmbientLight>(null);
+  const hemi = useRef<THREE.HemisphereLight>(null);
 
   useFrame((_, delta) => {
     poseAtInto(poseRef.current, progressRef.current);
@@ -42,10 +65,17 @@ function Studio({
     if (Math.abs(t - lastTheme.current) > 0.001) {
       lastTheme.current = t;
       const L = lightsAt(t);
+      gl.toneMappingExposure = L.exposure;
       gl.setClearColor(L.bg, 1);
+      scene.environmentIntensity = L.envIntensity;
       if (amb.current) {
         amb.current.color.set(L.ambient);
         amb.current.intensity = L.ambientIntensity;
+      }
+      if (hemi.current) {
+        hemi.current.color.set(L.hemiSky);
+        hemi.current.groundColor.set(L.hemiGround);
+        hemi.current.intensity = L.hemiIntensity;
       }
       if (key.current) {
         key.current.color.set(L.key);
@@ -54,6 +84,10 @@ function Studio({
       if (fill.current) {
         fill.current.color.set(L.fill);
         fill.current.intensity = L.fillIntensity;
+      }
+      if (rim.current) {
+        rim.current.color.set(L.rim);
+        rim.current.intensity = L.rimIntensity;
       }
       if (floor.current) floor.current.color.set(L.bg);
     }
@@ -64,12 +98,15 @@ function Studio({
 
   return (
     <>
-      <ambientLight ref={amb} intensity={0.58} color="#4d4dff" />
-      <directionalLight ref={key} position={[0.55, 1.2, 0.45]} intensity={1.32} color="#f2f2f2" />
-      <directionalLight ref={fill} position={[-0.6, 0.35, 0.2]} intensity={0.62} color="#0000f2" />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
+      <StudioIbl />
+      <ambientLight ref={amb} intensity={0.32} color="#3d3dff" />
+      <hemisphereLight ref={hemi} color="#9a9aff" groundColor="#0000c2" intensity={0.48} />
+      <directionalLight ref={key} position={[0.72, 1.45, 0.62]} intensity={2.35} color="#f7f7ff" />
+      <directionalLight ref={fill} position={[-0.82, 0.48, 0.38]} intensity={0.78} color="#0000f2" />
+      <directionalLight ref={rim} position={[-0.18, 0.72, -0.92]} intensity={1.35} color="#7a7aff" />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]} receiveShadow={false}>
         <planeGeometry args={[8, 8]} />
-        <meshBasicMaterial ref={floor} color="#0000f2" />
+        <meshStandardMaterial ref={floor} color="#0000f2" roughness={0.92} metalness={0} envMapIntensity={0.35} />
       </mesh>
     </>
   );

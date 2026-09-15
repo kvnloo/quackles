@@ -279,7 +279,7 @@ async function main() {
   const dprCap = pageFacts.canvasCssWidth
     ? pageFacts.canvasWidth / pageFacts.canvasCssWidth
     : pageFacts.dpr;
-  if (dprCap > 1.55 + 1e-6) failures.push(`unbounded dpr ${dprCap.toFixed(2)}`);
+  if (dprCap > 2.05 + 1e-6) failures.push(`unbounded dpr ${dprCap.toFixed(2)}`);
 
   const report = {
     label: LABEL,

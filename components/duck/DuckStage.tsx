@@ -18,7 +18,8 @@ export function DuckStage() {
   useEffect(() => {
     const id = window.setTimeout(() => {
       setWebgl(supported);
-      if (!supported) setReady(true);
+      // Cycles plates are the first frame; do not hold the hatch on WebGL.
+      setReady(true);
     }, 0);
     return () => window.clearTimeout(id);
   }, [supported, setReady, setWebgl]);

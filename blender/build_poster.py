@@ -33,27 +33,27 @@ INK = (0.03, 0.045, 0.12)
 
 # Classic cream Microduck (sRGB hex -> assigned as Blender base colors).
 MESH_MATS = {
-    "top_head_shell.stl": ("#e4d5c0", 0.52, 0.0),
-    "bottom_head_shell.stl": ("#e4d5c0", 0.52, 0.0),
-    "face_part.stl": ("#1a1a1e", 0.28, 0.12),
-    "noenoeil.stl": ("#2a2a2e", 0.28, 0.08),
+    "top_head_shell.stl": ("#f0e0cc", 0.52, 0.0),
+    "bottom_head_shell.stl": ("#f0e0cc", 0.52, 0.0),
+    "face_part.stl": ("#1e1e24", 0.28, 0.12),
+    "noenoeil.stl": ("#2a2a32", 0.28, 0.08),
     "lens.stl": ("#05060a", 0.05, 0.0),
     "m12_lens_holder.stl": ("#1d1d1f", 0.45, 0.25),
     "soft_mouth_top.stl": ("#8a7a6a", 0.5, 0.0),
     "jaw.stl": ("#8a7a6a", 0.42, 0.0),
     "jaw_soft.stl": ("#8a7a6a", 0.5, 0.0),
-    "trunk_base.stl": ("#e4d5c0", 0.52, 0.0),
-    "left_shell.stl": ("#e4d5c0", 0.52, 0.0),
-    "right_shell.stl": ("#e4d5c0", 0.52, 0.0),
-    "upper_leg_left.stl": ("#3a3a3e", 0.48, 0.08),
-    "upper_leg_right.stl": ("#3a3a3e", 0.48, 0.08),
+    "trunk_base.stl": ("#f0e0cc", 0.52, 0.0),
+    "left_shell.stl": ("#f0e0cc", 0.52, 0.0),
+    "right_shell.stl": ("#f0e0cc", 0.52, 0.0),
+    "upper_leg_left.stl": ("#2a2a32", 0.42, 0.18),
+    "upper_leg_right.stl": ("#2a2a32", 0.42, 0.18),
     "hip_l.stl": ("#8b8b90", 0.5, 0.2),
-    "foot_left.stl": ("#e4d5c0", 0.5, 0.0),
-    "foot_right.stl": ("#e4d5c0", 0.5, 0.0),
-    "ankle_left.stl": ("#e4d5c0", 0.5, 0.0),
-    "ankle_right.stl": ("#e4d5c0", 0.5, 0.0),
-    "sole_left.stl": ("#e56b1a", 0.55, 0.0),
-    "sole_right.stl": ("#e56b1a", 0.55, 0.0),
+    "foot_left.stl": ("#f0e0cc", 0.5, 0.0),
+    "foot_right.stl": ("#f0e0cc", 0.5, 0.0),
+    "ankle_left.stl": ("#f0e0cc", 0.5, 0.0),
+    "ankle_right.stl": ("#f0e0cc", 0.5, 0.0),
+    "sole_left.stl": ("#e8a33a", 0.45, 0.0),
+    "sole_right.stl": ("#e8a33a", 0.45, 0.0),
     "xl330.stl": ("#1d1d1f", 0.45, 0.3),
     "leg.stl": ("#8b8b90", 0.5, 0.25),
     "seeed_bearing__configuration_default.stl": ("#1d1d1f", 0.45, 0.3),
@@ -926,7 +926,7 @@ def export_jpeg(png_path: Path, jpg_path: Path):
         from PIL import Image
 
         im = Image.open(png_path).convert("RGB")
-        im.save(jpg_path, "JPEG", quality=92, optimize=True)
+        im.save(jpg_path, "JPEG", quality=95, optimize=True, subsampling=0)
         print("wrote", jpg_path, jpg_path.stat().st_size)
         return
     except Exception as exc:
@@ -937,7 +937,7 @@ def export_jpeg(png_path: Path, jpg_path: Path):
         cmd = [
             "python3",
             "-c",
-            "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], 'JPEG', quality=92, optimize=True)",
+            "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], 'JPEG', quality=95, optimize=True, subsampling=0)",
             str(png_path),
             str(jpg_path),
         ]
