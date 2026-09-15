@@ -1,94 +1,136 @@
 "use client";
 
+import { ContactShadows } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, type MutableRefObject } from "react";
+import { useRef, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
+import type { ColorwayId } from "@/lib/colorways";
 import type { Pose } from "@/lib/pose";
-import { poseAtInto } from "@/lib/pose";
-import { publishPose, pushGlFrame } from "@/lib/probe";
-import { readScrollProgress } from "@/lib/scroll";
-import { getThemeSnapshot, lightsAt } from "@/lib/theme";
-import { OfficialDuck } from "./OfficialDuck";
+import { poseAt } from "@/lib/pose";
+import type { PaperTheme } from "@/lib/theme";
+import { OfficialDuck, OfficialFlock } from "./OfficialDuck";
 
-function ScrollBinder({
+function CameraRig({
   poseRef,
-  progressRef,
+  exposure,
 }: {
   poseRef: MutableRefObject<Pose>;
-  progressRef: MutableRefObject<number>;
+  exposure: number;
 }) {
-  const { camera, gl, invalidate } = useThree();
+  const { camera, gl } = useThree();
   const look = useRef(new THREE.Vector3());
-  const lastFov = useRef(-1);
-  const lastTheme = useRef(-1);
+  const lookTarget = useRef(new THREE.Vector3());
+  const desired = useRef(new THREE.Vector3());
+  const primed = useRef(false);
 
-  useEffect(() => {
-    window.__QUACKLES_INVALIDATE__ = invalidate;
-    const bump = () => invalidate();
-    window.addEventListener("scroll", bump, { passive: true });
-    window.addEventListener("resize", bump, { passive: true });
-    invalidate();
-    return () => {
-      window.removeEventListener("scroll", bump);
-      window.removeEventListener("resize", bump);
-    };
-  }, [invalidate]);
-
-  useFrame((_, delta) => {
-    const p = readScrollProgress();
-    progressRef.current = p;
-    poseAtInto(poseRef.current, p);
-    const pose = poseRef.current;
-    camera.position.set(pose.camPos[0], pose.camPos[1], pose.camPos[2]);
-    look.current.set(pose.lookAt[0], pose.lookAt[1], pose.lookAt[2]);
+  useFrame(() => {
+    const p = poseRef.current;
+    desired.current.set(p.camPos[0], p.camPos[1], p.camPos[2]);
+    lookTarget.current.set(p.lookAt[0], p.lookAt[1], p.lookAt[2]);
+    if (!primed.current) {
+      camera.position.copy(desired.current);
+      look.current.copy(lookTarget.current);
+      primed.current = true;
+    } else {
+      camera.position.lerp(desired.current, 0.18);
+      look.current.lerp(lookTarget.current, 0.18);
+    }
     camera.lookAt(look.current);
     const persp = camera as THREE.PerspectiveCamera;
-    if (Math.abs(pose.fov - lastFov.current) > 0.04) {
-      persp.fov = pose.fov;
-      persp.updateProjectionMatrix();
-      lastFov.current = pose.fov;
-    }
-
-    const t = getThemeSnapshot();
-    if (Math.abs(t - lastTheme.current) > 0.004) {
-      lastTheme.current = t;
-      const L = lightsAt(t);
-      gl.setClearColor(L.bg, 1);
-    }
-
-    publishPose(p, pose);
-    pushGlFrame(delta, p, pose);
-
+    persp.fov = p.fov;
+    persp.updateProjectionMatrix();
+    gl.toneMappingExposure = exposure;
   });
 
   return null;
 }
 
-function Lights() {
+function Lights({ theme }: { theme: PaperTheme }) {
+  const L = theme.lights;
   return (
     <>
-      <ambientLight intensity={0.78} color="#f4eee4" />
-      <directionalLight position={[0.55, 1.15, 0.4]} intensity={1.45} color="#fff8ee" />
+      <ambientLight intensity={L.ambientIntensity} color={L.ambient} />
+      <hemisphereLight args={[L.hemiSky, L.hemiGround, L.hemiIntensity]} />
+      <directionalLight
+        position={[0.7, 1.5, 0.35]}
+        intensity={L.keyIntensity}
+        color={L.key}
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0003}
+      />
+      <directionalLight position={[-0.9, 0.4, 0.15]} intensity={L.rimIntensity} color={L.rim} />
+      <directionalLight position={[0.15, 0.25, -0.8]} intensity={L.fillIntensity} color={L.fill} />
     </>
   );
 }
 
-export function DuckScene({
+function Gate({
   poseRef,
-  progressRef,
-  reducedMotion,
+  showWhen,
+  children,
 }: {
   poseRef: MutableRefObject<Pose>;
-  progressRef: MutableRefObject<number>;
-  reducedMotion: boolean;
+  showWhen: (p: Pose) => boolean;
+  children: ReactNode;
 }) {
+  const group = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (group.current) group.current.visible = showWhen(poseRef.current);
+  });
+  return <group ref={group}>{children}</group>;
+}
+
+export function DuckScene({
+  poseRef,
+  colorway,
+  reducedMotion,
+  theme,
+}: {
+  poseRef: MutableRefObject<Pose>;
+  colorway: ColorwayId;
+  mobile: boolean;
+  reducedMotion: boolean;
+  theme: PaperTheme;
+}) {
+  const duckPose = useRef<Pose>(poseAt(0));
+  useFrame(() => {
+    duckPose.current = poseRef.current;
+  });
+  const L = theme.lights;
+
   return (
     <>
-      <Lights />
-      <ScrollBinder poseRef={poseRef} progressRef={progressRef} />
-      <group position={[0.03, 0, 0]}>
-        <OfficialDuck poseRef={poseRef} reducedMotion={reducedMotion} />
-      </group>
+      <Lights theme={theme} />
+      <CameraRig poseRef={poseRef} exposure={theme.lights.exposure} />
+
+      <Gate
+        poseRef={poseRef}
+        showWhen={(p) => p.explode < 0.55 && p.play < 0.45 && p.flock < 0.72}
+      >
+        <group position={[0.03, 0, 0]}>
+          <OfficialDuck
+            poseRef={duckPose}
+            colorway={colorway}
+            reducedMotion={reducedMotion}
+            clearcoat={L.clearcoat}
+          />
+        </group>
+      </Gate>
+
+      <Gate poseRef={poseRef} showWhen={(p) => p.flock > 0.04 && p.play < 0.4}>
+        <OfficialFlock poseRef={poseRef} reducedMotion={reducedMotion} />
+      </Gate>
+
+      <ContactShadows
+        position={[0, -0.014, 0]}
+        opacity={L.shadowOpacity}
+        scale={1.55}
+        blur={2.4}
+        far={0.5}
+        resolution={512}
+        color={L.shadow}
+      />
     </>
   );
 }
