@@ -29,7 +29,7 @@ export function DuckCanvas() {
       <div className="h-full w-full transition-opacity duration-500" style={{ opacity }}>
         <Canvas
           className="h-full w-full"
-          camera={{ position: [0.3, 0.195, 0.62], fov: 29, near: 0.02, far: 12 }}
+          camera={{ position: [0.34, 0.255, 0.52], fov: 31, near: 0.02, far: 12 }}
           dpr={dpr}
           shadows
           gl={{

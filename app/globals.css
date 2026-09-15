@@ -318,16 +318,17 @@
   align-items: flex-end;
   overflow: hidden;
   background-color: var(--cobalt);
+  background-image: none;
 }
 
 .poster-hands {
-  width: 165%;
-  height: 165%;
-  margin-left: -18%;
-  margin-bottom: -8%;
+  width: 180%;
+  max-width: none;
+  height: 120%;
+  margin-left: -40%;
   object-fit: cover;
-  object-position: 0% 100%;
-  filter: grayscale(1) contrast(2.1) brightness(0.78) invert(0);
+  object-position: 15% 82%;
+  filter: grayscale(1) contrast(1.7) brightness(1.15);
   mix-blend-mode: multiply;
 }
 

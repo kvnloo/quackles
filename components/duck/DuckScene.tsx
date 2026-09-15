@@ -105,11 +105,11 @@ export function DuckScene({
       </Gate>
 
       <ContactShadows
-        position={[0, 0.001, 0]}
-        opacity={0.22}
-        scale={1.6}
-        blur={2.6}
-        far={0.5}
+        position={[0, -0.01, 0]}
+        opacity={0.28}
+        scale={1.4}
+        blur={2.2}
+        far={0.45}
         resolution={512}
         color="#6a5a40"
       />
