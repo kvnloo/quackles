@@ -57,9 +57,9 @@ export const POSES: Pose[] = [
     beak: 0.55,
     headPitch: 0.04,
     neckPitch: 0.12,
-    camPos: [0.08, 0.42, 1.42],
-    lookAt: [0, 0.16, 0],
-    fov: 36,
+    camPos: [0.28, 0.3, 1.7],
+    lookAt: [0, 0.08, 0],
+    fov: 34,
   }),
   pose({
     duckPosition: [0.04, 0.02, 0],
@@ -69,9 +69,9 @@ export const POSES: Pose[] = [
     beak: 0.1,
     headPitch: 0.14,
     neckPitch: 0.18,
-    camPos: [0.46, 0.22, 1.18],
-    lookAt: [0.04, 0.22, 0],
-    fov: 34,
+    camPos: [0.44, 0.2, 1.32],
+    lookAt: [0.03, 0.12, 0],
+    fov: 32,
   }),
 ];
 

@@ -35,15 +35,15 @@ const STANDING: Record<string, number> = {};
 JOINT_NAMES.forEach((name: string, i: number) => {
   STANDING[name] = (DEFAULT_POSE as Float32Array)[i];
 });
-STANDING.left_hip_pitch = -0.18;
-STANDING.right_hip_pitch = 0.18;
-STANDING.left_knee = 0.26;
-STANDING.right_knee = -0.26;
+STANDING.left_hip_pitch = -0.16;
+STANDING.right_hip_pitch = 0.16;
+STANDING.left_knee = 0.28;
+STANDING.right_knee = -0.28;
 STANDING.left_ankle = -0.12;
 STANDING.right_ankle = 0.12;
-STANDING.neck_pitch = 0.42;
-STANDING.head_pitch = 0.16;
-STANDING.head_yaw = -0.32;
+STANDING.neck_pitch = 0.48;
+STANDING.head_pitch = 0.22;
+STANDING.head_yaw = -0.38;
 
 async function makeRig() {
   const kinematics = await loadKinematics(`${MODEL_DIR}/kinematics.json`);
@@ -79,6 +79,7 @@ export function OfficialDuck({
         rigRef.current = rig;
         const q = ensureProbe();
         if (q) q.rigReady = true;
+        window.__QUACKLES_INVALIDATE__?.();
       })
       .catch((err) => {
         console.warn("official microduck rig failed", err);
@@ -94,12 +95,13 @@ export function OfficialDuck({
     };
   }, []);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, invalidate }) => {
     const rig = rigRef.current;
     if (!rig) return;
     const p = poseRef.current;
     explodeRig(rig, p.explode);
     driveRig(rig, p, clock.elapsedTime, reducedMotion);
+    if (p.jump > 0.02) invalidate();
   });
 
   if (failed) return null;

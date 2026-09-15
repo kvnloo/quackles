@@ -125,9 +125,3 @@ export function applyThemeT(t: number) {
   rootEl.dataset.tone = next < 0.33 ? "paper" : next < 0.66 ? "cobalt" : "ink";
   themeListeners.forEach((fn) => fn());
 }
-
-/** Compat aliases if a poster agent still imports the old names. */
-export const applyThemeCss = applyThemeT;
-export function themeAt(t: number) {
-  return { lights: lightsAt(t), ...paletteAt(t) };
-}
