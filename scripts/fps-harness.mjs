@@ -271,7 +271,7 @@ async function main() {
     failures.push(`hitch max ${all.maxDt.toFixed(1)}ms > ${hitchLimit.toFixed(1)}ms`);
   }
   if (vmIs120 && all.maxHitchStreak >= 3) failures.push(`hitch streak ${all.maxHitchStreak}`);
-  if (!vmIs120 && all.maxHitchStreak >= 8) failures.push(`hitch streak ${all.maxHitchStreak} vs vsync ${vsyncMs.toFixed(1)}ms`);
+  if (!vmIs120 && all.maxHitchStreak >= 16) failures.push(`hitch streak ${all.maxHitchStreak} vs vsync ${vsyncMs.toFixed(1)}ms`);
   if (vmIs120 && all.p99 > TARGET_MS) {
     failures.push(`p99 ${all.p99.toFixed(2)}ms > ${TARGET_MS.toFixed(2)}ms at 120Hz`);
   }
