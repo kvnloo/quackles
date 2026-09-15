@@ -5,7 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import type { ColorwayId } from "@/lib/colorways";
-import { lerp, type Pose } from "@/lib/pose";
+import type { Pose } from "@/lib/pose";
 import { OfficialDuck, OfficialFlock } from "./OfficialDuck";
 
 function CameraRig({ poseRef }: { poseRef: MutableRefObject<Pose> }) {

@@ -116,10 +116,11 @@ export function PosterFront() {
       <div
         className="poster-plinth poster-plinth-side"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgb(47 91 255 / 0.15), rgb(47 91 255 / 0.35)), url("${assetPath("/poster/hands.jpg")}")`,
-          backgroundSize: "220% auto",
-          backgroundPosition: "12% 100%",
+          backgroundImage: `url("${assetPath("/poster/hands.jpg")}")`,
+          backgroundSize: "auto 175%",
+          backgroundPosition: "18% 100%",
           backgroundColor: "#2f5bff",
+          backgroundRepeat: "no-repeat",
         }}
       />
       <div className="poster-plinth poster-plinth-right">

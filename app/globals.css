@@ -319,6 +319,7 @@
   overflow: hidden;
   background-color: var(--cobalt);
   background-image: none;
+  background-blend-mode: multiply;
 }
 
 .poster-hands {
