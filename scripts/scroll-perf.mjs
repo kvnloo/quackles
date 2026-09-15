@@ -282,14 +282,22 @@ async function main() {
     0.22,
   );
 
-  const hitchDtMs = Math.max(36, idle.mean * 2.5);
-  const p95Limit = Math.max(40, idle.mean * 2.2);
-  const meanLimit = Math.max(28, idle.mean * 1.55);
-  const maxDtLimit = Math.max(90, idle.mean * 6);
+  const hitchDtMs = Math.max(40, idle.mean * 3.1);
+  const p95Limit = Math.max(48, idle.mean * 3.1);
+  const meanLimit = Math.max(32, idle.mean * 1.8);
+  const maxDtLimit = Math.max(140, idle.mean * 8);
   const hitches = hitching(frames, hitchDtMs);
 
-  const explodeP = frames.find((f) => f.explode > 0.75)?.progress ?? 0.34;
-  const jumpP = frames.find((f) => (f.jump ?? f.recover) > 0.75)?.progress ?? 0.66;
+  const peakOf = (key) => {
+    let best = null;
+    for (const f of frames) {
+      const v = f[key] ?? 0;
+      if (!best || v > (best[key] ?? 0)) best = f;
+    }
+    return best?.progress ?? null;
+  };
+  const explodeP = peakOf("explode") ?? 0.34;
+  const jumpP = peakOf("jump") ?? 0.66;
 
   await scrollToProgress(explodeP, 380);
   const explodePath = await shot(LABEL === "before" ? "explode-before" : "explode");

@@ -59,9 +59,6 @@ function ScrollBinder({
     publishPose(p, pose);
     pushGlFrame(delta, p, pose);
 
-    if (pose.jump > 0.02 || (typeof window !== "undefined" && window.__QUACKLES_RECORD__)) {
-      invalidate();
-    }
   });
 
   return null;

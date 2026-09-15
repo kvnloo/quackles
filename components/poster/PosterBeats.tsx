@@ -5,7 +5,6 @@ export function PosterBeats() {
     <div className="story-beats">
       {STORY.map((section) => {
         const isHero = section.id === "hero";
-        const isCta = section.id === "cta";
         return (
           <section
             key={section.id}
@@ -26,7 +25,7 @@ export function PosterBeats() {
                   ))}
                 </h2>
                 <p className="beat-body">{section.body}</p>
-                {isCta ? (
+                {section.id === STORY[STORY.length - 1]?.id ? (
                   <div className="beat-cta">
                     <a className="btn-solid" href={LINKS.store} target="_blank" rel="noreferrer">
                       Pre-order $399

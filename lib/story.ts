@@ -2,21 +2,15 @@ export const STORY = [
   { id: "hero", kicker: "01  BIPED", title: "", body: "" },
   {
     id: "explode",
-    kicker: "Anatomy",
-    title: "Helmet head.\nSerious internals.",
-    body: "Visor camera, 8×8 ToF, stacked neck servos, RK3566 in the trunk. Fifteen motors. The silhouette is the machine.",
+    kicker: "Explode",
+    title: "Explode.",
+    body: "Fifteen motors, visor camera, stacked neck. The silhouette is the machine.",
   },
   {
     id: "jump",
-    kicker: "Get up",
-    title: "Knock it over.\nIt stands back up.",
-    body: "Both feet off the desk, then standing, on its own, at 50 Hz.",
-  },
-  {
-    id: "cta",
-    kicker: "Apache-2.0 software",
-    title: "Train in sim.\nWaddle in reality.",
-    body: "SDK and the RL stack are on GitHub. Hardware files stay closed. Intro $399.",
+    kicker: "Jump",
+    title: "Jump.",
+    body: "Both feet off the desk. Same 25 cm biped, same 50 Hz loop.",
   },
 ] as const;
 

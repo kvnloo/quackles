@@ -16,7 +16,7 @@ export function DuckCanvas() {
       style={{ pointerEvents: "none", width: "100%", height: "100%", display: "block" }}
       camera={{ position: [0.4, 0.155, 0.66], fov: 27, near: 0.02, far: 12 }}
       dpr={1}
-      frameloop="demand"
+      frameloop="always"
       shadows={false}
       resize={{ scroll: false, debounce: { resize: 250, scroll: 0 } }}
       gl={{
