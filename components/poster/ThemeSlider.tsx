@@ -11,7 +11,8 @@ export function ThemeSlider() {
   }, [t]);
 
   return (
-    <div className="theme-slider-wrap">
+    <div className="theme-slider-wrap" data-lenis-prevent>
+      <span className="theme-slider-label">{themeLabel(t)}</span>
       <input
         className="theme-slider"
         type="range"
@@ -19,7 +20,7 @@ export function ThemeSlider() {
         max={100}
         step={1}
         value={Math.round(t * 100)}
-        aria-label="Backdrop, paper to cobalt to ink"
+        aria-label="Studio plate, white to cobalt to dark"
         aria-valuetext={themeLabel(t)}
         onChange={(e) => setT(Number(e.target.value) / 100)}
       />

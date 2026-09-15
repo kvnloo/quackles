@@ -2,22 +2,23 @@
 
 import dynamic from "next/dynamic";
 import { ExperienceProvider } from "@/components/providers/ExperienceProvider";
-import { PosterBeats } from "@/components/poster/PosterBeats";
-import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { PosterNav } from "@/components/poster/PosterNav";
+import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
+import { PosterBeats } from "@/components/poster/PosterBeats";
+import { PosterMarks, PosterPlates } from "@/components/poster/PosterChrome";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
 
 const DuckStage = dynamic(
   () => import("@/components/duck/DuckStage").then((module) => module.DuckStage),
-  { ssr: false },
+  { ssr: false }
 );
 
 function AppShell() {
   return (
     <div className="phone-shell">
       <div className="poster-stage">
-        <div className="stage-bg" aria-hidden />
+        <PosterPlates />
         <div className="duck-slot">
           <CanvasGuard fallback={<DuckFallback />}>
             <DuckStage />
@@ -25,6 +26,7 @@ function AppShell() {
         </div>
         <PosterNav />
         <PosterHeroCopy />
+        <PosterMarks />
       </div>
       <main id="top" className="poster-story">
         <PosterBeats />
