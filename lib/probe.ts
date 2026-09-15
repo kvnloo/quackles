@@ -19,13 +19,20 @@ export type QuacklesProbe = {
   glFrames: FrameSample[];
 };
 
+export type QuacklesLenis = {
+  scrollTo: (v: number, opts?: { immediate?: boolean }) => void;
+  limit: number;
+  progress: number;
+  raf: (time: number) => void;
+};
+
 declare global {
   interface Window {
     __QUACKLES__?: QuacklesProbe;
     __QUACKLES_RECORD__?: boolean;
     __QUACKLES_INVALIDATE__?: () => void;
     __QUACKLES_LENIS_FROM_R3F__?: boolean;
-    __QUACKLES_LENIS__?: { scrollTo: (v: number, opts?: { immediate?: boolean }) => void; limit: number };
+    __QUACKLES_LENIS__?: QuacklesLenis;
   }
 }
 
