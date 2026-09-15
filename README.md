@@ -29,6 +29,8 @@ Records WebGL frame times at 430×932 while scrolling explode → jump.
 
 The app is a static export (`next build` → `out/`). `.github/workflows/pages.yml` deploys on every push to `main`.
 
+Development snapshots land on [`nightly`](https://github.com/kvnloo/quackles/tree/nightly). After each working commit, push that branch too (`git push origin nightly && git push github nightly`).
+
 ## Stack
 
 Next.js (static export) · React Three Fiber · official Microduck GLB/kinematics · native scroll

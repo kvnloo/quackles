@@ -67,13 +67,19 @@ export function explodeRig(rig: any, explode: number) {
       rig._rest.set(name, body.position.clone());
     }
   }
+  if (explode < 0.002) {
+    if (!rig._exploded) return;
+    for (const [name, body] of rig.bodies) {
+      const rest = rig._rest.get(name);
+      if (rest) body.position.copy(rest);
+    }
+    rig._exploded = false;
+    return;
+  }
+  rig._exploded = true;
   for (const [name, body] of rig.bodies) {
     const rest = rig._rest.get(name);
     if (!rest) continue;
-    if (explode < 0.002) {
-      body.position.copy(rest);
-      continue;
-    }
     _away.copy(rest);
     if (_away.lengthSq() < 1e-8) {
       body.position.copy(rest);
@@ -81,6 +87,6 @@ export function explodeRig(rig: any, explode: number) {
     }
     _away.normalize();
     body.position.copy(rest);
-    body.position.addScaledVector(_away, explode * 0.082);
+    body.position.addScaledVector(_away, explode * 0.042);
   }
 }
