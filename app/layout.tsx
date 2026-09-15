@@ -22,10 +22,10 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Microduck — Tiny duck. Big waddle.",
   description:
-    "A 25 cm biped from Pollen Robotics. Fifteen motors, a grasping beak, trained in sim.",
+    "A 25 cm biped from Pollen Robotics. Fifteen motors, a grasping beak, trained in sim. Product film with anatomy and get-up.",
   openGraph: {
     title: "Microduck — Tiny duck. Big waddle.",
-    description: "Product shot, explode, and jump — on a quiet cream studio.",
+    description: "Product shot, exploded anatomy, and a get-up — then pre-order.",
     type: "website",
   },
 };

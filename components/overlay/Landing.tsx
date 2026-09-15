@@ -1,56 +1,87 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { ExperienceProvider, useExperience } from "@/components/providers/ExperienceProvider";
 import { PosterNav } from "@/components/poster/PosterNav";
+import { PosterBack, PosterFront } from "@/components/poster/PosterChrome";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
-import { PosterBeats } from "@/components/poster/PosterBeats";
+import { ThemeSlider } from "@/components/poster/ThemeSlider";
+import { StoryOverlay } from "@/components/overlay/StoryOverlay";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
+import { SimulatorFrame } from "@/components/sim/SimulatorFrame";
+import { playMorph } from "@/lib/sim/morph";
+import { assetPath } from "@/lib/paths";
 
 const DuckStage = dynamic(
   () => import("@/components/duck/DuckStage").then((module) => module.DuckStage),
-  { ssr: false },
+  { ssr: false }
 );
 
 function Hatch() {
-  const { ready } = useExperience();
-  if (ready) return null;
   return (
     <div className="hatch-overlay" aria-hidden>
-      <p>hatching</p>
+      <div className="text-center">
+        <div className="mx-auto mb-4 size-10 rounded-full border-2 border-[color:var(--cobalt)] border-t-transparent animate-spin" />
+        <p className="font-label text-[10px] uppercase tracking-[0.28em] text-[color:var(--cobalt)]">
+          hatching the duck
+        </p>
+      </div>
     </div>
   );
 }
 
-function Stage() {
+function PaperGrain() {
+  const { progress } = useExperience();
+  const morph = playMorph(progress);
   return (
-    <div className="poster-stage">
-      <div className="stage-bg" aria-hidden />
-      <Hatch />
-      <div className="duck-slot">
-        <CanvasGuard fallback={<DuckFallback />}>
-          <DuckStage />
-        </CanvasGuard>
-      </div>
-      <PosterNav />
-      <PosterHeroCopy />
+    <div
+      className="paper-grain pointer-events-none absolute inset-0 z-10"
+      style={{ opacity: 1 - morph }}
+    />
+  );
+}
+
+function DuckSlot() {
+  const { progress } = useExperience();
+  const t = Math.min(1, progress / 0.14);
+  return (
+    <div
+      className="absolute z-[18] overflow-hidden"
+      style={{
+        top: `${31.2 * (1 - t)}%`,
+        left: `${17 * (1 - t)}%`,
+        right: `${0 * (1 - t)}%`,
+        bottom: `${31.6 * (1 - t)}%`,
+        transform: "none",
+      }}
+    >
+      <CanvasGuard fallback={<DuckFallback />}>
+        <DuckStage />
+      </CanvasGuard>
     </div>
   );
 }
 
 function AppShell() {
-  const [target, setTarget] = useState<HTMLElement | null>(null);
-  useEffect(() => setTarget(document.body), []);
-  const stage = <Stage />;
-
   return (
-    <div className="phone-shell">
-      {target ? createPortal(stage, target) : stage}
+    <div
+      className="phone-shell"
+      style={{ ["--stone-url" as string]: `url("${assetPath("/poster/stone.jpg")}")` }}
+    >
+      <div className="poster-stage">
+        <Hatch />
+        <PosterNav />
+        <PosterBack />
+        <DuckSlot />
+        <PosterFront />
+        <PosterHeroCopy />
+        <SimulatorFrame />
+        <PaperGrain />
+        <ThemeSlider />
+      </div>
       <main id="top" className="poster-story">
-        <PosterBeats />
+        <StoryOverlay />
       </main>
     </div>
   );
