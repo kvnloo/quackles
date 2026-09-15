@@ -6,7 +6,7 @@ export type FrameSample = {
   fps: number;
   progress: number;
   explode: number;
-  recover: number;
+  jump: number;
   source: "webgl";
 };
 
@@ -15,7 +15,7 @@ export type QuacklesProbe = {
   rigReady: boolean;
   progress: number;
   explode: number;
-  recover: number;
+  jump: number;
   glFrames: FrameSample[];
 };
 
@@ -24,6 +24,7 @@ declare global {
     __QUACKLES__?: QuacklesProbe;
     __QUACKLES_RECORD__?: boolean;
     __QUACKLES_INVALIDATE__?: () => void;
+    __QUACKLES_LENIS_FROM_R3F__?: boolean;
   }
 }
 
@@ -35,7 +36,7 @@ export function ensureProbe(): QuacklesProbe | null {
       rigReady: false,
       progress: 0,
       explode: 0,
-      recover: 0,
+      jump: 0,
       glFrames: [],
     };
   }
@@ -47,7 +48,7 @@ export function publishPose(progress: number, pose: Pose) {
   if (!q) return;
   q.progress = progress;
   q.explode = pose.explode;
-  q.recover = pose.recover;
+  q.jump = pose.jump;
 }
 
 export function pushGlFrame(deltaSec: number, progress: number, pose: Pose) {
@@ -61,7 +62,7 @@ export function pushGlFrame(deltaSec: number, progress: number, pose: Pose) {
     fps: dt > 0 ? 1000 / dt : 0,
     progress,
     explode: pose.explode,
-    recover: pose.recover,
+    jump: pose.jump,
     source: "webgl",
   });
 }

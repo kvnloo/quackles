@@ -1,5 +1,3 @@
-"use client";
-
 export function DuckFallback() {
   return (
     <div className="duck-fallback">

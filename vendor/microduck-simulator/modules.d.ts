@@ -29,11 +29,3 @@ declare module "@/vendor/microduck-simulator/constants.js" {
   export const DEFAULT_POSE: Float32Array;
   export const NUM_JOINTS: number;
 }
-
-declare module "@crazygl/hero-scroll-assemble-product" {
-  import type { ComponentType } from "react";
-  const ScrollAssembleProduct: ComponentType<Record<string, unknown>>;
-  export default ScrollAssembleProduct;
-}
-
-declare module "@crazygl/hero-scroll-assemble-product/style.css";

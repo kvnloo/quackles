@@ -10,12 +10,7 @@ export type Pose = {
   beak: number;
   crouch: number;
   explode: number;
-  walkAmp: number;
-  recover: number;
-  skate: number;
-  flock: number;
-  grab: number;
-  play: number;
+  jump: number;
   lookAt: Vec3;
   camPos: Vec3;
   fov: number;
@@ -24,120 +19,67 @@ export type Pose = {
 function pose(partial: Partial<Pose>): Pose {
   return {
     duckPosition: [0, 0, 0],
-    duckRotation: [0, 0.28, 0],
+    duckRotation: [0, 0.48, 0],
     duckScale: 1,
-    headPitch: 0.22,
-    headYaw: 0,
-    neckPitch: 0.12,
-    beak: 0.18,
-    crouch: 0.08,
+    headPitch: 0.1,
+    headYaw: -0.28,
+    neckPitch: 0.22,
+    beak: 0.06,
+    crouch: 0.04,
     explode: 0,
-    walkAmp: 0,
-    recover: 0,
-    skate: 0,
-    flock: 0,
-    grab: 0,
-    play: 0,
-    lookAt: [0.03, 0.14, 0],
-    camPos: [0.38, 0.2, 0.52],
-    fov: 30,
+    jump: 0,
+    lookAt: [0.03, 0.125, 0],
+    camPos: [0.4, 0.17, 0.62],
+    fov: 28,
     ...partial,
   };
 }
 
-// Camera units are metres — the official mesh is the real 25 cm robot.
+/** Product still → explode → jump. Three keys, one scroll. */
 export const POSES: Pose[] = [
   pose({
-    duckPosition: [0.03, -0.018, 0.0],
-    duckRotation: [0.02, 0.46, 0.02],
-    duckScale: 1.12,
-    headPitch: 0.1,
-    headYaw: -0.18,
-    neckPitch: 0.18,
+    duckPosition: [0.04, 0, 0.01],
+    duckRotation: [0.03, 0.62, 0.03],
+    duckScale: 1,
+    headPitch: 0.08,
+    headYaw: -0.32,
+    neckPitch: 0.26,
     beak: 0.04,
-    crouch: 0.08,
-    walkAmp: 0,
-    camPos: [0.4, 0.205, 0.58],
-    lookAt: [0.04, 0.135, 0.0],
-    fov: 28,
+    crouch: 0.03,
+    camPos: [0.4, 0.155, 0.66],
+    lookAt: [0.04, 0.118, 0.01],
+    fov: 27,
   }),
   pose({
-    duckRotation: [0, 0.12, 0],
-    duckScale: 0.95,
-    headPitch: 0.1,
-    camPos: [0.06, 0.32, 0.92],
-    lookAt: [0, 0.12, 0],
-    fov: 32,
-  }),
-  pose({
-    duckRotation: [0, 0.48, 0],
+    duckPosition: [0.01, 0.012, 0],
+    duckRotation: [0, 0.38, 0],
     explode: 1,
-    headPitch: 0.05,
-    beak: 0.55,
-    camPos: [0.42, 0.26, 0.46],
+    beak: 0.62,
+    headPitch: 0.04,
+    neckPitch: 0.12,
+    camPos: [0.34, 0.26, 0.78],
     lookAt: [0, 0.155, 0],
-    fov: 30,
+    fov: 34,
   }),
   pose({
-    duckRotation: [0, Math.PI / 2 - 0.18, 0],
-    walkAmp: 1,
+    duckPosition: [0.02, 0.018, 0],
+    duckRotation: [-0.06, 0.52, 0.02],
+    jump: 1,
+    crouch: 0,
+    beak: 0.12,
     headPitch: 0.16,
-    camPos: [0.62, 0.13, 0.1],
-    lookAt: [0, 0.11, 0],
-    fov: 34,
+    neckPitch: 0.2,
+    camPos: [0.46, 0.1, 0.58],
+    lookAt: [0.02, 0.2, 0],
+    fov: 31,
   }),
   pose({
-    duckRotation: [0, 0.16, 0],
-    crouch: 0.85,
-    beak: 0.82,
-    grab: 1,
-    headPitch: 0.55,
-    neckPitch: 0.45,
-    camPos: [0.32, 0.09, 0.46],
-    lookAt: [0, 0.07, 0.03],
-    fov: 32,
-  }),
-  pose({
-    duckRotation: [0, 0.08, 0],
-    recover: 1,
-    crouch: 0.2,
-    headPitch: -0.2,
-    camPos: [0.12, 0.3, 0.7],
-    lookAt: [0, 0.07, 0],
-    fov: 36,
-  }),
-  pose({
-    duckRotation: [0, Math.PI / 2 - 0.22, 0],
-    skate: 1,
-    walkAmp: 0.35,
-    headPitch: 0.28,
-    neckPitch: 0.18,
-    camPos: [0.56, 0.11, 0.26],
-    lookAt: [0, 0.1, 0],
-    fov: 34,
-  }),
-  pose({
-    duckRotation: [0, 0.16, 0],
-    flock: 1,
-    duckScale: 0.92,
-    camPos: [0, 0.26, 1.05],
-    lookAt: [0, 0.12, 0],
-    fov: 30,
-  }),
-  pose({
-    duckRotation: [0, 0.28, 0],
-    play: 0.55,
-    camPos: [0.34, 0.2, 0.52],
-    lookAt: [0.04, 0.13, 0],
-    fov: 32,
-  }),
-  pose({
-    duckRotation: [0, 0.22, 0],
-    play: 1,
-    beak: 0.2,
-    camPos: [0.28, 0.18, 0.42],
-    lookAt: [0.06, 0.12, 0],
-    fov: 34,
+    duckPosition: [0.04, 0, 0.01],
+    duckRotation: [0.03, 0.55, 0.03],
+    jump: 0,
+    camPos: [0.38, 0.16, 0.62],
+    lookAt: [0.03, 0.12, 0.01],
+    fov: 28,
   }),
 ];
 
@@ -158,6 +100,36 @@ export function smoothstep(t: number) {
   return x * x * (3 - 2 * x);
 }
 
+function lerpVecInto(out: Vec3, a: Vec3, b: Vec3, t: number) {
+  out[0] = a[0] + (b[0] - a[0]) * t;
+  out[1] = a[1] + (b[1] - a[1]) * t;
+  out[2] = a[2] + (b[2] - a[2]) * t;
+}
+
+export function poseAtInto(out: Pose, progress: number): Pose {
+  const t = clamp01(progress);
+  const max = POSES.length - 1;
+  const u = t * max;
+  const i = Math.min(max - 1, Math.floor(u));
+  const s = smoothstep(u - i);
+  const a = POSES[i];
+  const b = POSES[i + 1];
+  lerpVecInto(out.duckPosition, a.duckPosition, b.duckPosition, s);
+  lerpVecInto(out.duckRotation, a.duckRotation, b.duckRotation, s);
+  out.duckScale = lerp(a.duckScale, b.duckScale, s);
+  out.headPitch = lerp(a.headPitch, b.headPitch, s);
+  out.headYaw = lerp(a.headYaw, b.headYaw, s);
+  out.neckPitch = lerp(a.neckPitch, b.neckPitch, s);
+  out.beak = lerp(a.beak, b.beak, s);
+  out.crouch = lerp(a.crouch, b.crouch, s);
+  out.explode = lerp(a.explode, b.explode, s);
+  out.jump = lerp(a.jump, b.jump, s);
+  lerpVecInto(out.lookAt, a.lookAt, b.lookAt, s);
+  lerpVecInto(out.camPos, a.camPos, b.camPos, s);
+  out.fov = lerp(a.fov, b.fov, s);
+  return out;
+}
+
 export function lerpPose(a: Pose, b: Pose, t: number): Pose {
   const s = smoothstep(t);
   return {
@@ -170,12 +142,7 @@ export function lerpPose(a: Pose, b: Pose, t: number): Pose {
     beak: lerp(a.beak, b.beak, s),
     crouch: lerp(a.crouch, b.crouch, s),
     explode: lerp(a.explode, b.explode, s),
-    walkAmp: lerp(a.walkAmp, b.walkAmp, s),
-    recover: lerp(a.recover, b.recover, s),
-    skate: lerp(a.skate, b.skate, s),
-    flock: lerp(a.flock, b.flock, s),
-    grab: lerp(a.grab, b.grab, s),
-    play: lerp(a.play, b.play, s),
+    jump: lerp(a.jump, b.jump, s),
     lookAt: lerpVec(a.lookAt, b.lookAt, s),
     camPos: lerpVec(a.camPos, b.camPos, s),
     fov: lerp(a.fov, b.fov, s),
@@ -183,11 +150,7 @@ export function lerpPose(a: Pose, b: Pose, t: number): Pose {
 }
 
 export function poseAt(progress: number): Pose {
-  const t = clamp01(progress);
-  const max = POSES.length - 1;
-  const u = t * max;
-  const i = Math.min(max - 1, Math.floor(u));
-  return lerpPose(POSES[i], POSES[i + 1], u - i);
+  return poseAtInto(pose({}), progress);
 }
 
 export function sectionIndex(progress: number) {

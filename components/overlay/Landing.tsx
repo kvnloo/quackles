@@ -3,15 +3,10 @@
 import dynamic from "next/dynamic";
 import { ExperienceProvider, useExperience } from "@/components/providers/ExperienceProvider";
 import { PosterNav } from "@/components/poster/PosterNav";
-import { PosterBack, PosterFront } from "@/components/poster/PosterChrome";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
-import { ThemeSlider } from "@/components/poster/ThemeSlider";
-import { StoryOverlay } from "@/components/overlay/StoryOverlay";
+import { PosterBeats } from "@/components/poster/PosterBeats";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
-import { SimulatorFrame } from "@/components/sim/SimulatorFrame";
-import { playMorph } from "@/lib/sim/morph";
-import { assetPath } from "@/lib/paths";
 
 const DuckStage = dynamic(
   () => import("@/components/duck/DuckStage").then((module) => module.DuckStage),
@@ -19,69 +14,32 @@ const DuckStage = dynamic(
 );
 
 function Hatch() {
+  const { ready } = useExperience();
+  if (ready) return null;
   return (
     <div className="hatch-overlay" aria-hidden>
-      <div className="text-center">
-        <div className="mx-auto mb-4 size-10 rounded-full border-2 border-[color:var(--cobalt)] border-t-transparent animate-spin" />
-        <p className="font-label text-[10px] uppercase tracking-[0.28em] text-[color:var(--cobalt)]">
-          hatching the duck
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function PaperGrain() {
-  const { progress } = useExperience();
-  const morph = playMorph(progress);
-  return (
-    <div
-      className="paper-grain pointer-events-none absolute inset-0 z-10"
-      style={{ opacity: 1 - morph }}
-    />
-  );
-}
-
-function DuckSlot() {
-  const { progress } = useExperience();
-  const t = Math.min(1, progress / 0.14);
-  return (
-    <div
-      className="absolute z-[18] overflow-hidden"
-      style={{
-        top: `${12 * (1 - t)}%`,
-        left: `${22 * (1 - t)}%`,
-        right: `${4 * (1 - t)}%`,
-        bottom: `${28.8 * (1 - t)}%`,
-        transform: "none",
-      }}
-    >
-      <CanvasGuard fallback={<DuckFallback />}>
-        <DuckStage />
-      </CanvasGuard>
+      <p>hatching</p>
     </div>
   );
 }
 
 function AppShell() {
   return (
-    <div
-      className="phone-shell"
-      style={{ ["--stone-url" as string]: `url("${assetPath("/poster/stone.jpg")}")` }}
-    >
+    <div className="phone-shell">
       <div className="poster-stage">
+        {/* Cream studio only — the set is the R3F hero, not HTML marble/bust/orb. */}
+        <div className="stage-bg" aria-hidden />
         <Hatch />
+        <div className="duck-slot">
+          <CanvasGuard fallback={<DuckFallback />}>
+            <DuckStage />
+          </CanvasGuard>
+        </div>
         <PosterNav />
-        <PosterBack />
-        <DuckSlot />
-        <PosterFront />
         <PosterHeroCopy />
-        <SimulatorFrame />
-        <PaperGrain />
-        <ThemeSlider />
       </div>
       <main id="top" className="poster-story">
-        <StoryOverlay />
+        <PosterBeats />
       </main>
     </div>
   );
