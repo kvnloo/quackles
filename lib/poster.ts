@@ -8,12 +8,4 @@ export const POSTER = {
   cta: "Pre-order $399",
   kicker: "01  BIPED",
   headline: ["Tiny duck.", "Big waddle."],
-  specs: ["15 motors", "25 cm", "<800 g", "50 Hz"],
-  coords: ["Pollen Robotics", "44.8378° N", "0.5792° W"],
-  manifesto: ["Human", "robot", "collaboration", "at desk scale"],
-  rightStamp: ["Train", "in sim", "waddle", "in reality"],
-  globeCaption: ["Open", "useful", "beautiful"],
-  plinth: ["Micro", "duck"],
-  footer: ["Intelligence", "belongs", "on your desk"],
-  year: "2026",
 } as const;
