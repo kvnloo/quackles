@@ -9,14 +9,14 @@ export function PosterHeroCopy() {
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-[3.35rem] z-[22] px-[16px]"
+      className="pointer-events-none absolute inset-x-0 top-[3.15rem] z-[22] px-[18px]"
       style={{ opacity: fade }}
     >
-      <p className="flex items-center gap-3 font-label text-[9px] font-semibold uppercase tracking-[0.22em] text-[color:var(--cobalt)]">
+      <p className="flex items-center gap-3 font-label text-[8px] font-semibold uppercase tracking-[0.26em] text-[color:var(--cobalt)]">
         {POSTER.kicker}
-        <span className="inline-block h-px w-9 bg-[color:var(--cobalt)]" />
+        <span className="inline-block h-px w-10 bg-[color:var(--cobalt)]" />
       </p>
-      <h1 className="mt-2 font-display text-[3.15rem] leading-[0.8] tracking-[-0.035em] text-[color:var(--cobalt)]">
+      <h1 className="mt-1.5 max-w-[11.5rem] font-display text-[3.35rem] leading-[0.78] tracking-[-0.04em] text-[color:var(--cobalt)]">
         {POSTER.headline.map((line) => (
           <span key={line} className="block">
             {line}

@@ -15,7 +15,10 @@ const AMBER_YELLOW = { color: [1.0, 0.413, 0.007], roughness: 0.4, metalness: 0.
 const BRIGHT_ORANGE = { color: [1.0, 0.144, 0.008], roughness: 0.45, metalness: 0.0 }; // #ff7a2f
 const AMBER = { color: [0.847, 0.339, 0.022], roughness: 0.45, metalness: 0.0 };       // #eda63e
 const CLEAN_YELLOW = { color: [1.0, 0.608, 0.021], roughness: 0.4, metalness: 0.0 };   // #ffd23f
-const CREAM = { color: [0.888, 0.86, 0.798], roughness: 0.35, metalness: 0.0 };        // #f2efe8
+const CREAM = { color: [0.78, 0.73, 0.64], roughness: 0.52, metalness: 0.0 };          // weathered poster cream
+const GRAPHITE_SHELL = { color: [0.028, 0.028, 0.032], roughness: 0.48, metalness: 0.18 };
+const MUTED_BEAK = { color: [0.42, 0.36, 0.3], roughness: 0.5, metalness: 0.0 };
+const FOOT_PAD = { color: [0.84, 0.38, 0.04], roughness: 0.48, metalness: 0.0 };
 const DARK = { color: [0.012, 0.012, 0.014], roughness: 0.55, metalness: 0.3 };        // #1d1d1f
 const GRAY = { color: [0.256, 0.256, 0.279], roughness: 0.5, metalness: 0.35 };        // #8b8b90
 // Camera-lens eye: very dark blue-black, glossy like coated glass.
@@ -56,18 +59,18 @@ export const VARIANTS = {
   // trim and beak, amber mouth interior, orange shoes on yellow soles.
   classic: {
     headDome: CREAM,
-    facePlate: WARM_GRAY,
-    trim: BRIGHT_ORANGE,
-    beakUpper: AMBER_YELLOW,
-    beakLower: BRIGHT_ORANGE,
-    tongue: AMBER_YELLOW,
-    eyeRing: AMBER_YELLOW,
+    facePlate: GRAPHITE_SHELL,
+    trim: CREAM,
+    beakUpper: MUTED_BEAK,
+    beakLower: MUTED_BEAK,
+    tongue: MUTED_BEAK,
+    eyeRing: GRAPHITE_SHELL,
     lens: LENS,
     bodyShell: CREAM,
     sideShells: CREAM,
-    legShells: CREAM,
-    feet: BRIGHT_ORANGE,
-    soles: CLEAN_YELLOW,
+    legShells: GRAPHITE_SHELL,
+    feet: CREAM,
+    soles: FOOT_PAD,
     hips: GRAY,
     mechDark: DARK,
     mechGray: GRAY,

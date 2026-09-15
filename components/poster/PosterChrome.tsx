@@ -8,10 +8,10 @@ import { useExperience } from "@/components/providers/ExperienceProvider";
 function CropMarks({ className }: { className?: string }) {
   return (
     <div className={className} aria-hidden>
-      <span className="absolute left-0 top-0 h-3 w-3 border-l border-t border-[color:var(--cobalt)]" />
-      <span className="absolute right-0 top-0 h-3 w-3 border-r border-t border-[color:var(--cobalt)]" />
-      <span className="absolute bottom-0 left-0 h-3 w-3 border-b border-l border-[color:var(--cobalt)]" />
-      <span className="absolute bottom-0 right-0 h-3 w-3 border-b border-r border-[color:var(--cobalt)]" />
+      <span className="absolute left-0 top-0 h-4 w-4 border-l-[1.5px] border-t-[1.5px] border-[color:var(--cobalt)]" />
+      <span className="absolute right-0 top-0 h-4 w-4 border-r-[1.5px] border-t-[1.5px] border-[color:var(--cobalt)]" />
+      <span className="absolute bottom-0 left-0 h-4 w-4 border-b-[1.5px] border-l-[1.5px] border-[color:var(--cobalt)]" />
+      <span className="absolute bottom-0 right-0 h-4 w-4 border-b-[1.5px] border-r-[1.5px] border-[color:var(--cobalt)]" />
     </div>
   );
 }
@@ -116,6 +116,7 @@ export function PosterFront() {
       <div className="poster-plinth poster-plinth-side">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={assetPath("/poster/hands.jpg")} alt="" className="poster-hands" />
+        <div className="poster-hands-ink" />
       </div>
       <div className="poster-plinth poster-plinth-right">
         <p className="max-w-[8rem] font-label text-[10px] font-semibold uppercase leading-[1.28] tracking-[0.16em] text-[color:var(--cobalt)]">

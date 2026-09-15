@@ -48,11 +48,11 @@ function DuckSlot() {
     <div
       className="absolute z-[12] overflow-hidden"
       style={{
-        top: `${12 * (1 - t)}%`,
-        left: `${16 * (1 - t)}%`,
-        right: `${6 * (1 - t)}%`,
-        bottom: `${22 * (1 - t)}%`,
-        transform: `translateY(${(1 - t) * 7}vh)`,
+        top: `${20 * (1 - t)}%`,
+        left: `${22 * (1 - t)}%`,
+        right: `${4 * (1 - t)}%`,
+        bottom: `${27 * (1 - t)}%`,
+        transform: `translateY(${(1 - t) * 1}vh)`,
       }}
     >
       <CanvasGuard fallback={<DuckFallback />}>
