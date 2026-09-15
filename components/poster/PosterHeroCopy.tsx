@@ -17,6 +17,16 @@ export function PosterHeroCopy() {
           <li key={line}>{line}</li>
         ))}
       </ul>
+      <p className="hero-coords">
+        {POSTER.coords.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
+      </p>
+      <p className="hero-manifesto">
+        {POSTER.manifesto.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
+      </p>
     </div>
   );
 }

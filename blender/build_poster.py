@@ -93,15 +93,15 @@ DEFAULT_POSE = {
 # Upright 3/4 poster stance — Microduck silhouette, planted on the plinth.
 STANDING = {
     **DEFAULT_POSE,
-    "left_hip_pitch": -0.18,
-    "right_hip_pitch": 0.18,
-    "left_knee": 0.32,
-    "right_knee": -0.32,
-    "left_ankle": -0.14,
-    "right_ankle": 0.14,
-    "neck_pitch": 0.52,
-    "head_pitch": 0.18,
-    "head_yaw": 0.32,
+    "left_hip_pitch": -0.10,
+    "right_hip_pitch": 0.10,
+    "left_knee": 0.14,
+    "right_knee": -0.14,
+    "left_ankle": -0.06,
+    "right_ankle": 0.06,
+    "neck_pitch": 0.18,
+    "head_pitch": 0.06,
+    "head_yaw": -0.35,
 }
 
 PLINTH_TOP = 0.125
@@ -702,16 +702,16 @@ def build_set(coll):
     )
     backing = add_cube(
         "BustBacking",
-        (0.38, 0.012, 0.50),
-        (0.28, 0.18, 0.50),
+        (0.34, 0.012, 0.46),
+        (0.18, 0.17, 0.46),
         coll,
         cobalt_emit,
         bevel=0.001,
     )
     bust = add_plane(
         "BustPrint",
-        (0.37, 0.48),
-        (0.28, 0.173, 0.50),
+        (0.33, 0.44),
+        (0.18, 0.163, 0.46),
         (math.radians(90), 0, 0),
         coll,
         bust_mat,
@@ -755,15 +755,15 @@ def build_set(coll):
 
 def setup_camera(scene, coll):
     cam_data = bpy.data.cameras.new("PosterCam")
-    cam_data.lens = 35
+    cam_data.lens = 32
     cam_data.sensor_width = 24
     cam_data.sensor_fit = "HORIZONTAL"
     cam_data.clip_start = 0.02
     cam_data.clip_end = 24
     cam_data.dof.use_dof = False
     cam = bpy.data.objects.new("PosterCam", cam_data)
-    cam.location = (0.07, -0.34, 0.21)
-    look_at(cam, (0.05, 0.05, 0.19))
+    cam.location = (0.11, -0.52, 0.28)
+    look_at(cam, (0.04, 0.03, 0.24))
     coll.objects.link(cam)
     scene.camera = cam
     return cam
@@ -916,6 +916,8 @@ def parse_args():
     p.add_argument("--inspect", action="store_true")
     p.add_argument("--save-blend", action="store_true", default=True)
     p.add_argument("--duck-only", action="store_true")
+    p.add_argument("--yaw", type=float, default=32.0, help="Duck root Z rotation in degrees")
+    p.add_argument("--scale", type=float, default=1.06)
     return p.parse_args(argv)
 
 
@@ -967,12 +969,13 @@ def main():
             bpy.data.objects.remove(o, do_unlink=True)
         except Exception:
             pass
-    # Visor toward camera / headline. Previous -108° showed the helmet back.
     root.rotation_mode = "XYZ"
-    root.rotation_euler = (0.0, 0.0, math.radians(72))
-    root.scale = (1.14, 1.14, 1.14)
-    root.location = (0.06, 0.05, 0.0)
+    root.rotation_euler = (0.0, 0.0, math.radians(args.yaw))
+    s = float(args.scale)
+    root.scale = (s, s, s)
+    root.location = (0.05, 0.06, 0.0)
     ground_to(root, PLINTH_TOP)
+    print("duck yaw", args.yaw, "scale", s)
     print("duck instances", len(instances), "root", tuple(root.location))
 
     set_objs = build_set(set_col)
