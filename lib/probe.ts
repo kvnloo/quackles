@@ -25,6 +25,7 @@ declare global {
     __QUACKLES_RECORD__?: boolean;
     __QUACKLES_INVALIDATE__?: () => void;
     __QUACKLES_LENIS_FROM_R3F__?: boolean;
+    __QUACKLES_LENIS__?: { scrollTo: (v: number, opts?: { immediate?: boolean }) => void; limit: number };
   }
 }
 

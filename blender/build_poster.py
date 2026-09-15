@@ -101,7 +101,7 @@ STANDING = {
     "right_ankle": 0.14,
     "neck_pitch": 0.52,
     "head_pitch": 0.18,
-    "head_yaw": -0.42,
+    "head_yaw": 0.32,
 }
 
 PLINTH_TOP = 0.125
@@ -228,17 +228,39 @@ def stone_mat(name="Stone"):
     noise.inputs["Scale"].default_value = 28.0
     noise.inputs["Detail"].default_value = 10.0
     ramp = nt.nodes.new("ShaderNodeValToRGB")
-    ramp.color_ramp.elements[0].color = (0.48, 0.43, 0.37, 1)
-    ramp.color_ramp.elements[1].color = (0.78, 0.73, 0.66, 1)
+    ramp.color_ramp.elements[0].color = (0.36, 0.32, 0.26, 1)
+    ramp.color_ramp.elements[1].color = (0.58, 0.52, 0.44, 1)
     nt.links.new(coord.outputs["UV"], mapping.inputs["Vector"])
-    nt.links.new(mapping.outputs["Vector"], nor.inputs["Vector"])
-    nt.links.new(mapping.outputs["Vector"], rough.inputs["Vector"])
     nt.links.new(mapping.outputs["Vector"], noise.inputs["Vector"])
     nt.links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
-    nt.links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
-    nt.links.new(nor.outputs["Color"], nmap.inputs["Color"])
-    nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
-    nt.links.new(rough.outputs["Color"], bsdf.inputs["Roughness"])
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    factor = mix.inputs.get("Factor") or mix.inputs[0]
+    factor.default_value = 0.55
+    a_in = mix.inputs.get("A") or mix.inputs.get("Color1") or mix.inputs[6]
+    b_in = mix.inputs.get("B") or mix.inputs.get("Color2") or mix.inputs[7]
+    mix_out = mix.outputs.get("Result") or mix.outputs.get("Color") or mix.outputs[2]
+    quarry = ASSETS / "quarry_wall_diff_2k.jpg"
+    if quarry.exists():
+        nt.links.new(mapping.outputs["Vector"], diff.inputs["Vector"])
+        nt.links.new(mapping.outputs["Vector"], nor.inputs["Vector"])
+        nt.links.new(mapping.outputs["Vector"], rough.inputs["Vector"])
+        nt.links.new(diff.outputs["Color"], a_in)
+        nt.links.new(ramp.outputs["Color"], b_in)
+        nt.links.new(nor.outputs["Color"], nmap.inputs["Color"])
+        nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
+        nt.links.new(rough.outputs["Color"], bsdf.inputs["Roughness"])
+        nmap.inputs["Strength"].default_value = 0.82
+    else:
+        nt.links.new(ramp.outputs["Color"], a_in)
+        b_in.default_value = (0.50, 0.45, 0.38, 1)
+        factor.default_value = 0.2
+    bc = nt.nodes.new("ShaderNodeBrightContrast")
+    bc.inputs["Bright"].default_value = -0.14
+    bc.inputs["Contrast"].default_value = 0.22
+    nt.links.new(mix_out, bc.inputs["Color"])
+    nt.links.new(bc.outputs["Color"], bsdf.inputs["Base Color"])
+    bsdf.inputs["Roughness"].default_value = 0.78
     return mat
 
 
@@ -483,12 +505,18 @@ def assemble_duck(parts, coll):
 
     bpy.context.view_layer.update()
     trunk = bodies["trunk_base"].matrix_world.translation.copy()
+    keep_bits = ("foot", "sole", "ankle", "shell", "head", "trunk", "jaw", "face", "lens", "mouth", "noenoeil")
     for inst in instances:
-        delta = (inst.matrix_world.translation - trunk).length
-        if delta > 0.22:
-            print("OUTLIER hide", inst.name, "d", round(delta, 3), inst.matrix_world.translation)
+        w = inst.matrix_world.translation
+        n = inst.name.lower()
+        delta = (w - trunk).length
+        left_stray = w.x < trunk.x - 0.095 and not any(k in n for k in keep_bits)
+        if delta > 0.16 or left_stray:
+            print("OUTLIER hide", inst.name, "d", round(delta, 3), "left", left_stray, w)
             inst.hide_render = True
             inst.hide_viewport = True
+        if any(k in n for k in ("lens", "face_part", "noenoeil", "top_head")):
+            print("FACE", inst.name, tuple(round(v, 4) for v in w))
     return root, instances, parts
 
 
@@ -515,14 +543,15 @@ def ground_to(root, z_top):
 
 
 def make_arch(coll, mat):
+    # Thick masonry opening — a fat bezier tube, not a pipe.
     curve_data = bpy.data.curves.new("ArchCurve", "CURVE")
     curve_data.dimensions = "3D"
-    curve_data.bevel_depth = 0.042
-    curve_data.bevel_resolution = 6
+    curve_data.bevel_depth = 0.088
+    curve_data.bevel_resolution = 8
     curve_data.fill_mode = "FULL"
     spline = curve_data.splines.new("BEZIER")
     spline.bezier_points.add(4)
-    w, h = 0.22, 0.42
+    w, h = 0.27, 0.52
     pts = [
         (-w, 0, 0.0),
         (-w, 0, h * 0.55),
@@ -535,7 +564,7 @@ def make_arch(coll, mat):
         bp.handle_left_type = "AUTO"
         bp.handle_right_type = "AUTO"
     obj = bpy.data.objects.new("Arch", curve_data)
-    obj.location = (0.02, 0.22, 0.16)
+    obj.location = (0.03, 0.26, 0.10)
     coll.objects.link(obj)
     obj.data.materials.append(mat)
     return obj
@@ -619,8 +648,15 @@ def build_set(coll):
     floor = add_cube("Floor", (3.5, 2.4, 0.06), (0.08, -0.4, -0.03), coll, floor_mat)
     side = add_cube("SideWall", (0.08, 2.4, 2.4), (0.78, -0.2, 0.9), coll, wall_mat)
 
-    arch_mat = principled("ArchCream", (0.93, 0.90, 0.86), 0.7, 0.0)
+    arch_mat = principled("ArchCream", (0.86, 0.82, 0.76), 0.74, 0.0)
     arch = make_arch(coll, arch_mat)
+    alcove = add_cube(
+        "Alcove",
+        (1.1, 0.05, 1.15),
+        (0.04, 0.42, 0.52),
+        coll,
+        principled("AlcoveCream", (0.80, 0.76, 0.70), 0.86, 0.0),
+    )
 
     main = add_cube(
         "PlinthMain",
@@ -661,21 +697,21 @@ def build_set(coll):
         "BustPanel",
         ASSETS / "bust_panel_opaque.png",
         alpha=False,
-        roughness=0.48,
-        emission=0.45,
+        roughness=0.42,
+        emission=0.95,
     )
     backing = add_cube(
         "BustBacking",
-        (0.32, 0.012, 0.42),
-        (0.22, 0.16, 0.42),
+        (0.38, 0.012, 0.50),
+        (0.28, 0.18, 0.50),
         coll,
         cobalt_emit,
         bevel=0.001,
     )
     bust = add_plane(
         "BustPrint",
-        (0.31, 0.40),
-        (0.22, 0.153, 0.42),
+        (0.37, 0.48),
+        (0.28, 0.173, 0.50),
         (math.radians(90), 0, 0),
         coll,
         bust_mat,
@@ -703,6 +739,7 @@ def build_set(coll):
         "floor": floor,
         "side": side,
         "arch": arch,
+        "alcove": alcove,
         "main": main,
         "left": left,
         "right_lip": right_lip,
@@ -718,15 +755,15 @@ def build_set(coll):
 
 def setup_camera(scene, coll):
     cam_data = bpy.data.cameras.new("PosterCam")
-    cam_data.lens = 32
+    cam_data.lens = 35
     cam_data.sensor_width = 24
     cam_data.sensor_fit = "HORIZONTAL"
     cam_data.clip_start = 0.02
     cam_data.clip_end = 24
     cam_data.dof.use_dof = False
     cam = bpy.data.objects.new("PosterCam", cam_data)
-    cam.location = (0.06, -0.42, 0.24)
-    look_at(cam, (0.03, 0.02, 0.22))
+    cam.location = (0.07, -0.34, 0.21)
+    look_at(cam, (0.05, 0.05, 0.19))
     coll.objects.link(cam)
     scene.camera = cam
     return cam
@@ -765,18 +802,18 @@ def apply_plate(plate, world_bg, lights, set_objs, scene):
     view = scene.view_settings
     if plate == "white":
         world_bg.inputs["Color"].default_value = (*CREAM, 1)
-        world_bg.inputs["Strength"].default_value = 0.12
-        lights["key"].data.energy = 55
+        world_bg.inputs["Strength"].default_value = 0.08
+        lights["key"].data.energy = 78
         lights["key"].data.color = (1.0, 0.96, 0.90)
-        lights["fill"].data.energy = 18
+        lights["fill"].data.energy = 12
         lights["fill"].data.color = (0.92, 0.94, 1.0)
-        lights["rim"].data.energy = 22
+        lights["rim"].data.energy = 30
         lights["rim"].data.color = (0.35, 0.45, 1.0)
-        lights["bounce"].data.energy = 8
+        lights["bounce"].data.energy = 6
         wbsdf.inputs["Base Color"].default_value = (*CREAM, 1)
         fbsdf.inputs["Base Color"].default_value = (*PAPER, 1)
-        absdf.inputs["Base Color"].default_value = (0.93, 0.90, 0.86, 1)
-        view.exposure = -0.35
+        absdf.inputs["Base Color"].default_value = (0.88, 0.84, 0.78, 1)
+        view.exposure = -0.12
         view.look = "AgX - Medium High Contrast"
     elif plate == "cobalt":
         world_bg.inputs["Color"].default_value = (0.55, 0.60, 0.85, 1)
@@ -889,6 +926,24 @@ def export_jpeg(png_path: Path, jpg_path: Path):
         im = Image.open(png_path).convert("RGB")
         im.save(jpg_path, "JPEG", quality=92, optimize=True)
         print("wrote", jpg_path, jpg_path.stat().st_size)
+        return
+    except Exception as exc:
+        print("in-process jpeg failed", exc)
+    try:
+        import subprocess
+
+        cmd = [
+            "python3",
+            "-c",
+            "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], 'JPEG', quality=92, optimize=True)",
+            str(png_path),
+            str(jpg_path),
+        ]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode == 0:
+            print("wrote", jpg_path, jpg_path.stat().st_size)
+        else:
+            print("jpeg subprocess failed", r.stderr)
     except Exception as exc:
         print("jpeg export failed", exc)
 
@@ -912,10 +967,11 @@ def main():
             bpy.data.objects.remove(o, do_unlink=True)
         except Exception:
             pass
-    # 3/4 toward the headline (frame left = -X), camera on -Y.
+    # Visor toward camera / headline. Previous -108° showed the helmet back.
     root.rotation_mode = "XYZ"
-    root.rotation_euler = (0.0, 0.0, math.radians(-108))
-    root.location = (0.05, 0.07, 0.0)
+    root.rotation_euler = (0.0, 0.0, math.radians(72))
+    root.scale = (1.14, 1.14, 1.14)
+    root.location = (0.06, 0.05, 0.0)
     ground_to(root, PLINTH_TOP)
     print("duck instances", len(instances), "root", tuple(root.location))
 

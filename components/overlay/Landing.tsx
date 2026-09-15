@@ -27,7 +27,6 @@ function AppShell() {
   return (
     <div className="phone-shell">
       <div className="poster-stage">
-        {/* Cream studio only — the set is the R3F hero, not HTML marble/bust/orb. */}
         <div className="stage-bg" aria-hidden />
         <Hatch />
         <div className="duck-slot">

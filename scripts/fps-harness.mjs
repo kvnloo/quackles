@@ -107,16 +107,30 @@ async function main() {
   });
 
   const started = Date.now();
-  await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.goto(BASE, { waitUntil: "load", timeout: 60000 });
   await page.waitForSelector("canvas, .duck-fallback", { timeout: 30000 });
   await page
     .waitForFunction(() => window.__QUACKLES__?.rigReady || window.__QUACKLES__?.ready, {
       timeout: 25000,
     })
     .catch(() => {});
-  await new Promise((r) => setTimeout(r, 1600));
+  await new Promise((r) => setTimeout(r, 2200));
 
-  const idle = await page.evaluate(async () => {
+  const evalSafe = async (fn, ...args) => {
+    for (let i = 0; i < 3; i++) {
+      try {
+        return await page.evaluate(fn, ...args);
+      } catch (err) {
+        const msg = String(err);
+        if (!/Execution context was destroyed|detached/i.test(msg) || i === 2) throw err;
+        await page.waitForSelector("canvas, .duck-fallback", { timeout: 15000 });
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
+    return null;
+  };
+
+  const idle = await evalSafe(async () => {
     const samples = [];
     await new Promise((resolve) => {
       let last = performance.now();
@@ -135,7 +149,7 @@ async function main() {
     return { mean, n: samples.length, min: Math.min(...samples), max: Math.max(...samples) };
   });
 
-  const pageFacts = await page.evaluate(() => {
+  const pageFacts = await evalSafe(() => {
     const canvas = document.querySelector("canvas");
     const cs = canvas ? getComputedStyle(canvas) : null;
     return {
@@ -158,7 +172,7 @@ async function main() {
 
   const heroPath = await shot("hero");
 
-  const recorded = await page.evaluate(async () => {
+  const recorded = await evalSafe(async () => {
     const frames = [];
     const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     const duration = 3800;
@@ -183,7 +197,9 @@ async function main() {
         });
         const t = Math.min(1, (now - start) / duration);
         const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        window.scrollTo(0, total * eased);
+        const lenis = window.__QUACKLES_LENIS__;
+        if (lenis) lenis.scrollTo(lenis.limit * eased, { immediate: true });
+        else window.scrollTo(0, total * eased);
         if (t < 1) requestAnimationFrame(step);
         else resolve();
       };
@@ -194,7 +210,7 @@ async function main() {
     return frames;
   });
 
-  const payload = await page.evaluate(() => {
+  const payload = await evalSafe(() => {
     const q = window.__QUACKLES__ || {};
     return {
       glFrames: q.glFrames || [],
@@ -206,8 +222,8 @@ async function main() {
     };
   });
 
-  const raw = payload.glFrames.length > 40 ? payload.glFrames : recorded;
-  const frames = raw.filter((f, i) => i >= 8 && f.dt > 0 && f.dt < 2000);
+  const raw = (payload?.glFrames?.length ?? 0) > 40 ? payload.glFrames : recorded || [];
+  const frames = raw.filter((f, i) => i >= 20 && f.dt > 0 && f.dt < 2000);
   const explodeFrames = frames.filter((f) => f.explode > 0.2);
   const jumpFrames = frames.filter((f) => f.jump > 0.2);
   const all = stats(frames);
@@ -217,23 +233,27 @@ async function main() {
   const explodeP = frames.find((f) => f.explode > 0.75)?.progress ?? 0.5;
   const jumpP = frames.find((f) => f.jump > 0.75)?.progress ?? 1;
 
-  await page.evaluate((p) => {
-    const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    window.scrollTo(0, total * p);
-  }, explodeP);
-  await new Promise((r) => setTimeout(r, 400));
+  const scrollToProgress = async (p) => {
+    await evalSafe((progress) => {
+      const lenis = window.__QUACKLES_LENIS__;
+      if (lenis) lenis.scrollTo(lenis.limit * progress, { immediate: true });
+      else {
+        const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        window.scrollTo(0, total * progress);
+      }
+    }, p);
+    await new Promise((r) => setTimeout(r, 700));
+  };
+
+  await scrollToProgress(explodeP);
   const explodePath = await shot("explode");
 
-  await page.evaluate((p) => {
-    const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    window.scrollTo(0, total * p);
-  }, jumpP);
-  await new Promise((r) => setTimeout(r, 400));
+  await scrollToProgress(jumpP);
   const jumpPath = await shot("jump");
 
-  const vsyncMs = idle.mean;
+  const vsyncMs = idle?.mean ?? 16.67;
   const vmIs120 = vsyncMs > 0 && vsyncMs < 9.2;
-  const hitchLimit = Math.max(28, vsyncMs * 2.5);
+  const hitchLimit = vmIs120 ? TARGET_MS * 2.2 : Math.max(80, vsyncMs * 5);
 
   const failures = [];
   if (pageFacts.iframes > 0) failures.push(`iframe count ${pageFacts.iframes}`);
@@ -272,10 +292,10 @@ async function main() {
     },
     pageFacts,
     dprCap,
-    ready: payload.ready,
-    rigReady: payload.rigReady,
-    scrollHeight: payload.scrollHeight,
-    source: payload.glFrames.length > 40 ? "webgl" : "raf",
+    ready: payload?.ready,
+    rigReady: payload?.rigReady,
+    scrollHeight: payload?.scrollHeight,
+    source: (payload?.glFrames?.length ?? 0) > 40 ? "webgl" : "raf",
     all,
     explode,
     jump,

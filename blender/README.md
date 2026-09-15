@@ -5,26 +5,31 @@ The landing hero is a **Cycles still**, not CSS set dressing. This folder rebuil
 ## What is in the scene
 
 - Official Microduck (`public/robot/mjlab/microduck.glb`) assembled from `kinematics.json` (MJCF Z-up, classic cream materials).
-- Cream cyclorama, Roman arch, cobalt bust panel (Apollo Belvedere duotone), limestone plinths, glass orb, cobalt square frame, Creation-of-Adam print, leaf.
+- Cream cyclorama + alcove arch, cobalt Apollo bust panel, limestone plinths, glass orb, cobalt square frame, Creation-of-Adam print, leaf.
 - Three lighting plates: **white** (poster cream), **cobalt**, **dark**.
 
 ## Rebuild
 
-Blender 4.2.x on `$PATH` (this agent installed `~/.local/blender-4.2.23`).
+Blender 4.2.x on `$PATH` (install: `~/.local/blender-4.2.23`, symlink `~/.local/bin/blender`).
 
 ```bash
 python3 blender/prepare_textures.py
-blender --background --python blender/build_poster.py -- --plate all --samples 96 --res 860 1864
+PATH="$HOME/.local/bin:$PATH" blender --background --python blender/build_poster.py -- \
+  --plate all --samples 48 --res 430 932
+python3 blender/export_jpeg.py
 ```
 
 Outputs:
 
 - `blender/out/frame-{white,cobalt,dark}.png`
-- copied to `public/poster/frame-{white,cobalt,dark}.jpg`
-- `blender/poster_studio.blend`
+- `public/poster/frame-{white,cobalt,dark}.jpg` (and `.png`)
+- `blender/poster_studio.blend` (gitignored)
 
-Preview a layout pass:
+Layout inspect (fast):
 
 ```bash
-blender --background --python blender/build_poster.py -- --plate white --samples 24 --res 430 932 --inspect
+PATH="$HOME/.local/bin:$PATH" blender --background --python blender/build_poster.py -- \
+  --plate white --samples 16 --res 430 932
 ```
+
+Quarry PBR maps live in `blender/assets/` (gitignored, `quarry_wall_*`). If they are missing the script falls back to procedural limestone.

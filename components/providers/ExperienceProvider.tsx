@@ -65,6 +65,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       respectReducedMotion: true,
     });
     lenisRef.current = lenis;
+    window.__QUACKLES_LENIS__ = lenis;
     lenis.on("scroll", (instance) => {
       applyProgress(progressRef, poseRef, instance.progress);
     });
@@ -79,6 +80,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelAnimationFrame(raf);
+      if (window.__QUACKLES_LENIS__ === lenis) window.__QUACKLES_LENIS__ = undefined;
       lenis.destroy();
       lenisRef.current = null;
     };

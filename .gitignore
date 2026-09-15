@@ -43,14 +43,13 @@ next-env.d.ts
 # local agent scratch
 /agent-tools
 
-# blender render scratch
+# Blender intermediates (rebuild with blender/build_poster.py)
 /blender/out/
 /blender/*.blend
 /blender/*.blend1
-/blender/assets/
-# Blender intermediates (rebuild with blender/build_poster.py)
-/blender/out/
-/blender/poster_studio.blend
 /blender/assets/quarry_wall_*
 /blender/assets/*.hdr
+/blender/assets/apollo_source.jpg
+/blender/assets/adam_full.jpg
+/blender/assets/studio_small*
 

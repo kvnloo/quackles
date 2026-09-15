@@ -8,7 +8,8 @@
     "start": "next start --port 43217 --hostname 0.0.0.0",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "fps": "node scripts/fps-harness.mjs"
+    "fps": "node scripts/fps-harness.mjs",
+    "test:scroll": "node scripts/scroll-perf.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

@@ -15,15 +15,15 @@ npm run dev
 
 Open [http://localhost:43217](http://localhost:43217).
 
-Machines without WebGL get the cream studio plate still.
+Machines without WebGL get a cream-studio line drawing.
 
 ## Perf check
 
 ```bash
-npm run fps
+npm run test:scroll
 ```
 
-Records rAF / WebGL frame times at 430×932 while scrolling explode → jump.
+Records WebGL frame times at 430×932 while scrolling explode → jump.
 
 ## GitHub Pages
 
@@ -31,4 +31,4 @@ The app is a static export (`next build` → `out/`). `.github/workflows/pages.y
 
 ## Stack
 
-Next.js (static export) · React Three Fiber · official Microduck GLB/kinematics · Lenis
+Next.js (static export) · React Three Fiber · official Microduck GLB/kinematics · native scroll

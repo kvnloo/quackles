@@ -31,7 +31,7 @@ export function DuckCanvas() {
     <Canvas
       className="duck-canvas"
       style={{ pointerEvents: "none" }}
-      camera={{ position: [0.4, 0.155, 0.66], fov: 27, near: 0.02, far: 12 }}
+      camera={{ position: [0.5, 0.22, 1.08], fov: 32, near: 0.02, far: 12 }}
       dpr={[1, 1.5]}
       frameloop="always"
       shadows={false}

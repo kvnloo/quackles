@@ -81,6 +81,6 @@ export function explodeRig(rig: any, explode: number) {
     }
     _away.normalize();
     body.position.copy(rest);
-    body.position.addScaledVector(_away, explode * 0.14);
+    body.position.addScaledVector(_away, explode * 0.068);
   }
 }
