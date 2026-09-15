@@ -20,18 +20,21 @@ export function PosterPlates() {
   const w = plateWeights(t);
   return (
     <div className="poster-plates" aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="poster-plate"
         src={assetPath("/poster/frame-white.jpg")}
         alt=""
         style={{ opacity: w.white }}
       />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="poster-plate"
         src={assetPath("/poster/frame-cobalt.jpg")}
         alt=""
         style={{ opacity: w.cobalt }}
       />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="poster-plate"
         src={assetPath("/poster/frame-dark.jpg")}
