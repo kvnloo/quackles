@@ -12,27 +12,24 @@ export function SimulatorFrame() {
   const interactive = morph > 0.42;
 
   const t = reducedMotion ? (progress > 0.82 ? 1 : 0) : morph;
-  const left = (1 - t) * 42;
-  const top = (1 - t) * 14;
-  const right = (1 - t) * 5;
-  const bottom = (1 - t) * 16;
+  const left = (1 - t) * 38;
+  const top = (1 - t) * 16;
+  const right = (1 - t) * 6;
+  const bottom = (1 - t) * 18;
   const radius = (1 - t) * 28;
 
   return (
     <div
-      className="fixed z-[5] overflow-hidden bg-[#f3efe3] transition-[opacity,box-shadow] duration-500"
+      className="absolute z-[28] overflow-hidden bg-[#efe8dc] transition-[opacity,box-shadow] duration-500"
       style={{
         opacity: t > 0.02 ? 1 : 0,
-        top: `${top}vh`,
-        right: `${right}vw`,
-        bottom: `${bottom}vh`,
-        left: `${left}vw`,
+        top: `${top}%`,
+        right: `${right}%`,
+        bottom: `${bottom}%`,
+        left: `${left}%`,
         borderRadius: `${radius}px`,
         pointerEvents: interactive ? "auto" : "none",
-        boxShadow:
-          t > 0.08 && t < 0.97
-            ? "0 24px 80px rgba(0,0,0,0.45)"
-            : "none",
+        boxShadow: t > 0.08 && t < 0.97 ? "0 24px 80px rgb(22 32 74 / 0.28)" : "none",
       }}
       aria-hidden={t < 0.08}
     >
@@ -41,26 +38,23 @@ export function SimulatorFrame() {
           data-lenis-prevent
           title="Try Micro Duck — official MuJoCo physics and RL policies"
           src={TRY_MICRODUCK}
-          className="h-full w-full border-0 bg-[#f3efe3]"
+          className="h-full w-full border-0 bg-[#efe8dc]"
           allow="camera; gamepad; autoplay; fullscreen; clipboard-read; clipboard-write"
           referrerPolicy="no-referrer-when-downgrade"
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-[#f3efe3] px-6">
+        <div className="flex h-full w-full items-center justify-center bg-[#efe8dc] px-6">
           <a
             href={TRY_MICRODUCK_HOME}
             target="_blank"
             rel="noreferrer"
-            className="rounded-2xl border border-black/20 bg-white/80 px-5 py-4 text-sm text-[#1a1714]"
+            className="border border-[color:var(--cobalt)] bg-[color:var(--paper)] px-4 py-3 font-label text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--cobalt)]"
           >
             Open Try Micro Duck
           </a>
         </div>
       )}
-      <div className="pointer-events-none absolute bottom-10 right-4 z-10 hidden max-w-xs rounded-xl border border-black/10 bg-[#f3efe3]/80 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-[#5c5346] backdrop-blur-md md:block">
-        Try Micro Duck · official physics · camera stays on your device
-      </div>
     </div>
   );
 }

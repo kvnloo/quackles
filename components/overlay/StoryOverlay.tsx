@@ -1,274 +1,181 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { COLORWAYS } from "@/lib/colorways";
 import { LINKS, MOVES, SPECS, STORY } from "@/lib/story";
 import { sectionIndex } from "@/lib/pose";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, Cpu } from "lucide-react";
-
-const AssembleHero = dynamic(
-  () => import("@/components/duck/AssembleHero").then((module) => module.AssembleHero),
-  { ssr: false }
-);
 
 export function StoryOverlay() {
-  const { progress, colorway, setColorway, webgl } = useExperience();
+  const { progress, colorway, setColorway } = useExperience();
   const current = sectionIndex(progress);
 
   return (
     <div className="relative z-20">
       {STORY.map((section) => {
-        if (section.id === "anatomy" && webgl) {
-          return (
-            <section
-              key={section.id}
-              className="relative"
-              aria-label={section.title.replace("\n", " ")}
-            >
-              <AssembleHero />
-            </section>
-          );
-        }
-
         const overSim = section.id === "play" || section.id === "cta";
+        const isHero = section.id === "hero";
 
         return (
           <section
             key={section.id}
             className={cn(
-              "relative flex min-h-[100svh] items-end md:items-center",
+              "relative flex min-h-[100svh]",
+              isHero ? "items-end" : "items-start pt-16",
               overSim && "pointer-events-none"
             )}
             aria-label={section.title.replace("\n", " ")}
           >
-            <div className="w-full px-5 pb-28 pt-24 md:px-12 md:pb-24">
-              <div
-                className={cn(
-                  "max-w-xl md:max-w-[min(36rem,42vw)]",
-                  overSim &&
-                    "pointer-events-auto rounded-3xl border border-border/70 bg-background/72 p-5 shadow-2xl backdrop-blur-md md:p-6"
-                )}
-              >
-                <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--accent-trim)]">
-                  {section.kicker}
-                </p>
-                <h2 className="font-heading text-[2.35rem] leading-[0.95] text-balance text-foreground md:text-6xl lg:text-[4.25rem] whitespace-pre-line">
-                  {section.title}
-                </h2>
-                <p className="mt-5 max-w-md text-pretty text-sm leading-relaxed text-muted-foreground md:text-base">
-                  {section.body}
-                </p>
-
-                {section.id === "hero" && (
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <a
-                      href={LINKS.store}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={cn(buttonVariants({ size: "lg" }))}
-                    >
-                      Pre-order the robot
-                      <ArrowUpRight className="size-3.5" />
-                    </a>
-                    <a
-                      href={LINKS.github}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-                    >
-                      pollen-robotics/microduck
-                    </a>
-                  </div>
-                )}
-
-                {section.id === "scale" && (
-                  <dl className="mt-8 grid grid-cols-3 gap-3">
-                    {[
-                      ["25 cm", "tall"],
-                      ["<800 g", "to pick up"],
-                      ["15", "motors"],
-                    ].map(([n, l]) => (
-                      <div
-                        key={l}
-                        className="rounded-2xl border border-border/80 bg-card/40 px-3 py-3 backdrop-blur-sm"
-                      >
-                        <dt className="font-heading text-2xl text-foreground md:text-3xl">{n}</dt>
-                        <dd className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                          {l}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                )}
-
-                {section.id === "anatomy" && (
-                  <ul className="mt-7 space-y-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                    <li>01  visor camera + 8×8 ToF</li>
-                    <li>02  grasping beak</li>
-                    <li>03  stacked neck servos</li>
-                    <li>04  RK3566 in the torso</li>
-                    <li>05  two IMUs · Wi-Fi · BT</li>
-                  </ul>
-                )}
-
-                {section.id === "waddle" && (
-                  <p className="mt-6 font-mono text-xs text-muted-foreground">
-                    Same recipe as the real robot:{" "}
-                    <a
-                      className="underline decoration-[color:var(--accent-trim)] underline-offset-4"
-                      href={LINKS.rl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      microduck_rl
-                    </a>
+            {isHero ? (
+              <div className="h-[100svh] w-full" />
+            ) : (
+              <div className="w-full px-4 pb-28 pt-2">
+                <div
+                  className={cn(
+                    "pointer-events-auto max-w-[17.5rem]",
+                    overSim &&
+                      "border border-[color:var(--cobalt)] bg-[color:var(--paper)]/88 p-4 backdrop-blur-md"
+                  )}
+                >
+                  <p className="font-label text-[10px] font-semibold uppercase tracking-[0.22em] text-[color:var(--cobalt)]">
+                    {section.kicker}
+                    <span className="ml-2 inline-block w-8 border-t border-[color:var(--cobalt)] align-middle" />
                   </p>
-                )}
+                  <h2 className="mt-2 font-display text-[2.15rem] leading-[0.88] tracking-[-0.03em] text-[color:var(--cobalt)] whitespace-pre-line">
+                    {section.title}
+                  </h2>
+                  <p className="mt-4 max-w-[16rem] text-[13px] leading-relaxed text-[color:var(--ink)]/80">
+                    {section.body}
+                  </p>
 
-                {section.id === "play" && (
-                  <div className="mt-6 space-y-4">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                      WASD walk · camera for hands · pet, slap, recover
-                    </p>
-                    <a
-                      href={LINKS.tryBrowser}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-                    >
-                      <Cpu className="size-3.5" />
-                      Open Try Micro Duck
-                    </a>
-                  </div>
-                )}
-
-                {section.id === "colorways" && (
-                  <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {COLORWAYS.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => setColorway(c.id)}
-                        className={cn(
-                          "rounded-2xl border px-3 py-3 text-left transition",
-                          colorway === c.id
-                            ? "border-[color:var(--accent-trim)] bg-card/70"
-                            : "border-border bg-card/30 hover:bg-card/50"
-                        )}
-                      >
-                        <span
-                          className="mb-2 block size-6 rounded-full border border-black/20"
-                          style={{ background: c.shell }}
-                        />
-                        <span className="block font-heading text-lg">{c.name}</span>
-                        <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
-                          {c.blurb}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {section.id === "cta" && (
-                  <div className="mt-8 space-y-8">
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {SPECS.map((s) => (
-                        <div
-                          key={s.label}
-                          className="rounded-2xl border border-border/80 bg-card/40 px-3 py-3"
-                        >
-                          <div className="font-heading text-2xl">{s.value}</div>
-                          <div className="text-xs text-foreground/80">{s.label}</div>
-                          <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                            {s.hint}
-                          </div>
+                  {section.id === "scale" && (
+                    <dl className="mt-6 grid grid-cols-3 gap-2">
+                      {[
+                        ["25 cm", "tall"],
+                        ["<800 g", "to pick up"],
+                        ["15", "motors"],
+                      ].map(([n, l]) => (
+                        <div key={l} className="border border-[color:var(--cobalt)]/35 px-2 py-2">
+                          <dt className="font-display text-xl text-[color:var(--ink)]">{n}</dt>
+                          <dd className="mt-1 font-label text-[8px] uppercase tracking-widest text-[color:var(--ink)]/65">
+                            {l}
+                          </dd>
                         </div>
                       ))}
+                    </dl>
+                  )}
+
+                  {section.id === "anatomy" && (
+                    <ul className="mt-5 space-y-1 font-label text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink)]/75">
+                      <li>01  visor camera + 8×8 ToF</li>
+                      <li>02  grasping beak</li>
+                      <li>03  stacked neck servos</li>
+                      <li>04  RK3566 in the torso</li>
+                      <li>05  two IMUs · Wi-Fi · BT</li>
+                    </ul>
+                  )}
+
+                  {section.id === "waddle" && (
+                    <p className="mt-5 font-label text-[10px] uppercase tracking-[0.14em] text-[color:var(--ink)]/70">
+                      Same recipe:{" "}
+                      <a className="underline decoration-[color:var(--cobalt)]" href={LINKS.rl} target="_blank" rel="noreferrer">
+                        microduck_rl
+                      </a>
+                    </p>
+                  )}
+
+                  {section.id === "play" && (
+                    <div className="mt-5 space-y-3">
+                      <p className="font-label text-[10px] uppercase tracking-[0.16em] text-[color:var(--ink)]/70">
+                        WASD walk · camera for hands
+                      </p>
+                      <a
+                        href={LINKS.tryBrowser}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block border border-[color:var(--cobalt)] px-3 py-2 font-label text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--cobalt)]"
+                      >
+                        Open Try Micro Duck
+                      </a>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {MOVES.map((m) => (
-                        <Badge key={m.file} variant="secondary" className="font-mono text-[10px]">
-                          {m.name}
-                        </Badge>
+                  )}
+
+                  {section.id === "colorways" && (
+                    <div className="mt-6 grid grid-cols-2 gap-2">
+                      {COLORWAYS.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setColorway(c.id)}
+                          className={cn(
+                            "border px-2 py-2 text-left",
+                            colorway === c.id
+                              ? "border-[color:var(--cobalt)] bg-[color:var(--paper)]"
+                              : "border-[color:var(--cobalt)]/30"
+                          )}
+                        >
+                          <span
+                            className="mb-2 block size-5 rounded-full border border-black/15"
+                            style={{ background: c.shell }}
+                          />
+                          <span className="block font-display text-lg leading-none">{c.name}</span>
+                        </button>
                       ))}
                     </div>
-                    <pre className="overflow-x-auto rounded-2xl border border-border bg-card/50 p-4 font-mono text-[11px] leading-relaxed text-muted-foreground">
-{`$ ssh microduck
-$ robotctl monitor    # status of the robot
-$ robotctl configure  # wifi, identity, voice
-$ robotctl update     # signed, reversible`}
-                    </pre>
-                    <div className="flex flex-wrap gap-3">
-                      <a
-                        href={LINKS.store}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={cn(buttonVariants({ size: "lg" }))}
-                      >
-                        Pre-order · $399
-                        <ArrowUpRight className="size-3.5" />
-                      </a>
-                      <a
-                        href={LINKS.official}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-                      >
-                        Official product page
-                      </a>
-                      <a
-                        href={LINKS.tryBrowser}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-                      >
-                        <Cpu className="size-3.5" />
-                        Try Micro Duck
-                      </a>
+                  )}
+
+                  {section.id === "cta" && (
+                    <div className="mt-6 space-y-5">
+                      <div className="grid grid-cols-2 gap-2">
+                        {SPECS.map((s) => (
+                          <div key={s.label} className="border border-[color:var(--cobalt)]/30 px-2 py-2">
+                            <div className="font-display text-xl">{s.value}</div>
+                            <div className="font-label text-[9px] uppercase tracking-widest">{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {MOVES.map((m) => (
+                          <Badge key={m.file} variant="secondary" className="font-label text-[9px] uppercase">
+                            {m.name}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <a
+                          href={LINKS.store}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="border border-[color:var(--cobalt)] bg-[color:var(--cobalt)] px-3 py-2 text-center font-label text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--paper)]"
+                        >
+                          Pre-order · $399
+                        </a>
+                        <a
+                          href={LINKS.official}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="border border-[color:var(--cobalt)] px-3 py-2 text-center font-label text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--cobalt)]"
+                        >
+                          Official product page
+                        </a>
+                      </div>
                     </div>
-                    <p className="max-w-md text-[11px] leading-relaxed text-muted-foreground">
-                      Fan-made 3D scrollytelling page. The opening shot is the official
-                      Microduck mesh. Scroll the features; the last chapters morph into{" "}
-                      <a
-                        className="underline underline-offset-2"
-                        href={LINKS.tryBrowser}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Try Micro Duck
-                      </a>{" "}
-                      — official MuJoCo physics and RL policies, with optional camera hands.
-                      Microduck is a product of Pollen Robotics. Software is Apache-2.0;
-                      mechanical and electronic design files are not open hardware. Facts from the{" "}
-                      <a
-                        className="underline underline-offset-2"
-                        href={LINKS.press}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        press kit
-                      </a>
-                      .
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </section>
         );
       })}
 
-      <div className="pointer-events-none fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 md:flex md:flex-col md:gap-2">
+      <div className="pointer-events-none absolute right-3 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-2 min-[400px]:flex">
         {STORY.map((s, i) => (
           <span
             key={s.id}
             className={cn(
-              "h-1.5 w-1.5 rounded-full transition-all",
-              current === i ? "h-6 bg-[color:var(--accent-trim)]" : "bg-foreground/25"
+              "h-1.5 w-1.5 rounded-full",
+              current === i ? "h-5 bg-[color:var(--cobalt)]" : "bg-[color:var(--cobalt)]/25"
             )}
           />
         ))}

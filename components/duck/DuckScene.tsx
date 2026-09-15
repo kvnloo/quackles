@@ -8,13 +8,7 @@ import type { ColorwayId } from "@/lib/colorways";
 import { lerp, type Pose } from "@/lib/pose";
 import { OfficialDuck, OfficialFlock } from "./OfficialDuck";
 
-function CameraRig({
-  poseRef,
-  mobile,
-}: {
-  poseRef: MutableRefObject<Pose>;
-  mobile: boolean;
-}) {
+function CameraRig({ poseRef }: { poseRef: MutableRefObject<Pose> }) {
   const { camera } = useThree();
   const look = useRef(new THREE.Vector3());
   const lookTarget = useRef(new THREE.Vector3());
@@ -22,16 +16,13 @@ function CameraRig({
 
   useFrame(() => {
     const p = poseRef.current;
-    const ox = mobile ? 0 : 0.04;
-    const oy = mobile ? 0.06 : 0;
-    const oz = mobile ? 0.16 : 0;
-    desired.current.set(p.camPos[0] + ox, p.camPos[1] + oy, p.camPos[2] + oz);
+    desired.current.set(p.camPos[0], p.camPos[1], p.camPos[2]);
     camera.position.lerp(desired.current, 0.08);
     lookTarget.current.set(p.lookAt[0], p.lookAt[1], p.lookAt[2]);
     look.current.lerp(lookTarget.current, 0.08);
     camera.lookAt(look.current);
     const persp = camera as THREE.PerspectiveCamera;
-    persp.fov = lerp(persp.fov, p.fov + (mobile ? 6 : 0), 0.08);
+    persp.fov = lerp(persp.fov, p.fov, 0.08);
     persp.updateProjectionMatrix();
   });
 
@@ -41,34 +32,19 @@ function CameraRig({
 function Lights() {
   return (
     <>
-      <ambientLight intensity={0.45} color="#f3ead8" />
-      <hemisphereLight args={["#f7ead2", "#2a2118", 0.5]} />
+      <ambientLight intensity={0.78} color="#fff7ee" />
+      <hemisphereLight args={["#fff4e8", "#c9b89a", 0.72]} />
       <directionalLight
-        position={[0.8, 1.35, 0.6]}
-        intensity={1.35}
-        color="#fff4e5"
+        position={[0.55, 1.4, 0.55]}
+        intensity={2.15}
+        color="#fff6ea"
         castShadow
         shadow-mapSize={[1024, 1024]}
-        shadow-bias={-0.0002}
+        shadow-bias={-0.0003}
       />
-      <directionalLight position={[-0.8, 0.45, 0.3]} intensity={0.4} color="#9eb6ff" />
-      <directionalLight position={[0.05, 0.35, -0.8]} intensity={0.7} color="#ffd8b0" />
+      <directionalLight position={[-0.8, 0.5, 0.2]} intensity={0.55} color="#2f5bff" />
+      <directionalLight position={[0.2, 0.3, -0.7]} intensity={0.48} color="#ffffff" />
     </>
-  );
-}
-
-function Pedestal() {
-  return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.0005, 0]} receiveShadow>
-        <circleGeometry args={[0.85, 64]} />
-        <meshStandardMaterial color="#161310" roughness={0.92} metalness={0.08} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.0004, 0]}>
-        <ringGeometry args={[0.22, 0.228, 64]} />
-        <meshBasicMaterial color="#e56b1a" transparent opacity={0.35} />
-      </mesh>
-    </group>
   );
 }
 
@@ -91,7 +67,6 @@ function Gate({
 export function DuckScene({
   poseRef,
   colorway,
-  mobile,
   reducedMotion,
 }: {
   poseRef: MutableRefObject<Pose>;
@@ -106,22 +81,14 @@ export function DuckScene({
 
   return (
     <>
-      <color attach="background" args={["#100e0c"]} />
-      <fog attach="fog" args={["#100e0c", 1.6, 3.8]} />
       <Lights />
-      <Gate
-        poseRef={poseRef}
-        showWhen={(p) => p.explode < 0.55 && p.play < 0.45 && p.flock < 0.72}
-      >
-        <Pedestal />
-      </Gate>
-      <CameraRig poseRef={poseRef} mobile={mobile} />
+      <CameraRig poseRef={poseRef} />
 
       <Gate
         poseRef={poseRef}
         showWhen={(p) => p.explode < 0.55 && p.play < 0.45 && p.flock < 0.72}
       >
-        <group position={mobile ? [0, 0, 0] : [0.12, 0, 0]}>
+        <group position={[0.02, 0, 0]}>
           <OfficialDuck poseRef={duckPose} colorway={colorway} reducedMotion={reducedMotion} />
         </group>
       </Gate>
@@ -131,13 +98,13 @@ export function DuckScene({
       </Gate>
 
       <ContactShadows
-        position={[0, 0, 0]}
-        opacity={0.55}
-        scale={2.4}
-        blur={2.2}
-        far={0.8}
+        position={[0, 0.001, 0]}
+        opacity={0.22}
+        scale={1.6}
+        blur={2.6}
+        far={0.5}
         resolution={512}
-        color="#000000"
+        color="#6a5a40"
       />
     </>
   );

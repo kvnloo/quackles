@@ -1,6 +1,8 @@
 # Microduck — Tiny duck. Big waddle.
 
-Fan-made **3D scrollytelling** for [Microduck](https://github.com/pollen-robotics/microduck). It opens on a studio product shot of the official mesh, scrolls through the features, then **morphs into [Try Micro Duck](https://trymicroduck.com/)** — the real in-browser twin (official MuJoCo physics + RL policies, optional camera hands).
+Fan-made **mobile poster + 3D scrollytelling** for [Microduck](https://github.com/pollen-robotics/microduck). It opens on a cream-and-cobalt magazine frame (classical bust, stone plinths, editorial type). Scroll from that first frame through the robot’s features; the last chapters **morph into [Try Micro Duck](https://trymicroduck.com/)**.
+
+Desktop layout is intentionally deferred — the live site is a 430px phone column.
 
 This is not the official product site. Hardware facts come from the [press kit](https://pollen-robotics.com/microduck/press-kit/). Software is Apache-2.0; mechanical and electronic design files are **not** open hardware.
 
@@ -13,7 +15,7 @@ npm run dev
 
 Open [http://localhost:43217](http://localhost:43217).
 
-Machines without WebGL get a flat SVG likeness; the Try Micro Duck iframe still loads at the end.
+Machines without WebGL get a flat SVG likeness standing on the same poster; the Try Micro Duck iframe still loads at the end.
 
 ## GitHub Pages
 
@@ -29,7 +31,7 @@ If the repo is named `<username>.github.io`, it deploys at the domain root.
 
 ## Stack
 
-Next.js (static export) · React Three Fiber · official Microduck GLB/kinematics · CrazyGL scroll-assemble · Lenis · Try Micro Duck iframe
+Next.js (static export) · React Three Fiber · official Microduck GLB/kinematics · Lenis · Try Micro Duck iframe
 
 ## Official links
 

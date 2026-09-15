@@ -1,0 +1,21 @@
+export const POSTER = {
+  brand: "microduck",
+  nav: [
+    { label: "Store", href: "https://store.pollen-robotics.com/collections/microduck" },
+    { label: "Docs", href: "https://github.com/pollen-robotics/microduck" },
+    { label: "Sim", href: "https://trymicroduck.com/" },
+    { label: "GitHub", href: "https://github.com/pollen-robotics/microduck" },
+  ],
+  cta: "Pre-order $399",
+  kicker: "01  BIPED",
+  headline: ["Tiny", "duck.", "Big", "waddle."],
+  stack: ["15 motors", "25 cm", "open software", "for everyone"],
+  coords: ["Pollen Robotics", "44.8378° N", "0.5792° W"],
+  manifesto: ["Human", "robot", "collaboration", "at desk scale"],
+  rightStamp: ["Train", "in sim", "waddle", "in reality"],
+  globeCaption: ["Open", "useful", "beautiful"],
+  plinth: ["Micro", "duck"],
+  plinthSub: "Pollen Robotics",
+  footer: ["Intelligence", "belongs", "on your desk"],
+  year: "2026",
+} as const;

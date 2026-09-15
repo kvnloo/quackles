@@ -29,16 +29,16 @@ export function DuckCanvas() {
       <div className="h-full w-full transition-opacity duration-500" style={{ opacity }}>
         <Canvas
           className="h-full w-full"
-          camera={{ position: [0.4, 0.2, 0.5], fov: 28, near: 0.02, far: 12 }}
+          camera={{ position: [0.22, 0.14, 0.4], fov: 30, near: 0.02, far: 12 }}
           dpr={dpr}
           shadows
           gl={{
             antialias: true,
-            alpha: false,
+            alpha: true,
             failIfMajorPerformanceCaveat: false,
             powerPreference: "default",
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.05,
+            toneMappingExposure: 1.12,
           }}
           onCreated={() => {
             setWebgl(true);

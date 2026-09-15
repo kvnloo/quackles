@@ -101,16 +101,11 @@ export function DuckFallback() {
   const flock = pose.flock;
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,#1c1814_0%,#100e0c_70%)]" />
-      <p className="absolute left-5 top-20 z-10 max-w-xs font-mono text-[10px] uppercase tracking-widest text-muted-foreground md:left-auto md:right-8 md:top-24">
-        3D scene unavailable here — a flat likeness while you scroll.
-      </p>
-
+    <div className="relative flex h-full w-full items-end justify-center bg-transparent pb-[6%]">
       {flock > 0.2 ? (
-        <div className="relative z-[1] flex w-full max-w-5xl items-end justify-center gap-2 px-8 md:gap-6">
+        <div className="relative z-[1] flex w-full items-end justify-center gap-1 px-4">
           {COLORWAYS.map((c) => (
-            <div key={c.id} className="h-[38vh] w-1/4 max-w-[180px] md:h-[52vh]">
+            <div key={c.id} className="h-[46%] w-1/4">
               <DuckSvg
                 colorwayId={c.id}
                 explode={0}
@@ -124,7 +119,7 @@ export function DuckFallback() {
           ))}
         </div>
       ) : (
-        <div className="relative z-[1] h-[58vh] w-[min(72vw,420px)] translate-x-[8%] md:h-[72vh] md:translate-x-[18%]">
+        <div className="relative z-[1] h-[92%] w-[78%] translate-x-[6%]">
           <DuckSvg
             colorwayId={colorway}
             explode={pose.explode}
