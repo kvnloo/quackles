@@ -32,7 +32,7 @@ export function DuckCanvas() {
   return (
     <Canvas
       className="duck-canvas"
-      style={{ pointerEvents: "none", width: "100%", height: "100%", display: "block" }}
+      style={{ pointerEvents: "none", width: "100%", height: "100%", display: "block", background: "transparent" }}
       camera={{ position: [0.52, 0.24, 1.12], fov: 32, near: 0.02, far: 16 }}
       dpr={[1, 2]}
       frameloop="always"
@@ -40,7 +40,7 @@ export function DuckCanvas() {
       resize={{ scroll: false, debounce: { resize: 250, scroll: 0 } }}
       gl={{
         antialias: true,
-        alpha: false,
+        alpha: true,
         stencil: false,
         depth: true,
         failIfMajorPerformanceCaveat: false,
@@ -53,7 +53,7 @@ export function DuckCanvas() {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = initial.exposure;
         gl.shadowMap.enabled = false;
-        gl.setClearColor(new THREE.Color(initial.bg), 1);
+        gl.setClearColor(new THREE.Color(initial.bg), 0);
         setWebgl(true);
         setReady(true);
         const q = ensureProbe();

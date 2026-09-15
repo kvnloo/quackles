@@ -33,9 +33,11 @@ function StudioIbl() {
 function Studio({
   poseRef,
   progressRef,
+  reducedMotion,
 }: {
   poseRef: MutableRefObject<Pose>;
   progressRef: MutableRefObject<number>;
+  reducedMotion: boolean;
 }) {
   const { camera, gl, scene } = useThree();
   const look = useRef(new THREE.Vector3());
@@ -46,6 +48,9 @@ function Studio({
   const rim = useRef<THREE.DirectionalLight>(null);
   const amb = useRef<THREE.AmbientLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
+
+  const lastLights = useRef(lightsAt(0.5));
+  const duckGroup = useRef<THREE.Group>(null);
 
   useFrame((_, delta) => {
     poseAtInto(poseRef.current, progressRef.current);
@@ -63,9 +68,9 @@ function Studio({
     const t = getThemeSnapshot();
     if (Math.abs(t - lastTheme.current) > 0.001) {
       lastTheme.current = t;
-      const L = lightsAt(t);
+      lastLights.current = lightsAt(t);
+      const L = lastLights.current;
       gl.toneMappingExposure = L.exposure;
-      gl.setClearColor(L.bg, 1);
       scene.environmentIntensity = L.envIntensity;
       if (amb.current) {
         amb.current.color.set(L.ambient);
@@ -90,6 +95,11 @@ function Studio({
       }
     }
 
+    const p = progressRef.current;
+    const fade = THREE.MathUtils.smoothstep(p, 0.06, 0.18);
+    gl.setClearColor(lastLights.current.bg, fade);
+    if (duckGroup.current) duckGroup.current.visible = p > 0.05;
+
     publishPose(progressRef.current, pose);
     pushGlFrame(delta, progressRef.current, pose);
   });
@@ -102,6 +112,9 @@ function Studio({
       <directionalLight ref={key} position={[0.72, 1.45, 0.62]} intensity={2.35} color="#f7f7ff" />
       <directionalLight ref={fill} position={[-0.82, 0.48, 0.38]} intensity={0.78} color="#0000f2" />
       <directionalLight ref={rim} position={[-0.18, 0.72, -0.92]} intensity={1.35} color="#7a7aff" />
+      <group ref={duckGroup} position={[0.02, 0, 0]} visible={false}>
+        <OfficialDuck poseRef={poseRef} reducedMotion={reducedMotion} />
+      </group>
     </>
   );
 }
@@ -116,11 +129,6 @@ export function DuckScene({
   reducedMotion: boolean;
 }) {
   return (
-    <>
-      <Studio poseRef={poseRef} progressRef={progressRef} />
-      <group position={[0.02, 0, 0]}>
-        <OfficialDuck poseRef={poseRef} reducedMotion={reducedMotion} />
-      </group>
-    </>
+    <Studio poseRef={poseRef} progressRef={progressRef} reducedMotion={reducedMotion} />
   );
 }
