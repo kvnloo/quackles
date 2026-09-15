@@ -5,6 +5,7 @@ import { ExperienceProvider, useExperience } from "@/components/providers/Experi
 import { PosterNav } from "@/components/poster/PosterNav";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { PosterBeats } from "@/components/poster/PosterBeats";
+import { BuildStamp } from "@/components/poster/BuildStamp";
 import { PosterPlates } from "@/components/poster/PosterChrome";
 import { CanvasGuard } from "@/components/duck/CanvasGuard";
 import { DuckFallback } from "@/components/duck/DuckFallback";
@@ -42,6 +43,7 @@ function AppShell() {
       <main id="top" className="poster-story">
         <PosterBeats />
       </main>
+      <BuildStamp />
     </div>
   );
 }

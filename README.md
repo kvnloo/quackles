@@ -27,11 +27,19 @@ Records WebGL frame times at 430×932 while scrolling explode → jump.
 
 ## GitHub Pages
 
-The app is a static export (`next build` → `out/`). `.github/workflows/pages.yml` deploys on every push to [`nightly`](https://github.com/kvnloo/quackles/tree/nightly), plus a 05:00 UTC cron.
+The app is a static export (`next build` → `out/`). `.github/workflows/pages.yml` deploys:
 
-Live: [https://kvnloo.github.io/quackles/](https://kvnloo.github.io/quackles/)
+- [`kvnloo/quackles`](https://github.com/kvnloo/quackles) from [`nightly`](https://github.com/kvnloo/quackles/tree/nightly) → [https://kvnloo.github.io/quackles/](https://kvnloo.github.io/quackles/)
+- [`kvnloo/quackles-nightly`](https://github.com/kvnloo/quackles-nightly) from `main` (`NEXT_PUBLIC_BASE_PATH=/quackles-nightly`) → [https://kvnloo.github.io/quackles-nightly/](https://kvnloo.github.io/quackles-nightly/)
 
-After each working commit, push that branch too (`git push origin nightly && git push github nightly`).
+Each export stamps `<meta name="microduck-build" content="<git sha> <ISO UTC>">` and a matching footer line so a stale tab is obvious.
+
+GitHub Pages serves `index.html` with `Cache-Control: max-age=600`. Hashed `_next/static/*` assets are cached much longer. If HTML is stale, the browser keeps old JS/CSS and the old slider/theme. After a deploy, hard-refresh once (Cmd/Ctrl-Shift-R). Unique URLs that force a distinct HTML cache key:
+
+- `https://kvnloo.github.io/quackles/?v=<sha>`
+- `https://kvnloo.github.io/quackles-nightly/?v=<sha>`
+
+After each working commit, push both live branches (`git push origin main nightly && git push github main nightly && git push nightly-pages main`).
 
 ## Verified OSS Loop
 

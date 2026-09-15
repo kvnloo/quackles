@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Barlow_Condensed, Inter, Geist_Mono } from "next/font/google";
+import { BUILD_STAMP } from "@/lib/build-info";
 import "./globals.css";
 
 const inter = Inter({
@@ -22,11 +23,14 @@ const barlow = Barlow_Condensed({
 export const metadata: Metadata = {
   title: "Microduck — Tiny duck. Big waddle.",
   description:
-    "A 25 cm biped from Pollen Robotics. Fifteen motors, a grasping beak, trained in sim.",
+    "A 25 cm biped from Pollen Robotics. Fifteen motors, a grasping beak, trained in sim. Unofficial fan landing.",
   openGraph: {
     title: "Microduck — Tiny duck. Big waddle.",
     description: "Product shot, explode, and jump — on a cobalt studio.",
     type: "website",
+  },
+  other: {
+    "microduck-build": BUILD_STAMP,
   },
 };
 

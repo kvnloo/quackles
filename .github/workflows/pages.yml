@@ -2,7 +2,8 @@ name: pages
 
 on:
   push:
-    branches: [nightly]
+    # quackles Pages tracks nightly; quackles-nightly only has main.
+    branches: [main, nightly]
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
@@ -41,6 +42,11 @@ jobs:
 
   deploy:
     needs: [lint, typecheck]
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      github.ref == 'refs/heads/nightly' ||
+      github.repository == 'kvnloo/quackles-nightly'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -61,10 +67,15 @@ jobs:
           else
             echo "path=/${NAME}" >> "$GITHUB_OUTPUT"
           fi
+      - name: Stamp build identity
+        id: stamp
+        run: echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
       - run: npm ci
       - run: npm run build
         env:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
+          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
+          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
