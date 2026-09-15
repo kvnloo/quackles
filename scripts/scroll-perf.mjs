@@ -304,7 +304,7 @@ async function main() {
   const explodeP = peakOf("explode") ?? 0.34;
   const jumpP = peakOf("jump") ?? 0.66;
 
-  // explode/jump stills were captured before the recording pass
+  // Beat stills captured before the recording pass.
 
   const dprCap = pageFacts.canvasCssWidth
     ? pageFacts.canvasWidth / pageFacts.canvasCssWidth
