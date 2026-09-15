@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
     "@crazygl/core",
   ],
   allowedDevOrigins: ["127.0.0.1", "localhost"],
+  devIndicators: false,
 };
 
 export default nextConfig;

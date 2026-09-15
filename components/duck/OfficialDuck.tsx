@@ -41,6 +41,16 @@ const STANDING: Record<string, number> = {};
 JOINT_NAMES.forEach((name: string, i: number) => {
   STANDING[name] = (DEFAULT_POSE as Float32Array)[i];
 });
+// Upright 3/4 poster stance — less MJCF squat, neck leaning toward the headline.
+STANDING.left_hip_pitch = -0.16;
+STANDING.right_hip_pitch = 0.16;
+STANDING.left_knee = 0.28;
+STANDING.right_knee = -0.28;
+STANDING.left_ankle = -0.12;
+STANDING.right_ankle = 0.12;
+STANDING.neck_pitch = 0.48;
+STANDING.head_pitch = 0.22;
+STANDING.head_yaw = -0.38;
 
 async function makeRig(variant: string) {
   const kinematics = await loadKinematics(`${MODEL_DIR}/kinematics.json`);

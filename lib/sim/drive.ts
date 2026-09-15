@@ -23,12 +23,20 @@ export function driveRig(rig: any, pose: Pose, time: number, reducedMotion: bool
   const hipR = Math.sin(phase + Math.PI) * 0.3 * walk;
   const kneeL = (1 - Math.cos(phase)) * 0.38 * walk;
   const kneeR = (1 - Math.cos(phase + Math.PI)) * 0.38 * walk;
+  // Default MJCF pose is a deep squat. Ease hips/knees upright on the hero.
+  const stand = Math.max(0, 1 - fold - walk);
+  const hipPitchL = lerp(d[2], -0.16, stand);
+  const hipPitchR = lerp(d[11], 0.16, stand);
+  const kneeL0 = lerp(d[3], 0.28, stand);
+  const kneeR0 = lerp(d[12], -0.28, stand);
+  const ankleL0 = lerp(d[4], -0.12, stand);
+  const ankleR0 = lerp(d[13], 0.12, stand);
 
   setJoint(rig, JOINT_NAMES[0], d[0] + Math.sin(phase) * 0.07 * walk);
   setJoint(rig, JOINT_NAMES[1], d[1]);
-  setJoint(rig, JOINT_NAMES[2], lerp(d[2], sit.left_hip_pitch, fold) + hipL);
-  setJoint(rig, JOINT_NAMES[3], lerp(d[3], sit.left_knee, fold) + kneeL);
-  setJoint(rig, JOINT_NAMES[4], lerp(d[4], sit.left_ankle, fold) - hipL * 0.4);
+  setJoint(rig, JOINT_NAMES[2], lerp(hipPitchL, sit.left_hip_pitch, fold) + hipL);
+  setJoint(rig, JOINT_NAMES[3], lerp(kneeL0, sit.left_knee, fold) + kneeL);
+  setJoint(rig, JOINT_NAMES[4], lerp(ankleL0, sit.left_ankle, fold) - hipL * 0.4);
   const breathe = reducedMotion ? 0 : Math.sin(time * 1.25) * 0.018 * (1 - walk);
   setJoint(rig, JOINT_NAMES[5], lerp(d[5], sit.neck_pitch, fold * 0.45) + (pose.neckPitch - 0.12) + breathe);
   setJoint(rig, JOINT_NAMES[6], lerp(d[6], sit.head_pitch, fold * 0.4) + (pose.headPitch - 0.22));
@@ -36,9 +44,9 @@ export function driveRig(rig: any, pose: Pose, time: number, reducedMotion: bool
   setJoint(rig, JOINT_NAMES[8], d[8] + pose.headYaw * 0.25);
   setJoint(rig, JOINT_NAMES[9], d[9] - Math.sin(phase) * 0.07 * walk);
   setJoint(rig, JOINT_NAMES[10], d[10]);
-  setJoint(rig, JOINT_NAMES[11], lerp(d[11], sit.right_hip_pitch, fold) + hipR);
-  setJoint(rig, JOINT_NAMES[12], lerp(d[12], sit.right_knee, fold) - kneeR);
-  setJoint(rig, JOINT_NAMES[13], lerp(d[13], sit.right_ankle, fold) - hipR * 0.4);
+  setJoint(rig, JOINT_NAMES[11], lerp(hipPitchR, sit.right_hip_pitch, fold) + hipR);
+  setJoint(rig, JOINT_NAMES[12], lerp(kneeR0, sit.right_knee, fold) - kneeR);
+  setJoint(rig, JOINT_NAMES[13], lerp(ankleR0, sit.right_ankle, fold) - hipR * 0.4);
   setJawOpen(rig, Math.min(1, pose.beak));
 
   const placer = rig.placer;
