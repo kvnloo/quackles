@@ -98,7 +98,13 @@ function Studio({
     const p = progressRef.current;
     const fade = THREE.MathUtils.smoothstep(p, 0.06, 0.18);
     gl.setClearColor(lastLights.current.bg, fade);
-    if (duckGroup.current) duckGroup.current.visible = p > 0.05;
+    if (duckGroup.current) {
+      // Always draw so shaders stay warm; hide under the plate at rest.
+      const live = p > 0.05;
+      duckGroup.current.visible = true;
+      duckGroup.current.scale.setScalar(live ? 1 : 0.001);
+      duckGroup.current.position.set(0.02, live ? 0 : -8, 0);
+    }
 
     publishPose(progressRef.current, pose);
     pushGlFrame(delta, progressRef.current, pose);
@@ -112,7 +118,7 @@ function Studio({
       <directionalLight ref={key} position={[0.72, 1.45, 0.62]} intensity={2.35} color="#f7f7ff" />
       <directionalLight ref={fill} position={[-0.82, 0.48, 0.38]} intensity={0.78} color="#0000f2" />
       <directionalLight ref={rim} position={[-0.18, 0.72, -0.92]} intensity={1.35} color="#7a7aff" />
-      <group ref={duckGroup} position={[0.02, 0, 0]} visible={false}>
+      <group ref={duckGroup} position={[0.02, -8, 0]} scale={0.001}>
         <OfficialDuck poseRef={poseRef} reducedMotion={reducedMotion} />
       </group>
     </>

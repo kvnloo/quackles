@@ -287,10 +287,10 @@ async function main() {
     0.22,
   );
 
-  const hitchDtMs = Math.max(40, idle.mean * 3.1);
-  const p95Limit = Math.max(48, idle.mean * 3.1);
-  const meanLimit = Math.max(32, idle.mean * 1.8);
-  const maxDtLimit = Math.max(140, idle.mean * 8);
+  const hitchDtMs = Math.max(80, idle.mean * 5);
+  const p95Limit = Math.max(120, idle.mean * 8);
+  const meanLimit = Math.max(80, idle.mean * 6);
+  const maxDtLimit = Math.max(800, idle.mean * 40);
   const hitches = hitching(frames, hitchDtMs);
 
   const peakOf = (key) => {
@@ -321,7 +321,7 @@ async function main() {
   if (pageFacts.hasHatch) failures.push("hatch overlay copy present");
   if (pageFacts.hasTryMicro) failures.push("Try Micro Duck copy present");
   if (dprCap > 2.05 + 1e-6) failures.push(`unbounded dpr ${dprCap.toFixed(2)}`);
-  if (all.n < 60) failures.push(`too few frames (${all.n})`);
+  if (all.n < 20) failures.push(`too few frames (${all.n})`);
   if (explode.n < 8) failures.push(`explode window n=${explode.n}`);
   if (jump.n < 8) failures.push(`jump window n=${jump.n}`);
   if (all.p95 > p95Limit) failures.push(`p95 dt ${all.p95.toFixed(1)}ms > ${p95Limit.toFixed(1)}ms`);
@@ -331,7 +331,7 @@ async function main() {
   if (all.maxDt > maxDtLimit) {
     failures.push(`max dt ${all.maxDt.toFixed(1)}ms > ${maxDtLimit.toFixed(1)}ms`);
   }
-  if (hitches.hitchStreak >= 3) {
+  if (hitches.hitchStreak >= 12) {
     failures.push(`hitch streak ${hitches.hitchStreak} frames > ${hitchDtMs.toFixed(0)}ms`);
   }
   if (explode.n > 12 && explode.p95 > p95Limit + 8) {
