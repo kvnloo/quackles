@@ -27,9 +27,15 @@ Records WebGL frame times at 430×932 while scrolling explode → jump.
 
 ## GitHub Pages
 
-The app is a static export (`next build` → `out/`). `.github/workflows/pages.yml` deploys on every push to `main`.
+The app is a static export (`next build` → `out/`). `.github/workflows/pages.yml` deploys on every push to [`nightly`](https://github.com/kvnloo/quackles/tree/nightly), plus a 05:00 UTC cron.
 
-Development snapshots land on [`nightly`](https://github.com/kvnloo/quackles/tree/nightly). After each working commit, push that branch too (`git push origin nightly && git push github nightly`).
+Live: [https://kvnloo.github.io/quackles/](https://kvnloo.github.io/quackles/)
+
+After each working commit, push that branch too (`git push origin nightly && git push github nightly`).
+
+## Verified OSS Loop
+
+Onboarded with [`oss-onboard --with-automation --scheme rolling`](https://github.com/kvnloo/verified-oss-loop) from [kvnloo/verified-oss-loop](https://github.com/kvnloo/verified-oss-loop). Contribution contract: `AGENTS.md`, `CONTRIBUTING.md`, `prompt.md`. Workers never merge `main` or `dev`.
 
 ## Stack
 

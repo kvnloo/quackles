@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "fps": "node scripts/fps-harness.mjs",
-    "test:scroll": "node scripts/scroll-perf.mjs"
+    "test:scroll": "node scripts/scroll-perf.mjs",
+    "test": "npm run lint && npm run typecheck"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
