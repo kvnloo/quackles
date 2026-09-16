@@ -94,13 +94,14 @@ a:focus-visible {
   inset: 0;
   pointer-events: none;
   contain: layout paint;
+  will-change: opacity;
 }
 .poster-plates {
   z-index: 1;
 }
 .duck-slot {
   z-index: 2;
-  visibility: hidden;
+  opacity: 0.001;
 }
 .poster-plate {
   position: absolute;
@@ -123,7 +124,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 31.6% 0 5.4%;
+  padding: 0 5.4%;
   z-index: 10;
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 38%, transparent);
 }
@@ -133,9 +134,15 @@ a:focus-visible {
   line-height: 1;
   letter-spacing: -0.03em;
 }
+.wordmark span {
+  font-family: var(--font-mono);
+  font-size: 2cqw;
+  vertical-align: super;
+  margin-left: 3px;
+}
 .site-nav nav {
   display: flex;
-  gap: 2cqw;
+  gap: 5cqw;
   align-items: center;
   font-size: 1.8cqw;
   letter-spacing: 0.1em;
@@ -219,11 +226,7 @@ a:focus-visible {
   margin: 4cqw 0;
 }
 .jump-copy h2 {
-  font-size: 7cqw;
-}
-.explode-copy {
-  top: auto;
-  bottom: 5%;
+  font-size: 9cqw;
 }
 .jump-copy {
   top: 8%;

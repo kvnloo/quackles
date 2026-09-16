@@ -28,7 +28,6 @@ export function prepareRigForRendering(rig: Rig) {
     )
       return;
     const original = node.material;
-    if (original.userData.robotSurface === true) return;
     let material = materials.get(original);
     if (!material) {
       material = new MeshStandardMaterial({

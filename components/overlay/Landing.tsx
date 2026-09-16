@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { ExperienceProvider, useExperience } from "@/components/providers/ExperienceProvider";
+import { ExperienceProvider } from "@/components/providers/ExperienceProvider";
 import { PosterNav } from "@/components/poster/PosterNav";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { PosterBeats } from "@/components/poster/PosterBeats";
@@ -11,15 +11,6 @@ const DuckStage = dynamic(
   () => import("@/components/duck/DuckStage").then((m) => m.DuckStage),
   { ssr: false },
 );
-function GuardedDuckStage() {
-  const { setWebgl } = useExperience();
-  return (
-    <CanvasGuard fallback={null} onError={() => setWebgl(false)}>
-      <DuckStage />
-    </CanvasGuard>
-  );
-}
-
 export function Landing() {
   return (
     <ExperienceProvider>
@@ -28,7 +19,9 @@ export function Landing() {
           <div className="poster-frame" data-testid="scene">
             <PosterPlates />
             <div className="duck-slot">
-              <GuardedDuckStage />
+              <CanvasGuard fallback={null}>
+                <DuckStage />
+              </CanvasGuard>
             </div>
             <PosterNav />
             <PosterHeroCopy />

@@ -1,48 +1,50 @@
-# Microduck
+# Microduck — Tiny duck. Big waddle.
 
-A mobile product study for [Pollen Robotics’ Microduck](https://github.com/pollen-robotics/microduck), with three studio themes: White, Blue and Dark.
+Fan-made **mobile product page** for [Microduck](https://github.com/pollen-robotics/microduck). One well-lit 3D product shot, HTML type and specs, then two scroll beats: **Explode** and **Jump**. Three studio finishes — White, Poster (cobalt), Dark — with a 360ms lerp.
 
-Scroll changes the camera angle, cues a jump, then starts an exploded view at touchdown. The actual Blender set stays in world space and leaves the camera view through perspective and parallax. Scrolling backwards reconstructs the same pose. Reduced motion uses static assembled and exploded views.
+Desktop layout is deferred — the live site is a 430px phone column.
 
-The website is a work in progress. The native Cycles renders remain the visual reference for the browser scene; material, shadow and reflection parity is not complete. No physical Galaxy S25 / 120 Hz result has been established.
+This is not the official product site. Hardware facts come from the [press kit](https://pollen-robotics.com/microduck/press-kit/). Software is Apache-2.0; mechanical and electronic design files are **not** open hardware.
 
-## Run
+## Run locally
 
-```sh
-npm ci
+```bash
+npm install
 npm run dev
 ```
 
-Open [localhost:43217](http://localhost:43217). For the static production export:
+Open [http://localhost:43217](http://localhost:43217).
 
-```sh
-npm test
-npm run build
-npm run preview
+Machines without WebGL get a cream-studio line drawing.
+
+## Perf check
+
+```bash
+npm run test:scroll
 ```
 
-The high-resolution Blender still remains visible while the 3D assets load, or when WebGL cannot be used. Theme selection is synchronized across the robot, set and page. A canvas render error restores the still.
+Records WebGL frame times at 430×932 while scrolling explode → jump.
 
-## Validate
+## GitHub Pages
 
-```sh
-npm run test:mobile:visual
-npm run test:mobile:timing
-python3 research-engine/ab_loop.py validate
-```
+The app is a static export (`next build` → `out/`). `.github/workflows/pages.yml` deploys:
 
-The mobile harness separates deterministic screenshots from timing, records browser/GPU identity, and checks spatial continuity, touchdown order, reverse scrolling and reduced motion. Read the options in `scripts/mobile-validation.mjs` before selecting an output directory or GPU mode. Desktop Chromium with a phone viewport is not physical-phone evidence.
+- [`kvnloo/quackles`](https://github.com/kvnloo/quackles) from [`nightly`](https://github.com/kvnloo/quackles/tree/nightly) → [https://kvnloo.github.io/quackles/](https://kvnloo.github.io/quackles/)
+- [`kvnloo/quackles-nightly`](https://github.com/kvnloo/quackles-nightly) from `main` (`NEXT_PUBLIC_BASE_PATH=/quackles-nightly`) → [https://kvnloo.github.io/quackles-nightly/](https://kvnloo.github.io/quackles-nightly/)
 
-The original STL positions and triangle connectivity of the painted robot parts are retained. Authored color, roughness and normal atlases are transferred from Blender; alternate themes share geometry. The browser’s previous simplified tessellation is not identical to these original surfaces.
+Each export stamps `<meta name="microduck-build" content="<git sha> <ISO UTC>">` and a matching footer line so a stale tab is obvious.
 
-## Preview publishing
+GitHub Pages serves `index.html` with `Cache-Control: max-age=600`. Hashed `_next/static/*` assets are cached much longer. If HTML is stale, the browser keeps old JS/CSS and the old slider/theme. After a deploy, hard-refresh once (Cmd/Ctrl-Shift-R). Unique URLs that force a distinct HTML cache key:
 
-[GitHub Pages](https://kvnloo.github.io/quackles/) deploys this repository’s `nightly` branch using `.github/workflows/pages.yml`. Push authorized preview checkpoints to `nightly`; do not merge `main` or `dev`, and do not publish to the separate `quackles-nightly` repository.
+- `https://kvnloo.github.io/quackles/?v=<sha>`
+- `https://kvnloo.github.io/quackles-nightly/?v=<sha>`
 
-Each export contains a `microduck-build` meta tag with its commit SHA and build time. A URL such as `https://kvnloo.github.io/quackles/?build=<sha>` helps distinguish a deployed checkpoint from a cached page.
+After each working commit, push both live branches (`git push origin main nightly && git push github main nightly && git push nightly-pages main`).
 
-## Research and provenance
+## Verified OSS Loop
 
-`research-engine/` contains a portable concept graph, retrieved primary sources, falsifiable experiments and an alternating A/B research log. Source support and measured outcomes are recorded separately. Rejected experiments remain visible, including a lossless meshopt transport that enlarged the final compressed payload.
+Onboarded with [`oss-onboard --with-automation --scheme rolling`](https://github.com/kvnloo/verified-oss-loop) from [kvnloo/verified-oss-loop](https://github.com/kvnloo/verified-oss-loop). Contribution contract: `AGENTS.md`, `CONTRIBUTING.md`, `prompt.md`. Workers never merge `main` or `dev`.
 
-This is an unofficial fan study. The upstream [Microduck repository](https://github.com/pollen-robotics/microduck) supplies the model and product specifications; its licenses apply to the supplied assets. Contribution policy is in `AGENTS.md` and `CONTRIBUTING.md`.
+## Stack
+
+Next.js (static export) · React Three Fiber · official Microduck GLB/kinematics · native scroll

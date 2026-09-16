@@ -416,16 +416,6 @@
       "id": "asset-texture-budget",
       "domain": "mobile",
       "kind": "measure"
-    },
-    {
-      "id": "source-geometry-identity",
-      "domain": "cross-domain",
-      "kind": "constraint"
-    },
-    {
-      "id": "lossless-float-entropy",
-      "domain": "mobile",
-      "kind": "mechanism"
     }
   ],
   "edges": [
@@ -1084,30 +1074,6 @@
       "evidence": [
         "W41"
       ]
-    },
-    {
-      "from": "source-geometry-identity",
-      "to": "lossless-float-entropy",
-      "relation": "restricts-codec-choice",
-      "evidence": [
-        "W44"
-      ]
-    },
-    {
-      "from": "lossless-float-entropy",
-      "to": "asset-transfer",
-      "relation": "can-improve-or-worsen-compression",
-      "evidence": [
-        "W44"
-      ]
-    },
-    {
-      "from": "lossless-float-entropy",
-      "to": "asset-decode-upload",
-      "relation": "adds-decoder-cost",
-      "evidence": [
-        "W44"
-      ]
     }
   ],
   "source_status": {
@@ -1645,18 +1611,6 @@
       "evidence": [
         "W10",
         "W42"
-      ]
-    },
-    "source-geometry-identity": {
-      "status": "sourced",
-      "evidence": [
-        "W44"
-      ]
-    },
-    "lossless-float-entropy": {
-      "status": "sourced",
-      "evidence": [
-        "W44"
       ]
     }
   },

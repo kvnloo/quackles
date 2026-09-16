@@ -12,19 +12,17 @@ import {
 import {
   clamp01,
   interval,
+  sceneMix,
   poseAt,
   poseAtInto,
   type Pose,
 } from "@/lib/pose";
-import { getThemeSnapshot, getThemeTarget } from "@/lib/theme";
 import { ensureProbe, publishPose } from "@/lib/probe";
 type Experience = {
   progressRef: MutableRefObject<number>;
   poseRef: MutableRefObject<Pose>;
   ready: boolean;
-  setRigReady: (v: boolean) => void;
-  setSetReady: (v: boolean) => void;
-  setEnvironmentReady: (v: boolean) => void;
+  setReady: (v: boolean) => void;
   webgl: boolean | null;
   setWebgl: (v: boolean) => void;
   reducedMotion: boolean;
@@ -33,12 +31,9 @@ const Context = createContext<Experience | null>(null);
 export function ExperienceProvider({ children }: { children: ReactNode }) {
   const progressRef = useRef(0),
     poseRef = useRef(poseAt(0));
-  const [rigReady, setRigReady] = useState(false),
-    [setReady, setSetReady] = useState(false),
-    [environmentReady, setEnvironmentReady] = useState(false),
+  const [ready, setReady] = useState(false),
     [webgl, setWebgl] = useState<boolean | null>(null),
     [reducedMotion, setReducedMotion] = useState(false);
-  const ready = rigReady && setReady && environmentReady;
   useEffect(() => {
     const mq = matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setReducedMotion(mq.matches);
@@ -63,27 +58,29 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       progressRef.current = p;
       poseAtInto(poseRef.current, p);
       if (reducedMotion) {
-        poseAtInto(poseRef.current, p < 0.56 ? 0 : 1);
+        poseAtInto(poseRef.current, 0.2);
+        poseRef.current.lookAt[1] = 0.14;
+        poseRef.current.explode = 0;
         poseRef.current.jump = 0;
         poseRef.current.crouch = 0;
       }
       publishPose(p, poseRef.current);
       const q = ensureProbe();
       if (q) q.reducedMotion = reducedMotion;
-      const active = Boolean(ready && webgl);
-      if (q) q.ready = active;
-      if (plates) plates.style.visibility = active ? "hidden" : "visible";
-      if (canvas) canvas.style.visibility = active ? "visible" : "hidden";
+      const active = ready && webgl;
+      const modelOpacity = active ? sceneMix(p) : 0;
+      if (plates) plates.style.opacity = "1";
+      if (canvas) canvas.style.opacity = String(Math.max(0.001, modelOpacity));
       if (copy) copy.style.opacity = String(1 - interval(p, 0.03, 0.13));
       if (explodeCopy)
         explodeCopy.style.opacity = String(
-          interval(p, 0.56, 0.61) * (1 - interval(p, 0.7, 0.76)),
+          interval(p, 0.17, 0.22) * (1 - interval(p, 0.53, 0.59)),
         );
       if (jumpCopy)
         jumpCopy.style.opacity = String(
-          interval(p, 0.19, 0.24) * (1 - interval(p, 0.53, 0.56)),
+          interval(p, 0.6, 0.65) * (1 - interval(p, 0.89, 0.95)),
         );
-      if (specs) specs.style.opacity = String(interval(p, 0.9, 0.97));
+      if (specs) specs.style.opacity = String(interval(p, 0.94, 1));
       if (progress) progress.style.transform = `scaleX(${p})`;
       window.__QUACKLES_INVALIDATE__?.();
     };
@@ -110,10 +107,6 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       },
       getState: () => ensureProbe(),
       getAuditState: () => window.__QUACKLES_AUDIT__?.() ?? null,
-      getSetAudit: () => window.__QUACKLES_SET_AUDIT__?.() ?? null,
-      prepareAudit: async () => { await window.__QUACKLES_PREPARE_AUDIT__?.(); },
-      getThemeAudit: () => ({ target: getThemeTarget(), current: getThemeSnapshot(), robot: ensureProbe()?.robotTheme ?? null, set: ensureProbe()?.setTheme ?? null }),
-      failCanvas: () => window.__QUACKLES_FAIL_CANVAS__?.(),
     };
     addEventListener("scroll", schedule, { passive: true });
     addEventListener("resize", resize);
@@ -129,9 +122,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       progressRef,
       poseRef,
       ready,
-      setRigReady,
-      setSetReady,
-      setEnvironmentReady,
+      setReady,
       webgl,
       setWebgl,
       reducedMotion,

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "current_phase": "B",
-  "current_round": 7,
+  "current_round": 6,
   "history": [
     {
       "round": 1,
@@ -97,23 +97,6 @@
       "round": 6,
       "phase": "B",
       "note": "Reread primary W3C, Three, Blender, glTF, Drei, official example and perception sources. Added spatial-continuity dependencies and M16/M17 gates; corrected stale OSS path and qualified infant identity and causal-delay replication limits. Source support is not a local performance or visual pass."
-    },
-    {
-      "round": 7,
-      "phase": "A",
-      "note": "Retrospective bounded codec investigation: source identity constrains compression; measure exact-byte decoding and final transport entropy. M18 records the completed negative result, not a preregistration.",
-      "experiment_status_snapshot": {
-        "untested": 11,
-        "tested-pass": 5,
-        "tested-fail": 3,
-        "inconclusive": 4,
-        "running": 1
-      }
-    },
-    {
-      "round": 7,
-      "phase": "B",
-      "note": "Official EXT meshopt specification plus local 75-view exact-byte experiment: gzip payload grows 498634 bytes with meshopt. Reject added decoder and keep ordinary gzip. See M18 and local receipt."
     }
   ],
   "experiment_events": [
@@ -214,20 +197,6 @@
       "result": "User rejected the whole-scene fade and selected camera angle change, duck jump, touchdown-triggered explode and geometric set exit. Real set export and browser implementation are in progress; checkpoint and performance results are not yet available.",
       "evidence": "spatial-frontier.md;work/research-engine/visual-audit/report.json",
       "before_next_a": 6
-    },
-    {
-      "id": "M10",
-      "status": "inconclusive",
-      "result": "A post-crash hardware run verified NVIDIA RTX3080Ti WebGL and five visible six-second traces at p95 16.7-16.8ms, worst16.8ms, zero missed intervals and zero long tasks. This removes the earlier multi-second stalls in this environment but host load/restart and prior revisions prevent a strict single-variable causal conclusion. Headless scheduling is60Hz; no S25/120Hz validation.",
-      "evidence": "outputs/mobile-validation/hardware-baseline/report.json",
-      "before_next_a": 7
-    },
-    {
-      "id": "M16",
-      "status": "running",
-      "result": "Three bounded actual-set prototypes now preserve set object identity, matrices and opacity; corrected .56 impact onset and reverse/static reduced-motion states pass. Earlier jump/head/spec collisions were corrected. Final scenic props still remain behind specs in prototype3, so camera departure and actual baked robot materials remain under refinement before dense frames/timings.",
-      "evidence": "outputs/mobile-validation/spatial-prototype-3/report.json",
-      "before_next_a": 7
     }
   ]
 }

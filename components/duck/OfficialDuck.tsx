@@ -1,8 +1,8 @@
 "use client";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { Group, Mesh, MeshStandardMaterial, Texture } from "three";
-import { poseAt, type Pose } from "@/lib/pose";
+import { Group, Mesh, MeshStandardMaterial } from "three";
+import type { Pose } from "@/lib/pose";
 import {
   auditFeet,
   driveRig,
@@ -10,8 +10,6 @@ import {
   prepareRig,
   type Rig,
 } from "@/lib/sim/drive";
-import { applyRobotSurfaces } from "@/lib/sim/robot-surfaces";
-import { auditBounds } from "@/lib/scene-audit";
 import { ensureProbe } from "@/lib/probe";
 import {
   auditRenderBatches,
@@ -56,46 +54,27 @@ export function OfficialDuck({
       prepared: ReturnType<typeof prepareRig>;
     } | null>(null);
   const { gl, scene, camera, invalidate } = useThree();
-  const { setRigReady, setWebgl } = useExperience();
+  const { setReady, setWebgl } = useExperience();
   useEffect(() => {
     const group = host.current;
     if (!group) return;
     let cancelled = false;
     let activeRig: Rig | null = null;
-    let disposeSurfaces: (() => void) | undefined;
     async function load() {
       try {
         const kinematics = await loadKinematics(`${MODEL_DIR}/kinematics.json`);
         const rig = await buildRig(kinematics, { materialForMesh });
         if (!isRig(rig)) throw new Error("Invalid Microduck hierarchy");
         if (cancelled) return;
-        const registration = prepareRig(rig);
-        driveRig(rig, poseAt(0), registration);
-        const robotSurfaces = await applyRobotSurfaces(rig);
-        disposeSurfaces = robotSurfaces.dispose;
-        if (cancelled) return;
-        const prepared = prepareRig(rig);
         prepareRigForRendering(rig);
-        rig.root.traverse((node) => {
-          if (node instanceof Mesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-          }
-        });
         activeRig = rig;
         group!.add(rig.placer);
+        const prepared = prepareRig(rig);
         rigRef.current = { rig, prepared };
-        window.__QUACKLES_PREPARE_AUDIT__ = robotSurfaces.prepareAudit;
-        window.__QUACKLES_AUDIT__ = () => {
-          const feet = auditFeet(rig, prepared);
-          return {
-            ...feet,
-            robotSurfaces: robotSurfaces.getAudit(),
-            duckBounds: auditBounds(rig.placer, camera),
-            support: { group: "set_robot_plinth", topY: 0, contact: Math.abs(feet.feetMinY) < 0.0005 },
-            batchGeometry: auditRenderBatches(rig),
-          };
-        };
+        window.__QUACKLES_AUDIT__ = () => ({
+          ...auditFeet(rig, prepared),
+          batchGeometry: auditRenderBatches(rig),
+        });
         driveRig(rig, poseRef.current, prepared);
         await gl.compileAsync(scene, camera);
         if (cancelled) return;
@@ -103,46 +82,39 @@ export function OfficialDuck({
         if (q) {
           q.rigReady = true;
           q.rigLoaded = true;
+          q.ready = true;
         }
-        setRigReady(true);
+        setReady(true);
         invalidate();
       } catch (error) {
         if (!cancelled) {
           console.error("Microduck model load failed", error);
           setWebgl(false);
-          setRigReady(true);
+          setReady(true);
         }
       }
     }
     void load();
     return () => {
       delete window.__QUACKLES_AUDIT__;
-      delete window.__QUACKLES_PREPARE_AUDIT__;
       cancelled = true;
       rigRef.current = null;
-      disposeSurfaces?.();
       if (activeRig) {
         group.remove(activeRig.placer);
         const materials = new Set<MeshStandardMaterial>();
-        const textures = new Set<Texture>();
         activeRig.root.traverse((node) => {
           if (
             node instanceof Mesh &&
             node.material instanceof MeshStandardMaterial
           )
             materials.add(node.material);
-          if (node instanceof Mesh && (node.userData.mergedForRendering || node.userData.robotSurface))
+          if (node instanceof Mesh && node.userData.mergedForRendering)
             node.geometry.dispose();
         });
-        materials.forEach((material) => {
-          for (const value of Object.values(material))
-            if (value instanceof Texture) textures.add(value);
-          material.dispose();
-        });
-        textures.forEach((texture) => texture.dispose());
+        materials.forEach((material) => material.dispose());
       }
     };
-  }, [camera, gl, invalidate, poseRef, scene, setRigReady, setWebgl]);
+  }, [camera, gl, invalidate, poseRef, scene, setReady, setWebgl]);
   useFrame(() => {
     const active = rigRef.current;
     if (!active) return;
