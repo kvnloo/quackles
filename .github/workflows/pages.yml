@@ -2,8 +2,9 @@ name: pages
 
 on:
   push:
-    # quackles Pages tracks nightly; quackles-nightly only has main.
-    branches: [main, nightly]
+    # The root Pages site is the stable poster. The newer source is published
+    # beneath /nightly by the deploy job below.
+    branches: [nightly]
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
@@ -45,8 +46,7 @@ jobs:
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule' ||
-      github.ref == 'refs/heads/nightly' ||
-      github.repository == 'kvnloo/quackles-nightly'
+      github.ref == 'refs/heads/nightly'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -71,14 +71,39 @@ jobs:
         id: stamp
         run: echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
       - run: npm ci
-      - run: npm run build
+      - name: Build stable root
+        run: npm run build
         env:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
           NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
           NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
+      - name: Preserve stable root artifact
+        run: |
+          mkdir -p pages-root
+          cp -a out/. pages-root/
+      - name: Fetch newer source branch
+        id: nightly
+        run: |
+          git fetch --no-tags origin nightly-source:refs/remotes/origin/nightly-source
+          echo "sha=$(git rev-parse origin/nightly-source)" >> "$GITHUB_OUTPUT"
+          mkdir -p nightly-source
+          git archive origin/nightly-source | tar -x -C nightly-source
+      - name: Build newer source under nightly path
+        working-directory: nightly-source
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}/nightly
+          NEXT_PUBLIC_BUILD_SHA: ${{ steps.nightly.outputs.sha }}
+          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
+        run: |
+          npm ci
+          npm run build
+      - name: Add newer artifact beneath nightly
+        run: |
+          mkdir -p pages-root/nightly
+          cp -a nightly-source/out/. pages-root/nightly/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          path: pages-root
       - id: deploy
         uses: actions/deploy-pages@v4
