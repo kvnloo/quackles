@@ -1,0 +1,120 @@
+{
+  "coordinates": "glTF Y-up metres; Blender floor z=.125 maps to Three y=0",
+  "groups": [
+    "set_backdrop",
+    "set_floor",
+    "set_robot_plinth",
+    "set_orb_pedestal",
+    "set_rear_block",
+    "set_banner",
+    "set_print",
+    "set_square_frame",
+    "set_arch",
+    "set_foliage",
+    "set_left_step"
+  ],
+  "materials": {
+    "set_floor__QUALITY-quarried-stone": {
+      "colorMaps": {
+        "white": "set_floor__quality-quarried-stone-white-color.webp",
+        "blue": "set_floor__quality-quarried-stone-white-color.webp",
+        "dark": "set_floor__quality-quarried-stone-dark-color.webp"
+      },
+      "emissive": false,
+      "roughness": 1,
+      "metalness": 0,
+      "roughnessMap": "set_floor__quality-quarried-stone-white-roughness.webp",
+      "normalMap": "set_floor__quality-quarried-stone-white-normal.webp"
+    },
+    "set_robot_plinth__QUALITY-quarried-stone": {
+      "colorMaps": {
+        "white": "set_robot_plinth__quality-quarried-stone-white-color.webp",
+        "blue": "set_robot_plinth__quality-quarried-stone-cobalt-color.webp",
+        "dark": "set_robot_plinth__quality-quarried-stone-dark-color.webp"
+      },
+      "emissive": false,
+      "roughness": 1,
+      "metalness": 0,
+      "roughnessMap": "set_robot_plinth__quality-quarried-stone-white-roughness.webp",
+      "normalMap": "set_robot_plinth__quality-quarried-stone-white-normal.webp"
+    },
+    "set_orb_pedestal__QUALITY-quarried-stone": {
+      "colorMaps": {
+        "white": "set_orb_pedestal__quality-quarried-stone-white-color.webp",
+        "blue": "set_orb_pedestal__quality-quarried-stone-cobalt-color.webp",
+        "dark": "set_orb_pedestal__quality-quarried-stone-dark-color.webp"
+      },
+      "emissive": false,
+      "roughness": 1,
+      "metalness": 0,
+      "roughnessMap": "set_orb_pedestal__quality-quarried-stone-white-roughness.webp",
+      "normalMap": "set_orb_pedestal__quality-quarried-stone-white-normal.webp"
+    },
+    "set_rear_block__QUALITY-quarried-stone": {
+      "colorMaps": {
+        "white": "set_rear_block__quality-quarried-stone-white-color.webp",
+        "blue": "set_rear_block__quality-quarried-stone-white-color.webp",
+        "dark": "set_rear_block__quality-quarried-stone-dark-color.webp"
+      },
+      "emissive": false,
+      "roughness": 1,
+      "metalness": 0,
+      "roughnessMap": "set_rear_block__quality-quarried-stone-white-roughness.webp",
+      "normalMap": "set_rear_block__quality-quarried-stone-white-normal.webp"
+    },
+    "set_banner__POSTER-bust": {
+      "colorMaps": {
+        "white": "set_banner__poster-bust-white-color.webp",
+        "blue": "set_banner__poster-bust-cobalt-color.webp",
+        "dark": "set_banner__poster-bust-dark-color.webp"
+      },
+      "emissive": true,
+      "roughness": 1,
+      "metalness": 0
+    },
+    "set_print__POSTER-hands": {
+      "colorMaps": {
+        "white": "set_print__poster-hands-white-color.webp",
+        "blue": "set_print__poster-hands-cobalt-color.webp",
+        "dark": "set_print__poster-hands-dark-color.webp"
+      },
+      "emissive": true,
+      "roughness": 1,
+      "metalness": 0
+    },
+    "set_square_frame__POSTER-blue-frame": {
+      "colorMaps": {
+        "white": "set_square_frame__poster-blue-frame-white-color.webp",
+        "blue": "set_square_frame__poster-blue-frame-cobalt-color.webp",
+        "dark": "set_square_frame__poster-blue-frame-dark-color.webp"
+      },
+      "emissive": false,
+      "roughness": 1,
+      "metalness": 0,
+      "roughnessMap": "set_square_frame__poster-blue-frame-white-roughness.webp",
+      "normalMap": "set_square_frame__poster-blue-frame-white-normal.webp"
+    },
+    "set_banner__QUALITY-banner-header": {
+      "colorMaps": {
+        "white": "set_banner__quality-banner-header-white-color.webp",
+        "blue": "set_banner__quality-banner-header-cobalt-color.webp",
+        "dark": "set_banner__quality-banner-header-dark-color.webp"
+      },
+      "emissive": true,
+      "roughness": 1,
+      "metalness": 0
+    },
+    "set_left_step__QUALITY-quarried-stone": {
+      "colorMaps": {
+        "white": "set_left_step__quality-quarried-stone-white-color.webp",
+        "blue": "set_left_step__quality-quarried-stone-white-color.webp",
+        "dark": "set_left_step__quality-quarried-stone-dark-color.webp"
+      },
+      "emissive": false,
+      "roughness": 1,
+      "metalness": 0,
+      "roughnessMap": "set_left_step__quality-quarried-stone-white-roughness.webp",
+      "normalMap": "set_left_step__quality-quarried-stone-white-normal.webp"
+    }
+  }
+}

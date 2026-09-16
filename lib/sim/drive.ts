@@ -112,8 +112,8 @@ export function driveRig(
         point.copy(corner).applyMatrix4(sole.mesh.matrixWorld).y,
       );
   if (!Number.isFinite(minY)) minY = 0;
-  rig.placer.position.y = -minY + pose.jump * 0.11;
-  return pose.jump * 0.11;
+  rig.placer.position.y = -minY + pose.duckPosition[1] + pose.jump * 0.11;
+  return pose.duckPosition[1] + pose.jump * 0.11;
 }
 export function auditFeet(rig: Rig, prepared: ReturnType<typeof prepareRig>) {
   rig.placer.updateWorldMatrix(true, true);
