@@ -34,14 +34,27 @@ export function detailPlan(variants: Variant[], desiredWidth: number, crop: Crop
   }
   return null;
 }
-export function paintBase(canvas: HTMLCanvasElement, images: Decoded[], mix: number, cssWidth: number) {
+function composite(context: CanvasRenderingContext2D, images: Decoded[], mix: number, width: number, height: number) {
+  context.globalAlpha = 1; context.drawImage(images[0].bitmap, 0, 0, width, height);
+  if (images[1] && mix > 0) { context.globalAlpha = mix; context.drawImage(images[1].bitmap, 0, 0, width, height); context.globalAlpha = 1; }
+}
+let scratch: HTMLCanvasElement | undefined;
+export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: Decoded[] | undefined, progressMix: number, themeMix: number, cssWidth: number) {
+  const images = after?.length ? [...before, ...after] : before;
   const width = Math.min(Math.max(...images.map((image) => image.asset.width)), Math.ceil(cssWidth * devicePixelRatio));
   const height = Math.round(width * images[0].asset.height / images[0].asset.width);
   if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
   const context = canvas.getContext("2d", { alpha: false });
   if (!context) throw new Error("Canvas2D is unavailable");
-  context.globalAlpha = 1; context.drawImage(images[0].bitmap, 0, 0, width, height);
-  if (images[1]) { context.globalAlpha = mix; context.drawImage(images[1].bitmap, 0, 0, width, height); context.globalAlpha = 1; }
+  composite(context, before, themeMix, width, height);
+  if (after?.length && progressMix > 0) {
+    if (!scratch) scratch = document.createElement("canvas");
+    if (scratch.width !== width || scratch.height !== height) { scratch.width = width; scratch.height = height; }
+    const extra = scratch.getContext("2d", { alpha: false });
+    if (!extra) throw new Error("Canvas2D is unavailable");
+    composite(extra, after, themeMix, width, height);
+    context.globalAlpha = progressMix; context.drawImage(scratch, 0, 0, width, height); context.globalAlpha = 1;
+  }
 }
 export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, variant: ImageAsset | TileAsset, images: { image: Decoded; x: number; y: number }[]) {
   const rect = container.getBoundingClientRect();

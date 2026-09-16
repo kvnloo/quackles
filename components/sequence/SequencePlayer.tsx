@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { DECODED_BUDGET, FrameCache } from "@/lib/sequence/cache";
-import { frameAt, imageAt, isImage, parseManifest, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId } from "@/lib/sequence/manifest";
+import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId } from "@/lib/sequence/manifest";
 import { detailPlan, paintBase, paintDetail, viewportCrop } from "@/lib/sequence/render";
 import { applyPalette, configure, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
 import { applyStoryProgress } from "./SequenceScroll";
@@ -43,31 +43,34 @@ export function SequencePlayer() {
     function render() {
       pendingFrame = 0;
       if (!manifest || !cache || cancelled) return;
-      const current = snapshot(), frame = frameAt(manifest, current.progress, current.reducedMotion);
+      const current = snapshot(), span = spanAt(manifest, current.progress, current.reducedMotion);
+      const frame = span.mix < 0.5 ? span.before : span.after;
       const nextLoadIntent = `${frame.id}/${current.target}`;
       if (nextLoadIntent !== loadIntentKey) { loadIntentKey = nextLoadIntent; failed.clear(); }
       const low = Math.floor(current.theme), high = Math.ceil(current.theme), mix = current.theme - low;
       const indices = low === high ? [low] : [low, high];
       const themes = indices.map((i) => THEME_IDS[i]);
-      const assets = themes.map((theme) => imageAt(frame, theme, 1024));
+      const beforeAssets = themes.map((theme) => imageAt(span.before, theme, 1024));
+      const afterAssets = span.mix > 0 && span.after !== span.before ? themes.map((theme) => imageAt(span.after, theme, 1024)) : [];
+      const assets = [...beforeAssets, ...afterAssets];
       const rect = container!.getBoundingClientRect(), crop = viewportCrop(container!);
       const desiredWidth = Math.ceil(rect.width * devicePixelRatio * crop.scale);
-      const nextIntent = `${frame.id}/${current.theme}/${desiredWidth}`;
+      const nextIntent = `${span.before.id}/${span.after.id}/${span.mix}/${current.theme}/${desiredWidth}`;
       if (nextIntent !== intentKey) { intentKey = nextIntent; generation++; }
       state.requested = { frameId: frame.id, frameProgress: frame.progress, progress: current.progress, themes, mix, tierWidth: desiredWidth, generation, urls: assets.map((asset) => asset.url) };
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
       let detailTasks: { asset: ImageAsset; x: number; y: number }[] = [];
-      if (settled && low === high && crop.width > 0 && crop.height > 0 && desiredWidth > assets[0].width) {
-        const plan = detailPlan(frame.assets[themes[0]], desiredWidth, crop, DECODED_BUDGET - assets[0].width * assets[0].height * 4);
-        if (plan && plan.variant.width > assets[0].width) {
+      if (settled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
+        const plan = detailPlan(frame.assets[themes[0]], desiredWidth, crop, DECODED_BUDGET - beforeAssets[0].width * beforeAssets[0].height * 4);
+        if (plan && plan.variant.width > beforeAssets[0].width) {
           detailVariant = plan.variant;
           detailTasks = plan.tasks;
           tasks.push(...detailTasks.map(({ asset }) => ({ asset, priority: 90 })));
         }
       }
-      const center = manifest.frames.indexOf(frame), selected = Math.round(current.target);
-      for (const offset of [1, -1, 2]) {
+      const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
+      for (const offset of [1, -1, 2, 3]) {
         const adjacent = manifest.frames[center + offset];
         if (adjacent) tasks.push({ asset: imageAt(adjacent, THEME_IDS[selected], 1024), priority: 20 - Math.abs(offset) });
       }
@@ -75,24 +78,24 @@ export function SequencePlayer() {
         const theme = THEME_IDS[selected + offset];
         if (theme) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 });
       }
-      // Canvas keeps the complete previous picture while its decoded tiles can be evicted.
       cache.pin([...assets.map((asset) => asset.url), ...detailTasks.map(({ asset }) => asset.url)]);
       cache.retain(tasks.map(({ asset }) => asset.url));
       for (const task of tasks) request(task.asset, task.priority);
-      const images = assets.map((asset) => cache!.peek(asset.url));
-      const nextBase = `${frame.id}/${current.theme}/${rect.width}/${devicePixelRatio}`;
-      if (images.every((image) => image !== undefined) && nextBase !== baseKey) {
-        paintBase(baseCanvas!, images, mix, rect.width);
+      const beforeImages = beforeAssets.map((asset) => cache!.peek(asset.url));
+      const afterImages = afterAssets.map((asset) => cache!.peek(asset.url));
+      const nextBase = `${span.before.id}/${span.after.id}/${span.mix.toFixed(3)}/${current.theme.toFixed(3)}/${rect.width}/${devicePixelRatio}`;
+      if (beforeImages.every((image) => image !== undefined) && afterImages.every((image) => image !== undefined) && nextBase !== baseKey) {
+        paintBase(baseCanvas!, beforeImages as NonNullable<(typeof beforeImages)[number]>[], afterImages.length ? afterImages as NonNullable<(typeof afterImages)[number]>[] : undefined, span.mix, mix, rect.width);
         applyPalette(current.theme);
         baseKey = nextBase; paintedKeys = assets.map((asset) => asset.url);
         detailCanvas!.style.visibility = "hidden"; detailCanvas!.width = 1; detailCanvas!.height = 1; detailKeys = []; detailKey = "";
         state.detailWidth = 0; state.detailTiles = 0;
         state.ready = true; state.drawCount++;
-        state.rendered = { ...state.requested, tierWidth: assets[0].width, urls: [...paintedKeys] };
+        state.rendered = { ...state.requested, tierWidth: beforeAssets[0].width, urls: [...paintedKeys] };
         if (fallback.current) fallback.current.style.visibility = "hidden";
         baseCanvas!.style.visibility = "visible";
       }
-      if (baseKey === nextBase) applyStoryProgress(current.reducedMotion ? current.progress : frame.progress);
+      if (baseKey === nextBase) applyStoryProgress(current.progress);
       if (detailVariant && detailTasks.length && baseKey === nextBase) {
         const decoded = detailTasks.map((task) => ({ ...task, image: cache!.peek(task.asset.url) }));
         const nextDetail = `${frame.id}/${low}/${detailVariant.width}/${JSON.stringify(crop)}`;

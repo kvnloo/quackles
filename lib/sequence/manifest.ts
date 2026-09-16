@@ -98,18 +98,27 @@ export function parseManifest(value: unknown, base: string): SequenceManifest {
 }
 
 export function isImage(variant: Variant): variant is ImageAsset { return "url" in variant; }
-export function frameAt(manifest: SequenceManifest, progress: number, reduced: boolean): SequenceFrame {
+export function spanAt(manifest: SequenceManifest, progress: number, reduced: boolean): { before: SequenceFrame; after: SequenceFrame; mix: number } {
   if (reduced) {
     const phase = manifest.reducedMotion.findLast((phase) => phase.from <= progress) ?? manifest.reducedMotion[0];
-    return manifest.frames.find((frame) => frame.id === phase.frameId)!;
+    const frame = manifest.frames.find((frame) => frame.id === phase.frameId)!;
+    return { before: frame, after: frame, mix: 0 };
   }
-  let low = 0, high = manifest.frames.length - 1;
+  const frames = manifest.frames;
+  if (progress <= frames[0].progress) return { before: frames[0], after: frames[0], mix: 0 };
+  if (progress >= frames[frames.length - 1].progress) return { before: frames[frames.length - 1], after: frames[frames.length - 1], mix: 0 };
+  let low = 0, high = frames.length - 1;
   while (low < high) {
     const middle = Math.floor((low + high) / 2);
-    if (manifest.frames[middle].progress < progress) low = middle + 1; else high = middle;
+    if (frames[middle].progress < progress) low = middle + 1; else high = middle;
   }
-  const before = manifest.frames[Math.max(0, low - 1)], after = manifest.frames[low];
-  return progress - before.progress <= after.progress - progress ? before : after;
+  const after = frames[low], before = frames[Math.max(0, low - 1)];
+  const span = after.progress - before.progress;
+  return { before, after, mix: span <= 0 ? 0 : (progress - before.progress) / span };
+}
+export function frameAt(manifest: SequenceManifest, progress: number, reduced: boolean): SequenceFrame {
+  const { before, after, mix } = spanAt(manifest, progress, reduced);
+  return mix < 0.5 ? before : after;
 }
 export function imageAt(frame: SequenceFrame, theme: ThemeId, width: number): ImageAsset {
   const images = frame.assets[theme].filter(isImage);
