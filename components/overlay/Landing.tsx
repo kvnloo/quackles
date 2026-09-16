@@ -6,10 +6,12 @@ import { ThemeControl } from "@/components/poster/ThemeControl";
 import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
+import { FeelEngine } from "@/components/feel/FeelEngine";
 
 export function Landing() {
   return <main id="top" className="phone-shell" data-testid="experience">
     <SequenceScroll />
+    <FeelEngine />
     <div className="poster-stage">
       <SequenceFrame>
         <SequencePlayer />
