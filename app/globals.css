@@ -285,7 +285,6 @@ a:focus-visible {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
   gap: 0;
-  touch-action: none;
 }
 .theme-thumb {
   position: absolute;
