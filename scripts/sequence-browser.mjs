@@ -208,7 +208,7 @@ async function gestures() {
     const before = await state(page);
     await touch(page, Array.from({ length: 9 }, (_, i) => ({ x: box.x + box.width * (.8 - i * .065), y })));
     const horizontal = await state(page);
-    check(`${viewport.width}: horizontal touch selects exactly one theme and retains frame`, horizontal.current.target === 2 && horizontal.rendered.frameId === before.rendered.frameId, { before, horizontal });
+    check(`${viewport.width}: horizontal touch parks a continuous theme mix and retains frame`, horizontal.current.theme === horizontal.current.target && horizontal.current.theme !== 1 && Number.isInteger(before.current.target) && horizontal.rendered.frameId === before.rendered.frameId, { before, horizontal });
     await select(page, 'white', .45); const beforeVertical = await page.evaluate(() => scrollY);
     await touch(page, Array.from({ length: 9 }, (_, i) => ({ x: box.x + box.width * .5, y: y + 90 - i * 25 })));
     const vertical = await state(page), afterVertical = await page.evaluate(() => scrollY);

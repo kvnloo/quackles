@@ -43,7 +43,8 @@ export function setReducedMotion(reducedMotion: boolean) {
 }
 export function dragTheme(theme: number) {
   cancelAnimationFrame(animation);
-  publish({ ...state, theme: Math.max(0, Math.min(4, theme)) });
+  const next = Math.max(0, Math.min(4, theme));
+  publish({ ...state, theme: next, target: next });
 }
 export function selectTheme(id: ThemeId) {
   cancelAnimationFrame(animation);

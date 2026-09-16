@@ -1,19 +1,16 @@
 "use client";
 import { useEffect, useRef, type ReactNode } from "react";
-import { THEME_IDS } from "@/lib/sequence/manifest";
-import { dragTheme, selectTheme, snapshot } from "@/lib/sequence/store";
+import { dragTheme, snapshot } from "@/lib/sequence/store";
 
 export function SequenceFrame({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    let gesture: { id: number; x: number; y: number; theme: number; time: number; horizontal: boolean } | null = null;
+    let gesture: { id: number; x: number; y: number; theme: number; horizontal: boolean } | null = null;
     const cancel = () => {
       const previous = gesture; gesture = null;
-      if (!previous?.horizontal) return;
-      selectTheme(THEME_IDS[Math.round(snapshot().theme)]);
-      if (node.hasPointerCapture(previous.id)) node.releasePointerCapture(previous.id);
+      if (previous?.horizontal && node.hasPointerCapture(previous.id)) node.releasePointerCapture(previous.id);
     };
     const zoom = () => {
       const zoomed = (visualViewport?.scale ?? 1) > 1.01;
@@ -23,7 +20,7 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
     const down = (event: PointerEvent) => {
       if (!event.isPrimary) { cancel(); return; }
       if (event.button !== 0 || (visualViewport?.scale ?? 1) > 1.01 || (event.target instanceof Element && event.target.closest("a,button"))) return;
-      gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, theme: snapshot().theme, time: performance.now(), horizontal: false };
+      gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, theme: snapshot().theme, horizontal: false };
     };
     const move = (event: PointerEvent) => {
       if (!gesture || event.pointerId !== gesture.id) return;
@@ -37,11 +34,7 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
     };
     const up = (event: PointerEvent) => {
       if (!gesture || event.pointerId !== gesture.id) return;
-      if (gesture.horizontal) {
-        const dx = event.clientX - gesture.x, velocity = dx / Math.max(1, performance.now() - gesture.time);
-        const target = Math.abs(velocity) > .4 ? Math.round(gesture.theme) - Math.sign(dx) : Math.round(snapshot().theme);
-        selectTheme(THEME_IDS[Math.max(0, Math.min(4, target))]);
-      }
+      if (gesture.horizontal && node.hasPointerCapture(event.pointerId)) node.releasePointerCapture(event.pointerId);
       gesture = null;
     };
     zoom(); visualViewport?.addEventListener("resize", zoom);
