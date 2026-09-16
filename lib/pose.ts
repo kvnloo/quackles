@@ -1,5 +1,4 @@
 export type Vec3 = [number, number, number];
-
 export type Pose = {
   duckPosition: Vec3;
   duckRotation: Vec3;
@@ -15,136 +14,70 @@ export type Pose = {
   camPos: Vec3;
   fov: number;
 };
-
-function pose(partial: Partial<Pose>): Pose {
-  return {
-    duckPosition: [0, 0, 0],
-    duckRotation: [0, 0.48, 0],
-    duckScale: 1,
-    headPitch: 0.1,
-    headYaw: -0.28,
-    neckPitch: 0.22,
-    beak: 0.06,
-    crouch: 0.04,
-    explode: 0,
-    jump: 0,
-    lookAt: [0.04, 0.13, 0],
-    camPos: [0.52, 0.24, 1.12],
-    fov: 32,
-    ...partial,
-  };
-}
-
-/** Product still → explode → jump. Three keys, one scroll. */
-export const POSES: Pose[] = [
-  pose({
-    duckPosition: [0.1, 0, 0.02],
-    duckRotation: [0.02, 0.72, 0.02],
-    duckScale: 1,
-    headPitch: 0.08,
-    headYaw: -0.28,
-    neckPitch: 0.24,
-    beak: 0.04,
-    crouch: 0.03,
-    camPos: [0.52, 0.24, 1.12],
-    lookAt: [0.06, 0.13, 0.02],
-    fov: 32,
-  }),
-  pose({
-    duckPosition: [0.02, 0.02, 0],
-    duckRotation: [0, 0.38, 0],
-    explode: 1,
-    beak: 0.55,
-    headPitch: 0.04,
-    neckPitch: 0.12,
-    camPos: [0.36, 0.34, 1.92],
-    lookAt: [0.02, 0.12, 0],
-    fov: 32,
-  }),
-  pose({
-    duckPosition: [0.04, 0.03, 0],
-    duckRotation: [-0.08, 0.52, 0.02],
-    jump: 1,
-    crouch: 0,
-    beak: 0.1,
-    headPitch: 0.14,
-    neckPitch: 0.18,
-    camPos: [0.48, 0.3, 1.62],
-    lookAt: [0.04, 0.16, 0],
-    fov: 32,
-  }),
-];
-
-export function clamp01(v: number) {
-  return Math.min(1, Math.max(0, v));
-}
-
-export function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
-export function lerpVec(a: Vec3, b: Vec3, t: number): Vec3 {
-  return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
-}
-
+export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export function smoothstep(t: number) {
   const x = clamp01(t);
   return x * x * (3 - 2 * x);
 }
-
-function lerpVecInto(out: Vec3, a: Vec3, b: Vec3, t: number) {
-  out[0] = a[0] + (b[0] - a[0]) * t;
-  out[1] = a[1] + (b[1] - a[1]) * t;
-  out[2] = a[2] + (b[2] - a[2]) * t;
+export function interval(p: number, start: number, end: number) {
+  return smoothstep((p - start) / (end - start));
 }
-
+export function sceneMix(p: number) {
+  return interval(p, 0.06, 0.2);
+}
 export function poseAtInto(out: Pose, progress: number): Pose {
-  const t = clamp01(progress);
-  const max = POSES.length - 1;
-  const u = t * max;
-  const i = Math.min(max - 1, Math.floor(u));
-  const s = smoothstep(u - i);
-  const a = POSES[i];
-  const b = POSES[i + 1];
-  lerpVecInto(out.duckPosition, a.duckPosition, b.duckPosition, s);
-  lerpVecInto(out.duckRotation, a.duckRotation, b.duckRotation, s);
-  out.duckScale = lerp(a.duckScale, b.duckScale, s);
-  out.headPitch = lerp(a.headPitch, b.headPitch, s);
-  out.headYaw = lerp(a.headYaw, b.headYaw, s);
-  out.neckPitch = lerp(a.neckPitch, b.neckPitch, s);
-  out.beak = lerp(a.beak, b.beak, s);
-  out.crouch = lerp(a.crouch, b.crouch, s);
-  out.explode = lerp(a.explode, b.explode, s);
-  out.jump = lerp(a.jump, b.jump, s);
-  lerpVecInto(out.lookAt, a.lookAt, b.lookAt, s);
-  lerpVecInto(out.camPos, a.camPos, b.camPos, s);
-  out.fov = lerp(a.fov, b.fov, s);
+  const p = clamp01(progress);
+  const enter = interval(p, 0.16, 0.3);
+  const explosion = interval(p, 0.18, 0.38) * (1 - interval(p, 0.44, 0.58));
+  const flight = clamp01((p - 0.7) / 0.21);
+  const jump = Math.sin(Math.PI * flight) ** 2;
+  const squat = Math.sin(Math.PI * clamp01((p - 0.62) / 0.08)) ** 2;
+  const land = Math.sin(Math.PI * clamp01((p - 0.91) / 0.06)) ** 2;
+  out.duckPosition[0] = lerp(0.085, 0, enter);
+  out.duckPosition[1] = 0;
+  out.duckPosition[2] = 0;
+  out.duckRotation[0] = -jump * 0.08;
+  out.duckRotation[1] = lerp(-0.28, -0.3, enter);
+  out.duckRotation[2] = 0;
+  out.duckScale = 1;
+  out.headPitch = 0.29 - jump * 0.12;
+  out.headYaw = -0.12;
+  out.neckPitch = 0.1 + squat * 0.08;
+  out.beak = explosion * 0.3;
+  out.crouch = squat * 0.7 + land * 0.28;
+  out.explode = explosion;
+  out.jump = jump;
+  out.lookAt[0] = lerp(0.02, 0, enter);
+  out.lookAt[1] =
+    lerp(0.16, 0.18, enter) + explosion * 0.08 - interval(p, 0.94, 1) * 0.055;
+  out.lookAt[2] = 0;
+  out.camPos[0] = lerp(0.49, 0.44, enter);
+  out.camPos[1] = lerp(0.23, 0.28, enter);
+  out.camPos[2] = lerp(0.88, 0.94, enter) + explosion * 0.2;
+  out.fov = 32;
   return out;
 }
-
-export function lerpPose(a: Pose, b: Pose, t: number): Pose {
-  const s = smoothstep(t);
-  return {
-    duckPosition: lerpVec(a.duckPosition, b.duckPosition, s),
-    duckRotation: lerpVec(a.duckRotation, b.duckRotation, s),
-    duckScale: lerp(a.duckScale, b.duckScale, s),
-    headPitch: lerp(a.headPitch, b.headPitch, s),
-    headYaw: lerp(a.headYaw, b.headYaw, s),
-    neckPitch: lerp(a.neckPitch, b.neckPitch, s),
-    beak: lerp(a.beak, b.beak, s),
-    crouch: lerp(a.crouch, b.crouch, s),
-    explode: lerp(a.explode, b.explode, s),
-    jump: lerp(a.jump, b.jump, s),
-    lookAt: lerpVec(a.lookAt, b.lookAt, s),
-    camPos: lerpVec(a.camPos, b.camPos, s),
-    fov: lerp(a.fov, b.fov, s),
-  };
+export function poseAt(p: number): Pose {
+  return poseAtInto(
+    {
+      duckPosition: [0, 0, 0],
+      duckRotation: [0, 0, 0],
+      duckScale: 1,
+      headPitch: 0,
+      headYaw: 0,
+      neckPitch: 0,
+      beak: 0,
+      crouch: 0,
+      explode: 0,
+      jump: 0,
+      lookAt: [0, 0, 0],
+      camPos: [0, 0, 0],
+      fov: 32,
+    },
+    p,
+  );
 }
-
-export function poseAt(progress: number): Pose {
-  return poseAtInto(pose({}), progress);
-}
-
-export function sectionIndex(progress: number) {
-  return Math.round(clamp01(progress) * (POSES.length - 1));
+export function sectionIndex(p: number) {
+  return p < 0.18 ? 0 : p < 0.62 ? 1 : 2;
 }

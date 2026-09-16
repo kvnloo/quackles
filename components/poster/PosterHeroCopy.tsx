@@ -1,26 +1,35 @@
-import { POSTER } from "@/lib/poster";
-import { SPECS } from "@/lib/story";
-
 export function PosterHeroCopy() {
   return (
     <div className="hero-copy">
       <p className="hero-kicker">
-        {POSTER.kicker}
-        <span />
+        01 &nbsp; MICRODUCK <i />
       </p>
       <h1>
-        {POSTER.headline.map((line) => (
-          <span key={line}>{line}</span>
-        ))}
+        MICRODUCK
+        <br />
+        OPEN SOURCE
+        <br />
+        BIPED
       </h1>
-      <dl className="hero-specs">
-        {SPECS.map((spec) => (
-          <div key={spec.label}>
-            <dt>{spec.value}</dt>
-            <dd>{spec.label}</dd>
-          </div>
-        ))}
-      </dl>
+      <p className="hero-label">
+        OPEN SOURCE
+        <br />
+        BIPED
+        <br />
+        BY POLLEN
+        <br />
+        ROBOTICS
+      </p>
+      <p className="hero-note">
+        15 MOTORS
+        <br />
+        25 CM TALL
+        <br />
+        800 G
+      </p>
+      <div className="crop-cross" aria-hidden>
+        +
+      </div>
     </div>
   );
 }

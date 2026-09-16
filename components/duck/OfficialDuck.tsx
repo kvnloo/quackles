@@ -1,164 +1,122 @@
 "use client";
-
-import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
-import type { Group, MeshPhysicalMaterial } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { Group, Mesh, MeshStandardMaterial } from "three";
 import type { Pose } from "@/lib/pose";
-import { driveRig, explodeRig } from "@/lib/sim/drive";
+import {
+  auditFeet,
+  driveRig,
+  isRig,
+  prepareRig,
+  type Rig,
+} from "@/lib/sim/drive";
 import { ensureProbe } from "@/lib/probe";
 import {
-  applyPose,
   buildRig,
-  groundFullBody,
   loadKinematics,
   MODEL_DIR,
 } from "@/vendor/microduck-simulator/duck.js";
-import { DEFAULT_POSE, JOINT_NAMES } from "@/vendor/microduck-simulator/constants.js";
-import { applyVariant, materialHookFor, VARIANTS } from "@/vendor/microduck-simulator/variants.js";
-
-type Spec = {
-  color: number[];
-  roughness: number;
-  metalness: number;
-  clearcoat?: number;
-  clearcoatRoughness?: number;
-  envMapIntensity?: number;
-};
-
-type Rig = {
-  placer: object;
-  root?: { traverse: (fn: (o: unknown) => void) => void };
-  bodies: Map<
-    string,
-    {
-      position: {
-        clone: () => unknown;
-        copy: (v: unknown) => void;
-        addScaledVector: (v: unknown, s: number) => void;
-      };
-    }
-  >;
-  joints: Map<string, unknown>;
-};
-
-const STANDING: Record<string, number> = {};
-JOINT_NAMES.forEach((name: string, i: number) => {
-  STANDING[name] = (DEFAULT_POSE as Float32Array)[i];
-});
-STANDING.left_hip_pitch = -0.18;
-STANDING.right_hip_pitch = 0.18;
-STANDING.left_knee = 0.26;
-STANDING.right_knee = -0.26;
-STANDING.left_ankle = -0.12;
-STANDING.right_ankle = 0.12;
-STANDING.neck_pitch = 0.42;
-STANDING.head_pitch = 0.16;
-STANDING.head_yaw = -0.32;
-
-/** Official classic: cream shells, graphite legs/face, amber pads. */
-const CREAM: Spec = {
-  color: [0.78, 0.73, 0.64],
-  roughness: 0.52,
-  metalness: 0,
-  clearcoat: 0.28,
-  clearcoatRoughness: 0.42,
-  envMapIntensity: 1.2,
-};
-const GRAPHITE: Spec = {
-  color: [0.028, 0.028, 0.032],
-  roughness: 0.4,
-  metalness: 0.18,
-  clearcoat: 0.2,
-  clearcoatRoughness: 0.26,
-  envMapIntensity: 1.05,
-};
-const AMBER: Spec = {
-  color: [0.847, 0.339, 0.022],
-  roughness: 0.42,
-  metalness: 0,
-  envMapIntensity: 1.1,
-};
-
-const HQ_CLASSIC = {
-  ...VARIANTS.classic,
-  headDome: CREAM,
-  trim: CREAM,
-  bodyShell: CREAM,
-  sideShells: CREAM,
-  feet: CREAM,
-  facePlate: GRAPHITE,
-  eyeRing: GRAPHITE,
-  legShells: GRAPHITE,
-  soles: AMBER,
-};
-
-function polishMaterials(rig: Rig) {
-  rig.root?.traverse((node) => {
-    const mesh = node as { isMesh?: boolean; material?: MeshPhysicalMaterial };
-    if (!mesh.isMesh || !mesh.material) return;
-    mesh.material.envMapIntensity = Math.max(mesh.material.envMapIntensity ?? 0.7, 1.12);
-    mesh.material.needsUpdate = true;
-  });
+import { useExperience } from "@/components/providers/ExperienceProvider";
+const shell = { color: [0.71, 0.68, 0.61], roughness: 0.46, metalness: 0.02 };
+const dark = { color: [0.015, 0.017, 0.02], roughness: 0.39, metalness: 0.2 };
+const metal = { color: [0.25, 0.27, 0.29], roughness: 0.31, metalness: 0.78 };
+function materialForMesh(name: string) {
+  if (name === "noenoeil.stl") return shell;
+  if (name === "lens.stl")
+    return {
+      color: [0.008, 0.015, 0.025],
+      roughness: 0.09,
+      metalness: 0.2,
+      clearcoat: 0.6,
+    };
+  if (name === "bottom_head_shell.stl") return dark;
+  if (
+    /head_shell|left_shell|right_shell|upper_leg|foot|ankle|eye_ring/.test(name)
+  )
+    return shell;
+  if (/bracket|bearing|horn|holder|support/.test(name)) return metal;
+  return dark;
 }
-
-async function makeRig() {
-  const kinematics = await loadKinematics(`${MODEL_DIR}/kinematics.json`);
-  const rig = (await buildRig(kinematics, {
-    materialForMesh: materialHookFor(HQ_CLASSIC),
-  })) as Rig;
-  applyPose(rig, STANDING);
-  groundFullBody(rig);
-  applyVariant(rig, HQ_CLASSIC);
-  polishMaterials(rig);
-  return rig;
-}
-
 export function OfficialDuck({
   poseRef,
-  reducedMotion,
 }: {
-  poseRef: { current: Pose };
-  reducedMotion: boolean;
+  poseRef: {
+    current: Pose;
+  };
 }) {
-  const host = useRef<Group>(null);
-  const rigRef = useRef<Rig | null>(null);
-  const [failed, setFailed] = useState(false);
-
+  const host = useRef<Group>(null),
+    rigRef = useRef<{
+      rig: Rig;
+      prepared: ReturnType<typeof prepareRig>;
+    } | null>(null);
+  const { gl, scene, camera, invalidate } = useThree();
+  const { setReady, setWebgl } = useExperience();
   useEffect(() => {
     const group = host.current;
     if (!group) return;
     let cancelled = false;
-
-    makeRig()
-      .then((rig) => {
-        if (cancelled || !host.current) return;
-        host.current.add(rig.placer as never);
-        rigRef.current = rig;
+    let activeRig: Rig | null = null;
+    async function load() {
+      try {
+        const kinematics = await loadKinematics(`${MODEL_DIR}/kinematics.json`);
+        const rig = await buildRig(kinematics, { materialForMesh });
+        if (!isRig(rig)) throw new Error("Invalid Microduck hierarchy");
+        if (cancelled) return;
+        activeRig = rig;
+        group!.add(rig.placer);
+        const prepared = prepareRig(rig);
+        rigRef.current = { rig, prepared };
+        window.__QUACKLES_AUDIT__ = () => auditFeet(rig, prepared);
+        driveRig(rig, poseRef.current, prepared);
+        await gl.compileAsync(scene, camera);
+        if (cancelled) return;
         const q = ensureProbe();
-        if (q) q.rigReady = true;
-      })
-      .catch((err) => {
-        console.warn("official microduck rig failed", err);
-        if (!cancelled) setFailed(true);
-      });
-
+        if (q) {
+          q.rigReady = true;
+          q.rigLoaded = true;
+          q.ready = true;
+        }
+        setReady(true);
+        invalidate();
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Microduck model load failed", error);
+          setWebgl(false);
+          setReady(true);
+        }
+      }
+    }
+    void load();
     return () => {
+      delete window.__QUACKLES_AUDIT__;
       cancelled = true;
       rigRef.current = null;
-      if (group) {
-        while (group.children.length) group.remove(group.children[0]);
+      if (activeRig) {
+        group.remove(activeRig.placer);
+        const materials = new Set<MeshStandardMaterial>();
+        activeRig.root.traverse((node) => {
+          if (
+            node instanceof Mesh &&
+            node.material instanceof MeshStandardMaterial
+          )
+            materials.add(node.material);
+        });
+        materials.forEach((material) => material.dispose());
       }
     };
-  }, []);
-
-  useFrame(({ clock }) => {
-    const rig = rigRef.current;
-    if (!rig) return;
-    const p = poseRef.current;
-    explodeRig(rig, p.explode);
-    driveRig(rig, p, clock.elapsedTime, reducedMotion);
-  });
-
-  if (failed) return null;
+  }, [camera, gl, invalidate, poseRef, scene, setReady, setWebgl]);
+  useFrame(() => {
+    const active = rigRef.current;
+    if (!active) return;
+    const feetMinY = driveRig(active.rig, poseRef.current, active.prepared);
+    const q = ensureProbe();
+    if (q) {
+      q.feetMinY = feetMinY;
+      const p = active.rig.placer.position;
+      q.rootPosition[0] = p.x;
+      q.rootPosition[1] = p.y;
+      q.rootPosition[2] = p.z;
+    }
+  }, -1);
   return <group ref={host} />;
 }

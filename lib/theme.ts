@@ -35,20 +35,20 @@ export type SceneLights = {
 };
 
 /** White / paper: --hermes-paper on --hermes-color-blue type. */
-const PAPER: Palette = { paper: "#f2f2f2", deep: "#ececec", ink: "#0000f2", cobalt: "#0000f2" };
+const PAPER: Palette = { paper: "#e5e1d8", deep: "#ddd9d0", ink: "#0000f2", cobalt: "#0000f2" };
 /** Poster: --hermes-bg #0000f2, --hermes-fg #f2f2f2. Default. */
 const COBALT: Palette = { paper: "#0000f2", deep: "#0000c2", ink: "#f2f2f2", cobalt: "#f2f2f2" };
 /** Dark: --hermes-blue-dark-80 / -90, accent --hermes-blue-light-40. */
-const INK: Palette = { paper: "#000030", deep: "#000018", ink: "#f2f2f2", cobalt: "#6666f6" };
+const INK: Palette = { paper: "#090b10", deep: "#050609", ink: "#f2f2f2", cobalt: "#6666f6" };
 
 export const THEME_STATES: readonly ThemeState[] = [
   { id: "white", tone: "paper", label: "White", t: 0 },
-  { id: "poster", tone: "cobalt", label: "Poster", t: 0.5 },
+  { id: "poster", tone: "cobalt", label: "Blue", t: 0.5 },
   { id: "dark", tone: "ink", label: "Dark", t: 1 },
 ] as const;
 
-export const DEFAULT_THEME_ID: ThemeStateId = "poster";
-export const DEFAULT_THEME_T = 0.5;
+export const DEFAULT_THEME_ID: ThemeStateId = "white";
+export const DEFAULT_THEME_T = 0;
 /** Hermes --default-transition-timing-function, 300–400ms. */
 export const THEME_LERP_MS = 360;
 

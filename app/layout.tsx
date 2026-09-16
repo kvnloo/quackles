@@ -1,47 +1,32 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Barlow_Condensed, Inter, Geist_Mono } from "next/font/google";
-import { BUILD_STAMP } from "@/lib/build-info";
+import localFont from "next/font/local";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+import { BUILD_STAMP } from "@/lib/build-info";
+const display = localFont({
+  src: "../public/preview-scene/fonts/RulesGothicCnd-Light.woff2",
+  variable: "--font-display",
+  display: "swap",
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const mono = localFont({
+  src: "../public/preview-scene/fonts/AeonikFono-Regular.woff2",
+  variable: "--font-mono",
+  display: "swap",
 });
-
-const barlow = Barlow_Condensed({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: ["200", "400", "500"],
-});
-
 export const metadata: Metadata = {
-  title: "Microduck — Tiny duck. Big waddle.",
+  title: "Quackles · Microduck",
   description:
-    "A 25 cm biped from Pollen Robotics. Fifteen motors, a grasping beak, trained in sim. Unofficial fan landing.",
-  openGraph: {
-    title: "Microduck — Tiny duck. Big waddle.",
-    description: "Product shot, explode, and jump — on a cobalt studio.",
-    type: "website",
-  },
-  other: {
-    "microduck-build": BUILD_STAMP,
-  },
+    "A study of Microduck, the open source biped by Pollen Robotics. Product, exploded view, and jump.",
+  other: { "microduck-build": BUILD_STAMP },
 };
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      data-tone="cobalt"
-      className={`${inter.variable} ${geistMono.variable} ${barlow.variable} h-full antialiased`}
+      data-tone="paper"
+      className={`${display.variable} ${mono.variable}`}
     >
-      <body className="min-h-full">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

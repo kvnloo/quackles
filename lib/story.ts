@@ -17,7 +17,7 @@ export const STORY = [
 export const SPECS = [
   { value: "15", label: "Motors" },
   { value: "25 cm", label: "Tall" },
-  { value: "<800 g", label: "Mass" },
+  { value: "800 g", label: "Mass" },
   { value: "50 Hz", label: "Policy" },
 ] as const;
 

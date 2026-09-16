@@ -1,27 +1,18 @@
-"use client";
-
 import { LINKS } from "@/lib/story";
-import { POSTER } from "@/lib/poster";
-import { ThemeControl } from "@/components/poster/ThemeControl";
-
 export function PosterNav() {
   return (
     <header className="site-nav">
-      <a href="#top" className="wordmark">
-        {POSTER.brand}
-        <sup>TM</sup>
+      <a href="#top" className="wordmark" aria-label="Microduck, back to top">
+        microduck<span>®</span>
       </a>
-      <nav>
-        {POSTER.nav.map((item) => (
-          <a key={item.label} href={item.href} target="_blank" rel="noreferrer">
-            {item.label}
-          </a>
-        ))}
+      <nav aria-label="Product">
+        <a href={LINKS.github} target="_blank" rel="noreferrer">
+          SOURCE ↗
+        </a>
+        <a href={LINKS.official} target="_blank" rel="noreferrer">
+          POLLEN ↗
+        </a>
       </nav>
-      <a href={LINKS.store} target="_blank" rel="noreferrer" className="nav-cta">
-        {POSTER.cta}
-      </a>
-      <ThemeControl />
     </header>
   );
 }

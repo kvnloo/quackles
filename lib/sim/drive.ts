@@ -1,86 +1,160 @@
-import { Vector3 } from "three";
-import { DEFAULT_POSE, JOINT_NAMES } from "@/vendor/microduck-simulator/constants.js";
-import { setJoint, setJawOpen, SITTING_POSE } from "@/vendor/microduck-simulator/duck.js";
+import { Group, Matrix3, Mesh, Vector3 } from "three";
+import { setJoint, setJawOpen } from "@/vendor/microduck-simulator/duck.js";
 import type { Pose } from "@/lib/pose";
-
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
-const _away = new Vector3();
-
-// Official three.js rig objects are untyped JS from the simulator.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function driveRig(rig: any, pose: Pose, time: number, reducedMotion: boolean) {
-  const hop = pose.jump;
-  const fold = pose.crouch * (1 - hop);
-  const d = DEFAULT_POSE as Float32Array;
-  const sit = SITTING_POSE as Record<string, number>;
-
-  const stand = Math.max(0, 1 - fold + hop * 0.45);
-  const hipPitchL = lerp(d[2], -0.22, stand);
-  const hipPitchR = lerp(d[11], 0.22, stand);
-  const kneeL0 = lerp(d[3], 0.18, stand);
-  const kneeR0 = lerp(d[12], -0.18, stand);
-  const ankleL0 = lerp(d[4], -0.08, stand);
-  const ankleR0 = lerp(d[13], 0.08, stand);
-
-  const kick = hop * 0.48;
-  const phase = reducedMotion ? 0 : time * 6.2 * hop;
-
-  setJoint(rig, JOINT_NAMES[0], d[0]);
-  setJoint(rig, JOINT_NAMES[1], d[1]);
-  setJoint(rig, JOINT_NAMES[2], lerp(hipPitchL, sit.left_hip_pitch, fold) - kick);
-  setJoint(rig, JOINT_NAMES[3], lerp(kneeL0, sit.left_knee, fold) + Math.sin(phase) * 0.14 * hop);
-  setJoint(rig, JOINT_NAMES[4], lerp(ankleL0, sit.left_ankle, fold));
-  const breathe = reducedMotion ? 0 : Math.sin(time * 1.15) * 0.012 * (1 - hop);
-  setJoint(
-    rig,
-    JOINT_NAMES[5],
-    lerp(d[5], sit.neck_pitch, fold * 0.45) + (pose.neckPitch - 0.12) + breathe,
+export type Rig = {
+  placer: Group;
+  root: Group;
+  bodies: Map<string, Group>;
+  joints: Map<string, unknown>;
+};
+export function isRig(value: unknown): value is Rig {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "placer" in value &&
+    value.placer instanceof Group &&
+    "root" in value &&
+    value.root instanceof Group &&
+    "bodies" in value &&
+    value.bodies instanceof Map &&
+    Array.from(value.bodies.entries()).every(
+      ([name, body]) => typeof name === "string" && body instanceof Group,
+    ) &&
+    "joints" in value &&
+    value.joints instanceof Map
   );
-  setJoint(rig, JOINT_NAMES[6], lerp(d[6], sit.head_pitch, fold * 0.4) + (pose.headPitch - 0.22));
-  setJoint(rig, JOINT_NAMES[7], pose.headYaw);
-  setJoint(rig, JOINT_NAMES[8], d[8] + pose.headYaw * 0.25);
-  setJoint(rig, JOINT_NAMES[9], d[9]);
-  setJoint(rig, JOINT_NAMES[10], d[10]);
-  setJoint(rig, JOINT_NAMES[11], lerp(hipPitchR, sit.right_hip_pitch, fold) + kick * 0.85);
-  setJoint(rig, JOINT_NAMES[12], lerp(kneeR0, sit.right_knee, fold) - Math.sin(phase + 0.6) * 0.12 * hop);
-  setJoint(rig, JOINT_NAMES[13], lerp(ankleR0, sit.right_ankle, fold));
-  setJawOpen(rig, Math.min(1, pose.beak));
-
-  const placer = rig.placer;
-  placer.rotation.x = pose.duckRotation[0] - hop * 0.12;
-  placer.rotation.y = -Math.PI / 2 + pose.duckRotation[1];
-  placer.rotation.z = pose.duckRotation[2];
-  placer.position.x = pose.duckPosition[0];
-  placer.position.y = pose.duckPosition[1] + hop * 0.22 - pose.crouch * 0.016;
-  placer.position.z = pose.duckPosition[2];
-  placer.scale.setScalar(pose.duckScale);
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function explodeRig(rig: any, explode: number) {
-  if (!rig._rest) {
-    rig._rest = new Map();
-    for (const [name, body] of rig.bodies) {
-      rig._rest.set(name, body.position.clone());
-    }
-  }
+type Part = {
+  body: Group;
+  rest: Vector3;
+  away: Vector3;
+};
+type Sole = {
+  mesh: Mesh;
+  corners: Vector3[];
+  bottom: Vector3[];
+  normal: Vector3;
+};
+export function prepareRig(rig: Rig) {
+  const parts: Part[] = [];
+  const soles: Sole[] = [];
   for (const [name, body] of rig.bodies) {
-    const rest = rig._rest.get(name);
-    if (!rest) continue;
-    if (explode < 0.002) {
-      body.position.copy(rest);
-      continue;
-    }
-    _away.copy(rest);
-    if (_away.lengthSq() < 1e-8) {
-      body.position.copy(rest);
-      continue;
-    }
-    _away.normalize();
-    body.position.copy(rest);
-    body.position.addScaledVector(_away, explode * 0.062);
+    const rest = body.position.clone();
+    const away = rest.clone().normalize();
+    if (name.includes("left")) away.y += 0.2;
+    if (name.includes("right")) away.y -= 0.2;
+    parts.push({ body, rest, away: away.normalize() });
   }
+  rig.root.traverse((node) => {
+    if (
+      !(node instanceof Mesh) ||
+      !String(node.userData.meshName).includes("sole")
+    )
+      return;
+    node.geometry.computeBoundingBox();
+    const box = node.geometry.boundingBox;
+    if (!box) return;
+    const corners: Vector3[] = [];
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y])
+        for (const z of [box.min.z, box.max.z])
+          corners.push(new Vector3(x, y, z));
+    const positions = node.geometry.getAttribute("position");
+    const seen = new Set<string>();
+    const bottom: Vector3[] = [];
+    for (let i = 0; i < positions.count; i++) {
+      const v = new Vector3().fromBufferAttribute(positions, i);
+      const key = `${v.x.toFixed(5)},${v.y.toFixed(5)},${v.z.toFixed(5)}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        bottom.push(v);
+      }
+    }
+    const size = box.getSize(new Vector3());
+    const normal =
+      size.x < size.y && size.x < size.z
+        ? new Vector3(1, 0, 0)
+        : size.y < size.z
+          ? new Vector3(0, 1, 0)
+          : new Vector3(0, 0, 1);
+    soles.push({ mesh: node, corners, bottom, normal });
+  });
+  return { parts, soles };
+}
+const point = new Vector3();
+export function driveRig(
+  rig: Rig,
+  pose: Pose,
+  prepared: ReturnType<typeof prepareRig>,
+) {
+  const crouch = pose.crouch;
+  const hip = 0.56 + crouch * 0.25 - pose.jump * 0.14,
+    knee = 0.332 + crouch * 0.42 + pose.jump * 0.15;
+  setJoint(rig, "left_hip_yaw", 0);
+  setJoint(rig, "right_hip_yaw", 0);
+  setJoint(rig, "left_hip_roll", -0.087266);
+  setJoint(rig, "right_hip_roll", 0.087266);
+  setJoint(rig, "left_hip_pitch", -hip);
+  setJoint(rig, "right_hip_pitch", hip);
+  setJoint(rig, "left_knee", -knee);
+  setJoint(rig, "right_knee", knee);
+  setJoint(rig, "left_ankle", hip - knee);
+  setJoint(rig, "right_ankle", knee - hip);
+  setJoint(rig, "neck_pitch", pose.neckPitch);
+  setJoint(rig, "head_pitch", pose.headPitch);
+  setJoint(rig, "head_yaw", pose.headYaw);
+  setJoint(rig, "head_roll", 0);
+  setJawOpen(rig, pose.beak);
+  for (const part of prepared.parts)
+    part.body.position
+      .copy(part.rest)
+      .addScaledVector(part.away, pose.explode * 0.032);
+  rig.placer.rotation.set(
+    pose.duckRotation[0],
+    -Math.PI / 2 + pose.duckRotation[1],
+    pose.duckRotation[2],
+  );
+  rig.placer.position.set(pose.duckPosition[0], 0, pose.duckPosition[2]);
+  rig.placer.scale.setScalar(pose.duckScale);
+  rig.placer.updateWorldMatrix(true, true);
+  let minY = Infinity;
+  for (const sole of prepared.soles)
+    for (const corner of sole.bottom)
+      minY = Math.min(
+        minY,
+        point.copy(corner).applyMatrix4(sole.mesh.matrixWorld).y,
+      );
+  if (!Number.isFinite(minY)) minY = 0;
+  rig.placer.position.y = -minY + pose.jump * 0.11;
+  return pose.jump * 0.11;
+}
+export function auditFeet(rig: Rig, prepared: ReturnType<typeof prepareRig>) {
+  rig.placer.updateWorldMatrix(true, true);
+  let feetMinY = Infinity,
+    soleVertices = 0;
+  const soles = prepared.soles.map((sole) => {
+    let minY = Infinity;
+    const vertices = sole.mesh.geometry.getAttribute("position");
+    for (let i = 0; i < vertices.count; i++) {
+      point
+        .fromBufferAttribute(vertices, i)
+        .applyMatrix4(sole.mesh.matrixWorld);
+      minY = Math.min(minY, point.y);
+    }
+    feetMinY = Math.min(feetMinY, minY);
+    soleVertices += vertices.count;
+    const normal = sole.normal
+      .clone()
+      .applyMatrix3(new Matrix3().getNormalMatrix(sole.mesh.matrixWorld))
+      .normalize();
+    const tiltDegrees =
+      (Math.acos(Math.min(1, Math.abs(normal.y))) * 180) / Math.PI;
+    return {
+      name: String(sole.mesh.userData.meshName),
+      minY,
+      vertexCount: vertices.count,
+      tiltDegrees,
+    };
+  });
+  return { feetMinY, soleVertices, soles };
 }
