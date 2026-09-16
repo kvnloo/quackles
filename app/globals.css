@@ -1,9 +1,9 @@
 @import "tailwindcss";
 :root {
-  --paper: #e5e1d8;
-  --paper-deep: #ddd9d0;
-  --ink: #080d9d;
-  --cobalt: #080d9d;
+  --paper: #0000f2;
+  --paper-deep: #0000c2;
+  --ink: #f2f2f2;
+  --cobalt: #f2f2f2;
   --background: var(--paper);
   --foreground: var(--ink);
 }
