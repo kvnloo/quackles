@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      data-tone="paper"
+      data-tone="blue"
       className={`${display.variable} ${mono.variable}`}
     >
       <body>{children}</body>

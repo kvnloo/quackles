@@ -47,8 +47,8 @@ export const THEME_STATES: readonly ThemeState[] = [
   { id: "dark", tone: "ink", label: "Dark", t: 1 },
 ] as const;
 
-export const DEFAULT_THEME_ID: ThemeStateId = "white";
-export const DEFAULT_THEME_T = 0;
+export const DEFAULT_THEME_ID: ThemeStateId = "poster";
+export const DEFAULT_THEME_T = 0.5;
 /** Hermes --default-transition-timing-function, 300–400ms. */
 export const THEME_LERP_MS = 360;
 

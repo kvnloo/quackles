@@ -141,7 +141,7 @@ export function SequencePlayer() {
     };
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">
-    <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/frame-white-1536.webp")} width={1536} height={2304} alt="Microduck in the rendered studio" fetchPriority="high" />
+    <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />
     <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
     <canvas ref={detail} className="sequence-detail" aria-hidden />
   </div>;
