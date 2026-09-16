@@ -4,6 +4,9 @@ import path from 'node:path';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+const execFileAsync = promisify(execFile);
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -181,6 +184,17 @@ async function realTimePass(direction, duration, changeThemes = false) {
     return { frames, longTasks: test.longTasks, longAnimationFrames: test.longFrames, reactCommits: test.reactCommits };
   }, { direction, duration, changeThemes });
 }
+async function hostLoad() {
+  const result = { loadAverage: os.loadavg(), at: new Date().toISOString() };
+  for (const [key, command, args] of [
+    ['gpu', 'nvidia-smi', ['--query-gpu=utilization.gpu,utilization.memory,memory.used', '--format=csv,noheader']],
+    ['processes', 'ps', ['-eo', 'pid,pcpu,pmem,comm', '--sort=-pcpu']],
+  ]) {
+    try { result[key] = (await execFileAsync(command, args, { timeout: 5000 })).stdout.trim().split('\n').slice(0, 12); }
+    catch (error) { result[key] = { unavailable: error.message }; }
+  }
+  return result;
+}
 async function metrics() {
   return page.evaluate(() => ({
     viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
@@ -272,6 +286,7 @@ async function boundaryChecks() {
 const report = {
   environment: { node: process.version, platform: process.platform, cpus: os.cpus().length, gpuMode: GPU_MODE, launchArgs, loadAverageAtStart: os.loadavg(), concurrentLoad: process.env.CONCURRENT_LOAD || 'Other user workflows may be active. No cross-run causal speedup claim.' },
   buildId: await fs.readFile(path.resolve('.next/BUILD_ID'), 'utf8').catch(() => 'unavailable'),
+  sourceRevision: process.env.SOURCE_REVISION || 'Working candidate; served HTML SHA and buildId identify the captured artifact', performanceNote: process.env.PERFORMANCE_NOTE || null,
   version: 2, date: new Date().toISOString(), label: LABEL, url: BASE, prototype: PROTOTYPE, visualThemes: PROTOTYPE ? VISUAL_THEMES : ['White', 'Blue', 'Dark'], spatialRequired: process.env.SPATIAL === '1', surfaceRequired: process.env.SURFACE === '1', shadowRequired: process.env.SHADOW === '1', checkpoints: PROTOTYPE ? CHECKPOINTS : null,
   limitations: ['Chromium desktop with mobile viewport and touch emulation; not a physical Galaxy S25.', 'rAF timestamps measure scheduling, not physical display presentation.', 'Deterministic screenshots are not taken during timing measurements.', 'Finite samples cannot establish every possible continuous scroll position.'],
   timings: [], visualSamples: [], timelineSamples: [], reducedMotionSamples: [], directSeekSamples: [], errors: [],
@@ -312,7 +327,24 @@ try {
   report.idleRenderedFrames = afterIdle.renderCount - report.initial.state.renderCount;
   report.refreshBudgetMs = idleMedian;
   report.canVerify120Hz = false;
-  if (MODE !== 'visual') {
+  if (MODE === 'shadow-pair') {
+    report.experiment = 'ABBA shadow-on/off comparison in one browser/build while unrelated host rendering may continue. No audit preparation or screenshots during timing.';
+    for (const [index, enabled] of [true, false, false, true].entries()) {
+      await page.evaluate(async enabled => {
+        if (!window.__QUACKLES_DEBUG__?.setShadows) throw new Error('Shadow probe is unavailable');
+        await window.__QUACKLES_DEBUG__.setShadows(enabled);
+      }, enabled);
+      await progress(0);
+      await page.waitForTimeout(1500);
+      const settings = await page.evaluate(() => window.__QUACKLES_DEBUG__.getState().shadows);
+      const before = await hostLoad();
+      const pass = await realTimePass('forward', DURATION);
+      const after = await hostLoad();
+      report.timings.push({ viewport: { width: 430, height: 932 }, direction: `shadow-${enabled ? 'on' : 'off'}-${index + 1}`, shadows: enabled, shadowAudit: settings, hostLoad: { before, after }, ...pass, statistics: distribution(pass.frames.map(x => x.dt), idleMedian) });
+      console.log(JSON.stringify({ phase: 'shadow-pair', index, enabled, settings, statistics: report.timings.at(-1).statistics }));
+    }
+    await page.evaluate(() => window.__QUACKLES_DEBUG__.setShadows(true));
+  } else if (MODE !== 'visual') {
     for (const [width, height] of [[430, 932], [360, 800]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(400);
@@ -327,7 +359,7 @@ try {
     report.timings.push({ viewport: { width: 430, height: 932 }, direction: 'forward-with-themes', ...themed, statistics: distribution(themed.frames.map(x => x.dt), idleMedian) });
   }
   console.log(JSON.stringify({phase:'timing-complete', directory:DIR}));
-  if (MODE !== 'timing') {
+  if (!['timing', 'shadow-pair'].includes(MODE)) {
     if (report.surfaceRequired) {
       const startAudit = performance.now();
       await page.evaluate(async () => {

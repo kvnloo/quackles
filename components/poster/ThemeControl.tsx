@@ -1,38 +1,27 @@
 "use client";
-import { useEffect, useState } from "react";
-import {
-  applyThemeT,
-  DEFAULT_THEME_ID,
-  DEFAULT_THEME_T,
-  selectTheme,
-  THEME_STATES,
-  type ThemeStateId,
-} from "@/lib/theme";
+import { useSyncExternalStore } from "react";
+import { THEME_IDS } from "@/lib/sequence/manifest";
+import { selectTheme, snapshot, subscribe } from "@/lib/sequence/store";
+
 export function ThemeControl() {
-  const [active, setActive] = useState<ThemeStateId>(DEFAULT_THEME_ID);
-  useEffect(() => applyThemeT(DEFAULT_THEME_T), []);
-  return (
-    <div className="theme-seg" role="radiogroup" aria-label="Scene color">
-      <span className="theme-label" aria-hidden>
-        STUDIO
-      </span>
-      {THEME_STATES.map((state) => (
-        <button
-          key={state.id}
-          type="button"
-          role="radio"
-          aria-checked={state.id === active}
-          data-testid={`theme-${state.id}`}
-          className="theme-seg-btn"
-          onClick={() => {
-            setActive(state.id);
-            selectTheme(state.id);
-          }}
-        >
-          <i className={`swatch swatch-${state.id}`} />
-          {state.label}
-        </button>
-      ))}
-    </div>
-  );
+  const target = useSyncExternalStore(subscribe, () => snapshot().target, () => 1);
+  return <div className="theme-seg" role="radiogroup" aria-label="Studio theme">
+    {THEME_IDS.map((id, index) => <button
+      key={id}
+      type="button"
+      role="radio"
+      aria-checked={index === target}
+      tabIndex={index === target ? 0 : -1}
+      data-testid={`theme-${id}`}
+      className="theme-seg-btn"
+      onClick={() => selectTheme(id)}
+      onKeyDown={(event) => {
+        const offset = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+        const next = event.key === "Home" ? 0 : event.key === "End" ? 4 : (index + offset + 5) % 5;
+        if (!offset && event.key !== "Home" && event.key !== "End") return;
+        event.preventDefault(); selectTheme(THEME_IDS[next]);
+        document.querySelector<HTMLButtonElement>(`[data-testid="theme-${THEME_IDS[next]}"]`)?.focus();
+      }}
+    ><i className={`swatch swatch-${id}`} aria-hidden />{id[0].toUpperCase() + id.slice(1)}</button>)}
+  </div>;
 }

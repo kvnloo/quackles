@@ -114,6 +114,10 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       prepareAudit: async () => { await window.__QUACKLES_PREPARE_AUDIT__?.(); },
       getThemeAudit: () => ({ target: getThemeTarget(), current: getThemeSnapshot(), robot: ensureProbe()?.robotTheme ?? null, set: ensureProbe()?.setTheme ?? null }),
       failCanvas: () => window.__QUACKLES_FAIL_CANVAS__?.(),
+      setShadows: async (enabled) => {
+        if (!window.__QUACKLES_SET_SHADOWS__) throw new Error("Scene is not ready");
+        await window.__QUACKLES_SET_SHADOWS__(enabled);
+      },
     };
     addEventListener("scroll", schedule, { passive: true });
     addEventListener("resize", resize);

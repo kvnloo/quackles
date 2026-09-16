@@ -62,6 +62,22 @@ export function DuckScene({
     ambient = useRef<THREE.AmbientLight>(null);
   const lastTheme = useRef(-1);
   useEffect(() => {
+    window.__QUACKLES_SET_SHADOWS__ = async (enabled) => {
+      if (!key.current) throw new Error("Studio key light is not ready");
+      gl.shadowMap.enabled = enabled;
+      key.current.castShadow = enabled;
+      scene.traverse((node) => {
+        if (!(node instanceof THREE.Mesh)) return;
+        for (const material of Array.isArray(node.material) ? node.material : [node.material])
+          material.needsUpdate = true;
+      });
+      await gl.compileAsync(scene, camera);
+      gl.shadowMap.needsUpdate = enabled;
+      invalidate();
+    };
+    return () => { delete window.__QUACKLES_SET_SHADOWS__; };
+  }, [camera, gl, invalidate, scene]);
+  useEffect(() => {
     window.__QUACKLES_INVALIDATE__ = invalidate;
     const unsub = subscribeTheme(invalidate);
     invalidate();
@@ -106,6 +122,8 @@ export function DuckScene({
     pushGlFrame(delta, progressRef.current, pose);
     const q = ensureProbe();
     if (q) {
+      q.shadows.enabled = gl.shadowMap.enabled;
+      q.shadows.keyCastShadow = key.current?.castShadow ?? false;
       q.renderer.calls = gl.info.render.calls;
       q.renderer.triangles = gl.info.render.triangles;
       q.renderer.geometries = gl.info.memory.geometries;

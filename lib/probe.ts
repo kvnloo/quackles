@@ -37,6 +37,7 @@ export type QuacklesProbe = {
   rigLoaded: boolean;
   robotTheme: number | null;
   setTheme: number | null;
+  shadows: { enabled: boolean; keyCastShadow: boolean };
   setReady: boolean;
   phase: "poster" | "camera" | "crouch" | "flight" | "landing" | "explode" | "inspection";
   renderCount: number;
@@ -66,6 +67,7 @@ export type QuacklesDebug = {
   prepareAudit: () => Promise<void>;
   getThemeAudit: () => { target: number; current: number; robot: number | null; set: number | null };
   failCanvas: () => void;
+  setShadows: (enabled: boolean) => Promise<void>;
 };
 declare global {
   interface Window {
@@ -76,6 +78,7 @@ declare global {
     __QUACKLES_AUDIT__?: () => RigAudit;
     __QUACKLES_PREPARE_AUDIT__?: () => Promise<void>;
     __QUACKLES_FAIL_CANVAS__?: () => void;
+    __QUACKLES_SET_SHADOWS__?: (enabled: boolean) => Promise<void>;
     __QUACKLES_SET_AUDIT__?: () => SetAudit;
   }
 }
@@ -87,6 +90,7 @@ export function ensureProbe(): QuacklesProbe | null {
     rigLoaded: false,
     robotTheme: null,
     setTheme: null,
+    shadows: { enabled: false, keyCastShadow: false },
     setReady: false,
     phase: "poster",
     renderCount: 0,
