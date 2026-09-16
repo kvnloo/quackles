@@ -12,9 +12,9 @@ import {
 import {
   clamp01,
   interval,
+  sceneMix,
   poseAt,
   poseAtInto,
-  sceneMix,
   type Pose,
 } from "@/lib/pose";
 import { ensureProbe, publishPose } from "@/lib/probe";
@@ -67,9 +67,10 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       publishPose(p, poseRef.current);
       const q = ensureProbe();
       if (q) q.reducedMotion = reducedMotion;
-      const mix = ready && webgl ? sceneMix(p) : 0;
-      if (plates) plates.style.opacity = String(1 - mix);
-      if (canvas) canvas.style.opacity = String(Math.max(0.001, mix));
+      const active = ready && webgl;
+      const modelOpacity = active ? sceneMix(p) : 0;
+      if (plates) plates.style.opacity = "1";
+      if (canvas) canvas.style.opacity = String(Math.max(0.001, modelOpacity));
       if (copy) copy.style.opacity = String(1 - interval(p, 0.03, 0.13));
       if (explodeCopy)
         explodeCopy.style.opacity = String(

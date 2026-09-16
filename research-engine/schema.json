@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/research-engine.schema.json",
+  "title": "A/B research engine graph and state",
+  "$defs": {
+    "sourceStatus": {
+      "oneOf": [
+        {"type": "object", "required": ["status", "evidence"], "properties": {"status": {"const": "sourced"}, "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}}}, "additionalProperties": false},
+        {"type": "object", "required": ["status", "query", "reason"], "properties": {"status": {"const": "failed-search"}, "query": {"type": "string", "minLength": 1}, "reason": {"type": "string", "minLength": 1}}, "additionalProperties": false}
+      ]
+    }
+  },
+  "type": "object",
+  "required": ["version", "nodes", "edges", "source_status", "round_updates"],
+  "properties": {
+    "version": {"type": "integer", "minimum": 1},
+    "purpose": {"type": "string"},
+    "nodes": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["id", "domain", "kind"], "properties": {"id": {"type": "string"}, "domain": {"enum": ["mobile", "blender", "cross-domain"]}, "kind": {"type": "string"}}, "additionalProperties": false}},
+    "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to", "relation", "evidence"], "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "relation": {"type": "string"}, "other": {"type": "string"}, "evidence": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false}},
+    "source_status": {"type": "object", "additionalProperties": {"$ref": "#/$defs/sourceStatus"}},
+    "round_updates": {"type": "array"}
+  }
+}

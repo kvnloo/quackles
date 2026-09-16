@@ -1,6 +1,7 @@
-import { Group, Matrix3, Mesh, Vector3 } from "three";
+import { Group, Mesh, Vector3 } from "three";
 import { setJoint, setJawOpen } from "@/vendor/microduck-simulator/duck.js";
 import type { Pose } from "@/lib/pose";
+import calibration from "../poster-camera.json";
 export type Rig = {
   placer: Group;
   root: Group;
@@ -31,9 +32,7 @@ type Part = {
 };
 type Sole = {
   mesh: Mesh;
-  corners: Vector3[];
   bottom: Vector3[];
-  normal: Vector3;
 };
 export function prepareRig(rig: Rig) {
   const parts: Part[] = [];
@@ -54,11 +53,6 @@ export function prepareRig(rig: Rig) {
     node.geometry.computeBoundingBox();
     const box = node.geometry.boundingBox;
     if (!box) return;
-    const corners: Vector3[] = [];
-    for (const x of [box.min.x, box.max.x])
-      for (const y of [box.min.y, box.max.y])
-        for (const z of [box.min.z, box.max.z])
-          corners.push(new Vector3(x, y, z));
     const positions = node.geometry.getAttribute("position");
     const seen = new Set<string>();
     const bottom: Vector3[] = [];
@@ -70,14 +64,7 @@ export function prepareRig(rig: Rig) {
         bottom.push(v);
       }
     }
-    const size = box.getSize(new Vector3());
-    const normal =
-      size.x < size.y && size.x < size.z
-        ? new Vector3(1, 0, 0)
-        : size.y < size.z
-          ? new Vector3(0, 1, 0)
-          : new Vector3(0, 0, 1);
-    soles.push({ mesh: node, corners, bottom, normal });
+    soles.push({ mesh: node, bottom });
   });
   return { parts, soles };
 }
@@ -88,8 +75,8 @@ export function driveRig(
   prepared: ReturnType<typeof prepareRig>,
 ) {
   const crouch = pose.crouch;
-  const hip = 0.56 + crouch * 0.25 - pose.jump * 0.14,
-    knee = 0.332 + crouch * 0.42 + pose.jump * 0.15;
+  const hip = calibration.hip + crouch * 0.25 - pose.jump * 0.14,
+    knee = calibration.knee + crouch * 0.42 + pose.jump * 0.15;
   setJoint(rig, "left_hip_yaw", 0);
   setJoint(rig, "right_hip_yaw", 0);
   setJoint(rig, "left_hip_roll", -0.087266);
@@ -143,10 +130,39 @@ export function auditFeet(rig: Rig, prepared: ReturnType<typeof prepareRig>) {
     }
     feetMinY = Math.min(feetMinY, minY);
     soleVertices += vertices.count;
-    const normal = sole.normal
-      .clone()
-      .applyMatrix3(new Matrix3().getNormalMatrix(sole.mesh.matrixWorld))
-      .normalize();
+    const index = sole.mesh.geometry.index;
+    const a = new Vector3(),
+      b = new Vector3(),
+      c = new Vector3(),
+      area = new Vector3();
+    const planes = new Map<string, { vector: Vector3; triangles: number }>();
+    for (let i = 0; i < (index?.count ?? vertices.count); i += 3) {
+      a.fromBufferAttribute(vertices, index ? index.getX(i) : i).applyMatrix4(
+        sole.mesh.matrixWorld,
+      );
+      b.fromBufferAttribute(
+        vertices,
+        index ? index.getX(i + 1) : i + 1,
+      ).applyMatrix4(sole.mesh.matrixWorld);
+      c.fromBufferAttribute(
+        vertices,
+        index ? index.getX(i + 2) : i + 2,
+      ).applyMatrix4(sole.mesh.matrixWorld);
+      area.crossVectors(b.sub(a), c.sub(a)).multiplyScalar(0.5);
+      const length = area.length();
+      if (length === 0 || area.y / length > -0.7) continue;
+      const key = `${Math.round((area.x / length) * 100)},${Math.round((area.y / length) * 100)},${Math.round((area.z / length) * 100)}`;
+      const plane = planes.get(key) ?? { vector: new Vector3(), triangles: 0 };
+      plane.vector.add(area);
+      plane.triangles++;
+      planes.set(key, plane);
+    }
+    let dominant = { vector: new Vector3(), triangles: 0 };
+    for (const plane of planes.values())
+      if (plane.vector.lengthSq() > dominant.vector.lengthSq())
+        dominant = plane;
+    const planeAreaM2 = dominant.vector.length();
+    const normal = dominant.vector.normalize();
     const tiltDegrees =
       (Math.acos(Math.min(1, Math.abs(normal.y))) * 180) / Math.PI;
     return {
@@ -154,6 +170,8 @@ export function auditFeet(rig: Rig, prepared: ReturnType<typeof prepareRig>) {
       minY,
       vertexCount: vertices.count,
       tiltDegrees,
+      planeAreaM2,
+      planeTriangles: dominant.triangles,
     };
   });
   return { feetMinY, soleVertices, soles };

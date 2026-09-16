@@ -1,0 +1,89 @@
+{
+  "retrieved_on": "2026-09-16",
+  "round": "6B",
+  "sources": [
+    {
+      "url": "https://www.w3.org/TR/scroll-animations-1/",
+      "route": "Jina web reader",
+      "status": "content read",
+      "retrieved_text_sha256": "5cfda45b4b21a3d47281825b9708bc105c3a423abab425b3a3eeabb3a3f38c48"
+    },
+    {
+      "url": "https://threejs.org/docs/pages/CatmullRomCurve3.html",
+      "route": "Jina web reader",
+      "status": "content read",
+      "retrieved_text_sha256": "184349b72eca623f3e15a6dff92170ab8cbdee924decd28a1da412eb7e0cc8e9"
+    },
+    {
+      "url": "https://github.com/mrdoob/three.js/blob/dev/src/extras/core/Curve.js",
+      "route": "GitHub CLI",
+      "status": "official implementation read after reader returned documentation navigation; official docs also read via web",
+      "retrieved_text_sha256": "e15b70663608e578e693813d88e46d1da9e4103b56b457334f6858613690bda2"
+    },
+    {
+      "url": "https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js",
+      "route": "GitHub CLI",
+      "status": "official implementation read after reader returned documentation navigation; official docs also read via web",
+      "retrieved_text_sha256": "6c18e09a14f2d2fa7813e23bb257b3a9df542c5f7ad605f79ab8a99fa3bd8497"
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4521857/",
+      "route": "Jina web reader",
+      "status": "content read",
+      "retrieved_text_sha256": "b956cd42ab0b9f99ff135a4286ffebf201c4c9613dac616d5da92fd5ec3a9e83"
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/3226867/",
+      "route": "Jina web reader",
+      "status": "primary abstract read",
+      "retrieved_text_sha256": "11efa973edeac658ddea630d61be66cbce9dba19513e73bf2800d7fc3e88c225"
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4085165/",
+      "route": "Jina web reader",
+      "status": "content read; infant population explicitly qualified",
+      "retrieved_text_sha256": "3583d746f12f199a2317773ccbb9927c6c676ed3dbc7a1156c77b4a8893e4ef9"
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12434928/",
+      "route": "Jina web reader",
+      "status": "content read; replication differences explicitly qualified",
+      "retrieved_text_sha256": "104249540f54571d9116746308492fc471af6696ed13434af1595fb122eb9fb9"
+    },
+    {
+      "url": "https://drei.docs.pmnd.rs/staging/contact-shadows",
+      "route": "Jina web reader",
+      "status": "content read",
+      "retrieved_text_sha256": "c773355f8c6e8539f93399e2d05bd492c18a354f326ec8b5d5444e392cd8ba26"
+    },
+    {
+      "url": "https://docs.blender.org/manual/en/5.0/render/cycles/baking.html",
+      "route": "Jina web reader",
+      "status": "content read",
+      "retrieved_text_sha256": "1d9498de1a4a24ca701a75feea6fd3ef85d732db339abb61d94e5c67ed36896d"
+    },
+    {
+      "url": "https://docs.blender.org/manual/en/4.0/addons/import_export/scene_gltf2.html",
+      "route": "Jina web reader",
+      "status": "content read",
+      "retrieved_text_sha256": "8c09c79947b34b01e0a66f941091fb94dd1ed8e813298a0027ead1a7e5979cc1"
+    },
+    {
+      "url": "https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/Specification.adoc",
+      "route": "GitHub CLI",
+      "status": "official specification read after registry verification page",
+      "retrieved_text_sha256": "31cb64ce16e082b78a2acb41369557cfdda5fa1c2ef28ffb583c15e5e1cf9f49"
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html",
+      "route": "Jina web reader",
+      "status": "content read",
+      "retrieved_text_sha256": "f9abfde21a9c101399169264b6464cce0c7d9a20f990ffa50cbcdbad003cf198"
+    },
+    {
+      "url": "https://github.com/pmndrs/examples/blob/main/examples/scrollcontrols-with-minimap/src/App.tsx",
+      "route": "GitHub CLI",
+      "status": "content read from corrected path; old demos/.../App.jsx returned 404"
+    }
+  ]
+}

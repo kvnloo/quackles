@@ -1,4 +1,9 @@
 import type { Pose } from "@/lib/pose";
+import type { auditFeet } from "@/lib/sim/drive";
+import type { auditRenderBatches } from "@/lib/sim/render-rig";
+type RigAudit = ReturnType<typeof auditFeet> & {
+  batchGeometry: ReturnType<typeof auditRenderBatches>;
+};
 export type FrameSample = {
   t: number;
   dt: number;
@@ -13,6 +18,8 @@ export type QuacklesProbe = {
   rigReady: boolean;
   rigLoaded: boolean;
   renderCount: number;
+  renderedProgress: number;
+  renderedAt: number;
   progress: number;
   explode: number;
   jump: number;
@@ -32,10 +39,7 @@ export type QuacklesProbe = {
 export type QuacklesDebug = {
   setProgress: (progress: number) => void;
   getState: () => QuacklesProbe | null;
-  getAuditState: () => {
-    feetMinY: number;
-    soleVertices: number;
-  } | null;
+  getAuditState: () => RigAudit | null;
 };
 declare global {
   interface Window {
@@ -43,10 +47,7 @@ declare global {
     __QUACKLES_DEBUG__?: QuacklesDebug;
     __QUACKLES_RECORD__?: boolean;
     __QUACKLES_INVALIDATE__?: () => void;
-    __QUACKLES_AUDIT__?: () => {
-      feetMinY: number;
-      soleVertices: number;
-    };
+    __QUACKLES_AUDIT__?: () => RigAudit;
   }
 }
 export function ensureProbe(): QuacklesProbe | null {
@@ -56,6 +57,8 @@ export function ensureProbe(): QuacklesProbe | null {
     rigReady: false,
     rigLoaded: false,
     renderCount: 0,
+    renderedProgress: 0,
+    renderedAt: 0,
     progress: 0,
     explode: 0,
     jump: 0,

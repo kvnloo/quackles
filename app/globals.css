@@ -215,18 +215,18 @@ a:focus-visible {
 }
 .motion-copy {
   position: absolute;
-  inset: 10% 5.5% auto;
+  inset: 8% 5.5% auto;
   opacity: 0;
 }
 .motion-copy h2 {
   font-family: var(--font-display);
-  font-size: 15cqw;
+  font-size: 9cqw;
   font-weight: 300;
   line-height: 0.95;
   margin: 4cqw 0;
 }
 .jump-copy h2 {
-  font-size: 12cqw;
+  font-size: 9cqw;
 }
 .jump-copy {
   top: 8%;

@@ -6,6 +6,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { Pose } from "@/lib/pose";
 import { ensureProbe, pushGlFrame } from "@/lib/probe";
 import { getThemeSnapshot, lightsAt, subscribeTheme } from "@/lib/theme";
+import { ContactShadow } from "./ContactShadow";
 import { OfficialDuck } from "./OfficialDuck";
 function StudioIbl() {
   const { gl, scene, invalidate } = useThree();
@@ -53,6 +54,10 @@ export function DuckScene({
     camera.position.fromArray(pose.camPos);
     look.current.fromArray(pose.lookAt);
     camera.lookAt(look.current);
+    if (camera instanceof THREE.PerspectiveCamera && camera.fov !== pose.fov) {
+      camera.fov = pose.fov;
+      camera.updateProjectionMatrix();
+    }
     const t = getThemeSnapshot();
     if (t !== lastTheme.current) {
       lastTheme.current = t;
@@ -98,6 +103,7 @@ export function DuckScene({
         intensity={0.6}
       />
       <directionalLight ref={rim} position={[0.1, 0.8, -1]} intensity={1.2} />
+      <ContactShadow poseRef={poseRef} />
       <OfficialDuck poseRef={poseRef} />
     </>
   );

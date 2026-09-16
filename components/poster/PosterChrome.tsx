@@ -2,7 +2,12 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { assetPath } from "@/lib/paths";
+import { BUILD_SHA } from "@/lib/build-info";
+
 import { getThemeSnapshot, plateWeights, subscribeTheme } from "@/lib/theme";
+const posterAsset = (path: string) =>
+  assetPath(`${path}?v=${encodeURIComponent(BUILD_SHA)}`);
+
 export function PosterPlates() {
   const white = useRef<HTMLImageElement>(null),
     cobalt = useRef<HTMLImageElement>(null),
@@ -10,8 +15,11 @@ export function PosterPlates() {
   useEffect(() => {
     const sync = () => {
       const w = plateWeights(getThemeSnapshot());
-      if (white.current) white.current.style.opacity = String(w.white);
-      if (cobalt.current) cobalt.current.style.opacity = String(w.cobalt);
+      if (white.current) white.current.style.opacity = "1";
+      if (cobalt.current)
+        cobalt.current.style.opacity = String(
+          w.dark < 1 ? w.cobalt / (1 - w.dark) : 0,
+        );
       if (dark.current) dark.current.style.opacity = String(w.dark);
     };
     sync();
@@ -25,8 +33,8 @@ export function PosterPlates() {
       <img
         ref={white}
         className="poster-plate"
-        src={assetPath("/preview-scene/frame-white-1024.webp")}
-        srcSet={`${assetPath("/preview-scene/frame-white-640.webp")} 640w, ${assetPath("/preview-scene/frame-white-1024.webp")} 1024w`}
+        src={posterAsset("/preview-scene/frame-white-1024.webp")}
+        srcSet={`${posterAsset("/preview-scene/frame-white-640.webp")} 640w, ${posterAsset("/preview-scene/frame-white-1024.webp")} 1024w, ${posterAsset("/preview-scene/frame-white-1536.webp")} 1536w`}
         sizes="(max-width:430px) 100vw,430px"
         width={1024}
         height={1536}
@@ -37,8 +45,8 @@ export function PosterPlates() {
       <img
         ref={cobalt}
         className="poster-plate"
-        src={assetPath("/preview-scene/frame-cobalt-1024.webp")}
-        srcSet={`${assetPath("/preview-scene/frame-cobalt-640.webp")} 640w, ${assetPath("/preview-scene/frame-cobalt-1024.webp")} 1024w`}
+        src={posterAsset("/preview-scene/frame-cobalt-1024.webp")}
+        srcSet={`${posterAsset("/preview-scene/frame-cobalt-640.webp")} 640w, ${posterAsset("/preview-scene/frame-cobalt-1024.webp")} 1024w, ${posterAsset("/preview-scene/frame-cobalt-1536.webp")} 1536w`}
         sizes="(max-width:430px) 100vw,430px"
         width={1024}
         height={1536}
@@ -50,8 +58,8 @@ export function PosterPlates() {
       <img
         ref={dark}
         className="poster-plate"
-        src={assetPath("/preview-scene/frame-dark-1024.webp")}
-        srcSet={`${assetPath("/preview-scene/frame-dark-640.webp")} 640w, ${assetPath("/preview-scene/frame-dark-1024.webp")} 1024w`}
+        src={posterAsset("/preview-scene/frame-dark-1024.webp")}
+        srcSet={`${posterAsset("/preview-scene/frame-dark-640.webp")} 640w, ${posterAsset("/preview-scene/frame-dark-1024.webp")} 1024w, ${posterAsset("/preview-scene/frame-dark-1536.webp")} 1536w`}
         sizes="(max-width:430px) 100vw,430px"
         width={1024}
         height={1536}

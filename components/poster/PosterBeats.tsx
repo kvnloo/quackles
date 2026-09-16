@@ -7,22 +7,12 @@ export function PosterBeats() {
           02 &nbsp; ASSEMBLY <i />
         </p>
         <h2>EXPLODE</h2>
-        <p className="motion-note">
-          THE OPEN SOURCE
-          <br />
-          MACHINE, PART BY PART.
-        </p>
       </section>
       <section className="motion-copy jump-copy" aria-label="Jump">
         <p className="hero-kicker">
           03 &nbsp; MOTION <i />
         </p>
         <h2>JUMP</h2>
-        <p className="motion-note">
-          CROUCH. TAKE OFF.
-          <br />
-          BACK ON TWO FEET.
-        </p>
       </section>
       <section
         className="specs-copy"

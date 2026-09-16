@@ -1,0 +1,1788 @@
+{
+  "version": 1,
+  "purpose": "Mechanism graph for mobile scrollytelling and Blender look development. Source evidence and local validation remain separate.",
+  "nodes": [
+    {
+      "id": "input-clock",
+      "domain": "mobile",
+      "kind": "mechanism"
+    },
+    {
+      "id": "display-clock",
+      "domain": "mobile",
+      "kind": "mechanism"
+    },
+    {
+      "id": "clock-phase-mismatch",
+      "domain": "cross-domain",
+      "kind": "failure"
+    },
+    {
+      "id": "single-frame-authority",
+      "domain": "mobile",
+      "kind": "design"
+    },
+    {
+      "id": "scroll-event-cadence",
+      "domain": "mobile",
+      "kind": "mechanism"
+    },
+    {
+      "id": "extra-rAF-boundary",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "progress-phase-lag",
+      "domain": "mobile",
+      "kind": "failure"
+    },
+    {
+      "id": "scroll-progress",
+      "domain": "mobile",
+      "kind": "state"
+    },
+    {
+      "id": "pose-continuity",
+      "domain": "mobile",
+      "kind": "outcome"
+    },
+    {
+      "id": "temporal-continuity",
+      "domain": "cross-domain",
+      "kind": "outcome"
+    },
+    {
+      "id": "spatial-jitter",
+      "domain": "mobile",
+      "kind": "failure"
+    },
+    {
+      "id": "frame-time-variance",
+      "domain": "mobile",
+      "kind": "measure"
+    },
+    {
+      "id": "long-animation-frame",
+      "domain": "mobile",
+      "kind": "measure"
+    },
+    {
+      "id": "physical-120hz",
+      "domain": "mobile",
+      "kind": "validation"
+    },
+    {
+      "id": "headless-trace",
+      "domain": "mobile",
+      "kind": "validation"
+    },
+    {
+      "id": "asset-transfer",
+      "domain": "mobile",
+      "kind": "phase"
+    },
+    {
+      "id": "asset-decode-upload",
+      "domain": "mobile",
+      "kind": "phase"
+    },
+    {
+      "id": "density-corrected-natural-size",
+      "domain": "mobile",
+      "kind": "measure"
+    },
+    {
+      "id": "decoded-physical-dimensions",
+      "domain": "mobile",
+      "kind": "measure"
+    },
+    {
+      "id": "decoded-image-memory",
+      "domain": "mobile",
+      "kind": "cost"
+    },
+    {
+      "id": "shader-compile",
+      "domain": "mobile",
+      "kind": "phase"
+    },
+    {
+      "id": "software-raster",
+      "domain": "mobile",
+      "kind": "environment"
+    },
+    {
+      "id": "hardware-raster",
+      "domain": "mobile",
+      "kind": "environment"
+    },
+    {
+      "id": "presented-ready",
+      "domain": "mobile",
+      "kind": "gate"
+    },
+    {
+      "id": "first-visible-frame",
+      "domain": "mobile",
+      "kind": "measure"
+    },
+    {
+      "id": "scene-raster-complexity",
+      "domain": "mobile",
+      "kind": "cost"
+    },
+    {
+      "id": "cold-start-hitch",
+      "domain": "mobile",
+      "kind": "failure"
+    },
+    {
+      "id": "DPR",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "fragment-work",
+      "domain": "mobile",
+      "kind": "cost"
+    },
+    {
+      "id": "backing-store-memory",
+      "domain": "mobile",
+      "kind": "cost"
+    },
+    {
+      "id": "MSAA",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "KTX2",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "GPU-texture-memory",
+      "domain": "mobile",
+      "kind": "cost"
+    },
+    {
+      "id": "hybrid-frameloop",
+      "domain": "mobile",
+      "kind": "design"
+    },
+    {
+      "id": "idle-power",
+      "domain": "mobile",
+      "kind": "outcome"
+    },
+    {
+      "id": "resume-hitch",
+      "domain": "mobile",
+      "kind": "failure"
+    },
+    {
+      "id": "capability-hints",
+      "domain": "mobile",
+      "kind": "signal"
+    },
+    {
+      "id": "initial-quality-tier",
+      "domain": "mobile",
+      "kind": "decision"
+    },
+    {
+      "id": "measured-adaptation",
+      "domain": "mobile",
+      "kind": "decision"
+    },
+    {
+      "id": "rigid-part-instancing",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "draw-call-count",
+      "domain": "mobile",
+      "kind": "measure"
+    },
+    {
+      "id": "procedural-material-graph",
+      "domain": "blender",
+      "kind": "source"
+    },
+    {
+      "id": "camera-projected-artwork",
+      "domain": "blender",
+      "kind": "control"
+    },
+    {
+      "id": "mesh-space-UV",
+      "domain": "cross-domain",
+      "kind": "representation"
+    },
+    {
+      "id": "UV-material-bake",
+      "domain": "cross-domain",
+      "kind": "control"
+    },
+    {
+      "id": "glTF-metal-rough-PBR",
+      "domain": "cross-domain",
+      "kind": "representation"
+    },
+    {
+      "id": "articulated-texture-registration",
+      "domain": "cross-domain",
+      "kind": "outcome"
+    },
+    {
+      "id": "color-space-parity",
+      "domain": "cross-domain",
+      "kind": "outcome"
+    },
+    {
+      "id": "texel-density",
+      "domain": "cross-domain",
+      "kind": "control"
+    },
+    {
+      "id": "texture-atlas",
+      "domain": "mobile",
+      "kind": "design"
+    },
+    {
+      "id": "theme-ink-mask",
+      "domain": "mobile",
+      "kind": "design"
+    },
+    {
+      "id": "texture-residency",
+      "domain": "mobile",
+      "kind": "cost"
+    },
+    {
+      "id": "handoff-material-parity",
+      "domain": "cross-domain",
+      "kind": "outcome"
+    },
+    {
+      "id": "BSDF-energy-model",
+      "domain": "blender",
+      "kind": "mechanism"
+    },
+    {
+      "id": "roughness-frequency",
+      "domain": "blender",
+      "kind": "control"
+    },
+    {
+      "id": "lighting-reflection-structure",
+      "domain": "blender",
+      "kind": "mechanism"
+    },
+    {
+      "id": "material-legibility",
+      "domain": "blender",
+      "kind": "outcome"
+    },
+    {
+      "id": "path-variance",
+      "domain": "blender",
+      "kind": "cost"
+    },
+    {
+      "id": "adaptive-sampling",
+      "domain": "blender",
+      "kind": "control"
+    },
+    {
+      "id": "sample-count-pass",
+      "domain": "blender",
+      "kind": "measure"
+    },
+    {
+      "id": "denoiser-aux-passes",
+      "domain": "blender",
+      "kind": "control"
+    },
+    {
+      "id": "texture-preservation",
+      "domain": "blender",
+      "kind": "outcome"
+    },
+    {
+      "id": "AgX",
+      "domain": "blender",
+      "kind": "control"
+    },
+    {
+      "id": "reference-match",
+      "domain": "blender",
+      "kind": "outcome"
+    },
+    {
+      "id": "light-linking",
+      "domain": "blender",
+      "kind": "control"
+    },
+    {
+      "id": "optical-isolation",
+      "domain": "blender",
+      "kind": "outcome"
+    },
+    {
+      "id": "sampling-cost",
+      "domain": "blender",
+      "kind": "cost"
+    },
+    {
+      "id": "mesh-hash",
+      "domain": "blender",
+      "kind": "validation"
+    },
+    {
+      "id": "paired-visual-review",
+      "domain": "cross-domain",
+      "kind": "validation"
+    },
+    {
+      "id": "spatial-scene-authority",
+      "domain": "mobile",
+      "kind": "design"
+    },
+    {
+      "id": "set-asset-graph",
+      "domain": "cross-domain",
+      "kind": "representation"
+    },
+    {
+      "id": "camera-arc-length",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "camera-orientation",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "relative-motion-parallax",
+      "domain": "cross-domain",
+      "kind": "mechanism"
+    },
+    {
+      "id": "dynamic-occlusion",
+      "domain": "cross-domain",
+      "kind": "mechanism"
+    },
+    {
+      "id": "object-identity",
+      "domain": "cross-domain",
+      "kind": "design-inference"
+    },
+    {
+      "id": "lighting-continuity",
+      "domain": "cross-domain",
+      "kind": "control"
+    },
+    {
+      "id": "contact-shadow-state",
+      "domain": "mobile",
+      "kind": "state"
+    },
+    {
+      "id": "contact-triggered-explode",
+      "domain": "cross-domain",
+      "kind": "design-inference"
+    },
+    {
+      "id": "phase-ownership",
+      "domain": "mobile",
+      "kind": "design"
+    },
+    {
+      "id": "reduced-motion",
+      "domain": "mobile",
+      "kind": "control"
+    },
+    {
+      "id": "card-depth-failure",
+      "domain": "mobile",
+      "kind": "failure-hypothesis"
+    },
+    {
+      "id": "asset-texture-budget",
+      "domain": "mobile",
+      "kind": "measure"
+    }
+  ],
+  "edges": [
+    {
+      "from": "input-clock",
+      "to": "clock-phase-mismatch",
+      "relation": "can-cause-with",
+      "other": "display-clock",
+      "evidence": [
+        "W08"
+      ]
+    },
+    {
+      "from": "display-clock",
+      "to": "clock-phase-mismatch",
+      "relation": "can-cause-with",
+      "other": "input-clock",
+      "evidence": [
+        "W08"
+      ]
+    },
+    {
+      "from": "clock-phase-mismatch",
+      "to": "spatial-jitter",
+      "relation": "causes",
+      "evidence": [
+        "W08"
+      ]
+    },
+    {
+      "from": "single-frame-authority",
+      "to": "scroll-progress",
+      "relation": "samples",
+      "evidence": [
+        "W02"
+      ]
+    },
+    {
+      "from": "scroll-event-cadence",
+      "to": "extra-rAF-boundary",
+      "relation": "does-not-require-for-throttling",
+      "evidence": [
+        "W22"
+      ]
+    },
+    {
+      "from": "extra-rAF-boundary",
+      "to": "progress-phase-lag",
+      "relation": "can-add",
+      "evidence": [
+        "W22",
+        "W08"
+      ]
+    },
+    {
+      "from": "progress-phase-lag",
+      "to": "temporal-continuity",
+      "relation": "can-degrade",
+      "evidence": [
+        "W08"
+      ]
+    },
+    {
+      "from": "single-frame-authority",
+      "to": "pose-continuity",
+      "relation": "supports",
+      "evidence": [
+        "W02",
+        "W08"
+      ]
+    },
+    {
+      "from": "pose-continuity",
+      "to": "temporal-continuity",
+      "relation": "contributes-to",
+      "evidence": [
+        "W08"
+      ]
+    },
+    {
+      "from": "frame-time-variance",
+      "to": "temporal-continuity",
+      "relation": "measures-risk-to",
+      "evidence": [
+        "W09"
+      ]
+    },
+    {
+      "from": "long-animation-frame",
+      "to": "cold-start-hitch",
+      "relation": "attributes-if-over-50ms",
+      "evidence": [
+        "W05"
+      ]
+    },
+    {
+      "from": "physical-120hz",
+      "to": "temporal-continuity",
+      "relation": "validates",
+      "evidence": [
+        "W03"
+      ]
+    },
+    {
+      "from": "headless-trace",
+      "to": "pose-continuity",
+      "relation": "regression-checks",
+      "evidence": []
+    },
+    {
+      "from": "headless-trace",
+      "to": "physical-120hz",
+      "relation": "cannot-substitute-for",
+      "evidence": [
+        "W03"
+      ]
+    },
+    {
+      "from": "asset-transfer",
+      "to": "asset-decode-upload",
+      "relation": "precedes",
+      "evidence": [
+        "W11",
+        "W13"
+      ]
+    },
+    {
+      "from": "asset-decode-upload",
+      "to": "cold-start-hitch",
+      "relation": "can-cause",
+      "evidence": [
+        "W10",
+        "W13"
+      ]
+    },
+    {
+      "from": "density-corrected-natural-size",
+      "to": "decoded-physical-dimensions",
+      "relation": "cannot-substitute-for",
+      "evidence": [
+        "W25"
+      ]
+    },
+    {
+      "from": "decoded-physical-dimensions",
+      "to": "decoded-image-memory",
+      "relation": "determines",
+      "evidence": [
+        "W25"
+      ]
+    },
+    {
+      "from": "decoded-image-memory",
+      "to": "cold-start-hitch",
+      "relation": "can-contribute-to",
+      "evidence": [
+        "W13",
+        "W25"
+      ]
+    },
+    {
+      "from": "shader-compile",
+      "to": "cold-start-hitch",
+      "relation": "can-cause",
+      "evidence": [
+        "W10"
+      ]
+    },
+    {
+      "from": "software-raster",
+      "to": "scene-raster-complexity",
+      "relation": "executes-on-cpu",
+      "evidence": [
+        "W23"
+      ]
+    },
+    {
+      "from": "hardware-raster",
+      "to": "scene-raster-complexity",
+      "relation": "control-environment-for",
+      "evidence": [
+        "W23"
+      ]
+    },
+    {
+      "from": "shader-compile",
+      "to": "presented-ready",
+      "relation": "is-insufficient-for",
+      "evidence": [
+        "W24"
+      ]
+    },
+    {
+      "from": "presented-ready",
+      "to": "first-visible-frame",
+      "relation": "must-gate",
+      "evidence": [
+        "W24"
+      ]
+    },
+    {
+      "from": "scene-raster-complexity",
+      "to": "first-visible-frame",
+      "relation": "can-delay",
+      "evidence": [
+        "W10",
+        "W23"
+      ]
+    },
+    {
+      "from": "DPR",
+      "to": "fragment-work",
+      "relation": "quadratically-scales-pixels-for",
+      "evidence": [
+        "W10",
+        "W18"
+      ]
+    },
+    {
+      "from": "DPR",
+      "to": "backing-store-memory",
+      "relation": "quadratically-scales-pixels-for",
+      "evidence": [
+        "W10",
+        "W18"
+      ]
+    },
+    {
+      "from": "MSAA",
+      "to": "fragment-work",
+      "relation": "adds",
+      "evidence": [
+        "W10"
+      ]
+    },
+    {
+      "from": "KTX2",
+      "to": "GPU-texture-memory",
+      "relation": "can-reduce",
+      "evidence": [
+        "W11",
+        "W12"
+      ]
+    },
+    {
+      "from": "KTX2",
+      "to": "asset-decode-upload",
+      "relation": "adds-transcode-to",
+      "evidence": [
+        "W12"
+      ]
+    },
+    {
+      "from": "hybrid-frameloop",
+      "to": "idle-power",
+      "relation": "can-reduce",
+      "evidence": [
+        "W15"
+      ]
+    },
+    {
+      "from": "hybrid-frameloop",
+      "to": "resume-hitch",
+      "relation": "must-control",
+      "evidence": [
+        "W15"
+      ]
+    },
+    {
+      "from": "capability-hints",
+      "to": "initial-quality-tier",
+      "relation": "selects",
+      "evidence": [
+        "W17",
+        "W18"
+      ]
+    },
+    {
+      "from": "initial-quality-tier",
+      "to": "measured-adaptation",
+      "relation": "is-refined-by",
+      "evidence": [
+        "W03",
+        "W04"
+      ]
+    },
+    {
+      "from": "rigid-part-instancing",
+      "to": "draw-call-count",
+      "relation": "can-reduce",
+      "evidence": [
+        "W26"
+      ]
+    },
+    {
+      "from": "draw-call-count",
+      "to": "scene-raster-complexity",
+      "relation": "measures-submission-component-of",
+      "evidence": [
+        "W16",
+        "W26"
+      ]
+    },
+    {
+      "from": "procedural-material-graph",
+      "to": "UV-material-bake",
+      "relation": "requires-for-portable-export",
+      "evidence": [
+        "W27",
+        "W28"
+      ]
+    },
+    {
+      "from": "camera-projected-artwork",
+      "to": "UV-material-bake",
+      "relation": "must-convert-to-mesh-space",
+      "evidence": []
+    },
+    {
+      "from": "mesh-space-UV",
+      "to": "UV-material-bake",
+      "relation": "required-by",
+      "evidence": [
+        "W27",
+        "W29"
+      ]
+    },
+    {
+      "from": "UV-material-bake",
+      "to": "glTF-metal-rough-PBR",
+      "relation": "produces-compatible-textures-for",
+      "evidence": [
+        "W27",
+        "W28"
+      ]
+    },
+    {
+      "from": "glTF-metal-rough-PBR",
+      "to": "articulated-texture-registration",
+      "relation": "supports-through-mesh-UV",
+      "evidence": [
+        "W29"
+      ]
+    },
+    {
+      "from": "texel-density",
+      "to": "handoff-material-parity",
+      "relation": "controls-visible-detail-in",
+      "evidence": [
+        "W31"
+      ]
+    },
+    {
+      "from": "color-space-parity",
+      "to": "handoff-material-parity",
+      "relation": "required-by",
+      "evidence": [
+        "W29",
+        "W30"
+      ]
+    },
+    {
+      "from": "texture-atlas",
+      "to": "draw-call-count",
+      "relation": "can-preserve-batching-for",
+      "evidence": [
+        "W26",
+        "W31"
+      ]
+    },
+    {
+      "from": "texture-atlas",
+      "to": "texture-residency",
+      "relation": "adds",
+      "evidence": [
+        "W11"
+      ]
+    },
+    {
+      "from": "theme-ink-mask",
+      "to": "texture-residency",
+      "relation": "may-reduce-versus-full-theme-maps",
+      "evidence": []
+    },
+    {
+      "from": "theme-ink-mask",
+      "to": "glTF-metal-rough-PBR",
+      "relation": "requires-custom-layering-beyond-core",
+      "evidence": [
+        "W29"
+      ]
+    },
+    {
+      "from": "KTX2",
+      "to": "texture-residency",
+      "relation": "can-reduce",
+      "evidence": [
+        "W11",
+        "W12"
+      ]
+    },
+    {
+      "from": "articulated-texture-registration",
+      "to": "handoff-material-parity",
+      "relation": "supports",
+      "evidence": [
+        "W27",
+        "W29"
+      ]
+    },
+    {
+      "from": "BSDF-energy-model",
+      "to": "material-legibility",
+      "relation": "constrains",
+      "evidence": [
+        "B01"
+      ]
+    },
+    {
+      "from": "roughness-frequency",
+      "to": "material-legibility",
+      "relation": "shapes",
+      "evidence": [
+        "B01"
+      ]
+    },
+    {
+      "from": "lighting-reflection-structure",
+      "to": "material-legibility",
+      "relation": "reveals",
+      "evidence": [
+        "B01",
+        "B05"
+      ]
+    },
+    {
+      "from": "path-variance",
+      "to": "adaptive-sampling",
+      "relation": "drives",
+      "evidence": [
+        "B03"
+      ]
+    },
+    {
+      "from": "adaptive-sampling",
+      "to": "sample-count-pass",
+      "relation": "measured-by",
+      "evidence": [
+        "B03"
+      ]
+    },
+    {
+      "from": "denoiser-aux-passes",
+      "to": "texture-preservation",
+      "relation": "supports",
+      "evidence": [
+        "B04"
+      ]
+    },
+    {
+      "from": "AgX",
+      "to": "reference-match",
+      "relation": "confounds-if-changed",
+      "evidence": [
+        "B06"
+      ]
+    },
+    {
+      "from": "light-linking",
+      "to": "optical-isolation",
+      "relation": "supports",
+      "evidence": [
+        "B02"
+      ]
+    },
+    {
+      "from": "light-linking",
+      "to": "sampling-cost",
+      "relation": "can-increase",
+      "evidence": [
+        "B02"
+      ]
+    },
+    {
+      "from": "mesh-hash",
+      "to": "reference-match",
+      "relation": "bounds-geometry-change-in",
+      "evidence": []
+    },
+    {
+      "from": "paired-visual-review",
+      "to": "reference-match",
+      "relation": "validates",
+      "evidence": []
+    },
+    {
+      "from": "paired-visual-review",
+      "to": "temporal-continuity",
+      "relation": "validates-on-target",
+      "evidence": [
+        "W09"
+      ]
+    },
+    {
+      "from": "scroll-progress",
+      "to": "spatial-scene-authority",
+      "relation": "is-the-shared-input-for",
+      "evidence": [
+        "W01",
+        "W35"
+      ]
+    },
+    {
+      "from": "spatial-scene-authority",
+      "to": "phase-ownership",
+      "relation": "assigns-one-progress-to",
+      "evidence": [
+        "W01",
+        "W35"
+      ]
+    },
+    {
+      "from": "spatial-scene-authority",
+      "to": "camera-arc-length",
+      "relation": "samples",
+      "evidence": [
+        "W32",
+        "W33"
+      ]
+    },
+    {
+      "from": "camera-arc-length",
+      "to": "camera-orientation",
+      "relation": "must-share-progress-with",
+      "evidence": [
+        "W34"
+      ]
+    },
+    {
+      "from": "set-asset-graph",
+      "to": "dynamic-occlusion",
+      "relation": "provides-depth-for",
+      "evidence": [
+        "W36",
+        "W42"
+      ]
+    },
+    {
+      "from": "camera-arc-length",
+      "to": "relative-motion-parallax",
+      "relation": "changes-viewpoint-for",
+      "evidence": [
+        "W32",
+        "W36"
+      ]
+    },
+    {
+      "from": "relative-motion-parallax",
+      "to": "dynamic-occlusion",
+      "relation": "complements",
+      "evidence": [
+        "W36",
+        "W37"
+      ]
+    },
+    {
+      "from": "card-depth-failure",
+      "to": "relative-motion-parallax",
+      "relation": "fails-to-preserve",
+      "evidence": [
+        "W36",
+        "W37"
+      ]
+    },
+    {
+      "from": "dynamic-occlusion",
+      "to": "object-identity",
+      "relation": "motivates-local-continuity-test-for",
+      "evidence": [
+        "W38"
+      ]
+    },
+    {
+      "from": "object-identity",
+      "to": "temporal-continuity",
+      "relation": "is-a-local-review-question-for",
+      "evidence": [
+        "W38"
+      ]
+    },
+    {
+      "from": "phase-ownership",
+      "to": "contact-triggered-explode",
+      "relation": "assigns-touchdown-boundary-to",
+      "evidence": [
+        "W39"
+      ]
+    },
+    {
+      "from": "contact-shadow-state",
+      "to": "contact-triggered-explode",
+      "relation": "supplies-visible-contact-cue-for",
+      "evidence": [
+        "W39",
+        "W40"
+      ]
+    },
+    {
+      "from": "contact-shadow-state",
+      "to": "scene-raster-complexity",
+      "relation": "has-runtime-cost-in",
+      "evidence": [
+        "W40"
+      ]
+    },
+    {
+      "from": "UV-material-bake",
+      "to": "set-asset-graph",
+      "relation": "supplies-portable-surfaces-to",
+      "evidence": [
+        "W27",
+        "W42"
+      ]
+    },
+    {
+      "from": "lighting-continuity",
+      "to": "handoff-material-parity",
+      "relation": "requires-local-comparison-for",
+      "evidence": [
+        "W43"
+      ]
+    },
+    {
+      "from": "set-asset-graph",
+      "to": "asset-texture-budget",
+      "relation": "must-be-measured-with",
+      "evidence": [
+        "W10",
+        "W42"
+      ]
+    },
+    {
+      "from": "texture-atlas",
+      "to": "asset-texture-budget",
+      "relation": "trades-resolution-and-bindings-in",
+      "evidence": [
+        "W10",
+        "W31",
+        "W42"
+      ]
+    },
+    {
+      "from": "spatial-scene-authority",
+      "to": "reduced-motion",
+      "relation": "requires-accessible-alternative-for",
+      "evidence": [
+        "W41"
+      ]
+    }
+  ],
+  "source_status": {
+    "input-clock": {
+      "status": "sourced",
+      "evidence": [
+        "W08"
+      ]
+    },
+    "display-clock": {
+      "status": "sourced",
+      "evidence": [
+        "W03",
+        "W08"
+      ]
+    },
+    "clock-phase-mismatch": {
+      "status": "sourced",
+      "evidence": [
+        "W08"
+      ]
+    },
+    "single-frame-authority": {
+      "status": "sourced",
+      "evidence": [
+        "W02",
+        "W08"
+      ]
+    },
+    "scroll-event-cadence": {
+      "status": "sourced",
+      "evidence": [
+        "W22"
+      ]
+    },
+    "extra-rAF-boundary": {
+      "status": "sourced",
+      "evidence": [
+        "W22"
+      ]
+    },
+    "progress-phase-lag": {
+      "status": "sourced",
+      "evidence": [
+        "W08",
+        "W22"
+      ]
+    },
+    "scroll-progress": {
+      "status": "sourced",
+      "evidence": [
+        "W01"
+      ]
+    },
+    "pose-continuity": {
+      "status": "sourced",
+      "evidence": [
+        "W08"
+      ]
+    },
+    "temporal-continuity": {
+      "status": "sourced",
+      "evidence": [
+        "W09"
+      ]
+    },
+    "spatial-jitter": {
+      "status": "sourced",
+      "evidence": [
+        "W08"
+      ]
+    },
+    "frame-time-variance": {
+      "status": "sourced",
+      "evidence": [
+        "W09"
+      ]
+    },
+    "long-animation-frame": {
+      "status": "sourced",
+      "evidence": [
+        "W05"
+      ]
+    },
+    "physical-120hz": {
+      "status": "sourced",
+      "evidence": [
+        "W03",
+        "W09"
+      ]
+    },
+    "headless-trace": {
+      "status": "failed-search",
+      "query": "primary source proving headless SwiftShader rAF validates physical 120 Hz scanout",
+      "reason": "No supporting source found; the environments must remain separate."
+    },
+    "asset-transfer": {
+      "status": "sourced",
+      "evidence": [
+        "W11",
+        "W14"
+      ]
+    },
+    "asset-decode-upload": {
+      "status": "sourced",
+      "evidence": [
+        "W10",
+        "W13"
+      ]
+    },
+    "density-corrected-natural-size": {
+      "status": "sourced",
+      "evidence": [
+        "W25"
+      ]
+    },
+    "decoded-physical-dimensions": {
+      "status": "sourced",
+      "evidence": [
+        "W25"
+      ]
+    },
+    "decoded-image-memory": {
+      "status": "sourced",
+      "evidence": [
+        "W13",
+        "W25"
+      ]
+    },
+    "shader-compile": {
+      "status": "sourced",
+      "evidence": [
+        "W10"
+      ]
+    },
+    "software-raster": {
+      "status": "sourced",
+      "evidence": [
+        "W23"
+      ]
+    },
+    "hardware-raster": {
+      "status": "sourced",
+      "evidence": [
+        "W23"
+      ]
+    },
+    "presented-ready": {
+      "status": "sourced",
+      "evidence": [
+        "W24"
+      ]
+    },
+    "first-visible-frame": {
+      "status": "sourced",
+      "evidence": [
+        "W24",
+        "W10"
+      ]
+    },
+    "scene-raster-complexity": {
+      "status": "sourced",
+      "evidence": [
+        "W10",
+        "W16",
+        "W23"
+      ]
+    },
+    "cold-start-hitch": {
+      "status": "sourced",
+      "evidence": [
+        "W10",
+        "W13"
+      ]
+    },
+    "DPR": {
+      "status": "sourced",
+      "evidence": [
+        "W10",
+        "W18"
+      ]
+    },
+    "fragment-work": {
+      "status": "sourced",
+      "evidence": [
+        "W10"
+      ]
+    },
+    "backing-store-memory": {
+      "status": "sourced",
+      "evidence": [
+        "W10",
+        "W18"
+      ]
+    },
+    "MSAA": {
+      "status": "sourced",
+      "evidence": [
+        "W10"
+      ]
+    },
+    "KTX2": {
+      "status": "sourced",
+      "evidence": [
+        "W11",
+        "W12"
+      ]
+    },
+    "GPU-texture-memory": {
+      "status": "sourced",
+      "evidence": [
+        "W10",
+        "W11"
+      ]
+    },
+    "hybrid-frameloop": {
+      "status": "sourced",
+      "evidence": [
+        "W15"
+      ]
+    },
+    "idle-power": {
+      "status": "sourced",
+      "evidence": [
+        "W15"
+      ]
+    },
+    "resume-hitch": {
+      "status": "sourced",
+      "evidence": [
+        "W15"
+      ]
+    },
+    "capability-hints": {
+      "status": "sourced",
+      "evidence": [
+        "W17",
+        "W18"
+      ]
+    },
+    "initial-quality-tier": {
+      "status": "sourced",
+      "evidence": [
+        "W17"
+      ]
+    },
+    "measured-adaptation": {
+      "status": "sourced",
+      "evidence": [
+        "W04",
+        "W09"
+      ]
+    },
+    "rigid-part-instancing": {
+      "status": "sourced",
+      "evidence": [
+        "W26"
+      ]
+    },
+    "draw-call-count": {
+      "status": "sourced",
+      "evidence": [
+        "W16",
+        "W26"
+      ]
+    },
+    "procedural-material-graph": {
+      "status": "sourced",
+      "evidence": [
+        "W27",
+        "W28"
+      ]
+    },
+    "camera-projected-artwork": {
+      "status": "failed-search",
+      "query": "primary source proving this project's camera-projected pigment remains registered under per-part articulation",
+      "reason": "This is a project-specific coordinate-space invariant. The source coverage establishes that baking targets mesh UVs; registration must be tested locally."
+    },
+    "mesh-space-UV": {
+      "status": "sourced",
+      "evidence": [
+        "W27",
+        "W29",
+        "W31"
+      ]
+    },
+    "UV-material-bake": {
+      "status": "sourced",
+      "evidence": [
+        "W27",
+        "W28"
+      ]
+    },
+    "glTF-metal-rough-PBR": {
+      "status": "sourced",
+      "evidence": [
+        "W28",
+        "W29"
+      ]
+    },
+    "articulated-texture-registration": {
+      "status": "sourced",
+      "evidence": [
+        "W27",
+        "W29"
+      ]
+    },
+    "color-space-parity": {
+      "status": "sourced",
+      "evidence": [
+        "W29",
+        "W30"
+      ]
+    },
+    "texel-density": {
+      "status": "sourced",
+      "evidence": [
+        "W31"
+      ]
+    },
+    "texture-atlas": {
+      "status": "sourced",
+      "evidence": [
+        "W11",
+        "W31"
+      ]
+    },
+    "theme-ink-mask": {
+      "status": "failed-search",
+      "query": "core glTF independent per-theme ink-mask compositing without custom shader or full material variant",
+      "reason": "Core glTF defines texture-times-factor PBR inputs but no arbitrary two-layer theme compositing. Treat mask compositing as a custom runtime experiment."
+    },
+    "texture-residency": {
+      "status": "sourced",
+      "evidence": [
+        "W11",
+        "W12"
+      ]
+    },
+    "handoff-material-parity": {
+      "status": "sourced",
+      "evidence": [
+        "W29",
+        "W30"
+      ]
+    },
+    "BSDF-energy-model": {
+      "status": "sourced",
+      "evidence": [
+        "B01"
+      ]
+    },
+    "roughness-frequency": {
+      "status": "sourced",
+      "evidence": [
+        "B01"
+      ]
+    },
+    "lighting-reflection-structure": {
+      "status": "sourced",
+      "evidence": [
+        "B01",
+        "B05"
+      ]
+    },
+    "material-legibility": {
+      "status": "sourced",
+      "evidence": [
+        "B01",
+        "W19"
+      ]
+    },
+    "path-variance": {
+      "status": "sourced",
+      "evidence": [
+        "B03"
+      ]
+    },
+    "adaptive-sampling": {
+      "status": "sourced",
+      "evidence": [
+        "B03"
+      ]
+    },
+    "sample-count-pass": {
+      "status": "sourced",
+      "evidence": [
+        "B05"
+      ]
+    },
+    "denoiser-aux-passes": {
+      "status": "sourced",
+      "evidence": [
+        "B04"
+      ]
+    },
+    "texture-preservation": {
+      "status": "sourced",
+      "evidence": [
+        "B04",
+        "W19"
+      ]
+    },
+    "AgX": {
+      "status": "sourced",
+      "evidence": [
+        "B06"
+      ]
+    },
+    "reference-match": {
+      "status": "sourced",
+      "evidence": [
+        "W19",
+        "B06"
+      ]
+    },
+    "light-linking": {
+      "status": "sourced",
+      "evidence": [
+        "B02"
+      ]
+    },
+    "optical-isolation": {
+      "status": "sourced",
+      "evidence": [
+        "B02"
+      ]
+    },
+    "sampling-cost": {
+      "status": "sourced",
+      "evidence": [
+        "B02",
+        "B03"
+      ]
+    },
+    "mesh-hash": {
+      "status": "failed-search",
+      "query": "primary source for project-specific normalized STL mesh-hash invariant",
+      "reason": "This is a local verification contract, not an external research claim."
+    },
+    "paired-visual-review": {
+      "status": "sourced",
+      "evidence": [
+        "W19"
+      ]
+    },
+    "spatial-scene-authority": {
+      "status": "sourced",
+      "evidence": [
+        "W01",
+        "W35"
+      ]
+    },
+    "set-asset-graph": {
+      "status": "sourced",
+      "evidence": [
+        "W42",
+        "W43"
+      ]
+    },
+    "camera-arc-length": {
+      "status": "sourced",
+      "evidence": [
+        "W32",
+        "W33"
+      ]
+    },
+    "camera-orientation": {
+      "status": "sourced",
+      "evidence": [
+        "W34"
+      ]
+    },
+    "relative-motion-parallax": {
+      "status": "sourced",
+      "evidence": [
+        "W36",
+        "W37"
+      ]
+    },
+    "dynamic-occlusion": {
+      "status": "sourced",
+      "evidence": [
+        "W36",
+        "W37"
+      ]
+    },
+    "object-identity": {
+      "status": "sourced",
+      "evidence": [
+        "W38"
+      ]
+    },
+    "lighting-continuity": {
+      "status": "sourced",
+      "evidence": [
+        "W27",
+        "W43"
+      ]
+    },
+    "contact-shadow-state": {
+      "status": "sourced",
+      "evidence": [
+        "W40"
+      ]
+    },
+    "contact-triggered-explode": {
+      "status": "sourced",
+      "evidence": [
+        "W39"
+      ]
+    },
+    "phase-ownership": {
+      "status": "sourced",
+      "evidence": [
+        "W01",
+        "W35"
+      ]
+    },
+    "reduced-motion": {
+      "status": "sourced",
+      "evidence": [
+        "W41"
+      ]
+    },
+    "card-depth-failure": {
+      "status": "sourced",
+      "evidence": [
+        "W36",
+        "W37"
+      ]
+    },
+    "asset-texture-budget": {
+      "status": "sourced",
+      "evidence": [
+        "W10",
+        "W42"
+      ]
+    }
+  },
+  "round_updates": [
+    {
+      "round": "1B",
+      "added": [
+        "single-frame-authority->pose-continuity",
+        "asset-decode-upload->cold-start-hitch",
+        "lighting-reflection-structure->material-legibility"
+      ]
+    },
+    {
+      "round": "2B",
+      "added": [
+        "clock-phase-mismatch->spatial-jitter",
+        "DPR->fragment-work",
+        "DPR->backing-store-memory",
+        "denoiser-aux-passes->texture-preservation"
+      ]
+    },
+    {
+      "round": "3B",
+      "added": [
+        "capability-hints->initial-quality-tier",
+        "initial-quality-tier->measured-adaptation",
+        "hybrid-frameloop->resume-hitch",
+        "light-linking->sampling-cost"
+      ]
+    },
+    {
+      "round": "4B",
+      "added": [
+        "software-raster->scene-raster-complexity",
+        "shader-compile->presented-ready",
+        "presented-ready->first-visible-frame",
+        "scene-raster-complexity->first-visible-frame",
+        "rigid-part-instancing->draw-call-count"
+      ]
+    },
+    {
+      "round": "5B",
+      "added": [
+        "procedural-material-graph->UV-material-bake",
+        "mesh-space-UV->UV-material-bake",
+        "UV-material-bake->glTF-metal-rough-PBR",
+        "articulated-texture-registration->handoff-material-parity",
+        "color-space-parity->handoff-material-parity",
+        "KTX2->texture-residency"
+      ]
+    },
+    {
+      "round": "6B",
+      "added": [
+        "scroll-progress->spatial-scene-authority",
+        "spatial-scene-authority->phase-ownership",
+        "spatial-scene-authority->camera-arc-length",
+        "camera-arc-length->camera-orientation",
+        "set-asset-graph->dynamic-occlusion",
+        "camera-arc-length->relative-motion-parallax",
+        "relative-motion-parallax->dynamic-occlusion",
+        "card-depth-failure->relative-motion-parallax",
+        "dynamic-occlusion->object-identity",
+        "object-identity->temporal-continuity",
+        "phase-ownership->contact-triggered-explode",
+        "contact-shadow-state->contact-triggered-explode",
+        "contact-shadow-state->scene-raster-complexity",
+        "UV-material-bake->set-asset-graph",
+        "lighting-continuity->handoff-material-parity",
+        "set-asset-graph->asset-texture-budget",
+        "texture-atlas->asset-texture-budget",
+        "spatial-scene-authority->reduced-motion"
+      ],
+      "qualification": "The camera, identity and contact-trigger application edges are design inferences to test in M16; source mechanisms do not validate this website. The infant identity study and causal-delay replication have explicit scope limits."
+    }
+  ],
+  "experiment_updates": [
+    {
+      "experiment": "B01",
+      "status": "tested-pass",
+      "confirmed_edges": [
+        "BSDF-energy-model->material-legibility",
+        "lighting-reflection-structure->material-legibility"
+      ],
+      "evidence": "work/calibration/quality-white-refined0001.png"
+    },
+    {
+      "experiment": "B02",
+      "status": "tested-pass",
+      "confirmed_edges": [
+        "paired-visual-review->reference-match"
+      ],
+      "evidence": "work/calibration/quality-white-refined0001.png"
+    },
+    {
+      "experiment": "B03",
+      "status": "tested-pass",
+      "confirmed_edges": [
+        "light-linking->optical-isolation"
+      ],
+      "unresolved_edges": [
+        "light-linking->sampling-cost"
+      ],
+      "result": "The 1536x2304 white render retained a readable blue dielectric lens highlight without the blue spill previously visible on the ivory face. Render-time and sample-count effects remain unmeasured.",
+      "evidence": "work/calibration/pre-layout-quality/quality-final-white.png"
+    },
+    {
+      "experiment": "M08",
+      "status": "tested-fail",
+      "rejected_current_edge": "KTX2->GPU-texture-memory",
+      "reason": "The current GLB contains no embedded images or materials, so KTX2 has no current texture payload to optimize. Reopen if baked textures are introduced.",
+      "evidence": "outputs/mobile-validation/glb-budget.json"
+    },
+    {
+      "experiment": "M03",
+      "status": "tested-pass",
+      "confirmed_edge": "hybrid-frameloop->idle-power",
+      "result": "Demand rendering stopped at idle with zero idle renders.",
+      "evidence": "outputs/mobile-validation/baseline/report.json"
+    },
+    {
+      "experiment": "M06",
+      "status": "tested-fail",
+      "rejected_gate": "shader-compile->ready",
+      "result": "compileAsync readiness was followed by a 6.85 second first visible reveal and repeated resize stalls.",
+      "evidence": "outputs/mobile-validation/baseline/report.json"
+    },
+    {
+      "experiment": "M07",
+      "status": "inconclusive",
+      "result": "The trace excludes large measured probe CPU and reports compositor DroppedFrame 318, but no over-50 ms timeline event identifies the GPU wait. A controlled 120 ms rAF busy loop proves the LoAF observer works, so empty application LoAF entries are not an unsupported-API result and still do not attribute the software-raster or presentation wait.",
+      "evidence": "outputs/mobile-validation/baseline/chromium-trace.json;outputs/mobile-validation/loaf-probe.json"
+    },
+    {
+      "experiment": "M13",
+      "status": "inconclusive",
+      "testing_edges": [
+        "presented-ready->first-visible-frame",
+        "scene-raster-complexity->first-visible-frame"
+      ],
+      "result": "Epsilon opacity removed the first-reveal spike, but cold settle and long-task metrics regressed and a pose fix co-landed.",
+      "evidence": "outputs/mobile-validation/warm-visible/report.json"
+    },
+    {
+      "experiment": "image-budget-correction",
+      "status": "tested-pass",
+      "confirmed_edge": "decoded-physical-dimensions->decoded-image-memory",
+      "result": "Three 1024x1536 RGBA poster sources imply an 18 MiB decoded baseline; 430 naturalWidth was density-corrected presentation width.",
+      "evidence": "outputs/mobile-validation/baseline/image-budget.json"
+    },
+    {
+      "experiment": "M12",
+      "status": "tested-pass",
+      "confirmed_edges": [
+        "software-raster->scene-raster-complexity",
+        "scene-raster-complexity->first-visible-frame"
+      ],
+      "result": "Same-build hidden canvas held all passes at p95 16.7-16.8 ms while visible rendering remained p95 217-400 ms. This diagnoses presentation/raster dependence but is not a usable UI result.",
+      "evidence": "outputs/mobile-validation/hidden-canvas/report.json"
+    },
+    {
+      "experiment": "M14",
+      "status": "inconclusive",
+      "confirmed_edges": [
+        "rigid-part-instancing->draw-call-count"
+      ],
+      "unresolved_edges": [
+        "draw-call-count->scene-raster-complexity",
+        "scene-raster-complexity->first-visible-frame"
+      ],
+      "result": "Candidate reduced draw calls from 70 to 35 with 198412 submitted triangles unchanged, but batching and standard-material changes co-landed under a different concurrent load. Visible SwiftShader p95 remained 200-316.7 ms and no independent max-deviation or image-parity audit landed.",
+      "evidence": "outputs/mobile-validation/batched-standard/report.json"
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "current_phase": "B",
+  "current_round": 6,
+  "history": [
+    {
+      "round": 1,
+      "phase": "A",
+      "note": "Mapped browser, asset, and Blender pipelines.",
+      "experiment_status_snapshot": {
+        "untested": 14,
+        "tested-pass": 0,
+        "running": 0
+      }
+    },
+    {
+      "round": 1,
+      "phase": "B",
+      "note": "Retrieved standards and engine documentation for each retained concept."
+    },
+    {
+      "round": 2,
+      "phase": "A",
+      "note": "Added clock mismatch, spatial frequency, cold/warm state, and perception couplings.",
+      "experiment_status_snapshot": {
+        "untested": 14,
+        "tested-pass": 0,
+        "running": 0
+      }
+    },
+    {
+      "round": 2,
+      "phase": "B",
+      "note": "Retrieved primary research on spatial jitter and documentation on GL stalls and denoising."
+    },
+    {
+      "round": 3,
+      "phase": "A",
+      "note": "Defined confounders, gates, and target-device validation.",
+      "experiment_status_snapshot": {
+        "untested": 11,
+        "tested-pass": 2,
+        "running": 1
+      }
+    },
+    {
+      "round": 3,
+      "phase": "B",
+      "note": "Retrieved R3F, Three.js, WebGL, capability-hint, light-linking, and color-management evidence."
+    },
+    {
+      "round": 4,
+      "phase": "A",
+      "note": "Baseline experiments rejected KTX2 for the current asset, accepted idle demand rendering, exposed compiled-versus-presented readiness, and split software-raster, hardware-raster, and scene-complexity dependencies.",
+      "experiment_status_snapshot": {
+        "untested": 11,
+        "tested-pass": 3,
+        "tested-fail": 2,
+        "inconclusive": 1,
+        "running": 1
+      }
+    },
+    {
+      "round": 4,
+      "phase": "B",
+      "note": "Retrieved Chromium SwiftShader and Three renderer contracts; queued M10-M12 and qualified M07 as inconclusive rather than claiming a GPU-wait root cause."
+    },
+    {
+      "round": 5,
+      "phase": "A",
+      "note": "The aligned website exposed a bounded remaining material gap; mapped procedural and camera-projected pigment through mesh-space UV bake, glTF PBR semantics, color management, texel density, theme residency, and compression.",
+      "experiment_status_snapshot": {
+        "untested": 11,
+        "tested-pass": 5,
+        "tested-fail": 2,
+        "inconclusive": 3
+      }
+    },
+    {
+      "round": 5,
+      "phase": "B",
+      "note": "Retrieved Blender baking/export/UV, glTF PBR, Three texture-color, and KTX2 sources; queued one 512-square head-shell proof and logged core-glTF theme-mask layering as an explicit failed search."
+    },
+    {
+      "round": 6,
+      "phase": "A",
+      "note": "The rejected fade motivates a spatial-continuity contract: fixed-world set assets, camera arc-length and orientation, parallax/occlusion, same-object identity, contact/phase ownership, lighting transfer, reduced motion and asset budgets. M16 is running with no outcome claim.",
+      "experiment_status_snapshot": {
+        "untested": 12,
+        "tested-pass": 5,
+        "tested-fail": 2,
+        "inconclusive": 3,
+        "running": 1
+      }
+    },
+    {
+      "round": 6,
+      "phase": "B",
+      "note": "Reread primary W3C, Three, Blender, glTF, Drei, official example and perception sources. Added spatial-continuity dependencies and M16/M17 gates; corrected stale OSS path and qualified infant identity and causal-delay replication limits. Source support is not a local performance or visual pass."
+    }
+  ],
+  "experiment_events": [
+    {
+      "id": "B01",
+      "status": "tested-pass",
+      "result": "Refined preview improved hardware edge readability and material separation.",
+      "evidence": "work/calibration/quality-white-refined0001.png",
+      "before_next_a": 3
+    },
+    {
+      "id": "B02",
+      "status": "tested-pass",
+      "result": "Refined preview made stone physical while preserving label clearance.",
+      "evidence": "work/calibration/quality-white-refined0001.png",
+      "before_next_a": 3
+    },
+    {
+      "id": "B03",
+      "status": "running",
+      "result": "Lens-only light linking is rendering in the final trio.",
+      "evidence": "work/calibration/quality_pass.py",
+      "before_next_a": 4
+    },
+    {
+      "id": "M08",
+      "status": "tested-fail",
+      "result": "Precondition absent: GLB has 38 meshes, 38 primitives, 107684 triangles, and no embedded materials, images, or extensions. KTX2 does not apply unless baked textures are added later.",
+      "evidence": "outputs/mobile-validation/glb-budget.json",
+      "before_next_a": 4
+    },
+    {
+      "id": "M03",
+      "status": "tested-pass",
+      "result": "Demand mode stopped cleanly at idle: idle interval 16.7 ms with zero idle renders. Resume smoothness remains a separate active-scroll question.",
+      "evidence": "outputs/mobile-validation/baseline/report.json",
+      "before_next_a": 4
+    },
+    {
+      "id": "M06",
+      "status": "tested-fail",
+      "result": "compileAsync readiness did not prevent the first visible canvas reveal from taking about 6.85 s, and the stall repeated after resize. Ready must include a presented visible-frame gate.",
+      "evidence": "outputs/mobile-validation/baseline/report.json",
+      "before_next_a": 4
+    },
+    {
+      "id": "M07",
+      "status": "tested-pass",
+      "result": "The combined report and Chromium trace separated negligible probe CPU cost from software-GPU raster/presentation stalls and recorded environment/concurrency caveats.",
+      "evidence": "outputs/mobile-validation/baseline/chromium-trace.json",
+      "before_next_a": 4
+    },
+    {
+      "id": "M07",
+      "status": "inconclusive",
+      "result": "Qualification: the trace excludes large measured probe CPU and reports compositor DroppedFrame 318, but no >50 ms timeline X event identified the GPU wait. Root-cause attribution remains unresolved.",
+      "evidence": "outputs/mobile-validation/baseline/chromium-trace.json",
+      "before_next_a": 4
+    },
+    {
+      "id": "M13",
+      "status": "inconclusive",
+      "result": "Epsilon opacity removed the 6.85 s first-reveal spike, but cold settle worsened from 2.46 s to 4.78 s, max cold rAF reached 1.83 s, max long task 1.70 s, and a pose fix co-landed. No single-factor causal claim.",
+      "evidence": "outputs/mobile-validation/warm-visible/report.json",
+      "before_next_a": 5
+    },
+    {
+      "id": "M12",
+      "status": "tested-pass",
+      "result": "Same-build CSS-hidden diagnostic held all five passes at p95 16.7-16.8 ms with zero long tasks and one missed 60 Hz interval total, while visible candidate stayed p95 217-400 ms. This isolates the current software-raster/presentation dependency; hidden output is not a usable smoothness result.",
+      "evidence": "outputs/mobile-validation/hidden-canvas/report.json",
+      "before_next_a": 5
+    },
+    {
+      "id": "B03",
+      "status": "tested-pass",
+      "result": "The 1536x2304 white render retained a readable blue dielectric lens highlight while removing the blue spill previously visible on the ivory face; independent visual review found no new noise regression.",
+      "evidence": "work/calibration/pre-layout-quality/quality-final-white.png",
+      "before_next_a": 5
+    },
+    {
+      "id": "M14",
+      "status": "inconclusive",
+      "result": "Candidate reduced renderer calls from 70 to 35 while keeping 198412 submitted triangles, but batching and standard-material changes co-landed and the SwiftShader/concurrent-load environment changed. Warm visible p95 generally fell yet remained 200-316.7 ms; no causal cadence pass or independent max-deviation image-parity audit.",
+      "evidence": "outputs/mobile-validation/batched-standard/report.json",
+      "before_next_a": 5
+    },
+    {
+      "id": "M07",
+      "status": "inconclusive",
+      "result": "A controlled 120 ms rAF busy loop produced a LoAF entry, proving the observer works in this Chromium build. Empty application LoAF entries therefore do not mean the API is unsupported, but they still do not identify the visible software-raster or presentation wait.",
+      "evidence": "outputs/mobile-validation/loaf-probe.json",
+      "before_next_a": 5
+    },
+    {
+      "id": "M16",
+      "status": "running",
+      "result": "User rejected the whole-scene fade and selected camera angle change, duck jump, touchdown-triggered explode and geometric set exit. Real set export and browser implementation are in progress; checkpoint and performance results are not yet available.",
+      "evidence": "spatial-frontier.md;work/research-engine/visual-audit/report.json",
+      "before_next_a": 6
+    }
+  ]
+}

@@ -12,6 +12,10 @@ import {
 } from "@/lib/sim/drive";
 import { ensureProbe } from "@/lib/probe";
 import {
+  auditRenderBatches,
+  prepareRigForRendering,
+} from "@/lib/sim/render-rig";
+import {
   buildRig,
   loadKinematics,
   MODEL_DIR,
@@ -62,11 +66,15 @@ export function OfficialDuck({
         const rig = await buildRig(kinematics, { materialForMesh });
         if (!isRig(rig)) throw new Error("Invalid Microduck hierarchy");
         if (cancelled) return;
+        prepareRigForRendering(rig);
         activeRig = rig;
         group!.add(rig.placer);
         const prepared = prepareRig(rig);
         rigRef.current = { rig, prepared };
-        window.__QUACKLES_AUDIT__ = () => auditFeet(rig, prepared);
+        window.__QUACKLES_AUDIT__ = () => ({
+          ...auditFeet(rig, prepared),
+          batchGeometry: auditRenderBatches(rig),
+        });
         driveRig(rig, poseRef.current, prepared);
         await gl.compileAsync(scene, camera);
         if (cancelled) return;
@@ -100,6 +108,8 @@ export function OfficialDuck({
             node.material instanceof MeshStandardMaterial
           )
             materials.add(node.material);
+          if (node instanceof Mesh && node.userData.mergedForRendering)
+            node.geometry.dispose();
         });
         materials.forEach((material) => material.dispose());
       }
@@ -112,6 +122,8 @@ export function OfficialDuck({
     const q = ensureProbe();
     if (q) {
       q.feetMinY = feetMinY;
+      q.renderedProgress = q.progress;
+      q.renderedAt = performance.now();
       const p = active.rig.placer.position;
       q.rootPosition[0] = p.x;
       q.rootPosition[1] = p.y;
