@@ -2,8 +2,8 @@ name: pages
 
 on:
   push:
-    # The root Pages site is the stable poster. The newer source is published
-    # beneath /nightly by the deploy job below.
+    # Stable poster at /. Experimental channels are nested: /nightly, /preview, /dev.
+    # This file is the only Pages publisher; preview/dev pushes kick it via kick-pages.yml.
     branches: [nightly]
   schedule:
     - cron: "0 5 * * *"
@@ -101,6 +101,24 @@ jobs:
         run: |
           mkdir -p pages-root/nightly
           cp -a nightly-source/out/. pages-root/nightly/
+      - name: Build channel under preview
+        continue-on-error: true
+        run: |
+          git fetch --no-tags origin preview:refs/remotes/origin/preview
+          rm -rf channel-preview
+          mkdir -p channel-preview pages-root/preview
+          git archive origin/preview | tar -x -C channel-preview
+          (cd channel-preview && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/preview" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/preview)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
+          cp -a channel-preview/out/. pages-root/preview/
+      - name: Build channel under dev
+        continue-on-error: true
+        run: |
+          git fetch --no-tags origin dev:refs/remotes/origin/dev
+          rm -rf channel-dev
+          mkdir -p channel-dev pages-root/dev
+          git archive origin/dev | tar -x -C channel-dev
+          (cd channel-dev && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/dev" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/dev)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
+          cp -a channel-dev/out/. pages-root/dev/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
