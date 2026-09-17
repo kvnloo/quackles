@@ -2,8 +2,10 @@ name: pages
 
 on:
   push:
-    # quackles Pages tracks nightly; quackles-nightly only has main.
-    branches: [main, nightly]
+    # Stable poster at /. Experimental channels are nested: /nightly, /preview, /dev.
+    # GitHub runs `schedule` from the default branch (main). That file MUST be this
+    # composite publisher. A single-root `out/` deploy on main overwrites /nightly.
+    branches: [nightly]
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
@@ -14,7 +16,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -22,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,6 +37,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -45,14 +51,15 @@ jobs:
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule' ||
-      github.ref == 'refs/heads/nightly' ||
-      github.repository == 'kvnloo/quackles-nightly'
+      github.ref == 'refs/heads/nightly'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -71,14 +78,57 @@ jobs:
         id: stamp
         run: echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
       - run: npm ci
-      - run: npm run build
+      - name: Build stable root
+        run: npm run build
         env:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
           NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
           NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
+      - name: Preserve stable root artifact
+        run: |
+          mkdir -p pages-root
+          cp -a out/. pages-root/
+      - name: Fetch newer source branch
+        id: nightly
+        run: |
+          git fetch --no-tags origin nightly-source:refs/remotes/origin/nightly-source
+          echo "sha=$(git rev-parse origin/nightly-source)" >> "$GITHUB_OUTPUT"
+          mkdir -p nightly-source
+          git archive origin/nightly-source | tar -x -C nightly-source
+      - name: Build newer source under nightly path
+        working-directory: nightly-source
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}/nightly
+          NEXT_PUBLIC_BUILD_SHA: ${{ steps.nightly.outputs.sha }}
+          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
+        run: |
+          npm ci
+          npm run build
+      - name: Add newer artifact beneath nightly
+        run: |
+          mkdir -p pages-root/nightly
+          cp -a nightly-source/out/. pages-root/nightly/
+      - name: Build channel under preview
+        continue-on-error: true
+        run: |
+          git fetch --no-tags origin preview:refs/remotes/origin/preview
+          rm -rf channel-preview
+          mkdir -p channel-preview pages-root/preview
+          git archive origin/preview | tar -x -C channel-preview
+          (cd channel-preview && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/preview" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/preview)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
+          cp -a channel-preview/out/. pages-root/preview/
+      - name: Build channel under dev
+        continue-on-error: true
+        run: |
+          git fetch --no-tags origin dev:refs/remotes/origin/dev
+          rm -rf channel-dev
+          mkdir -p channel-dev pages-root/dev
+          git archive origin/dev | tar -x -C channel-dev
+          (cd channel-dev && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/dev" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/dev)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
+          cp -a channel-dev/out/. pages-root/dev/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          path: pages-root
       - id: deploy
         uses: actions/deploy-pages@v4
