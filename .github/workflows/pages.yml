@@ -126,7 +126,7 @@ jobs:
           git archive origin/dev | tar -x -C channel-dev
           (cd channel-dev && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/dev" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/dev)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
           cp -a channel-dev/out/. pages-root/dev/
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v3
         with:
           path: pages-root
