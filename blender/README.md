@@ -32,4 +32,6 @@ PATH="$HOME/.local/bin:$PATH" blender --background --python blender/build_poster
   --plate white --samples 16 --res 430 932
 ```
 
+Generated limestone PBR (`T_limestone_{albedo,roughness,normal}.png`) plus `plinth_look.py` UV-prints the Creation fingers onto the limestone. Cinematic renders import that from `calibration/cinematic_theme.py`.
+
 Quarry PBR maps live in `blender/assets/` (gitignored, `quarry_wall_*`). If they are missing the script falls back to procedural limestone.
