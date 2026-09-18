@@ -28,6 +28,10 @@ export function ThemeControl() {
           data-testid={`theme-${id}`}
           className="theme-seg-btn"
           onClick={() => {
+            // Paint chrome immediately — don't wait for sequence paint/raf.
+            if (typeof document !== "undefined") {
+              document.documentElement.dataset.tone = id;
+            }
             selectTheme(id);
             feelThemeStop();
           }}

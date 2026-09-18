@@ -10,20 +10,29 @@
 /* Tone locks: chrome matches plate even if JS palette lags first paint. */
 [data-tone="blue"] {
   --paper: #0000f2;
-  --paper-deep: #0000c2;
+  --paper-deep: #0000f2;
   --ink: #f2f2f2;
   --cobalt: #f2f2f2;
   --background: #0000f2;
   --foreground: #f2f2f2;
 }
-[data-tone="blue"] .phone-shell,
-[data-tone="blue"] .poster-stage,
-[data-tone="blue"] .poster-frame,
-[data-tone="blue"] .scene-dock {
-  background-color: #0000f2;
+/* Cobalt lock is full-bleed blue field — no cream/transparent strip. */
+html[data-tone="blue"],
+html[data-tone="blue"] body {
+  background: #0000f2 !important;
+  color: #f2f2f2;
 }
-[data-tone="blue"] .site-nav {
-  background: linear-gradient(90deg, #0000f2 68.4%, transparent 68.4%);
+html[data-tone="blue"] .phone-shell,
+html[data-tone="blue"] .poster-stage,
+html[data-tone="blue"] .poster-frame,
+html[data-tone="blue"] .scene-dock,
+html[data-tone="blue"] .sequence-player,
+html[data-tone="blue"] .poster-plate {
+  background-color: #0000f2 !important;
+}
+html[data-tone="blue"] .site-nav {
+  background: #0000f2 !important;
+  background-image: none !important;
   border-bottom-color: color-mix(in srgb, #f2f2f2 38%, transparent);
 }
 [data-tone="white"] {
