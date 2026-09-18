@@ -1,31 +1,56 @@
+/** Hermes-poster-primary type (~identical stacks). Fan deltas only. */
 export function PosterHeroCopy() {
   return (
     <div className="hero-copy">
       <p className="hero-kicker">
-        01 &nbsp; MICRODUCK <i />
+        01 &nbsp; AGENT — <i />
       </p>
       <h1>
-        MICRODUCK
+        A MORE
         <br />
-        OPEN SOURCE
+        OPEN
         <br />
-        BIPED
+        INTELLIGENCE
       </h1>
       <p className="hero-label">
-        OPEN SOURCE
+        AGENTS
         <br />
-        BIPED
+        MODELS
         <br />
-        BY POLLEN
+        TOOLS
         <br />
-        ROBOTICS
+        FOR EVERYONE
       </p>
       <p className="hero-note">
-        15 MOTORS
+        NOUS RESEARCH
         <br />
-        25 CM TALL
+        37.7749° N
         <br />
-        800 G
+        122.4194° W
+        <br />
+        HUMAN
+        <br />
+        COMPUTE
+        <br />
+        COLLABORATION
+        <br />
+        AT SCALE
+      </p>
+      <p className="hero-right-lead">
+        RESEARCH
+        <br />
+        BUILDS
+        <br />
+        A BRIGHTER
+        <br />
+        TOMORROW
+      </p>
+      <p className="hero-right-sub">
+        OPEN
+        <br />
+        USEFUL
+        <br />
+        BEAUTIFUL
       </p>
       <div className="crop-cross" aria-hidden>
         +

@@ -28,7 +28,7 @@ export function PosterBeats() {
             </div>
           ))}
         </dl>
-        <a href={LINKS.github} target="_blank" rel="noreferrer">
+        <a href={LINKS.source} target="_blank" rel="noreferrer">
           EXPLORE THE SOURCE ↗
         </a>
       </section>

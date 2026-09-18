@@ -14,9 +14,9 @@ const mono = localFont({
   display: "swap",
 });
 export const metadata: Metadata = {
-  title: "Quackles · Microduck",
+  title: "Quackles · fan study",
   description:
-    "A study of Microduck, the open source biped by Pollen Robotics. Product, exploded view, and jump.",
+    "Unofficial fan study: Hermes-style poster with Microduck in frame. Not Nous Research or Pollen Robotics.",
   other: { "microduck-build": BUILD_STAMP },
 };
 export default function RootLayout({ children }: { children: ReactNode }) {

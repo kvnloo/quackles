@@ -37,7 +37,8 @@ export function Landing() {
               <div className="scroll-progress-fill" />
             </div>
             <p className="credit">
-              MICRODUCK BY POLLEN ROBOTICS <span>FAN STUDY / 2026</span>
+              FAN STUDY · MICRODUCK IN FRAME{" "}
+              <span>NOT NOUS / NOT POLLEN · 2026</span>
             </p>
           </div>
         </div>

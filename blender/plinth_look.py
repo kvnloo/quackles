@@ -168,9 +168,120 @@ def print_creation_on_plinth(scene):
     return True
 
 
-def apply_plinth_look(scene):
+def apply_robot_shell_pbr():
+    """Wire T_robot_shell_* onto cream shell materials already on the duck."""
+    albedo = ASSETS / "T_robot_shell_albedo.png"
+    rough = ASSETS / "T_robot_shell_roughness.png"
+    normal = ASSETS / "T_robot_shell_normal.png"
+    if not albedo.exists():
+        return 0
+    mats = []
+    root = bpy.data.objects.get("duck_root")
+    objs = list(root.children_recursive) if root else list(bpy.data.objects)
+    for obj in objs:
+        if getattr(obj, "type", None) != "MESH":
+            continue
+        for slot in obj.material_slots:
+            mat = slot.material
+            if not mat or mat in mats:
+                continue
+            bs = principal(mat)
+            if not bs:
+                continue
+            base = bs.inputs["Base Color"].default_value
+            metal = bs.inputs["Metallic"].default_value if "Metallic" in bs.inputs else 0
+            bright = sum(base[:3]) / 3.0
+            # Cream shells only: skip dark/mech/rubber/metal.
+            if metal > 0.2 or bright < 0.45:
+                continue
+            if any(n.name == "RobotShellAlbedo" for n in mat.node_tree.nodes):
+                mats.append(mat)
+                continue
+            nt = mat.node_tree
+            coord = nt.nodes.new("ShaderNodeTexCoord")
+            mapping = nt.nodes.new("ShaderNodeMapping")
+            mapping.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
+            diff = nt.nodes.new("ShaderNodeTexImage")
+            diff.name = "RobotShellAlbedo"
+            diff.image = bpy.data.images.load(str(albedo), check_existing=True)
+            rtex = nt.nodes.new("ShaderNodeTexImage")
+            rtex.image = bpy.data.images.load(str(rough), check_existing=True)
+            rtex.image.colorspace_settings.name = "Non-Color"
+            ntex = nt.nodes.new("ShaderNodeTexImage")
+            ntex.image = bpy.data.images.load(str(normal), check_existing=True)
+            ntex.image.colorspace_settings.name = "Non-Color"
+            nmap = nt.nodes.new("ShaderNodeNormalMap")
+            nmap.inputs["Strength"].default_value = 0.35
+            nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
+            for tex in (diff, rtex, ntex):
+                nt.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
+            mix = nt.nodes.new("ShaderNodeMixRGB")
+            mix.blend_type = "MULTIPLY"
+            mix.inputs["Fac"].default_value = 0.85
+            base_sock = bs.inputs["Base Color"]
+            if base_sock.links:
+                nt.links.new(base_sock.links[0].from_socket, mix.inputs[1])
+            else:
+                mix.inputs[1].default_value = tuple(base_sock.default_value)
+            nt.links.new(diff.outputs["Color"], mix.inputs[2])
+            for link in list(base_sock.links):
+                nt.links.remove(link)
+            nt.links.new(mix.outputs[0], base_sock)
+            nt.links.new(rtex.outputs["Color"], bs.inputs["Roughness"])
+            nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
+            nt.links.new(nmap.outputs["Normal"], bs.inputs["Normal"])
+            if "Specular IOR Level" in bs.inputs:
+                bs.inputs["Specular IOR Level"].default_value = 0.5
+            mats.append(mat)
+    return len(mats)
+
+
+def tune_day_orb():
+    """Cut volume absorption so glossy paths show robot + stone, not lights-only."""
+    orb = bpy.data.objects.get("Cobalt optical glass")
+    mat = bpy.data.materials.get("POSTER-cobalt-glass")
+    if orb and orb.data.materials:
+        mat = orb.data.materials[0] or mat
+    if not mat or not mat.use_nodes:
+        return False
+    bs = principal(mat)
+    nt = mat.node_tree
+    if bs:
+        if "Transmission Weight" in bs.inputs:
+            bs.inputs["Transmission Weight"].default_value = 1.0
+        elif "Transmission" in bs.inputs:
+            bs.inputs["Transmission"].default_value = 1.0
+        if "Roughness" in bs.inputs:
+            bs.inputs["Roughness"].default_value = 0.012
+        if "IOR" in bs.inputs:
+            bs.inputs["IOR"].default_value = 1.52
+        if "Base Color" in bs.inputs and not bs.inputs["Base Color"].links:
+            bs.inputs["Base Color"].default_value = (0.55, 0.72, 0.95, 1.0)
+    for n in nt.nodes:
+        if n.type == "VOLUME_ABSORPTION":
+            # poster_set used Density=100 — kills robot/marble in sphere.
+            if "Density" in n.inputs:
+                n.inputs["Density"].default_value = 0.35
+            if "Color" in n.inputs:
+                n.inputs["Color"].default_value = (0.15, 0.35, 0.85, 1.0)
+        if n.type == "VOLUME_SCATTER" and "Density" in n.inputs:
+            n.inputs["Density"].default_value = min(float(n.inputs["Density"].default_value), 0.08)
+    scene = bpy.context.scene
+    if scene and scene.world and scene.world.use_nodes:
+        for n in scene.world.node_tree.nodes:
+            if n.type == "BACKGROUND" and n.name != "Cinematic camera background":
+                if float(n.inputs["Strength"].default_value) < 0.18:
+                    n.inputs["Strength"].default_value = 0.22
+    return True
+
+
+def apply_plinth_look(scene, *, shells=True, orb=True):
     stone = apply_generated_limestone()
     print_ok = print_creation_on_plinth(scene)
+    shell_n = apply_robot_shell_pbr() if shells else 0
+    orb_ok = tune_day_orb() if orb else False
     scene["plinth_generated_stone"] = stone
     scene["plinth_creation_uv"] = print_ok
-    return stone, print_ok
+    scene["plinth_shell_pbr"] = shell_n
+    scene["plinth_orb_tuned"] = orb_ok
+    return stone, print_ok, shell_n, orb_ok
