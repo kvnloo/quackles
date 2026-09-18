@@ -313,7 +313,7 @@ def tune_day_orb():
             # Lock day.png = deep cobalt with highlight.
             # Density 100 = lights-only; 0.35 = clear crystal. ~14 = cobalt body.
             if "Density" in n.inputs:
-                n.inputs["Density"].default_value = 28.0
+                n.inputs["Density"].default_value = 55.0
             if "Color" in n.inputs:
                 n.inputs["Color"].default_value = (0.008, 0.04, 0.92, 1.0)
         if n.type == "VOLUME_SCATTER" and "Density" in n.inputs:
