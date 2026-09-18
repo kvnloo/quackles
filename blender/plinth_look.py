@@ -1,4 +1,7 @@
-"""UV-print Creation fingers on Hero limestone; wire generated stone PBR."""
+"""UV-print Creation fingers on Hero limestone; wire generated stone PBR.
+
+Also: robot cream shell maps + day cobalt orb absorption (shared by cinematic path).
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,6 +9,7 @@ from pathlib import Path
 import bpy
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
+
 
 def _assets():
     here = Path(__file__).resolve().parent / "assets"
@@ -56,10 +60,17 @@ def apply_generated_limestone():
         rtex.image.colorspace_settings.name = "Non-Color"
         nmap = nt.nodes.new("ShaderNodeNormalMap")
         nmap.inputs["Strength"].default_value = 0.9
+        # Cool gray grade toward day lock concrete (warm map × cool multiply).
+        cool = nt.nodes.new("ShaderNodeMixRGB")
+        cool.name = "LimestoneCool"
+        cool.blend_type = "MULTIPLY"
+        cool.inputs["Fac"].default_value = 1.0
+        cool.inputs[2].default_value = (0.52, 0.55, 0.60, 1.0)
         nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
         for tex in (diff, nor, rtex):
             nt.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
-        nt.links.new(diff.outputs["Color"], bs.inputs["Base Color"])
+        nt.links.new(diff.outputs["Color"], cool.inputs[1])
+        nt.links.new(cool.outputs[0], bs.inputs["Base Color"])
         nt.links.new(rtex.outputs["Color"], bs.inputs["Roughness"])
         nt.links.new(nor.outputs["Color"], nmap.inputs["Color"])
         nt.links.new(nmap.outputs["Normal"], bs.inputs["Normal"])
@@ -169,21 +180,59 @@ def print_creation_on_plinth(scene):
 
 
 def apply_robot_shell_pbr():
-    """Wire T_robot_shell_* onto cream shell materials already on the duck."""
+    """Wire T_robot_shell_* onto cream shell materials on duck meshes only."""
     albedo = ASSETS / "T_robot_shell_albedo.png"
     rough = ASSETS / "T_robot_shell_roughness.png"
     normal = ASSETS / "T_robot_shell_normal.png"
     if not albedo.exists():
         return 0
+    shell_needles = (
+        "shell",
+        "top_head",
+        "bottom_head",
+        "torso",
+        "chest",
+        "pelvis",
+        "hip",
+        "thigh",
+        "shin",
+        "upper_leg",
+        "lower_leg",
+        "foot",
+        "ankle",
+        "knee",
+        "body",
+    )
+    skip_mat = (
+        "ivory",
+        "limestone",
+        "stone",
+        "plinth",
+        "wall",
+        "floor",
+        "glass",
+        "cobalt",
+        "print",
+        "banner",
+        "bust",
+        "cyclorama",
+    )
     mats = []
     root = bpy.data.objects.get("duck_root")
-    objs = list(root.children_recursive) if root else list(bpy.data.objects)
-    for obj in objs:
+    if not root:
+        return 0
+    for obj in root.children_recursive:
         if getattr(obj, "type", None) != "MESH":
+            continue
+        low = obj.name.lower()
+        if not any(n in low for n in shell_needles):
             continue
         for slot in obj.material_slots:
             mat = slot.material
             if not mat or mat in mats:
+                continue
+            mlow = mat.name.lower()
+            if any(s in mlow for s in skip_mat):
                 continue
             bs = principal(mat)
             if not bs:
@@ -192,7 +241,7 @@ def apply_robot_shell_pbr():
             metal = bs.inputs["Metallic"].default_value if "Metallic" in bs.inputs else 0
             bright = sum(base[:3]) / 3.0
             # Cream shells only: skip dark/mech/rubber/metal.
-            if metal > 0.2 or bright < 0.45:
+            if metal > 0.25 or bright < 0.35:
                 continue
             if any(n.name == "RobotShellAlbedo" for n in mat.node_tree.nodes):
                 mats.append(mat)
@@ -211,18 +260,19 @@ def apply_robot_shell_pbr():
             ntex.image = bpy.data.images.load(str(normal), check_existing=True)
             ntex.image.colorspace_settings.name = "Non-Color"
             nmap = nt.nodes.new("ShaderNodeNormalMap")
-            nmap.inputs["Strength"].default_value = 0.35
+            nmap.inputs["Strength"].default_value = 0.42
             nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
             for tex in (diff, rtex, ntex):
                 nt.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
             mix = nt.nodes.new("ShaderNodeMixRGB")
             mix.blend_type = "MULTIPLY"
-            mix.inputs["Fac"].default_value = 0.85
+            mix.inputs["Fac"].default_value = 0.9
             base_sock = bs.inputs["Base Color"]
             if base_sock.links:
                 nt.links.new(base_sock.links[0].from_socket, mix.inputs[1])
             else:
-                mix.inputs[1].default_value = tuple(base_sock.default_value)
+                # Warm cream under wear map (classic Microduck)
+                mix.inputs[1].default_value = (0.94, 0.88, 0.80, 1.0)
             nt.links.new(diff.outputs["Color"], mix.inputs[2])
             for link in list(base_sock.links):
                 nt.links.remove(link)
@@ -231,13 +281,13 @@ def apply_robot_shell_pbr():
             nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
             nt.links.new(nmap.outputs["Normal"], bs.inputs["Normal"])
             if "Specular IOR Level" in bs.inputs:
-                bs.inputs["Specular IOR Level"].default_value = 0.5
+                bs.inputs["Specular IOR Level"].default_value = 0.45
             mats.append(mat)
     return len(mats)
 
 
 def tune_day_orb():
-    """Cut volume absorption so glossy paths show robot + stone, not lights-only."""
+    """Cobalt glass: blue body + enough transmission for robot/stone in sphere."""
     orb = bpy.data.objects.get("Cobalt optical glass")
     mat = bpy.data.materials.get("POSTER-cobalt-glass")
     if orb and orb.data.materials:
@@ -252,20 +302,22 @@ def tune_day_orb():
         elif "Transmission" in bs.inputs:
             bs.inputs["Transmission"].default_value = 1.0
         if "Roughness" in bs.inputs:
-            bs.inputs["Roughness"].default_value = 0.012
+            bs.inputs["Roughness"].default_value = 0.014
         if "IOR" in bs.inputs:
-            bs.inputs["IOR"].default_value = 1.52
+            bs.inputs["IOR"].default_value = 1.5
         if "Base Color" in bs.inputs and not bs.inputs["Base Color"].links:
-            bs.inputs["Base Color"].default_value = (0.55, 0.72, 0.95, 1.0)
+            # Near-white glass base; color comes from volume absorption
+            bs.inputs["Base Color"].default_value = (0.92, 0.95, 1.0, 1.0)
     for n in nt.nodes:
         if n.type == "VOLUME_ABSORPTION":
-            # poster_set used Density=100 — kills robot/marble in sphere.
+            # Lock day.png = deep cobalt with highlight.
+            # Density 100 = lights-only; 0.35 = clear crystal. ~14 = cobalt body.
             if "Density" in n.inputs:
-                n.inputs["Density"].default_value = 0.35
+                n.inputs["Density"].default_value = 55.0
             if "Color" in n.inputs:
-                n.inputs["Color"].default_value = (0.15, 0.35, 0.85, 1.0)
+                n.inputs["Color"].default_value = (0.008, 0.04, 0.92, 1.0)
         if n.type == "VOLUME_SCATTER" and "Density" in n.inputs:
-            n.inputs["Density"].default_value = min(float(n.inputs["Density"].default_value), 0.08)
+            n.inputs["Density"].default_value = min(float(n.inputs["Density"].default_value), 0.05)
     scene = bpy.context.scene
     if scene and scene.world and scene.world.use_nodes:
         for n in scene.world.node_tree.nodes:
