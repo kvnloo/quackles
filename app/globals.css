@@ -7,6 +7,41 @@
   --background: var(--paper);
   --foreground: var(--ink);
 }
+/* Tone locks: chrome matches plate even if JS palette lags first paint. */
+[data-tone="blue"] {
+  --paper: #0000f2;
+  --paper-deep: #0000c2;
+  --ink: #f2f2f2;
+  --cobalt: #f2f2f2;
+  --background: #0000f2;
+  --foreground: #f2f2f2;
+}
+[data-tone="blue"] .phone-shell,
+[data-tone="blue"] .poster-stage,
+[data-tone="blue"] .poster-frame,
+[data-tone="blue"] .scene-dock {
+  background-color: #0000f2;
+}
+[data-tone="blue"] .site-nav {
+  background: linear-gradient(90deg, #0000f2 68.4%, transparent 68.4%);
+  border-bottom-color: color-mix(in srgb, #f2f2f2 38%, transparent);
+}
+[data-tone="white"] {
+  --paper: #e5e1d8;
+  --paper-deep: #ddd9d0;
+  --ink: #0000f2;
+  --cobalt: #0000f2;
+  --background: #e5e1d8;
+  --foreground: #0000f2;
+}
+[data-tone="day"] {
+  --paper: #141416;
+  --paper-deep: #0c0c0e;
+  --ink: #e8e4dc;
+  --cobalt: #3d5cff;
+  --background: #141416;
+  --foreground: #e8e4dc;
+}
 * {
   box-sizing: border-box;
 }
