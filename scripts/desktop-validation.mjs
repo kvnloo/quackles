@@ -130,14 +130,10 @@ try {
   report.states.scrollUpEarly = await state();
   await pause(110);
   report.states.scrollUpMid = await state();
-  await pause(520);
-  report.states.scrollUpSettled = await state();
-  report.screenshots.scrollUpSettled = await screenshot("01b-scroll-up-zoom");
 
   const zoomStart = report.states.zoomStart.desktop;
   const zoomEarly = report.states.scrollUpEarly.desktop;
   const zoomMid = report.states.scrollUpMid.desktop;
-  const zoomSettled = report.states.scrollUpSettled.desktop;
 
   if (!(zoomEarly.targetZoom < zoomStart.targetZoom))
     throw new Error("scroll-up did not move the zoom target inward");
@@ -145,26 +141,36 @@ try {
     throw new Error("scroll-up zoom snapped or moved in the wrong direction");
   if (!(zoomMid.zoom < zoomEarly.zoom))
     throw new Error("scroll-up zoom did not continue smoothly toward the target");
+  if (!(zoomMid.zoomVelocity < 0))
+    throw new Error("scroll-up did not establish inward camera momentum");
+
+  // Reverse while the inward spring is still moving. This catches the actual
+  // "detached" failure mode that a reversal-after-settle test cannot see.
+  await page.mouse.wheel({ deltaY: 180 });
+  await pause(32);
+  report.states.scrollReverseEarly = await state();
+  const zoomReverseEarly = report.states.scrollReverseEarly.desktop;
+  if (!(zoomReverseEarly.targetZoom > zoomMid.targetZoom))
+    throw new Error("scroll reversal did not move the zoom target outward");
+  if (!(zoomReverseEarly.zoom > zoomMid.zoom))
+    throw new Error("camera kept moving inward after a downward reversal");
+  if (!(zoomReverseEarly.zoomVelocity >= 0))
+    throw new Error("stale inward spring momentum survived direction reversal");
+  if (zoomReverseEarly.phase !== "inspect")
+    throw new Error("scroll reversal escaped inspect phase");
+
+  // Independently verify that an uninterrupted scroll-up still settles.
+  await page.evaluate(() => window.__QUACKLES_DESKTOP__?.reset());
+  await pause(32);
+  await page.mouse.wheel({ deltaY: -120 });
+  await pause(700);
+  report.states.scrollUpSettled = await state();
+  report.screenshots.scrollUpSettled = await screenshot("01b-scroll-up-zoom");
+  const zoomSettled = report.states.scrollUpSettled.desktop;
   if (Math.abs(zoomSettled.zoom - zoomSettled.targetZoom) > 0.004)
     throw new Error("scroll-up zoom did not settle on its target");
   if (zoomSettled.launchIntent !== 0 || zoomSettled.phase !== "inspect")
     throw new Error("scroll-up incorrectly armed or launched the cinematic");
-
-  // Direction reversal must retarget cleanly instead of carrying stale inward
-  // momentum through the user's downward input.
-  await page.mouse.wheel({ deltaY: 90 });
-  await pause(120);
-  report.states.scrollReverse = await state();
-  if (
-    !(
-      report.states.scrollReverse.desktop.targetZoom >
-        zoomSettled.targetZoom &&
-      report.states.scrollReverse.desktop.zoom > zoomSettled.zoom
-    )
-  )
-    throw new Error("scroll direction reversal did not pull the camera back out");
-  if (report.states.scrollReverse.desktop.phase !== "inspect")
-    throw new Error("scroll reversal escaped inspect phase");
 
   await page.evaluate(() => window.__QUACKLES_DESKTOP__?.reset());
   await pause(32);
