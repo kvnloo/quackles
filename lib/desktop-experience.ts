@@ -27,6 +27,8 @@ export const DESKTOP_EXPERIENCE = {
 } as const;
 
 const exploded = poseAt(0.84);
+const crouch = poseAt(0.26);
+const farInspect = poseAt(0);
 const assembled = poseAt(0);
 
 function copyVec(out: [number, number, number], value: [number, number, number]) {
@@ -99,6 +101,9 @@ export function inspectPoseInto(out: Pose, zoom: number) {
   return out;
 }
 
+inspectPoseInto(farInspect, DESKTOP_EXPERIENCE.farZoom);
+inspectPoseInto(assembled, 1.18);
+
 export function cinematicPoseInto(
   out: Pose,
   phase: Exclude<DesktopPhase, "inspect" | "sim-ready">,
@@ -106,7 +111,12 @@ export function cinematicPoseInto(
 ) {
   const t = clamp01(progress);
   if (phase === "jump") {
-    return poseAtInto(out, lerp(0.26, 0.56, smoothstep(t)));
+    const settle = 0.16;
+    if (t < settle) {
+      return blendPoseInto(out, farInspect, crouch, t / settle);
+    }
+    const authored = (t - settle) / (1 - settle);
+    return poseAtInto(out, lerp(0.26, 0.56, smoothstep(authored)));
   }
   if (phase === "explode") {
     const authored = t < 0.86 ? t / 0.86 : 1;
