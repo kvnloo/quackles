@@ -1,0 +1,220 @@
+name: agent-visual-audit
+
+on:
+  workflow_run:
+    workflows: ["pages"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: agent-visual-audit
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: python3 -m pip install --quiet pillow
+
+      - name: Fetch deployed comparison manifest
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if curl --fail --silent --show-error --location \
+              https://kvnloo.github.io/quackles/compare/manifest.json \
+              -o /tmp/quackles-manifest.json; then
+              exit 0
+            fi
+            sleep 8
+          done
+          exit 1
+
+      - name: Capture desktop branch states
+        env:
+          CHROME: /usr/bin/google-chrome
+        run: |
+          cat > /tmp/quackles-agent-capture.mjs <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import crypto from "node:crypto";
+          import puppeteer from "puppeteer-core";
+
+          const manifest = JSON.parse(fs.readFileSync("/tmp/quackles-manifest.json", "utf8"));
+          const baseOrigin = "https://kvnloo.github.io";
+          const usable = manifest.channels.filter((c) => c.status === "ok");
+          const salt = process.env.GITHUB_RUN_ID || "local";
+          const ordered = usable.slice().sort((a, b) => {
+            const h = (x) => crypto.createHash("sha256").update(salt + x.ref).digest("hex");
+            return h(a).localeCompare(h(b));
+          });
+          const labels = new Map(ordered.map((c, i) => [c.ref, String.fromCharCode(65 + i)]));
+
+          fs.mkdirSync("review/raw", { recursive: true });
+          const browser = await puppeteer.launch({
+            executablePath: process.env.CHROME,
+            headless: true,
+            args: ["--no-sandbox", "--disable-dev-shm-usage", "--use-angle=swiftshader"],
+          });
+
+          const mapping = [];
+          for (const channel of usable) {
+            const label = labels.get(channel.ref);
+            const dir = path.join("review/raw", label);
+            fs.mkdirSync(dir, { recursive: true });
+            const page = await browser.newPage();
+            await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+            const errors = [];
+            page.on("pageerror", (error) => errors.push(String(error)));
+            page.on("console", (message) => {
+              if (message.type() === "error") errors.push(message.text());
+            });
+
+            const url = new URL(channel.url, baseOrigin).href;
+            try {
+              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90000 });
+              await page.evaluate(async () => {
+                const settle = async () => {
+                  if (document.fonts?.ready) await document.fonts.ready;
+                  await Promise.all([...document.images].map((img) => img.decode?.().catch(() => {})));
+                };
+                await Promise.race([settle(), new Promise((r) => setTimeout(r, 7000))]);
+              });
+              await new Promise((r) => setTimeout(r, 2200));
+
+              // Normalize to Day only when the branch actually exposes that theme.
+              await page.evaluate(() => {
+                const controls = [...document.querySelectorAll("button,[role=radio]")];
+                const day = controls.find((node) => {
+                  const text = (node.textContent || "").trim().toLowerCase();
+                  const aria = (node.getAttribute("aria-label") || "").trim().toLowerCase();
+                  return text === "day" || aria === "day";
+                });
+                if (day instanceof HTMLElement) day.click();
+                else window.__QUACKLES_SEQUENCE__?.setTheme?.("day");
+              }).catch(() => {});
+              await new Promise((r) => setTimeout(r, 900));
+
+              const hero = await page.$(".poster-frame, .poster-stage, [data-testid='experience']");
+              if (hero) await hero.screenshot({ path: path.join(dir, "hero-stage.png") });
+              else await page.screenshot({ path: path.join(dir, "hero-stage.png"), fullPage: false });
+
+              const maxScroll = await page.evaluate(() => Math.max(1, document.documentElement.scrollHeight - innerHeight));
+              for (const [name, p] of [["hero",0],["quarter",.25],["middle",.5],["three-quarter",.75],["end",1]]) {
+                await page.evaluate(({ p, maxScroll }) => scrollTo({ top: p * maxScroll, behavior: "instant" }), { p, maxScroll });
+                await new Promise((r) => setTimeout(r, 700));
+                await page.screenshot({ path: path.join(dir, name + ".png"), fullPage: false });
+              }
+            } catch (error) {
+              errors.push(error instanceof Error ? error.stack || error.message : String(error));
+            }
+            fs.writeFileSync(path.join(dir, "browser-errors.txt"), errors.join("\n"));
+            mapping.push({ label, ref: channel.ref, sha: channel.sha, url, status: channel.status });
+            await page.close();
+          }
+          await browser.close();
+          fs.mkdirSync("review/private-map", { recursive: true });
+          fs.writeFileSync("review/private-map/blind-map.json", JSON.stringify(mapping, null, 2));
+          NODE
+          node /tmp/quackles-agent-capture.mjs
+
+      - name: Build compact blind sheets
+        run: |
+          cat > /tmp/quackles-agent-sheets.py <<'PY'
+          from PIL import Image, ImageOps, ImageDraw
+          from pathlib import Path
+          import json
+
+          raw = Path("review/raw")
+          out = Path("review/blind")
+          out.mkdir(parents=True, exist_ok=True)
+          labels = sorted([p for p in raw.iterdir() if p.is_dir()], key=lambda p: p.name)
+
+          def fit(img, size):
+              img = ImageOps.exif_transpose(img.convert("RGB"))
+              return ImageOps.fit(img, size, method=Image.Resampling.LANCZOS)
+
+          # Hero stage sheet. This is the fastest way to spot geometry/pose/material regressions.
+          cell_w, cell_h = 320, 260
+          cols = 3
+          rows = (len(labels) + cols - 1) // cols
+          hero_sheet = Image.new("RGB", (cols * cell_w, rows * (cell_h + 28)), "white")
+          draw = ImageDraw.Draw(hero_sheet)
+          for i, d in enumerate(labels):
+              img = Image.open(d / "hero-stage.png")
+              thumb = fit(img, (cell_w, cell_h))
+              x = (i % cols) * cell_w
+              y = (i // cols) * (cell_h + 28)
+              hero_sheet.paste(thumb, (x, y))
+              draw.text((x + 8, y + cell_h + 5), d.name, fill="black")
+          hero_sheet.save(out / "desktop-hero-sheet.jpg", quality=62, optimize=True)
+
+          # Motion sheet: one branch per row, five scroll samples.
+          names = ["hero","quarter","middle","three-quarter","end"]
+          tw, th = 190, 132
+          motion = Image.new("RGB", (len(names) * tw, len(labels) * (th + 22)), "white")
+          draw = ImageDraw.Draw(motion)
+          for row, d in enumerate(labels):
+              for col, name in enumerate(names):
+                  p = d / f"{name}.png"
+                  if p.exists():
+                      motion.paste(fit(Image.open(p), (tw, th)), (col * tw, row * (th + 22)))
+              draw.text((6, row * (th + 22) + th + 3), d.name, fill="black")
+          motion.save(out / "desktop-motion-sheet.jpg", quality=58, optimize=True)
+
+          # Error summary remains branch-blind until the separate map is opened.
+          errors = {}
+          for d in labels:
+              p = d / "browser-errors.txt"
+              errors[d.name] = p.read_text()[:4000] if p.exists() else ""
+          (out / "browser-errors.json").write_text(json.dumps(errors, indent=2))
+          PY
+          python3 /tmp/quackles-agent-sheets.py
+
+      - name: Publish agent-readable audit bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/quackles-audit-publish
+          mkdir -p /tmp/quackles-audit-publish/latest
+          for image in review/blind/*.jpg; do
+            name="$(basename "$image")"
+            base64 -w 6000 "$image" > "/tmp/quackles-audit-publish/latest/${name}.b64"
+          done
+          cp review/blind/browser-errors.json /tmp/quackles-audit-publish/latest/
+          cp review/private-map/blind-map.json /tmp/quackles-audit-publish/latest/
+          cp /tmp/quackles-manifest.json /tmp/quackles-audit-publish/latest/manifest.json
+          printf '%s\n' "${{ github.run_id }}" > /tmp/quackles-audit-publish/latest/run-id.txt
+
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git fetch origin visual-audit 2>/dev/null || true
+          if git show-ref --verify --quiet refs/remotes/origin/visual-audit; then
+            git switch --force-create visual-audit origin/visual-audit
+          else
+            git switch --orphan visual-audit
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          rm -rf latest
+          cp -a /tmp/quackles-audit-publish/latest ./latest
+          git add latest
+          git commit -m "Update blind Quackles visual audit ${{ github.run_id }}" || exit 0
+          git push origin HEAD:visual-audit
