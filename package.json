@@ -14,7 +14,9 @@
     "preview": "python3 -m http.server 43217 --bind 0.0.0.0 --directory out",
     "test:mobile": "node scripts/mobile-validation.mjs",
     "test:mobile:timing": "MODE=timing node scripts/mobile-validation.mjs",
-    "test:mobile:visual": "MODE=visual node scripts/mobile-validation.mjs"
+    "test:mobile:visual": "MODE=visual node scripts/mobile-validation.mjs",
+    "test:inspection": "node scripts/inspection-browser.mjs",
+    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
