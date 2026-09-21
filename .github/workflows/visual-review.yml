@@ -94,7 +94,7 @@ jobs:
           CHROME: /usr/bin/google-chrome
           MANIFEST: /tmp/quackles-manifest.json
         run: |
-          cat > /tmp/capture-pages.mjs <<'NODE'
+          cat > review/capture-pages.mjs <<'NODE'
           import fs from "node:fs";
           import path from "node:path";
           import crypto from "node:crypto";
@@ -167,7 +167,7 @@ jobs:
           fs.mkdirSync("review/private-map", { recursive: true });
           fs.writeFileSync("review/private-map/blind-map.json", JSON.stringify(mapping, null, 2));
           NODE
-          node /tmp/capture-pages.mjs
+          node review/capture-pages.mjs
 
       - name: Build blind DreamLoop crop pack
         run: |
