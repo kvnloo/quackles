@@ -161,6 +161,9 @@ a:focus-visible {
   opacity: 0.94;
   transform: translate3d(0, 0, 0) scale(1);
 }
+.inspection-viewfinder[data-native-pinch="true"] {
+  transition: opacity 120ms ease;
+}
 .inspection-viewfinder-canvas,
 .inspection-viewfinder-overlay {
   position: absolute;
