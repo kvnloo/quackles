@@ -25,10 +25,11 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--disable-dev-shm-usage"],
 });
-const page = await browser.newPage({
+const context = await browser.newContext({
   viewport: { width: 1440, height: 1000 },
   deviceScaleFactor: 1,
 });
+const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 
