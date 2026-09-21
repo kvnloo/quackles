@@ -126,25 +126,48 @@ try {
   await pause(32);
   report.states.zoomStart = await state();
   await page.mouse.wheel({ deltaY: -120 });
-  await pause(32);
-  report.states.scrollUpEarly = await state();
-  await pause(110);
-  report.states.scrollUpMid = await state();
+
+  report.states.scrollUpSamples = await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const samples = [];
+        const sample = () => {
+          const current = window.__QUACKLES_DESKTOP__?.getState() ?? null;
+          samples.push(current);
+          if (samples.length >= 12) {
+            resolve(samples);
+            return;
+          }
+          requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }),
+  );
+
   await pause(520);
   report.states.scrollUpSettled = await state();
   report.screenshots.scrollUpSettled = await screenshot("01b-scroll-up-zoom");
 
   const zoomStart = report.states.zoomStart.desktop;
-  const zoomEarly = report.states.scrollUpEarly.desktop;
-  const zoomMid = report.states.scrollUpMid.desktop;
+  const zoomSamples = report.states.scrollUpSamples.filter(Boolean);
   const zoomSettled = report.states.scrollUpSettled.desktop;
+  const zoomEarly = zoomSamples.find(
+    (sample) =>
+      sample.zoom < zoomStart.zoom - 0.0005 &&
+      sample.zoom > sample.targetZoom + 0.0005,
+  );
+  const movingSamples = zoomSamples.filter(
+    (sample) => sample.zoom < zoomStart.zoom - 0.0005,
+  );
 
-  if (!(zoomEarly.targetZoom < zoomStart.targetZoom))
+  if (!zoomSamples.length || !(zoomSamples[0].targetZoom < zoomStart.targetZoom))
     throw new Error("scroll-up did not move the zoom target inward");
-  if (!(zoomEarly.zoom < zoomStart.zoom && zoomEarly.zoom > zoomEarly.targetZoom))
-    throw new Error("scroll-up zoom snapped or moved in the wrong direction");
-  if (!(zoomMid.zoom < zoomEarly.zoom))
-    throw new Error("scroll-up zoom did not continue smoothly toward the target");
+  if (!zoomEarly)
+    throw new Error("scroll-up produced no intermediate zoom state before settling");
+  for (let i = 1; i < movingSamples.length; i++) {
+    if (movingSamples[i].zoom > movingSamples[i - 1].zoom + 0.0005)
+      throw new Error("scroll-up zoom reversed direction while converging");
+  }
   if (Math.abs(zoomSettled.zoom - zoomSettled.targetZoom) > 0.004)
     throw new Error("scroll-up zoom did not settle on its target");
   if (zoomSettled.launchIntent !== 0 || zoomSettled.phase !== "inspect")
