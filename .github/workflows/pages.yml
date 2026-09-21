@@ -55,12 +55,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          {
-            printf '%s\n' main nightly nightly-source preview dev feat/water
-            git ls-remote --heads origin 'refs/heads/recovery/*' |
-              awk '{sub("^refs/heads/", "", $2); print $2}' |
-              sort -u
-          } > comparison-refs.txt
+          git ls-remote --heads origin |
+            awk '{sub("^refs/heads/", "", $2); print $2}' |
+            grep -E '^(main|nightly|nightly-source|preview|dev|feat/water|recovery/|cursor/)' |
+            sort -u > comparison-refs.txt
 
           while IFS= read -r ref; do
             [ -n "$ref" ] || continue
@@ -195,6 +193,7 @@ jobs:
               dev) slug="dev" ;;
               feat/water) slug="water" ;;
               recovery/*) slug="${ref#recovery/}" ;;
+              cursor/*) slug="cursor-${ref#cursor/}" ;;
               *) continue ;;
             esac
             [ "$ref" = "recovery/simulator" ] && mode="simulator"
