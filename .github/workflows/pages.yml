@@ -8,7 +8,7 @@ on:
       - ".github/workflows/agent-visual-audit.yml"
       - ".github/AI_REVIEW_POLICY.md"
   schedule:
-    - cron: "7,22,37,52 * * * *"
+    - cron: "11,41 * * * *"
   workflow_dispatch:
 
 permissions:
