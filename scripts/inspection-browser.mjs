@@ -364,10 +364,20 @@ try {
   if ((await dziRequests(page)).length !== deepRequestCount)
     throw new Error("settled deep inspection kept issuing DZI requests");
 
-  for (let i = 0; i < 16; i++) {
+  // Unwind by the actual inspection state. Stopping before one extra positive
+  // wheel event matters because once targetZoom reaches 1 that input belongs
+  // to normal story scroll, which is asserted separately below.
+  for (let i = 0; i < 64; i++) {
+    const current = await state(page);
+    if (current.inspection.targetZoom <= 1.0005) break;
     await page.mouse.wheel(0, 240);
     await page.waitForTimeout(24);
   }
+  const unwound = await state(page);
+  if (unwound.inspection.targetZoom > 1.0005)
+    throw new Error(
+      `zoom-out input stopped at targetZoom=${unwound.inspection.targetZoom}`,
+    );
   await page.waitForFunction(
     () => !window.__QUACKLES_INSPECTION__?.getState().active,
     undefined,
