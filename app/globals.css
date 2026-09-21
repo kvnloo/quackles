@@ -530,7 +530,7 @@ a:focus-visible {
   min-width: 92px;
   text-align: right;
 }
-@media (max-width: 899px), (pointer: coarse) {
+@media (max-width: 899px) {
   .desktop-shell {
     display: none;
   }
