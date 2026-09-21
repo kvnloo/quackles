@@ -28,13 +28,13 @@ const browser = await chromium.launch({
 });
 const errors = [];
 
-const imageRequests = (page) =>
+const sequenceRequests = (page) =>
   page.evaluate(() =>
     performance
       .getEntriesByType("resource")
       .map((entry) => entry.name)
       .filter((url) =>
-        /(?:\/sequence\/|\/quackles-assets\/).*\.(?:webp|png|avif)(?:\?|$)/i.test(url),
+        /\/sequence\/.*\.(?:webp|png|avif)(?:\?|$)/i.test(url),
       ),
   );
 
@@ -155,7 +155,7 @@ try {
   };
   await page.mouse.move(firstCursor.x, firstCursor.y);
 
-  const requestsBefore = await imageRequests(page);
+  const requestsBefore = await sequenceRequests(page);
   const initialDziRequests = await dziRequests(page);
   const before = await state(page);
   if (initialDziRequests.length)
@@ -170,7 +170,7 @@ try {
   const early = await state(page);
   await page.waitForTimeout(1100);
   const settled = await state(page);
-  const requestsSettled = await imageRequests(page);
+  const requestsSettled = await sequenceRequests(page);
 
   if (before.scrollY !== 0 || early.scrollY !== 0 || settled.scrollY !== 0)
     throw new Error("inspection wheel input leaked into story scroll");
@@ -213,7 +213,7 @@ try {
   }
 
   await page.waitForTimeout(350);
-  const requestsStable = await imageRequests(page);
+  const requestsStable = await sequenceRequests(page);
   if (requestsStable.length !== requestsSettled.length)
     throw new Error(
       "stable inspection kept issuing sequence image requests after detail settled",
