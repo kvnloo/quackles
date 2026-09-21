@@ -1,0 +1,51 @@
+[
+  {
+    "label": "G",
+    "ref": "main",
+    "sha": "4fe2a25f56e9dc72462174e1697710361d351759",
+    "url": "https://kvnloo.github.io/quackles/compare/main/",
+    "status": "ok"
+  },
+  {
+    "label": "D",
+    "ref": "nightly",
+    "sha": "7fd5d720fb988f7d9b9311308aa814e1e04d8eaf",
+    "url": "https://kvnloo.github.io/quackles/compare/nightly/",
+    "status": "ok"
+  },
+  {
+    "label": "C",
+    "ref": "nightly-source",
+    "sha": "0d0531a8551cfd38637da1c51093639fe58c149e",
+    "url": "https://kvnloo.github.io/quackles/compare/nightly-source/",
+    "status": "ok"
+  },
+  {
+    "label": "A",
+    "ref": "dev",
+    "sha": "ae51575c506a02bc1b2fb821ca21132433617a00",
+    "url": "https://kvnloo.github.io/quackles/compare/dev/",
+    "status": "ok"
+  },
+  {
+    "label": "B",
+    "ref": "feat/water",
+    "sha": "935e34d5b8908fec1469a6c98008e3c7be9b2edc",
+    "url": "https://kvnloo.github.io/quackles/compare/water/",
+    "status": "ok"
+  },
+  {
+    "label": "F",
+    "ref": "recovery/day-reference",
+    "sha": "648cf8642d412f31745180ca09a1893b9ab9528d",
+    "url": "https://kvnloo.github.io/quackles/compare/day-reference/",
+    "status": "ok"
+  },
+  {
+    "label": "E",
+    "ref": "recovery/gigapixel",
+    "sha": "abec1c40708f366682b67758e93e573ec11829e9",
+    "url": "https://kvnloo.github.io/quackles/compare/gigapixel/",
+    "status": "ok"
+  }
+]

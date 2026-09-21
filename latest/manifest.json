@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-09-21T04:34:30Z",
+  "publisher": "main/.github/workflows/pages.yml",
+  "stableRootRef": "nightly",
+  "channels": [
+    {
+      "ref": "main",
+      "slug": "main",
+      "sha": "4fe2a25f56e9dc72462174e1697710361d351759",
+      "status": "ok",
+      "title": "Auto-deploy all recovery branches in Pages lab ",
+      "url": "/quackles/compare/main/"
+    },
+    {
+      "ref": "nightly",
+      "slug": "nightly",
+      "sha": "7fd5d720fb988f7d9b9311308aa814e1e04d8eaf",
+      "status": "ok",
+      "title": "Keep nightly on the single central Pages dispatcher ",
+      "url": "/quackles/compare/nightly/"
+    },
+    {
+      "ref": "nightly-source",
+      "slug": "nightly-source",
+      "sha": "0d0531a8551cfd38637da1c51093639fe58c149e",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/nightly-source/"
+    },
+    {
+      "ref": "preview",
+      "slug": "preview",
+      "sha": "95b45152a06f5b21abce27f31fbdc3e4ea389941",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/preview/"
+    },
+    {
+      "ref": "dev",
+      "slug": "dev",
+      "sha": "ae51575c506a02bc1b2fb821ca21132433617a00",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/dev/"
+    },
+    {
+      "ref": "feat/water",
+      "slug": "water",
+      "sha": "935e34d5b8908fec1469a6c98008e3c7be9b2edc",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/water/"
+    },
+    {
+      "ref": "recovery/day-reference",
+      "slug": "day-reference",
+      "sha": "648cf8642d412f31745180ca09a1893b9ab9528d",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/day-reference/"
+    },
+    {
+      "ref": "recovery/gigapixel",
+      "slug": "gigapixel",
+      "sha": "abec1c40708f366682b67758e93e573ec11829e9",
+      "status": "ok",
+      "title": "Refresh comparison gallery when branch changes ",
+      "url": "/quackles/compare/gigapixel/"
+    },
+    {
+      "ref": "recovery/simulator",
+      "slug": "simulator",
+      "sha": "cc7f5915d24a04baf1dfdac9af173b6fc56e3ad9",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/simulator/"
+    }
+  ]
+}
