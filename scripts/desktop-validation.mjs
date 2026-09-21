@@ -163,6 +163,10 @@ try {
     throw new Error("SIM READY boundary was not reached");
   if (report.states.simReady.desktop.authority !== "simulator-pending")
     throw new Error("control authority did not reach simulator-pending");
+  if (report.states.simReady.desktop.handoff.maxAbs > 1e-6)
+    throw new Error(
+      `simulator handoff joint error too large: ${report.states.simReady.desktop.handoff.maxAbs}`,
+    );
   if (report.states.simReady.canvasCount !== 1)
     throw new Error(
       `expected exactly one visible desktop canvas, got ${report.states.simReady.canvasCount}`,

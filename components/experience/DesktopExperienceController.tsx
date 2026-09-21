@@ -12,6 +12,7 @@ import {
   type DesktopPhase,
 } from "@/lib/desktop-experience";
 import { ensureProbe, publishPose } from "@/lib/probe";
+import { simulatorHandoffError } from "@/lib/sim/drive";
 
 type DesktopState = {
   phase: DesktopPhase;
@@ -22,6 +23,7 @@ type DesktopState = {
   phaseProgress: number;
   authority: "cinematic" | "simulator-pending";
   simReady: boolean;
+  handoff: ReturnType<typeof simulatorHandoffError>;
 };
 
 declare global {
@@ -65,6 +67,7 @@ export function DesktopExperienceController() {
       authority:
         phaseRef.current === "sim-ready" ? "simulator-pending" : "cinematic",
       simReady: phaseRef.current === "sim-ready",
+      handoff: simulatorHandoffError(poseRef.current),
     });
 
     const syncPresentation = () => {

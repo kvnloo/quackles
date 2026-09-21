@@ -1,4 +1,5 @@
 import { Group, Mesh, Vector3 } from "three";
+import { DEFAULT_POSE, JOINT_NAMES } from "@/vendor/microduck-simulator/constants.js";
 import { setJoint, setJawOpen } from "@/vendor/microduck-simulator/duck.js";
 import type { Pose } from "@/lib/pose";
 import calibration from "../poster-camera.json";
@@ -69,28 +70,56 @@ export function prepareRig(rig: Rig) {
   return { parts, soles };
 }
 const point = new Vector3();
+
+export function jointTargetsForPose(pose: Pose) {
+  const crouch = pose.crouch;
+  const hip = calibration.hip + crouch * 0.25 - pose.jump * 0.14;
+  const knee = calibration.knee + crouch * 0.42 + pose.jump * 0.15;
+  const cinematic = [
+    0,
+    -0.087266,
+    -hip,
+    -knee,
+    hip - knee,
+    pose.neckPitch,
+    pose.headPitch,
+    pose.headYaw,
+    0,
+    0,
+    0.087266,
+    hip,
+    knee,
+    knee - hip,
+  ];
+  const blend = Math.max(0, Math.min(1, pose.simulatorBlend ?? 0));
+  return cinematic.map(
+    (value, index) => value + (DEFAULT_POSE[index] - value) * blend,
+  );
+}
+
+export function simulatorHandoffError(pose: Pose) {
+  const targets = jointTargetsForPose(pose);
+  const perJoint = JOINT_NAMES.map((name, index) => ({
+    name,
+    target: targets[index],
+    simulator: DEFAULT_POSE[index],
+    abs: Math.abs(targets[index] - DEFAULT_POSE[index]),
+  }));
+  const maxAbs = Math.max(...perJoint.map((entry) => entry.abs));
+  const rms = Math.sqrt(
+    perJoint.reduce((sum, entry) => sum + entry.abs * entry.abs, 0) /
+      perJoint.length,
+  );
+  return { maxAbs, rms, perJoint };
+}
+
 export function driveRig(
   rig: Rig,
   pose: Pose,
   prepared: ReturnType<typeof prepareRig>,
 ) {
-  const crouch = pose.crouch;
-  const hip = calibration.hip + crouch * 0.25 - pose.jump * 0.14,
-    knee = calibration.knee + crouch * 0.42 + pose.jump * 0.15;
-  setJoint(rig, "left_hip_yaw", 0);
-  setJoint(rig, "right_hip_yaw", 0);
-  setJoint(rig, "left_hip_roll", -0.087266);
-  setJoint(rig, "right_hip_roll", 0.087266);
-  setJoint(rig, "left_hip_pitch", -hip);
-  setJoint(rig, "right_hip_pitch", hip);
-  setJoint(rig, "left_knee", -knee);
-  setJoint(rig, "right_knee", knee);
-  setJoint(rig, "left_ankle", hip - knee);
-  setJoint(rig, "right_ankle", knee - hip);
-  setJoint(rig, "neck_pitch", pose.neckPitch);
-  setJoint(rig, "head_pitch", pose.headPitch);
-  setJoint(rig, "head_yaw", pose.headYaw);
-  setJoint(rig, "head_roll", 0);
+  const jointTargets = jointTargetsForPose(pose);
+  JOINT_NAMES.forEach((name, index) => setJoint(rig, name, jointTargets[index]));
   setJawOpen(rig, pose.beak);
   for (const part of prepared.parts)
     part.body.position

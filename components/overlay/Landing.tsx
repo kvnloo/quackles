@@ -86,7 +86,7 @@ function DesktopLiveLanding() {
 }
 
 export function Landing() {
-  const [desktop, setDesktop] = useState(false);
+  const [desktop, setDesktop] = useState<boolean | null>(null);
 
   useEffect(() => {
     const media = matchMedia("(min-width: 900px)");
@@ -96,5 +96,6 @@ export function Landing() {
     return () => media.removeEventListener("change", sync);
   }, []);
 
+  if (desktop === null) return <main className="viewport-gate" aria-busy="true" />;
   return desktop ? <DesktopLiveLanding /> : <MobileSequenceLanding />;
 }

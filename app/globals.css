@@ -535,3 +535,11 @@ a:focus-visible {
     display: none;
   }
 }
+
+
+/* Prevent the mobile image-sequence runtime from mounting for one hydration frame on desktop. */
+.viewport-gate {
+  position: fixed;
+  inset: 0;
+  background: var(--paper);
+}

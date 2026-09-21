@@ -59,6 +59,7 @@ export function copyPoseInto(out: Pose, source: Pose) {
   out.crouch = source.crouch;
   out.explode = source.explode;
   out.jump = source.jump;
+  out.simulatorBlend = source.simulatorBlend ?? 0;
   copyVec(out.lookAt, source.lookAt);
   copyVec(out.camPos, source.camPos);
   out.fov = source.fov;
@@ -77,6 +78,7 @@ export function blendPoseInto(out: Pose, a: Pose, b: Pose, progress: number) {
   out.crouch = lerp(a.crouch, b.crouch, t);
   out.explode = lerp(a.explode, b.explode, t);
   out.jump = lerp(a.jump, b.jump, t);
+  out.simulatorBlend = lerp(a.simulatorBlend ?? 0, b.simulatorBlend ?? 0, t);
   blendVec(out.lookAt, a.lookAt, b.lookAt, t);
   blendVec(out.camPos, a.camPos, b.camPos, t);
   out.fov = lerp(a.fov, b.fov, t);
@@ -103,6 +105,8 @@ export function inspectPoseInto(out: Pose, zoom: number) {
 
 inspectPoseInto(farInspect, DESKTOP_EXPERIENCE.farZoom);
 inspectPoseInto(assembled, 1.18);
+// Reassembly converges to the exact official simulator stand joint targets.
+assembled.simulatorBlend = 1;
 
 export function cinematicPoseInto(
   out: Pose,
