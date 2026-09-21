@@ -39,8 +39,8 @@ declare global {
 export function DesktopExperienceController() {
   const { poseRef, progressRef, reducedMotion } = useExperience();
   const phaseRef = useRef<DesktopPhase>("inspect");
-  const zoomRef = useRef(DESKTOP_EXPERIENCE.initialZoom);
-  const targetZoomRef = useRef(DESKTOP_EXPERIENCE.initialZoom);
+  const zoomRef = useRef<number>(DESKTOP_EXPERIENCE.initialZoom);
+  const targetZoomRef = useRef<number>(DESKTOP_EXPERIENCE.initialZoom);
   const launchIntentRef = useRef(0);
   const phaseStartedAtRef = useRef(0);
   const phaseProgressRef = useRef(0);
