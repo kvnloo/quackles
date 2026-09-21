@@ -102,9 +102,10 @@ export function InspectionViewfinder() {
       raf = 0;
       const inspection = inspectionSnapshot();
       const nativeScale = window.visualViewport?.scale ?? 1;
+      const cinematicPhase = frame.dataset.cinematicPhase;
       const atHero =
         sequenceSnapshot().progress <= 0.002 &&
-        frame.dataset.cinematicPhase === "idle";
+        (cinematicPhase === undefined || cinematicPhase === "idle");
       const nativePinchActive = nativeScale > 1.02;
       const active =
         atHero &&
