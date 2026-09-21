@@ -89,7 +89,7 @@ export function Landing() {
   const [desktop, setDesktop] = useState(false);
 
   useEffect(() => {
-    const media = matchMedia("(min-width: 900px) and (pointer: fine)");
+    const media = matchMedia("(min-width: 900px)");
     const sync = () => setDesktop(media.matches);
     sync();
     media.addEventListener("change", sync);
