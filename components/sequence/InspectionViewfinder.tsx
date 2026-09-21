@@ -11,6 +11,7 @@ import {
   type Crop,
 } from "@/lib/sequence/render";
 import { sequencePerfProfile } from "@/lib/sequence/perf-profile";
+import { snapshot as sequenceSnapshot } from "@/lib/sequence/store";
 
 type ViewfinderState = {
   active: boolean;
@@ -101,7 +102,10 @@ export function InspectionViewfinder() {
       raf = 0;
       const inspection = inspectionSnapshot();
       const nativeScale = window.visualViewport?.scale ?? 1;
-      const active = inspection.zoom > 1.02 || nativeScale > 1.02;
+      const atHero = sequenceSnapshot().progress <= 0.006;
+      const active =
+        atHero &&
+        ((inspection.active && inspection.zoom > 1.04) || nativeScale > 1.02);
       const crop = active ? currentCrop() : EMPTY_CROP;
 
       if (active && snapshotCount === 0) copySource();
