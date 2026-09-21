@@ -58,7 +58,7 @@ jobs:
           set -euo pipefail
           git ls-remote --heads origin |
             awk '{sub("^refs/heads/", "", $2); print $2}' |
-            grep -E '^(main|nightly|nightly-source|preview|dev|feat/water|recovery/|cursor/(duck-hq-hero|quiet-product-scroll|theme-slider-poster-match|three-state-theme)-)' |
+            grep -E '^(main|nightly|nightly-source|preview|dev|feat/water|recovery/|reconcile/|cursor/(duck-hq-hero|quiet-product-scroll|theme-slider-poster-match|three-state-theme)-)' |
             sort -u > comparison-refs.txt
 
           while IFS= read -r ref; do
@@ -194,6 +194,7 @@ jobs:
               dev) slug="dev" ;;
               feat/water) slug="water" ;;
               recovery/*) slug="${ref#recovery/}" ;;
+              reconcile/*) slug="reconcile-${ref#reconcile/}" ;;
               cursor/*) slug="cursor-${ref#cursor/}" ;;
               *) continue ;;
             esac
