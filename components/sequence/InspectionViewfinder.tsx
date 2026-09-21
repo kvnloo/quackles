@@ -11,7 +11,10 @@ import {
   type Crop,
 } from "@/lib/sequence/render";
 import { sequencePerfProfile } from "@/lib/sequence/perf-profile";
-import { snapshot as sequenceSnapshot } from "@/lib/sequence/store";
+import {
+  snapshot as sequenceSnapshot,
+  subscribe as subscribeSequence,
+} from "@/lib/sequence/store";
 
 type ViewfinderState = {
   active: boolean;
@@ -174,6 +177,7 @@ export function InspectionViewfinder() {
     };
 
     const unsubscribeInspection = subscribeInspection(schedule);
+    const unsubscribeSequence = subscribeSequence(schedule);
     const viewport = window.visualViewport;
     viewport?.addEventListener("resize", schedule);
     viewport?.addEventListener("scroll", schedule);
@@ -192,6 +196,7 @@ export function InspectionViewfinder() {
     return () => {
       cancelAnimationFrame(raf);
       unsubscribeInspection();
+      unsubscribeSequence();
       viewport?.removeEventListener("resize", schedule);
       viewport?.removeEventListener("scroll", schedule);
       window.removeEventListener("quackles:base-painted", onBasePainted);
