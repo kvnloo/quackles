@@ -12,7 +12,6 @@ import {
 } from "@/lib/sequence/inspection";
 import { inspectionCrop } from "@/lib/sequence/render";
 import {
-  setProgress,
   snapshot as sequenceSnapshot,
   subscribe as subscribeSequence,
 } from "@/lib/sequence/store";
@@ -159,9 +158,8 @@ export function HeroInspection() {
     const enterInspection = (clientX: number, clientY: number, zoom = 1.9) => {
       const current = inspectionSnapshot();
       const focus = targetFocus(clientX, clientY);
-      if (window.scrollY > 2) {
-        window.scrollTo({ top: 0, behavior: "instant" });
-        setProgress(0);
+      if (window.scrollY > 2 || sequenceSnapshot().progress > 0) {
+        window.dispatchEvent(new Event("quackles:reset-story-scroll"));
       }
       setInspectionState({
         active: true,
