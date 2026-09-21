@@ -139,7 +139,7 @@ export function SequencePlayer() {
         const decoded = detailTasks.map((task) => ({ ...task, image: cache!.peek(task.asset.url) }));
         const nextDetail = `${frame.id}/${low}/${detailVariant.width}/${JSON.stringify(crop)}`;
         if (decoded.every((task) => task.image !== undefined) && nextDetail !== detailKey) {
-          paintDetail(detailCanvas!, container!, crop, detailVariant, decoded.map(({ image, x, y }) => ({ image: image!, x, y })));
+          paintDetail(detailCanvas!, container!, crop, detailVariant, decoded.map(({ image, x, y, sourceX, sourceY }) => ({ image: image!, x, y, sourceX, sourceY })));
           detailKey = nextDetail; detailKeys = detailTasks.map(({ asset }) => asset.url);
           state.detailWidth = detailVariant.width; state.detailTiles = isImage(detailVariant) ? 0 : detailTasks.length; state.drawCount++;
           if (state.rendered) state.rendered = { ...state.rendered, tierWidth: detailVariant.width, urls: [...paintedKeys, ...detailKeys], generation };
