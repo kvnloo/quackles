@@ -53,6 +53,22 @@ const state = (page) =>
     origin: getComputedStyle(
       document.querySelector(".sequence-camera"),
     ).transformOrigin,
+    viewfinderBounds: (() => {
+      const node = document.querySelector(".inspection-viewfinder");
+      const viewport = window.visualViewport;
+      if (!node || !viewport) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        viewportLeft: viewport.offsetLeft,
+        viewportTop: viewport.offsetTop,
+        viewportRight: viewport.offsetLeft + viewport.width,
+        viewportBottom: viewport.offsetTop + viewport.height,
+      };
+    })(),
   }));
 
 async function open(context) {
@@ -255,6 +271,17 @@ try {
     throw new Error("native mobile pinch did not show the viewfinder");
   if (!(mobileZoomed.viewfinder.crop.width < 0.75))
     throw new Error("mobile viewfinder crop does not reflect pinch zoom");
+  const mobileBounds = mobileZoomed.viewfinderBounds;
+  if (
+    !mobileBounds ||
+    mobileBounds.left < mobileBounds.viewportLeft - 2 ||
+    mobileBounds.top < mobileBounds.viewportTop - 2 ||
+    mobileBounds.right > mobileBounds.viewportRight + 2 ||
+    mobileBounds.bottom > mobileBounds.viewportBottom + 2
+  )
+    throw new Error(
+      `mobile viewfinder escaped the visual viewport: ${JSON.stringify(mobileBounds)}`,
+    );
   if (mobileZoomed.viewfinder.backingBytes > 64 * 1024)
     throw new Error("mobile viewfinder backing surface exceeded 64 KiB");
   if (mobileZoomed.sequence.profile.tileOverscan !== 0)
