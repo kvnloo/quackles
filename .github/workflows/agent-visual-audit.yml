@@ -65,7 +65,14 @@ jobs:
 
           const manifest = JSON.parse(fs.readFileSync("/tmp/quackles-manifest.json", "utf8"));
           const baseOrigin = "https://kvnloo.github.io";
-          const usable = manifest.channels.filter((c) => c.status === "ok");
+          const wanted = new Set([
+            "main", "nightly", "nightly-source", "dev", "feat/water",
+            "recovery/day-reference", "recovery/gigapixel",
+            "cursor/duck-hq-hero-757a", "cursor/quiet-product-scroll-32fe",
+            "cursor/theme-slider-poster-match-530e", "cursor/three-state-theme-28f5",
+            "cursor/verified-oss-loop-onboard-afe5",
+          ]);
+          const usable = manifest.channels.filter((c) => c.status === "ok" && wanted.has(c.ref));
           const salt = process.env.GITHUB_RUN_ID || "local";
           const ordered = usable.slice().sort((a, b) => {
             const h = (x) => crypto.createHash("sha256").update(salt + x.ref).digest("hex");
@@ -95,7 +102,7 @@ jobs:
 
             const url = new URL(channel.url, baseOrigin).href;
             try {
-              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90000 });
+              await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
               await page.evaluate(async () => {
                 const settle = async () => {
                   if (document.fonts?.ready) await document.fonts.ready;
@@ -103,7 +110,7 @@ jobs:
                 };
                 await Promise.race([settle(), new Promise((r) => setTimeout(r, 7000))]);
               });
-              await new Promise((r) => setTimeout(r, 2200));
+              await new Promise((r) => setTimeout(r, 450));
 
               // Normalize to Day only when the branch actually exposes that theme.
               await page.evaluate(() => {
@@ -125,7 +132,7 @@ jobs:
               const maxScroll = await page.evaluate(() => Math.max(1, document.documentElement.scrollHeight - innerHeight));
               for (const [name, p] of [["hero",0],["quarter",.25],["middle",.5],["three-quarter",.75],["end",1]]) {
                 await page.evaluate(({ p, maxScroll }) => scrollTo({ top: p * maxScroll, behavior: "instant" }), { p, maxScroll });
-                await new Promise((r) => setTimeout(r, 700));
+                await new Promise((r) => setTimeout(r, 350));
                 await page.screenshot({ path: path.join(dir, name + ".png"), fullPage: false });
               }
             } catch (error) {
