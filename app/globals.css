@@ -451,3 +451,64 @@ a:focus-visible {
     transition-duration: 0s !important;
   }
 }
+
+
+/* Reconciled desktop cinematic handoff.
+ * Authored/Gigapixel pixels remain the inspection surface. The official
+ * live rig preloads behind them and becomes visible only after cinematic
+ * authority begins.
+ */
+.poster-frame {
+  --launch-intent: 0;
+}
+.sequence-player {
+  transition: opacity 180ms ease;
+}
+.cinematic-live-rig {
+  visibility: visible;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+.poster-frame[data-live-ready="true"][data-cinematic-phase="jump"] .sequence-player,
+.poster-frame[data-live-ready="true"][data-cinematic-phase="explode"] .sequence-player,
+.poster-frame[data-live-ready="true"][data-cinematic-phase="reassemble"] .sequence-player,
+.poster-frame[data-live-ready="true"][data-cinematic-phase="sim-ready"] .sequence-player {
+  opacity: 0;
+}
+.poster-frame[data-live-ready="true"][data-cinematic-phase="jump"] .cinematic-live-rig,
+.poster-frame[data-live-ready="true"][data-cinematic-phase="explode"] .cinematic-live-rig,
+.poster-frame[data-live-ready="true"][data-cinematic-phase="reassemble"] .cinematic-live-rig,
+.poster-frame[data-live-ready="true"][data-cinematic-phase="sim-ready"] .cinematic-live-rig {
+  opacity: 1;
+}
+.poster-frame[data-cinematic-phase="jump"] .hero-copy,
+.poster-frame[data-cinematic-phase="explode"] .hero-copy,
+.poster-frame[data-cinematic-phase="reassemble"] .hero-copy,
+.poster-frame[data-cinematic-phase="sim-ready"] .hero-copy {
+  opacity: 0 !important;
+}
+.poster-frame[data-cinematic-phase="jump"] .jump-copy {
+  opacity: 1 !important;
+}
+.poster-frame[data-cinematic-phase="explode"] .explode-copy,
+.poster-frame[data-cinematic-phase="reassemble"] .explode-copy {
+  opacity: 1 !important;
+}
+.poster-frame[data-cinematic-phase="sim-ready"] .specs-copy {
+  opacity: 1 !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .scroll-progress {
+    position: relative;
+  }
+  .scroll-progress::after {
+    content: "";
+    position: absolute;
+    inset: -3px auto -3px 0;
+    width: calc(var(--launch-intent) * 100%);
+    background: color-mix(in srgb, var(--ink) 35%, transparent);
+    pointer-events: none;
+    transform-origin: left;
+  }
+}

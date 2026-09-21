@@ -43,3 +43,12 @@ jobs:
           name: hero-inspection-${{ github.sha }}
           path: artifacts/hero-inspection
           if-no-files-found: warn
+      - name: Validate cinematic handoff
+        run: npm run test:cinematic
+      - name: Upload cinematic handoff evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-handoff-${{ github.sha }}
+          path: artifacts/cinematic-handoff
+          if-no-files-found: warn
