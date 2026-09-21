@@ -76,6 +76,21 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
           NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
           NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
+      - name: Stage pinned Gigapixel asset pyramid
+        env:
+          QUACKLES_ASSET_SHA: 5ff80074ffc251fff8bc120c812e2fd8d89fb54b
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/quackles-assets
+          git clone --filter=blob:none --no-checkout https://github.com/kvnloo/quackles-assets.git /tmp/quackles-assets
+          git -C /tmp/quackles-assets fetch --depth=1 origin "$QUACKLES_ASSET_SHA"
+          git -C /tmp/quackles-assets checkout --detach "$QUACKLES_ASSET_SHA"
+          test "$(git -C /tmp/quackles-assets rev-parse HEAD)" = "$QUACKLES_ASSET_SHA"
+          mkdir -p out/quackles-assets
+          cp -a /tmp/quackles-assets/blue out/quackles-assets/
+          test -f out/quackles-assets/blue/p0000000/0/0_0.webp
+          test -f out/quackles-assets/blue/p0000000/3/0_0.webp
+          test "$(find out/quackles-assets/blue/p0000000 -name '*.webp' | wc -l | tr -d ' ')" = "1055"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

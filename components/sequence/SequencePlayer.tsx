@@ -96,13 +96,17 @@ export function SequencePlayer() {
         profile.maxDetailWidth,
         Math.ceil(rect.width * devicePixelRatio * crop.scale),
       );
+      const detailEligible =
+        inspect.active ||
+        inspect.targetZoom > 1.0005 ||
+        nativeCrop.scale > 1.02;
       const nextIntent = `${span.before.id}/${span.after.id}/${span.mix}/${current.theme}/${desiredWidth}`;
       if (nextIntent !== intentKey) { intentKey = nextIntent; generation++; }
       state.requested = { frameId: frame.id, frameProgress: frame.progress, progress: current.progress, themes, mix, tierWidth: desiredWidth, generation, urls: assets.map((asset) => asset.url) };
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
       let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
-      if (settled && inspectionSettled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
+      if (detailEligible && settled && inspectionSettled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
         const plan = detailPlan(
           frame.assets[themes[0]],
           desiredWidth,

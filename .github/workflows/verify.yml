@@ -16,6 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # pull_request workflows otherwise test GitHub's synthetic merge ref.
+          # The evidence gate is explicitly about the submitted head revision.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -40,6 +44,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: hero-inspection-${{ github.sha }}
+          name: hero-inspection-${{ github.event.pull_request.head.sha || github.sha }}
           path: artifacts/hero-inspection
           if-no-files-found: warn

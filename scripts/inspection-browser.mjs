@@ -8,6 +8,7 @@ const BASE = process.env.BASE_URL || "http://127.0.0.1:43217";
 const OUT = path.resolve(
   process.env.ARTIFACTS || "artifacts/hero-inspection",
 );
+const ASSET_ORIGIN = "https://kvnloo.github.io/quackles-assets";
 const CHROME =
   process.env.CHROME ||
   [
@@ -28,7 +29,7 @@ const browser = await chromium.launch({
 });
 const errors = [];
 
-const imageRequests = (page) =>
+const sequenceRequests = (page) =>
   page.evaluate(() =>
     performance
       .getEntriesByType("resource")
@@ -37,6 +38,31 @@ const imageRequests = (page) =>
         /\/sequence\/.*\.(?:webp|png|avif)(?:\?|$)/i.test(url),
       ),
   );
+
+const dziRequests = (page) =>
+  page.evaluate(() =>
+    performance
+      .getEntriesByType("resource")
+      .map((entry) => entry.name)
+      .filter((url) => /\/quackles-assets\/.*\.webp(?:\?|$)/i.test(url)),
+  );
+
+const assetProxyResponses = [];
+async function installAssetProxy(context) {
+  await context.route("**/quackles-assets/**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const assetPathname = requestUrl.pathname.replace(/^\/quackles-assets/, "");
+    const upstream = `${ASSET_ORIGIN}${assetPathname}`;
+    const response = await route.fetch({ url: upstream });
+    assetProxyResponses.push({
+      requested: requestUrl.pathname,
+      upstream,
+      status: response.status(),
+      contentType: response.headers()["content-type"] ?? null,
+    });
+    await route.fulfill({ response });
+  });
+}
 
 const state = (page) =>
   page.evaluate(() => ({
@@ -106,7 +132,24 @@ function near(actual, expected, epsilon = 0.02) {
 try {
   const desktopContext = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
-    deviceScaleFactor: 1,
+    deviceScaleFactor: 2,
+  });
+  await installAssetProxy(desktopContext);
+  // The native-tier acceptance deliberately exercises the full desktop policy.
+  // GitHub's standard ubuntu runner exposes only four CPUs, which correctly
+  // selects the balanced production profile and caps detail at 8192px. Make
+  // this fixture deterministic instead of depending on CI host capacity.
+  await desktopContext.addInitScript(() => {
+    try {
+      Object.defineProperty(Navigator.prototype, "deviceMemory", {
+        configurable: true,
+        get: () => 8,
+      });
+      Object.defineProperty(Navigator.prototype, "hardwareConcurrency", {
+        configurable: true,
+        get: () => 8,
+      });
+    } catch {}
   });
   const page = await open(desktopContext);
   await page.waitForFunction(
@@ -123,8 +166,15 @@ try {
   };
   await page.mouse.move(firstCursor.x, firstCursor.y);
 
-  const requestsBefore = await imageRequests(page);
+  const requestsBefore = await sequenceRequests(page);
+  const initialDziRequests = await dziRequests(page);
   const before = await state(page);
+  if (before.sequence.profile.id !== "full")
+    throw new Error(
+      `native-tier desktop fixture did not select full profile: ${before.sequence.profile.id}`,
+    );
+  if (initialDziRequests.length)
+    throw new Error("initial 1x hero fetched DZI tiles before inspection");
   if (before.viewfinder.active)
     throw new Error("viewfinder should be hidden at 1x");
   if (before.willChange !== "auto")
@@ -135,7 +185,7 @@ try {
   const early = await state(page);
   await page.waitForTimeout(1100);
   const settled = await state(page);
-  const requestsSettled = await imageRequests(page);
+  const requestsSettled = await sequenceRequests(page);
 
   if (before.scrollY !== 0 || early.scrollY !== 0 || settled.scrollY !== 0)
     throw new Error("inspection wheel input leaked into story scroll");
@@ -178,7 +228,7 @@ try {
   }
 
   await page.waitForTimeout(350);
-  const requestsStable = await imageRequests(page);
+  const requestsStable = await sequenceRequests(page);
   if (requestsStable.length !== requestsSettled.length)
     throw new Error(
       "stable inspection kept issuing sequence image requests after detail settled",
@@ -201,7 +251,25 @@ try {
     y: rect.y + rect.height * 0.42,
   };
   await page.mouse.move(secondCursor.x, secondCursor.y);
-  await page.waitForTimeout(520);
+  await page.waitForFunction(
+    ({ focusX, focusY, cropX, cropY }) => {
+      const inspection = window.__QUACKLES_INSPECTION__?.getState();
+      const viewfinder = window.__QUACKLES_VIEWFINDER__?.getState();
+      return (
+        (inspection?.focusX ?? 1) < focusX &&
+        (inspection?.focusY ?? 1) < focusY &&
+        (viewfinder?.crop.x ?? 1) < cropX &&
+        (viewfinder?.crop.y ?? 1) < cropY
+      );
+    },
+    {
+      focusX: settled.inspection.focusX,
+      focusY: settled.inspection.focusY,
+      cropX: settled.viewfinder.crop.x,
+      cropY: settled.viewfinder.crop.y,
+    },
+    { timeout: 3000 },
+  );
   const followed = await state(page);
   if (!(followed.inspection.focusX < settled.inspection.focusX))
     throw new Error("inspection camera did not follow the cursor laterally");
@@ -212,10 +280,104 @@ try {
   if (!(followed.viewfinder.crop.y < settled.viewfinder.crop.y))
     throw new Error("viewfinder did not track vertical camera focus");
 
-  for (let i = 0; i < 8; i++) {
+  // Drive a real high-DPR deep inspection all the way to the policy's max zoom.
+  // A fixed wheel-count is not a stable proxy for depth because the zoom curve
+  // is deliberately nonlinear and may change without changing the acceptance.
+  for (let i = 0; i < 64; i++) {
+    const current = await state(page);
+    if (
+      current.inspection.targetZoom >=
+      current.inspection.maxZoom - 0.01
+    )
+      break;
+    await page.mouse.wheel(0, -180);
+    await page.waitForTimeout(24);
+  }
+  const driven = await state(page);
+  if (
+    driven.inspection.targetZoom <
+    driven.inspection.maxZoom - 0.01
+  )
+    throw new Error(
+      `deep inspection input stopped at targetZoom=${driven.inspection.targetZoom} of maxZoom=${driven.inspection.maxZoom}`,
+    );
+  await page.waitForTimeout(5000);
+  const deepProbe = await state(page);
+  console.log(
+    JSON.stringify(
+      {
+        deepProbe: {
+          inspection: deepProbe.inspection,
+          detailWidth: deepProbe.sequence.detailWidth,
+          detailTiles: deepProbe.sequence.detailTiles,
+          requestedTierWidth: deepProbe.sequence.requested?.tierWidth ?? null,
+          errors: deepProbe.sequence.errors,
+          cache: deepProbe.sequence.cache,
+          dziRequests: (await dziRequests(page)).length,
+          assetResponses: assetProxyResponses.slice(-8),
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  if (deepProbe.sequence.errors.length)
+    throw new Error(
+      `DZI load failed before native tier settled: ${JSON.stringify(deepProbe.sequence.errors.slice(-4))}`,
+    );
+  if (
+    deepProbe.sequence.detailWidth !== 11584 &&
+    deepProbe.sequence.cache.inflight === 0 &&
+    deepProbe.sequence.cache.queued === 0
+  )
+    throw new Error(
+      `native DZI stalled with no pending work: ${JSON.stringify({ detailWidth: deepProbe.sequence.detailWidth, detailTiles: deepProbe.sequence.detailTiles, requestedTierWidth: deepProbe.sequence.requested?.tierWidth ?? null, inspection: deepProbe.inspection, cache: deepProbe.sequence.cache })}`,
+    );
+  await page.waitForFunction(
+    () => {
+      const current = window.__QUACKLES_SEQUENCE__?.getState();
+      return (
+        (current?.detailWidth ?? 0) === 11584 &&
+        (current?.detailTiles ?? 0) > 0
+      );
+    },
+    undefined,
+    { timeout: 90000 },
+  );
+  const deep = await state(page);
+  const deepDziRequests = await dziRequests(page);
+  if (deep.sequence.detailWidth !== 11584)
+    throw new Error(`deep inspection stopped at ${deep.sequence.detailWidth}px instead of the 11584px DZI tier`);
+  if (!(deep.sequence.detailTiles > 0))
+    throw new Error("deep inspection did not paint DZI tiles");
+  if (!deepDziRequests.some((url) => /\/quackles-assets\/blue\/p0000000\/0\//.test(url)))
+    throw new Error("deep inspection never requested level-0 native 200MP tiles");
+  const failedDzi = assetProxyResponses.filter(
+    (entry) =>
+      entry.requested.includes("/quackles-assets/") &&
+      (entry.status !== 200 || !entry.contentType?.includes("image/webp")),
+  );
+  if (failedDzi.length)
+    throw new Error(`real DZI proxy returned invalid assets: ${JSON.stringify(failedDzi.slice(0, 4))}`);
+  const deepRequestCount = deepDziRequests.length;
+  await page.waitForTimeout(650);
+  if ((await dziRequests(page)).length !== deepRequestCount)
+    throw new Error("settled deep inspection kept issuing DZI requests");
+
+  // Unwind by the actual inspection state. Stopping before one extra positive
+  // wheel event matters because once targetZoom reaches 1 that input belongs
+  // to normal story scroll, which is asserted separately below.
+  for (let i = 0; i < 64; i++) {
+    const current = await state(page);
+    if (current.inspection.targetZoom <= 1.0005) break;
     await page.mouse.wheel(0, 240);
     await page.waitForTimeout(24);
   }
+  const unwound = await state(page);
+  if (unwound.inspection.targetZoom > 1.0005)
+    throw new Error(
+      `zoom-out input stopped at targetZoom=${unwound.inspection.targetZoom}`,
+    );
   await page.waitForFunction(
     () => !window.__QUACKLES_INSPECTION__?.getState().active,
     undefined,
@@ -252,13 +414,19 @@ try {
     { timeout: 6000 },
   );
   const rewound = await state(page);
-  if (rewound.viewfinder.active)
-    throw new Error("viewfinder remained visible after story rewind");
+  if (rewound.scrollY > 2 || rewound.sequence.current.progress > 0.012)
+    throw new Error("upward story rewind did not return to the hero boundary");
 
-  await page.mouse.move(firstCursor.x, firstCursor.y);
-  await page.mouse.wheel(0, -180);
-  await page.waitForTimeout(1000);
-  const reinspected = await state(page);
+  // Continuous upward input is allowed to cross directly from story rewind
+  // into inspection. If the rewind gesture ended exactly at hero, the next
+  // upward wheel must enter inspection without leaking back into story scroll.
+  let reinspected = rewound;
+  if (!rewound.viewfinder.active) {
+    await page.mouse.move(firstCursor.x, firstCursor.y);
+    await page.mouse.wheel(0, -180);
+    await page.waitForTimeout(1000);
+    reinspected = await state(page);
+  }
   if (!(reinspected.inspection?.zoom > 1.02))
     throw new Error("scroll-up after story rewind did not re-enter inspection");
   if (!reinspected.viewfinder.active)
@@ -274,6 +442,7 @@ try {
     isMobile: true,
     hasTouch: true,
   });
+  await installAssetProxy(mobileContext);
   await mobileContext.addInitScript(() => {
     try {
       Object.defineProperty(Navigator.prototype, "deviceMemory", {
@@ -346,6 +515,8 @@ try {
       early,
       settled,
       followed,
+      deep,
+      deepDziRequests: deepDziRequests.length,
       home,
       released,
       requestsBefore: requestsBefore.length,
