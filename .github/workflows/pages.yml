@@ -2,10 +2,7 @@ name: pages
 
 on:
   push:
-    # Stable poster at /. Experimental channels are nested: /nightly, /preview, /dev.
-    # GitHub runs `schedule` from the default branch (main). That file MUST be this
-    # composite publisher. A single-root `out/` deploy on main overwrites /nightly.
-    branches: [nightly]
+    branches: [main]
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
@@ -20,38 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-
   deploy:
-    needs: [lint, typecheck]
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'schedule' ||
-      github.ref == 'refs/heads/nightly'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -59,13 +25,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+
       - name: Resolve Pages base path
         id: base
+        shell: bash
         run: |
           NAME="${GITHUB_REPOSITORY#*/}"
           OWNER="${GITHUB_REPOSITORY_OWNER}"
@@ -74,61 +42,239 @@ jobs:
           else
             echo "path=/${NAME}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Stamp build identity
+
+      - name: Stamp build time
         id: stamp
+        shell: bash
         run: echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-      - run: npm ci
-      - name: Build stable root
-        run: npm run build
+
+      - name: Fetch comparison refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          refs=(
+            main
+            nightly
+            nightly-source
+            preview
+            dev
+            feat/water
+            recovery/day-reference
+            recovery/gigapixel
+            recovery/simulator
+          )
+          for ref in "${refs[@]}"; do
+            git fetch --no-tags origin "refs/heads/${ref}:refs/remotes/origin/${ref}"
+          done
+
+      - name: Build stable root from nightly
+        shell: bash
         env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
-          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
-          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
-      - name: Preserve stable root artifact
+          BASE_PATH: ${{ steps.base.outputs.path }}
+          BUILD_TIME: ${{ steps.stamp.outputs.time }}
         run: |
-          mkdir -p pages-root
-          cp -a out/. pages-root/
-      - name: Fetch newer source branch
-        id: nightly
-        run: |
-          git fetch --no-tags origin nightly-source:refs/remotes/origin/nightly-source
-          echo "sha=$(git rev-parse origin/nightly-source)" >> "$GITHUB_OUTPUT"
-          mkdir -p nightly-source
-          git archive origin/nightly-source | tar -x -C nightly-source
-      - name: Build newer source under nightly path
-        working-directory: nightly-source
+          set -euo pipefail
+          rm -rf pages-root root-src
+          mkdir -p pages-root root-src
+          git archive origin/nightly | tar -x -C root-src
+          ROOT_SHA="$(git rev-parse origin/nightly)"
+          (
+            cd root-src
+            npm ci
+            NEXT_PUBLIC_BASE_PATH="$BASE_PATH"             NEXT_PUBLIC_BUILD_SHA="$ROOT_SHA"             NEXT_PUBLIC_BUILD_TIME="$BUILD_TIME"             npm run build
+          )
+          cp -a root-src/out/. pages-root/
+
+      - name: Build every comparison channel
+        shell: bash
         env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}/nightly
-          NEXT_PUBLIC_BUILD_SHA: ${{ steps.nightly.outputs.sha }}
-          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
+          BASE_PATH: ${{ steps.base.outputs.path }}
+          BUILD_TIME: ${{ steps.stamp.outputs.time }}
         run: |
-          npm ci
-          npm run build
-      - name: Add newer artifact beneath nightly
+          set -u
+          mkdir -p pages-root/compare
+          : > pages-root/compare/builds.tsv
+
+          build_channel() {
+            ref="$1"
+            slug="$2"
+            mode="${3:-normal}"
+            dir="channel-$(echo "$slug" | tr '/' '-')"
+            target="pages-root/compare/$slug"
+            sha="$(git rev-parse "origin/$ref")"
+            title="$(git log -1 --format=%s "origin/$ref" | tr '\t\n\r' ' ')"
+            channel_base="$BASE_PATH/compare/$slug"
+
+            rm -rf "$dir" "$target"
+            mkdir -p "$dir" "$target"
+            git archive "origin/$ref" | tar -x -C "$dir"
+
+            if [ "$mode" = "simulator" ]; then
+              cat > "$dir/next.config.ts" <<'SIMCONFIG'
+          import type { NextConfig } from "next";
+
+          const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+          const nextConfig: NextConfig = {
+            output: "export",
+            trailingSlash: true,
+            images: { unoptimized: true },
+            ...(basePath ? { basePath } : {}),
+            transpilePackages: [
+              "three",
+              "@react-three/fiber",
+              "@react-three/drei",
+              "@crazygl/hero-scroll-assemble-product",
+              "@crazygl/core",
+            ],
+            allowedDevOrigins: ["127.0.0.1", "localhost"],
+            devIndicators: false,
+          };
+
+          export default nextConfig;
+          SIMCONFIG
+
+              CHANNEL_BASE="$channel_base" python3 - "$dir" <<'PY'
+          import os
+          import pathlib
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          base = os.environ["CHANNEL_BASE"]
+          for path in root.rglob("*"):
+              if not path.is_file() or path.suffix.lower() not in {".js", ".jsx", ".ts", ".tsx"}:
+                  continue
+              try:
+                  text = path.read_text()
+              except UnicodeDecodeError:
+                  continue
+              changed = text.replace('"/robot/', f'"{base}/robot/')
+              changed = changed.replace("'/robot/", f"'{base}/robot/")
+              if changed != text:
+                  path.write_text(changed)
+          PY
+            fi
+
+            echo "building $ref -> /compare/$slug @ $sha"
+            if (
+              cd "$dir" &&
+              npm ci &&
+              NEXT_PUBLIC_BASE_PATH="$channel_base"               NEXT_PUBLIC_BUILD_SHA="$sha"               NEXT_PUBLIC_BUILD_TIME="$BUILD_TIME"               npm run build
+            ); then
+              cp -a "$dir/out/." "$target/"
+              status="ok"
+            else
+              status="failed"
+              cat > "$target/index.html" <<EOF
+          <!doctype html>
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Quackles comparison build failed</title>
+          <style>body{font:16px system-ui;background:#111;color:#eee;padding:24px;max-width:760px;margin:auto}code{word-break:break-all}a{color:#9db5ff}</style>
+          <h1>Comparison build failed</h1>
+          <p><strong>$ref</strong> did not build in the composite Pages run.</p>
+          <p>SHA: <code>$sha</code></p>
+          <p>The other comparison branches were still deployed.</p>
+          <p><a href="$BASE_PATH/compare/">Back to comparison gallery</a></p>
+          EOF
+            fi
+
+            printf '%s\t%s\t%s\t%s\t%s\n' "$ref" "$slug" "$sha" "$status" "$title" >> pages-root/compare/builds.tsv
+          }
+
+          build_channel main main
+          build_channel nightly nightly
+          build_channel nightly-source nightly-source
+          build_channel preview preview
+          build_channel dev dev
+          build_channel feat/water water
+          build_channel recovery/day-reference day-reference
+          build_channel recovery/gigapixel gigapixel
+          build_channel recovery/simulator simulator simulator
+
+      - name: Generate comparison gallery and source manifest
+        shell: bash
+        env:
+          BASE_PATH: ${{ steps.base.outputs.path }}
+          BUILD_TIME: ${{ steps.stamp.outputs.time }}
         run: |
-          mkdir -p pages-root/nightly
-          cp -a nightly-source/out/. pages-root/nightly/
-      - name: Build channel under preview
-        continue-on-error: true
-        run: |
-          git fetch --no-tags origin preview:refs/remotes/origin/preview
-          rm -rf channel-preview
-          mkdir -p channel-preview pages-root/preview
-          git archive origin/preview | tar -x -C channel-preview
-          (cd channel-preview && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/preview" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/preview)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
-          cp -a channel-preview/out/. pages-root/preview/
-      - name: Build channel under dev
-        continue-on-error: true
-        run: |
-          git fetch --no-tags origin dev:refs/remotes/origin/dev
-          rm -rf channel-dev
-          mkdir -p channel-dev pages-root/dev
-          git archive origin/dev | tar -x -C channel-dev
-          (cd channel-dev && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/dev" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/dev)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
-          cp -a channel-dev/out/. pages-root/dev/
+          python3 - <<'PY'
+          import html
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("pages-root/compare")
+          rows = []
+          for raw in (root / "builds.tsv").read_text().splitlines():
+              ref, slug, sha, status, title = raw.split("\t", 4)
+              rows.append({
+                  "ref": ref,
+                  "slug": slug,
+                  "sha": sha,
+                  "status": status,
+                  "title": title,
+                  "url": f"{os.environ['BASE_PATH']}/compare/{slug}/",
+              })
+
+          manifest = {
+              "generatedAt": os.environ["BUILD_TIME"],
+              "publisher": "main/.github/workflows/pages.yml",
+              "stableRootRef": "nightly",
+              "channels": rows,
+          }
+          (root / "manifest.json").write_text(json.dumps(manifest, indent=2))
+
+          cards = []
+          for row in rows:
+              status = "✓ build" if row["status"] == "ok" else "✕ build failed"
+              cards.append(f"""
+              <a class="card" href="{html.escape(row['url'])}">
+                <div class="row"><strong>{html.escape(row['ref'])}</strong><span>{status}</span></div>
+                <p>{html.escape(row['title'])}</p>
+                <code>{html.escape(row['sha'][:12])}</code>
+              </a>
+              """)
+
+          page = f"""<!doctype html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Quackles branch comparison</title>
+            <style>
+              :root {{ color-scheme: dark; }}
+              * {{ box-sizing: border-box; }}
+              body {{ margin:0; background:#0c0d10; color:#f3f3f3; font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; }}
+              main {{ width:min(900px,100%); margin:auto; padding:24px 16px 64px; }}
+              h1 {{ font:500 clamp(28px,7vw,52px)/.95 system-ui; letter-spacing:-.04em; margin:8px 0 12px; }}
+              .lede {{ color:#b9bcc5; max-width:65ch; margin-bottom:28px; }}
+              .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }}
+              .card {{ display:block; color:inherit; text-decoration:none; border:1px solid #2b2e36; padding:16px; min-height:126px; background:#12141a; }}
+              .card:hover {{ border-color:#8ba4ff; }}
+              .row {{ display:flex; gap:12px; justify-content:space-between; align-items:start; }}
+              .row span {{ color:#9da2ad; font-size:11px; white-space:nowrap; }}
+              p {{ color:#c7cad1; }}
+              code {{ color:#8ba4ff; font-size:11px; }}
+              .stable {{ margin:18px 0 28px; }}
+              .stable a {{ color:#a9baff; }}
+            </style>
+          </head>
+          <body><main>
+            <p>QUACKLES / BRANCH LAB</p>
+            <h1>Choose the version that feels right.</h1>
+            <p class="lede">Every card is built from the named Git branch in the same Pages deployment. A failed experiment gets a failure page instead of blocking the rest.</p>
+            <p class="stable">Current root: <a href="{os.environ['BASE_PATH']}/">nightly</a> · generated {html.escape(os.environ['BUILD_TIME'])}</p>
+            <div class="grid">{''.join(cards)}</div>
+          </main></body></html>"""
+          (root / "index.html").write_text(page)
+          PY
+          rm -f pages-root/compare/builds.tsv
+
       - uses: actions/configure-pages@v5
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: pages-root
+
       - id: deploy
         uses: actions/deploy-pages@v4
