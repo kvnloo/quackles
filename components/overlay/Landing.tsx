@@ -58,8 +58,27 @@ function Experience() {
           <PosterBeats />
         </SequenceFrame>
         <div className="scene-dock">
+          <div className="desktop-theme-hint">
+            DRAG LEFT / RIGHT TO CHANGE SCENE COLOR
+          </div>
           <ThemeControl />
-          <div className="scroll-line">
+          <div className="desktop-scroll-hints" aria-label="Interaction hints">
+            <button
+              type="button"
+              className="desktop-hint desktop-hint-inspect"
+              onClick={() =>
+                window.__QUACKLES_INSPECTION__?.setTarget(1.45, 0.5, 0.5)
+              }
+            >
+              <span aria-hidden>↑</span>
+              <span>SCROLL UP OR CLICK TO INSPECT</span>
+            </button>
+            <div className="desktop-hint desktop-hint-specs">
+              <span aria-hidden>↓</span>
+              <span>SCROLL DOWN TO SEE SPECS</span>
+            </div>
+          </div>
+          <div className="scroll-line mobile-scroll-line">
             <span className="cinematic-scroll-copy">↑ INSPECT · ↓ EXPLORE</span>
             <span className="cinematic-phase-copy" aria-live="polite">↕</span>
           </div>
