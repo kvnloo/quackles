@@ -103,7 +103,11 @@ export function advanceInspectZoom(
   elapsedMs: number,
 ) {
   const target = clampDesktopZoom(targetZoom);
-  const dt = Math.max(0, Math.min(64, elapsedMs)) / 1000;
+  // This is an exact spring solution, so large wall-clock gaps are safe. Keep
+  // enough elapsed time to converge even when the 3D scene renders slowly
+  // (for example SwiftShader CI), while bounding stale momentum after a long
+  // background-tab pause.
+  const dt = Math.max(0, Math.min(1000, elapsedMs)) / 1000;
   if (!dt) return { zoom: clampDesktopZoom(zoom), velocity };
 
   // Exact critically damped spring step. This gives the Lenis-like "attached"
