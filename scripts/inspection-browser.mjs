@@ -53,20 +53,14 @@ async function installAssetProxy(context) {
     const requestUrl = new URL(route.request().url());
     const assetPathname = requestUrl.pathname.replace(/^\/quackles-assets/, "");
     const upstream = `${ASSET_ORIGIN}${assetPathname}`;
-    const response = await fetch(upstream);
-    const body = Buffer.from(await response.arrayBuffer());
-    const headers = Object.fromEntries(response.headers.entries());
+    const response = await route.fetch({ url: upstream });
     assetProxyResponses.push({
       requested: requestUrl.pathname,
       upstream,
-      status: response.status,
-      contentType: response.headers.get("content-type"),
+      status: response.status(),
+      contentType: response.headers()["content-type"] ?? null,
     });
-    await route.fulfill({
-      status: response.status,
-      headers,
-      body,
-    });
+    await route.fulfill({ response });
   });
 }
 
