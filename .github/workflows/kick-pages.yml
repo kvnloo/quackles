@@ -1,0 +1,23 @@
+name: kick-pages
+
+on:
+  push:
+    branches: [feat/water]
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: kick-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch central Pages publisher on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --repo "${{ github.repository }}" --ref main
