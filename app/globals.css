@@ -397,3 +397,141 @@ a:focus-visible {
     transition-duration: 0s !important;
   }
 }
+
+
+/* Desktop live-rig experiment: preserve the mobile sequence below the breakpoint. */
+.desktop-shell {
+  --desktop-zoom: 1;
+  --launch-intent: 0;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--paper);
+}
+.desktop-shell .poster-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100svh;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.desktop-shell .poster-frame {
+  width: 100%;
+  height: calc(100svh - 92px);
+  max-height: none;
+  aspect-ratio: auto;
+  overflow: hidden;
+}
+.desktop-shell .poster-plate {
+  object-fit: cover;
+}
+.desktop-shell .scene-dock {
+  width: 100%;
+  height: 92px;
+  max-height: none;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--paper) 82%, transparent),
+      var(--paper)
+    );
+  backdrop-filter: blur(14px);
+}
+.desktop-shell .duck-slot,
+.desktop-shell .duck-canvas {
+  width: 100%;
+  height: 100%;
+}
+.desktop-shell .hero-copy,
+.desktop-shell .jump-copy,
+.desktop-shell .explode-copy,
+.desktop-shell .specs-copy {
+  transition: opacity 180ms ease;
+}
+.desktop-shell .hero-copy {
+  opacity: 1;
+}
+.desktop-shell .jump-copy,
+.desktop-shell .explode-copy,
+.desktop-shell .specs-copy {
+  opacity: 0;
+}
+.desktop-shell[data-phase="jump"] .hero-copy,
+.desktop-shell[data-phase="explode"] .hero-copy,
+.desktop-shell[data-phase="reassemble"] .hero-copy,
+.desktop-shell[data-phase="sim-ready"] .hero-copy {
+  opacity: 0;
+}
+.desktop-shell[data-phase="jump"] .jump-copy {
+  opacity: 1;
+}
+.desktop-shell[data-phase="explode"] .explode-copy,
+.desktop-shell[data-phase="reassemble"] .explode-copy {
+  opacity: 1;
+}
+.desktop-shell[data-phase="sim-ready"] .specs-copy {
+  opacity: 1;
+}
+.desktop-shell .site-nav {
+  padding-right: 5.4%;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--paper) 78%, transparent),
+    transparent 78%
+  );
+}
+.desktop-shell .wordmark {
+  font-size: clamp(54px, 5.2vw, 92px);
+}
+.desktop-shell .site-nav nav {
+  gap: clamp(14px, 2vw, 34px);
+  font-size: clamp(10px, 0.8vw, 14px);
+}
+.desktop-shell .hero-copy h1 {
+  font-size: clamp(70px, 7vw, 126px);
+}
+.desktop-shell .hero-kicker,
+.desktop-shell .hero-label,
+.desktop-shell .hero-note,
+.desktop-shell .motion-note,
+.desktop-shell .specs-copy a {
+  font-size: clamp(11px, 0.9vw, 16px);
+}
+.desktop-shell .motion-copy h2 {
+  font-size: clamp(72px, 7vw, 128px);
+}
+.desktop-shell .jump-copy h2 {
+  font-size: clamp(64px, 6vw, 112px);
+}
+.desktop-shell .specs-copy dt {
+  font-size: clamp(46px, 4.5vw, 82px);
+}
+.desktop-shell .specs-copy dd {
+  font-size: clamp(10px, 0.8vw, 14px);
+}
+.desktop-shell .scroll-progress {
+  position: relative;
+}
+.desktop-shell .scroll-progress::after {
+  content: "";
+  position: absolute;
+  inset: -3px auto -3px 24%;
+  width: calc(var(--launch-intent) * 12%);
+  max-width: 12%;
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+  pointer-events: none;
+}
+.desktop-shell .desktop-phase-copy {
+  min-width: 92px;
+  text-align: right;
+}
+@media (max-width: 899px), (pointer: coarse) {
+  .desktop-shell {
+    display: none;
+  }
+}
