@@ -99,7 +99,7 @@ export function SequencePlayer() {
       state.requested = { frameId: frame.id, frameProgress: frame.progress, progress: current.progress, themes, mix, tierWidth: desiredWidth, generation, urls: assets.map((asset) => asset.url) };
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
-      let detailTasks: { asset: ImageAsset; x: number; y: number }[] = [];
+      let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
       if (settled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
         const plan = detailPlan(frame.assets[themes[0]], desiredWidth, crop, DECODED_BUDGET - beforeAssets[0].width * beforeAssets[0].height * 4);
         if (plan && plan.variant.width > beforeAssets[0].width) {
