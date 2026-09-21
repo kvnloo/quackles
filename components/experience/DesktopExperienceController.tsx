@@ -50,6 +50,10 @@ export function DesktopExperienceController() {
     const shell = document.querySelector<HTMLElement>(".desktop-shell");
     const progressFill =
       document.querySelector<HTMLElement>(".desktop-shell .scroll-progress-fill");
+    const phaseCopy =
+      document.querySelector<HTMLElement>(".desktop-shell .desktop-phase-copy");
+    const scrollCopy =
+      document.querySelector<HTMLElement>(".desktop-shell .desktop-scroll-copy");
 
     const state = (): DesktopState => ({
       phase: phaseRef.current,
@@ -76,6 +80,22 @@ export function DesktopExperienceController() {
             ),
           ),
         );
+      }
+      if (phaseCopy) {
+        phaseCopy.textContent =
+          phaseRef.current === "sim-ready"
+            ? "SIM READY"
+            : phaseRef.current.toUpperCase();
+      }
+      if (scrollCopy) {
+        scrollCopy.textContent =
+          phaseRef.current === "inspect"
+            ? targetZoomRef.current >= DESKTOP_EXPERIENCE.farZoom - 0.001
+              ? "KEEP SCROLLING DOWN TO LAUNCH"
+              : "SCROLL UP TO INSPECT · DOWN TO PULL BACK"
+            : phaseRef.current === "sim-ready"
+              ? "CINEMATIC COMPLETE · SIMULATOR HANDOFF READY"
+              : "CINEMATIC CONTROL LOCKED";
       }
       if (progressFill) {
         const zoomProgress =
