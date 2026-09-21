@@ -1,4 +1,6 @@
-import { playClick, playExplode, playLand, playServo, playTakeoff, unlockAudio } from "./audio";
+// Audio is intentionally dormant. The recovered synthetic Web Audio layer was
+// judged annoying/non-useful; keep PWM haptics independently evaluable until
+// credible event-driven robot audio has its own reviewed donor.
 import { click, pwm, roboticLand, roboticTakeoff, servoTrain, vibrate } from "./haptics";
 
 const CHOREO = { crouch: 0.26, takeoff: 0.34, impact: 0.56, compression: 0.64, exploded: 0.84 };
@@ -33,9 +35,7 @@ let lastServo = 0;
 
 export function armFeel() {
   armed = true;
-  unlockAudio();
   vibrate(click(8));
-  playClick();
 }
 
 export function driveFeel(progress: number, reduced: boolean) {
@@ -43,27 +43,24 @@ export function driveFeel(progress: number, reduced: boolean) {
   const phase = phaseAt(progress);
   const body = motion(progress);
   if (phase !== lastPhase) {
-    if (phase === "flight") { vibrate(roboticTakeoff()); playTakeoff(); }
-    else if (phase === "land") { vibrate(roboticLand()); playLand(); }
-    else if (phase === "explode") { vibrate(servoTrain(90, 0.7)); playExplode(); }
-    else if (phase === "crouch") { vibrate(pwm(40, 0.28)); playClick(); }
+    if (phase === "flight") { vibrate(roboticTakeoff()); }
+    else if (phase === "land") { vibrate(roboticLand()); }
+    else if (phase === "explode") { vibrate(servoTrain(90, 0.7)); }
+    else if (phase === "crouch") { vibrate(pwm(40, 0.28)); }
     lastPhase = phase;
   }
   const now = performance.now();
   if (phase === "flight" && now - lastServo > 70) {
     lastServo = now;
     vibrate(servoTrain(48, 0.25 + body.jump * 0.5));
-    playServo(body.jump);
   }
   if (phase === "explode" && now - lastServo > 90) {
     lastServo = now;
     vibrate(servoTrain(36, 0.35 + body.explode * 0.4));
-    playServo(body.explode);
   }
 }
 
 export function feelThemeStop() {
   if (!armed) return;
   vibrate(click(10));
-  playClick();
 }
