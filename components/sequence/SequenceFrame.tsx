@@ -8,9 +8,17 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
     const node = ref.current;
     if (!node) return;
     let gesture: { id: number; x: number; y: number; theme: number; horizontal: boolean } | null = null;
+    let clearDragging = 0;
+    const clearThemeDragging = () => {
+      window.clearTimeout(clearDragging);
+      clearDragging = window.setTimeout(() => {
+        delete node.dataset.themeDragging;
+      }, 80);
+    };
     const cancel = () => {
       const previous = gesture; gesture = null;
       if (previous?.horizontal && node.hasPointerCapture(previous.id)) node.releasePointerCapture(previous.id);
+      if (previous?.horizontal) clearThemeDragging();
     };
     const zoom = () => {
       const zoomed = (visualViewport?.scale ?? 1) > 1.01;
@@ -28,13 +36,16 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
       if (!gesture.horizontal) {
         if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) { gesture = null; return; }
         if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
-        gesture.horizontal = true; node.setPointerCapture(event.pointerId);
+        gesture.horizontal = true;
+        node.dataset.themeDragging = "true";
+        node.setPointerCapture(event.pointerId);
       }
       event.preventDefault(); dragTheme(gesture.theme - dx / (node.clientWidth * .72));
     };
     const up = (event: PointerEvent) => {
       if (!gesture || event.pointerId !== gesture.id) return;
       if (gesture.horizontal && node.hasPointerCapture(event.pointerId)) node.releasePointerCapture(event.pointerId);
+      if (gesture.horizontal) clearThemeDragging();
       gesture = null;
     };
     zoom(); visualViewport?.addEventListener("resize", zoom);
@@ -43,6 +54,7 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
     return () => {
       visualViewport?.removeEventListener("resize", zoom);
       node.removeEventListener("pointerdown", down); node.removeEventListener("pointermove", move);
+      window.clearTimeout(clearDragging);
       node.removeEventListener("pointerup", up); node.removeEventListener("pointercancel", cancel); node.removeEventListener("lostpointercapture", cancel);
     };
   }, []);
