@@ -43,15 +43,11 @@ await page.setViewport({
   hasTouch: false,
 });
 
-// Headless Chromium reports no hover/fine pointer even with a desktop viewport.
-// Force only the exact capability gate used by DesktopLiveLayer so this test
-// exercises the desktop production path without changing production behavior.
 await page.evaluateOnNewDocument(() => {
   const nativeMatchMedia = window.matchMedia.bind(window);
   window.matchMedia = (query) => {
-    if (query !== "(hover: hover) and (pointer: fine)") {
+    if (query !== "(hover: hover) and (pointer: fine)")
       return nativeMatchMedia(query);
-    }
     return {
       matches: true,
       media: query,
@@ -76,13 +72,14 @@ const state = () =>
     scrollY,
     inspection: window.__QUACKLES_INSPECTION__?.getState?.() ?? null,
     cinematic: window.__QUACKLES_CINEMATIC__?.getState?.() ?? null,
+    sequence: window.__QUACKLES_SEQUENCE__?.getState?.() ?? null,
+    viewfinder: window.__QUACKLES_VIEWFINDER__?.getState?.() ?? null,
     probe: window.__QUACKLES_DEBUG__?.getState?.() ?? null,
+    audit: window.__QUACKLES_DEBUG__?.getAuditState?.() ?? null,
     phase:
-      document.querySelector(".poster-frame")?.getAttribute("data-cinematic-phase") ??
-      null,
-    liveReady:
-      document.querySelector(".poster-frame")?.getAttribute("data-live-ready") ??
-      null,
+      document
+        .querySelector(".poster-frame")
+        ?.getAttribute("data-cinematic-phase") ?? null,
   }));
 
 try {
@@ -92,6 +89,7 @@ try {
       Boolean(
         window.__QUACKLES_INSPECTION__ &&
           window.__QUACKLES_CINEMATIC__ &&
+          window.__QUACKLES_SEQUENCE__?.getState?.().ready &&
           window.__QUACKLES_DEBUG__?.getState?.()?.ready,
       ),
     { timeout: 120000 },
@@ -100,23 +98,29 @@ try {
 
   const frame = await page.locator(".poster-frame").boundingBox();
   if (!frame) throw new Error("poster frame missing");
-  await page.mouse.move(frame.x + frame.width * 0.5, frame.y + frame.height * 0.5);
+  await page.mouse.move(
+    frame.x + frame.width * 0.5,
+    frame.y + frame.height * 0.5,
+  );
 
   const report = { base: BASE, states: {}, screenshots: {}, pageErrors };
   report.states.initial = await state();
 
-  // First prove inspection retains authority over wheel-up.
+  if (report.states.initial.audit?.robotSurfaces?.blenderSkin !== true)
+    throw new Error("authored Blender robot skin is not the default live surface");
+
+  // Inspection owns wheel-up at story origin.
   await page.mouse.wheel({ deltaY: -160 });
-  await pause(80);
+  await pause(120);
   report.states.inspecting = await state();
   if (!(report.states.inspecting.inspection?.targetZoom > 1))
     throw new Error("wheel-up did not enter inspection");
-  if (report.states.inspecting.cinematic?.phase !== "idle")
-    throw new Error("cinematic stole authority from inspection");
+  if (report.states.inspecting.cinematic?.storyProgress !== 0)
+    throw new Error("story advanced while inspection owned the wheel");
   if (report.states.inspecting.scrollY !== 0)
-    throw new Error("inspection leaked into page scroll");
+    throw new Error("inspection leaked into document scroll");
 
-  // Return home. The cinematic must not launch until inspection is fully idle.
+  // Wheel-down first returns inspection to 1x.
   for (let i = 0; i < 10; i++) {
     await page.mouse.wheel({ deltaY: 240 });
     await pause(30);
@@ -126,58 +130,97 @@ try {
     { timeout: 5000 },
   );
   report.states.home = await state();
-  if (report.states.home.scrollY !== 0)
-    throw new Error("return-to-home leaked into page scroll");
+  if (report.states.home.cinematic?.storyProgress !== 0)
+    throw new Error("zoom-out accidentally advanced the product story");
 
-  // A small downward intent is consumed at the hero but must not launch.
-  await page.mouse.wheel({ deltaY: 80 });
-  await pause(50);
-  report.states.intent = await state();
-  if (report.states.intent.scrollY !== 0)
-    throw new Error("launch intent leaked into page scroll");
-  if (report.states.intent.cinematic?.phase !== "idle")
-    throw new Error("small launch intent triggered cinematic");
-  if (!(report.states.intent.cinematic?.launchIntent > 0))
-    throw new Error("launch intent was not accumulated");
-
-  // Cross the hysteresis threshold and let wall-clock phases advance.
-  await page.mouse.wheel({ deltaY: 400 });
-  await page.waitForFunction(
-    () => window.__QUACKLES_CINEMATIC__?.getState?.().phase === "jump",
-    { timeout: 5000 },
-  );
+  // One controlled wheel step advances only one reversible story slice.
+  await page.mouse.wheel({ deltaY: 180 });
+  await pause(100);
   report.states.jump = await state();
-  report.screenshots.jump = path.join(OUT, "jump.png");
-  await page.screenshot({ path: report.screenshots.jump, fullPage: false });
+  if (report.states.jump.cinematic?.phase !== "jump")
+    throw new Error("first story step did not enter jump");
+  if (!(report.states.jump.cinematic?.storyProgress > 0))
+    throw new Error("story progress did not advance");
+  if (report.states.jump.viewfinder?.active)
+    throw new Error("viewfinder remained visible during downward story motion");
 
-  await page.waitForFunction(
-    () => window.__QUACKLES_CINEMATIC__?.getState?.().phase === "explode",
-    { timeout: 5000 },
-  );
+  // Nothing should autoplay after wheel input stops.
+  const frozenProgress = report.states.jump.cinematic.storyProgress;
+  await pause(700);
+  report.states.frozen = await state();
+  if (
+    Math.abs(
+      report.states.frozen.cinematic.storyProgress - frozenProgress,
+    ) > 1e-6
+  )
+    throw new Error("story autoplayed after the wheel stopped");
+
+  // Continue down through the authored reversible phases.
+  await page.mouse.wheel({ deltaY: 180 });
+  await pause(80);
   report.states.explode = await state();
+  if (report.states.explode.cinematic?.phase !== "explode")
+    throw new Error("second story step did not enter explode");
 
-  await page.waitForFunction(
-    () => window.__QUACKLES_CINEMATIC__?.getState?.().phase === "reassemble",
-    { timeout: 5000 },
-  );
+  await page.mouse.wheel({ deltaY: 180 });
+  await pause(80);
+  report.states.explodeDeep = await state();
+
+  await page.mouse.wheel({ deltaY: 180 });
+  await pause(80);
   report.states.reassemble = await state();
+  if (report.states.reassemble.cinematic?.phase !== "reassemble")
+    throw new Error("fourth story step did not enter reassemble");
 
-  await page.waitForFunction(
-    () => window.__QUACKLES_CINEMATIC__?.getState?.().phase === "sim-ready",
-    { timeout: 5000 },
-  );
+  await page.mouse.wheel({ deltaY: 180 });
+  await pause(100);
   report.states.simReady = await state();
-  report.screenshots.simReady = path.join(OUT, "sim-ready.png");
-  await page.screenshot({ path: report.screenshots.simReady, fullPage: false });
-
+  if (report.states.simReady.cinematic?.phase !== "sim-ready")
+    throw new Error("story did not reach specs/sim-ready at the end");
   if (report.states.simReady.cinematic?.authority !== "simulator-pending")
-    throw new Error("authority did not reach simulator-pending");
+    throw new Error("final authority did not reach simulator-pending");
   if ((report.states.simReady.cinematic?.handoff?.maxAbs ?? Infinity) > 1e-6)
     throw new Error(
       `simulator handoff joint error too large: ${report.states.simReady.cinematic?.handoff?.maxAbs}`,
     );
-  if (report.states.simReady.scrollY !== 0)
-    throw new Error("cinematic phases changed page scroll");
+
+  report.screenshots.simReady = path.join(OUT, "sim-ready.png");
+  await page.screenshot({
+    path: report.screenshots.simReady,
+    fullPage: false,
+  });
+
+  // Reverse the entire state machine with wheel-up.
+  for (let i = 0; i < 5; i++) {
+    await page.mouse.wheel({ deltaY: -180 });
+    await pause(70);
+  }
+  report.states.reversedHome = await state();
+  if (report.states.reversedHome.cinematic?.phase !== "idle")
+    throw new Error("reverse wheel did not return the story to idle");
+  if (report.states.reversedHome.cinematic?.storyProgress !== 0)
+    throw new Error("reverse wheel did not return story progress to zero");
+  if (report.states.reversedHome.scrollY !== 0)
+    throw new Error("reversible desktop story changed document scroll");
+
+  // Continue scrolling up and immediately regain inspection ownership.
+  await page.mouse.wheel({ deltaY: -180 });
+  await pause(120);
+  report.states.reenteredInspection = await state();
+  if (!(report.states.reenteredInspection.inspection?.targetZoom > 1))
+    throw new Error("inspection did not reactivate after reversing the story");
+  if (report.states.reenteredInspection.cinematic?.phase !== "idle")
+    throw new Error("cinematic state did not stay reset during re-inspection");
+
+  report.screenshots.reenteredInspection = path.join(
+    OUT,
+    "reentered-inspection.png",
+  );
+  await page.screenshot({
+    path: report.screenshots.reenteredInspection,
+    fullPage: false,
+  });
+
   if (pageErrors.length)
     throw new Error(`page errors: ${pageErrors.join(" | ")}`);
 
