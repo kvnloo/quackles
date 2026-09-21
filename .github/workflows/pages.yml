@@ -1,119 +1,23 @@
-name: pages
+name: kick-pages
 
 on:
   push:
-    # Stable poster at /. Experimental channels are nested: /nightly, /preview, /dev.
-    # This file is the only Pages publisher; preview/dev pushes kick it via kick-pages.yml.
     branches: [nightly]
-  schedule:
-    - cron: "0 5 * * *"
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: kick-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint:
+  kick:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-
-  deploy:
-    needs: [lint, typecheck]
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'schedule' ||
-      github.ref == 'refs/heads/nightly'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Resolve Pages base path
-        id: base
-        run: |
-          NAME="${GITHUB_REPOSITORY#*/}"
-          OWNER="${GITHUB_REPOSITORY_OWNER}"
-          if [ "$NAME" = "${OWNER}.github.io" ]; then
-            echo "path=" >> "$GITHUB_OUTPUT"
-          else
-            echo "path=/${NAME}" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Stamp build identity
-        id: stamp
-        run: echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-      - run: npm ci
-      - name: Build stable root
-        run: npm run build
+      - name: Dispatch central Pages publisher on main
         env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
-          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
-          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
-      - name: Preserve stable root artifact
-        run: |
-          mkdir -p pages-root
-          cp -a out/. pages-root/
-      - name: Build nightly channel from this branch
-        id: nightly
-        env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}/nightly
-          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
-          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
-        run: |
-          echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-          rm -rf out
-          npm run build
-          mkdir -p pages-root/nightly
-          cp -a out/. pages-root/nightly/
-      - name: Build channel under preview
-        continue-on-error: true
-        run: |
-          git fetch --no-tags origin preview:refs/remotes/origin/preview
-          rm -rf channel-preview
-          mkdir -p channel-preview pages-root/preview
-          git archive origin/preview | tar -x -C channel-preview
-          (cd channel-preview && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/preview" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/preview)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
-          cp -a channel-preview/out/. pages-root/preview/
-      - name: Build channel under dev
-        continue-on-error: true
-        run: |
-          git fetch --no-tags origin dev:refs/remotes/origin/dev
-          rm -rf channel-dev
-          mkdir -p channel-dev pages-root/dev
-          git archive origin/dev | tar -x -C channel-dev
-          (cd channel-dev && npm ci && NEXT_PUBLIC_BASE_PATH="${{ steps.base.outputs.path }}/dev" NEXT_PUBLIC_BUILD_SHA="$(git rev-parse origin/dev)" NEXT_PUBLIC_BUILD_TIME="${{ steps.stamp.outputs.time }}" npm run build)
-          cp -a channel-dev/out/. pages-root/dev/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: pages-root
-      - id: deploy
-        uses: actions/deploy-pages@v4
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --repo "${{ github.repository }}" --ref main
