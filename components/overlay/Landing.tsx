@@ -7,6 +7,7 @@ import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
 import { HeroInspection } from "@/components/sequence/HeroInspection";
+import { InspectionViewfinder } from "@/components/sequence/InspectionViewfinder";
 import { FeelEngine } from "@/components/feel/FeelEngine";
 
 export function Landing() {
@@ -17,6 +18,7 @@ export function Landing() {
     <div className="poster-stage">
       <SequenceFrame>
         <SequencePlayer />
+        <InspectionViewfinder />
         <PosterNav />
         <PosterHeroCopy />
         <PosterBeats />
