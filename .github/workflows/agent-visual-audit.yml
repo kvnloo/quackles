@@ -201,6 +201,15 @@ jobs:
           PY
           python3 /tmp/quackles-agent-sheets.py
 
+      - name: Upload desktop blind audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: quackles-desktop-blind-${{ github.run_id }}
+          path: |
+            review/blind/
+            review/private-map/
+          retention-days: 14
+
       - name: Publish agent-readable audit bundle
         env:
           GH_TOKEN: ${{ github.token }}
