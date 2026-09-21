@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T16:35:34Z",
+  "generatedAt": "2026-09-21T23:34:22Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -62,17 +62,17 @@
     {
       "ref": "nightly",
       "slug": "nightly",
-      "sha": "7fd5d720fb988f7d9b9311308aa814e1e04d8eaf",
+      "sha": "314a1d646d7ced0cbb95a4435268a299956afb1f",
       "status": "ok",
-      "title": "Keep nightly on the single central Pages dispatcher ",
+      "title": "Stage PR #39 DZI candidate on nightly ",
       "url": "/quackles/compare/nightly/"
     },
     {
       "ref": "nightly-source",
       "slug": "nightly-source",
-      "sha": "e12a73702f3923c58c884bfb7f4e8a89140f3157",
+      "sha": "8442a34791af5989594c229045c4bfcf66c687fa",
       "status": "ok",
-      "title": "Merge PR #31: zero-fetch zoom viewfinder + adaptive deep-zoom budgets ",
+      "title": "Merge PR #38: defer deep-zoom decode until inspect camera settles ",
       "url": "/quackles/compare/nightly-source/"
     },
     {
@@ -86,9 +86,9 @@
     {
       "ref": "reconcile/cinematic-handoff-v2",
       "slug": "reconcile-cinematic-handoff-v2",
-      "sha": "190bb61d77db1556d50373d11cf920a20850758a",
+      "sha": "fb89b66e2ee4ae3e86c070f34072a1608f9e3ad6",
       "status": "ok",
-      "title": "reconcile: cinematic handoff on current inspection stack ",
+      "title": "test: emulate desktop pointer for cinematic harness ",
       "url": "/quackles/compare/reconcile-cinematic-handoff-v2/"
     },
     {
