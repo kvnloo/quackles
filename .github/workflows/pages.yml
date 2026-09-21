@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths-ignore:
       - ".github/workflows/visual-review.yml"
+      - ".github/workflows/agent-visual-audit.yml"
       - ".github/AI_REVIEW_POLICY.md"
   schedule:
     - cron: "7,22,37,52 * * * *"
