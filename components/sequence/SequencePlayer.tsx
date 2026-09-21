@@ -5,7 +5,8 @@ import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { DECODED_BUDGET, FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId } from "@/lib/sequence/manifest";
-import { detailPlan, paintBase, paintDetail, viewportCrop } from "@/lib/sequence/render";
+import { detailPlan, inspectionCrop, paintBase, paintDetail, viewportCrop } from "@/lib/sequence/render";
+import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { applyPalette, configure, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
 import { applyStoryProgress } from "./SequenceScroll";
 
@@ -14,15 +15,21 @@ type PlayerState = { ready: boolean; manifestId: string | null; frameCount: numb
 type SequenceDebug = {
   setProgress: (value: number) => void;
   setTheme: (id: ThemeId) => void;
-  getState: () => PlayerState & { current: ReturnType<typeof snapshot>; cache: ReturnType<FrameCache["stats"]> | null; surfaceBytes: number; zoom: number };
+  getState: () => PlayerState & {
+    current: ReturnType<typeof snapshot>;
+    cache: ReturnType<FrameCache["stats"]> | null;
+    surfaceBytes: number;
+    zoom: number;
+    inspection: ReturnType<typeof inspectionSnapshot>;
+  };
 };
 declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug } }
 
 export function SequencePlayer() {
-  const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null);
+  const host = useRef<HTMLDivElement>(null), camera = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null);
   useEffect(() => {
-    const container = host.current, baseCanvas = base.current, detailCanvas = detail.current;
-    if (!container || !baseCanvas || !detailCanvas) return;
+    const container = host.current, cameraNode = camera.current, baseCanvas = base.current, detailCanvas = detail.current;
+    if (!container || !cameraNode || !baseCanvas || !detailCanvas) return;
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null;
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "";
@@ -53,14 +60,46 @@ export function SequencePlayer() {
       const beforeAssets = themes.map((theme) => imageAt(span.before, theme, 1024));
       const afterAssets = span.mix > 0 && span.after !== span.before ? themes.map((theme) => imageAt(span.after, theme, 1024)) : [];
       const assets = [...beforeAssets, ...afterAssets];
-      const rect = container!.getBoundingClientRect(), crop = viewportCrop(container!);
+      const rect = container!.getBoundingClientRect();
+      const inspection = inspectionSnapshot();
+      cameraNode!.style.transformOrigin = `${inspection.focusX * 100}% ${inspection.focusY * 100}%`;
+      cameraNode!.style.transform =
+        inspection.zoom > 1.0005 ? `scale(${inspection.zoom})` : "none";
+
+      const sourceWidths = themes.map((theme) =>
+        Math.max(...frame.assets[theme].map((variant) => variant.width)),
+      );
+      const maxSourceWidth = Math.min(...sourceWidths);
+      setInspectionMaxZoom(
+        Math.min(
+          8,
+          Math.max(
+            1,
+            maxSourceWidth / Math.max(1, rect.width * devicePixelRatio),
+          ),
+        ),
+      );
+
+      // Native pinch continues to use the visual viewport. Desktop product
+      // inspection instead predicts the target camera crop, so Gigapixel tiles
+      // can start decoding before the eased camera has physically arrived.
+      const nativeCrop = viewportCrop(container!);
+      const inspect = inspectionSnapshot();
+      const crop =
+        inspect.active || inspect.targetZoom > 1.0005
+          ? inspectionCrop(
+              inspect.targetZoom,
+              inspect.targetFocusX,
+              inspect.targetFocusY,
+            )
+          : nativeCrop;
       const desiredWidth = Math.ceil(rect.width * devicePixelRatio * crop.scale);
       const nextIntent = `${span.before.id}/${span.after.id}/${span.mix}/${current.theme}/${desiredWidth}`;
       if (nextIntent !== intentKey) { intentKey = nextIntent; generation++; }
       state.requested = { frameId: frame.id, frameProgress: frame.progress, progress: current.progress, themes, mix, tierWidth: desiredWidth, generation, urls: assets.map((asset) => asset.url) };
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
-      let detailTasks: { asset: ImageAsset; x: number; y: number }[] = [];
+      let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
       if (settled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
         const plan = detailPlan(frame.assets[themes[0]], desiredWidth, crop, DECODED_BUDGET - beforeAssets[0].width * beforeAssets[0].height * 4);
         if (plan && plan.variant.width > beforeAssets[0].width) {
@@ -100,7 +139,7 @@ export function SequencePlayer() {
         const decoded = detailTasks.map((task) => ({ ...task, image: cache!.peek(task.asset.url) }));
         const nextDetail = `${frame.id}/${low}/${detailVariant.width}/${JSON.stringify(crop)}`;
         if (decoded.every((task) => task.image !== undefined) && nextDetail !== detailKey) {
-          paintDetail(detailCanvas!, container!, crop, detailVariant, decoded.map(({ image, x, y }) => ({ image: image!, x, y })));
+          paintDetail(detailCanvas!, container!, crop, detailVariant, decoded.map(({ image, x, y, sourceX, sourceY }) => ({ image: image!, x, y, sourceX, sourceY })));
           detailKey = nextDetail; detailKeys = detailTasks.map(({ asset }) => asset.url);
           state.detailWidth = detailVariant.width; state.detailTiles = isImage(detailVariant) ? 0 : detailTasks.length; state.drawCount++;
           if (state.rendered) state.rendered = { ...state.rendered, tierWidth: detailVariant.width, urls: [...paintedKeys, ...detailKeys], generation };
@@ -113,13 +152,14 @@ export function SequencePlayer() {
       schedule();
     };
     const unsubscribe = subscribe(changed);
+    const unsubscribeInspection = subscribeInspection(schedule);
     const observer = new ResizeObserver(changed); observer.observe(container);
     visualViewport?.addEventListener("resize", changed);
     visualViewport?.addEventListener("scroll", changed);
     window.__QUACKLES_SEQUENCE__ = {
       setProgress(value) { scrollTo({ top: Math.max(0, Math.min(1, value)) * Math.max(1, document.documentElement.scrollHeight - innerHeight), behavior: "instant" }); setProgress(value); },
       setTheme: selectTheme,
-      getState: () => ({ ...state, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1 }),
+      getState: () => ({ ...state, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot() }),
     };
     const controller = new AbortController();
     void (async () => {
@@ -137,15 +177,17 @@ export function SequencePlayer() {
       }
     })();
     return () => {
-      cancelled = true; controller.abort(); unsubscribe(); observer.disconnect();
+      cancelled = true; controller.abort(); unsubscribe(); unsubscribeInspection(); observer.disconnect();
       cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer);
       visualViewport?.removeEventListener("resize", changed); visualViewport?.removeEventListener("scroll", changed);
       delete window.__QUACKLES_SEQUENCE__; cache?.dispose();
     };
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">
-    <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />
-    <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
-    <canvas ref={detail} className="sequence-detail" aria-hidden />
+    <div ref={camera} className="sequence-camera">
+      <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />
+      <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
+      <canvas ref={detail} className="sequence-detail" aria-hidden />
+    </div>
   </div>;
 }

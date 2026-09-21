@@ -6,11 +6,13 @@ import { ThemeControl } from "@/components/poster/ThemeControl";
 import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
+import { HeroInspection } from "@/components/sequence/HeroInspection";
 import { FeelEngine } from "@/components/feel/FeelEngine";
 
 export function Landing() {
   return <main id="top" className="phone-shell" data-testid="experience">
     <SequenceScroll />
+    <HeroInspection />
     <FeelEngine />
     <div className="poster-stage">
       <SequenceFrame>
@@ -21,7 +23,7 @@ export function Landing() {
       </SequenceFrame>
       <div className="scene-dock">
         <ThemeControl />
-        <div className="scroll-line"><span>SCROLL TO EXPLORE</span><span aria-hidden>↓</span></div>
+        <div className="scroll-line"><span>↑ INSPECT · ↓ EXPLORE</span><span aria-hidden>↕</span></div>
         <div className="scroll-progress"><div className="scroll-progress-fill" /></div>
       </div>
     </div>

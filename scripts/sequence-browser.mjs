@@ -139,7 +139,10 @@ async function detailComparison(page) {
           const url = new URL(variant.tiles.urlTemplate.replaceAll('{x}', String(x)).replaceAll('{y}', String(y)), manifestUrl).href;
           if (!s.rendered.urls.includes(url)) continue;
           const image = await createImageBitmap(await (await fetch(url)).blob());
-          ctx.drawImage(image, (x * variant.tiles.tileSize - crop.x * variant.width) * sx, (y * variant.tiles.tileSize - crop.y * variant.height) * sy, image.width * sx, image.height * sy); image.close();
+          const overlap = variant.tiles.overlap ?? 0;
+          const sourceX = Math.max(0, x * variant.tiles.tileSize - (x > 0 ? overlap : 0));
+          const sourceY = Math.max(0, y * variant.tiles.tileSize - (y > 0 ? overlap : 0));
+          ctx.drawImage(image, (sourceX - crop.x * variant.width) * sx, (sourceY - crop.y * variant.height) * sy, image.width * sx, image.height * sy); image.close();
         }
       }
       const actual = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, expected = ctx.getImageData(0, 0, reference.width, reference.height).data;
