@@ -234,7 +234,20 @@ export function DesktopExperienceController() {
     };
 
     const feedWheel = (deltaY: number) => {
-      if (phaseRef.current !== "inspect") return;
+      if (phaseRef.current !== "inspect" || deltaY === 0) return;
+
+      // Keep the camera attached to the user's latest gesture. A critically
+      // damped spring does not overshoot a fixed target, but its existing
+      // velocity can still point the wrong way for a few frames after a fast
+      // wheel-direction reversal. Cancel only that contradictory momentum.
+      if (
+        zoomVelocityRef.current !== 0 &&
+        Math.sign(zoomVelocityRef.current) !== Math.sign(deltaY)
+      ) {
+        zoomVelocityRef.current = 0;
+        lastInspectTickAtRef.current = 0;
+      }
+
       const zoomDelta =
         Math.sign(deltaY) *
         Math.min(Math.abs(deltaY), DESKTOP_EXPERIENCE.maxWheelZoomDelta);
