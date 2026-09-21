@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import Lenis from "lenis";
+import { createScrollDriver, type ScrollDriver } from "@/lib/sequence/scroll-driver";
 import { setProgress, setReducedMotion, snapshot, subscribe } from "@/lib/sequence/store";
 
 function interval(value: number, start: number, end: number) {
@@ -22,8 +22,7 @@ export function applyStoryProgress(p: number) {
 export function SequenceScroll() {
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
-    let lenis: Lenis | null = null;
-    let raf = 0;
+    let driver: ScrollDriver | null = null;
 
     const apply = () => {
       const p = snapshot().progress;
@@ -31,58 +30,27 @@ export function SequenceScroll() {
       if (line) line.style.transform = `scaleX(${p})`;
     };
 
-    const publishNativePosition = () => {
-      const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-      setProgress(scrollY / max);
-    };
-
-    const stop = () => {
-      cancelAnimationFrame(raf);
-      raf = 0;
-      lenis?.destroy();
-      lenis = null;
-    };
-
-    const start = () => {
-      stop();
-      const reduced = media.matches;
-      setReducedMotion(reduced);
-
-      // Donor: cursor/theme-slider-poster-match-530e.
-      // Keep the proven low-lerp Lenis input smoothing at the scroll boundary;
-      // do not import that branch's theme/story/simulator architecture.
-      lenis = new Lenis({
-        lerp: reduced ? 1 : 0.085,
-        smoothWheel: !reduced,
+    const startDriver = () => {
+      driver?.destroy();
+      setReducedMotion(media.matches);
+      driver = createScrollDriver({
+        reducedMotion: media.matches,
+        onProgress: setProgress,
       });
-
-      lenis.on("scroll", ({ progress }) => {
-        setProgress(Math.max(0, Math.min(1, progress)));
-      });
-
-      const loop = (time: number) => {
-        lenis?.raf(time);
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-      publishNativePosition();
     };
 
-    const resize = () => {
-      lenis?.resize();
-      publishNativePosition();
-    };
-
+    const resize = () => driver?.resize();
     const unsubscribe = subscribe(apply);
-    start();
+
+    startDriver();
     addEventListener("resize", resize);
-    media.addEventListener("change", start);
+    media.addEventListener("change", startDriver);
 
     return () => {
-      stop();
+      driver?.destroy();
       unsubscribe();
       removeEventListener("resize", resize);
-      media.removeEventListener("change", start);
+      media.removeEventListener("change", startDriver);
     };
   }, []);
 
