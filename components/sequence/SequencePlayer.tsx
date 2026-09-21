@@ -28,10 +28,10 @@ type SequenceDebug = {
 declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug } }
 
 export function SequencePlayer() {
-  const host = useRef<HTMLDivElement>(null), camera = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null);
+  const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null);
   useEffect(() => {
-    const container = host.current, cameraNode = camera.current, baseCanvas = base.current, detailCanvas = detail.current;
-    if (!container || !cameraNode || !baseCanvas || !detailCanvas) return;
+    const container = host.current, baseCanvas = base.current, detailCanvas = detail.current;
+    if (!container || !baseCanvas || !detailCanvas) return;
     const profile = sequencePerfProfile();
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null;
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
@@ -213,7 +213,7 @@ export function SequencePlayer() {
     };
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">
-    <div ref={camera} className="sequence-camera">
+    <div className="sequence-camera">
       <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />
       <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
       <canvas ref={detail} className="sequence-detail" aria-hidden />
