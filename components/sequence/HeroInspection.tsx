@@ -155,12 +155,15 @@ export function HeroInspection() {
 
     const atHero = () => sequenceSnapshot().progress <= 0.012;
 
+    const claimHeroBoundary = () => {
+      window.dispatchEvent(new Event("quackles:reset-story-scroll"));
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+
     const enterInspection = (clientX: number, clientY: number, zoom = 1.9) => {
       const current = inspectionSnapshot();
       const focus = targetFocus(clientX, clientY);
-      if (window.scrollY > 2 || sequenceSnapshot().progress > 0) {
-        window.dispatchEvent(new Event("quackles:reset-story-scroll"));
-      }
+      claimHeroBoundary();
       setInspectionState({
         active: true,
         targetZoom: Math.max(
@@ -258,6 +261,14 @@ export function HeroInspection() {
       enterInspection(event.clientX, event.clientY, 2.15);
     };
 
+    const onScroll = () => {
+      const current = inspectionSnapshot();
+      if (!current.active || current.targetZoom <= 1.002) return;
+      if (window.scrollY !== 0 || sequenceSnapshot().progress > 0) {
+        claimHeroBoundary();
+      }
+    };
+
     const resetTarget = () => {
       const current = inspectionSnapshot();
       if (!current.active && current.targetZoom === 1) return;
@@ -313,6 +324,7 @@ export function HeroInspection() {
     frame.addEventListener("wheel", onWheel, { passive: false, capture: true });
     frame.addEventListener("pointermove", onPointerMove, { passive: true });
     frame.addEventListener("click", onClick);
+    addEventListener("scroll", onScroll, { passive: true });
     addEventListener("keydown", onKeyDown);
     finePointer.addEventListener("change", onPointerCapabilityChange);
 
@@ -323,6 +335,7 @@ export function HeroInspection() {
       frame.removeEventListener("wheel", onWheel, { capture: true });
       frame.removeEventListener("pointermove", onPointerMove);
       frame.removeEventListener("click", onClick);
+      removeEventListener("scroll", onScroll);
       removeEventListener("keydown", onKeyDown);
       finePointer.removeEventListener("change", onPointerCapabilityChange);
       delete window.__QUACKLES_INSPECTION__;
