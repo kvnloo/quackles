@@ -71,17 +71,14 @@ const state = () =>
   }));
 const setZoom = async (value) => {
   await page.evaluate((zoom) => {
-    window.__QUACKLES_DESKTOP__?.setZoom(zoom);
+    window.__QUACKLES_DESKTOP__?.setZoomInstant(zoom);
   }, value);
   await page.waitForFunction(
     () => {
       const current = window.__QUACKLES_DESKTOP__?.getState();
-      return (
-        current &&
-        Math.abs(current.zoom - current.targetZoom) < 0.003
-      );
+      return current && Math.abs(current.zoom - current.targetZoom) < 1e-9;
     },
-    { timeout: 15000 },
+    { timeout: 5000 },
   );
 };
 const waitPhase = (phase, timeout = 15000) =>
