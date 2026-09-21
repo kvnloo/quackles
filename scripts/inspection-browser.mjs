@@ -140,6 +140,22 @@ try {
     deviceScaleFactor: 2,
   });
   await installAssetProxy(desktopContext);
+  // The native-tier acceptance deliberately exercises the full desktop policy.
+  // GitHub's standard ubuntu runner exposes only four CPUs, which correctly
+  // selects the balanced production profile and caps detail at 8192px. Make
+  // this fixture deterministic instead of depending on CI host capacity.
+  await desktopContext.addInitScript(() => {
+    try {
+      Object.defineProperty(Navigator.prototype, "deviceMemory", {
+        configurable: true,
+        get: () => 8,
+      });
+      Object.defineProperty(Navigator.prototype, "hardwareConcurrency", {
+        configurable: true,
+        get: () => 8,
+      });
+    } catch {}
+  });
   const page = await open(desktopContext);
   await page.waitForFunction(
     () => window.__QUACKLES_INSPECTION__?.getState().maxZoom > 1.05,
@@ -158,6 +174,10 @@ try {
   const requestsBefore = await sequenceRequests(page);
   const initialDziRequests = await dziRequests(page);
   const before = await state(page);
+  if (before.sequence.profile.id !== "full")
+    throw new Error(
+      `native-tier desktop fixture did not select full profile: ${before.sequence.profile.id}`,
+    );
   if (initialDziRequests.length)
     throw new Error("initial 1x hero fetched DZI tiles before inspection");
   if (before.viewfinder.active)
@@ -236,7 +256,25 @@ try {
     y: rect.y + rect.height * 0.42,
   };
   await page.mouse.move(secondCursor.x, secondCursor.y);
-  await page.waitForTimeout(520);
+  await page.waitForFunction(
+    ({ focusX, focusY, cropX, cropY }) => {
+      const inspection = window.__QUACKLES_INSPECTION__?.getState();
+      const viewfinder = window.__QUACKLES_VIEWFINDER__?.getState();
+      return (
+        (inspection?.focusX ?? 1) < focusX &&
+        (inspection?.focusY ?? 1) < focusY &&
+        (viewfinder?.crop.x ?? 1) < cropX &&
+        (viewfinder?.crop.y ?? 1) < cropY
+      );
+    },
+    {
+      focusX: settled.inspection.focusX,
+      focusY: settled.inspection.focusY,
+      cropX: settled.viewfinder.crop.x,
+      cropY: settled.viewfinder.crop.y,
+    },
+    { timeout: 3000 },
+  );
   const followed = await state(page);
   if (!(followed.inspection.focusX < settled.inspection.focusX))
     throw new Error("inspection camera did not follow the cursor laterally");
@@ -425,6 +463,8 @@ try {
       early,
       settled,
       followed,
+      deep,
+      deepDziRequests: deepDziRequests.length,
       home,
       released,
       requestsBefore: requestsBefore.length,
