@@ -512,3 +512,157 @@ a:focus-visible {
     transform-origin: left;
   }
 }
+
+
+/* Final portfolio interaction surface.
+ * Desktop uses the full viewport as the stage while preserving the authored
+ * 2:3 render without stretching it. Controls and hints live on-image.
+ */
+.experience-shell {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  background: var(--paper-deep);
+}
+.experience-shell .poster-stage {
+  height: 100svh;
+  max-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--paper) 86%, #fff 14%) 0, var(--paper) 34%, var(--paper-deep) 100%);
+}
+.experience-shell .poster-frame {
+  width: min(100vw, calc(100svh * 2 / 3));
+  max-width: none;
+  aspect-ratio: 2 / 3;
+  flex: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent),
+    0 28px 80px color-mix(in srgb, #000 28%, transparent);
+}
+.experience-shell .sequence-camera {
+  transform-origin: 0 0;
+  will-change: auto;
+}
+.experience-shell .poster-frame[data-inspecting="true"] .sequence-camera {
+  will-change: transform;
+}
+.scene-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+.scene-hud::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 18%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--paper-deep) 18%, transparent) 36%,
+    color-mix(in srgb, var(--paper-deep) 72%, transparent)
+  );
+  pointer-events: none;
+}
+.scene-hud .theme-seg {
+  position: absolute;
+  left: 5.4%;
+  bottom: 6.6%;
+  width: min(64%, 420px);
+  z-index: 2;
+  pointer-events: auto;
+}
+.scene-hud .theme-seg-btn {
+  min-height: 36px;
+  font-size: clamp(8px, 1.55cqw, 11px);
+  text-shadow: 0 1px 8px color-mix(in srgb, #000 34%, transparent);
+}
+.scene-hud .interaction-hints {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  font-size: clamp(8px, 1.45cqw, 11px);
+  letter-spacing: 0.12em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  text-shadow: 0 1px 10px color-mix(in srgb, #000 48%, transparent);
+}
+.interaction-hint {
+  position: absolute;
+  display: block;
+  opacity: 0.82;
+}
+.interaction-hint-theme {
+  left: 5.5%;
+  bottom: 3.45%;
+}
+.interaction-hint-inspect,
+.interaction-hint-specs {
+  right: 3.8%;
+  width: 24%;
+  max-width: 180px;
+  text-align: right;
+}
+.interaction-hint-inspect {
+  top: 47%;
+}
+.interaction-hint-specs {
+  top: 52%;
+  opacity: 0.62;
+}
+.poster-frame[data-inspecting="true"] .interaction-hint-inspect {
+  opacity: 0.35;
+}
+.poster-frame[data-inspecting="true"] .interaction-hint-specs {
+  opacity: 0;
+}
+.scene-hud .scroll-progress {
+  position: absolute;
+  left: 5.4%;
+  right: 5.4%;
+  bottom: 1.7%;
+  width: auto;
+  z-index: 2;
+  margin: 0;
+}
+.inspection-viewfinder {
+  right: 3.8%;
+  bottom: auto;
+  top: 9.2%;
+}
+@media (min-width: 700px) {
+  body {
+    background: var(--paper-deep);
+  }
+  .experience-shell {
+    width: 100%;
+    max-width: none;
+  }
+  .experience-shell .poster-frame {
+    width: min(82vw, calc(100svh * 2 / 3));
+    height: auto;
+  }
+}
+@media (max-width: 699px) {
+  .experience-shell .poster-stage {
+    place-items: start center;
+  }
+  .experience-shell .poster-frame {
+    width: 100vw;
+    box-shadow: none;
+  }
+  .scene-hud .theme-seg {
+    width: 72%;
+  }
+  .interaction-hint-inspect,
+  .interaction-hint-specs {
+    right: 3.5%;
+    width: 31%;
+    font-size: 7px;
+  }
+}

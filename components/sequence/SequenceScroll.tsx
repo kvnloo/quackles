@@ -40,16 +40,22 @@ export function SequenceScroll() {
     };
 
     const resize = () => driver?.resize();
+    const resetToHero = () => {
+      driver?.scrollToTop();
+      setProgress(0);
+    };
     const unsubscribe = subscribe(apply);
 
     startDriver();
     addEventListener("resize", resize);
+    addEventListener("quackles:reset-story-scroll", resetToHero);
     media.addEventListener("change", startDriver);
 
     return () => {
       driver?.destroy();
       unsubscribe();
       removeEventListener("resize", resize);
+      removeEventListener("quackles:reset-story-scroll", resetToHero);
       media.removeEventListener("change", startDriver);
     };
   }, []);
