@@ -1,23 +1,29 @@
-name: kick-pages
+name: kick-pages-gallery
 
 on:
   push:
-    branches: [recovery/simulator]
-  workflow_dispatch:
+    branches:
+      - nightly
+      - nightly-source
+      - preview
+      - dev
+      - feat/water
+      - recovery/**
 
 permissions:
   actions: write
   contents: read
 
 concurrency:
-  group: kick-pages-${{ github.ref }}
+  group: kick-pages-gallery
   cancel-in-progress: true
 
 jobs:
   kick:
+    if: github.repository == 'kvnloo/quackles'
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch central Pages publisher on main
+      - name: Dispatch the main Pages comparison publisher
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run pages.yml --repo "${{ github.repository }}" --ref main
