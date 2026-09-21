@@ -80,6 +80,13 @@ export function DesktopExperienceController() {
       if (shell) {
         shell.dataset.phase = phaseRef.current;
         shell.style.setProperty("--desktop-zoom", String(zoomRef.current));
+        const zoomT =
+          (zoomRef.current - DESKTOP_EXPERIENCE.nearZoom) /
+          (DESKTOP_EXPERIENCE.farZoom - DESKTOP_EXPERIENCE.nearZoom);
+        shell.style.setProperty(
+          "--desktop-inspect-scale",
+          String(1.22 - Math.max(0, Math.min(1, zoomT)) * 0.3),
+        );
         shell.style.setProperty(
           "--launch-intent",
           String(
