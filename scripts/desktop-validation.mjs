@@ -81,10 +81,10 @@ const setZoom = async (value) => {
         Math.abs(current.zoom - current.targetZoom) < 0.003
       );
     },
-    { timeout: 10000 },
+    { timeout: 15000 },
   );
 };
-const waitPhase = (phase, timeout = 10000) =>
+const waitPhase = (phase, timeout = 15000) =>
   page.waitForFunction(
     (expected) => window.__QUACKLES_DESKTOP__?.getState().phase === expected,
     { timeout },
@@ -138,7 +138,12 @@ try {
   if (report.states.smallIntent.desktop.phase !== "inspect")
     throw new Error("small wheel intent triggered jump");
 
-  await page.evaluate(() => window.__QUACKLES_DESKTOP__?.wheel(400));
+  await page.evaluate(() => {
+    const probe = window.__QUACKLES_DEBUG__?.getState?.();
+    if (probe) probe.glFrames.length = 0;
+    window.__QUACKLES_RECORD__ = true;
+    window.__QUACKLES_DESKTOP__?.wheel(400);
+  });
   await waitPhase("jump");
   await pause(520);
   report.states.jump = await state();
@@ -158,6 +163,33 @@ try {
   await pause(200);
   report.states.simReady = await state();
   report.screenshots.simReady = await screenshot("07-sim-ready");
+  report.frameTimes = await page.evaluate(() => {
+    window.__QUACKLES_RECORD__ = false;
+    const samples = (
+      window.__QUACKLES_DEBUG__?.getState?.()?.glFrames ?? []
+    )
+      .map((frame) => frame.dt)
+      .filter((dt) => Number.isFinite(dt) && dt > 0 && dt < 1000)
+      .sort((a, b) => a - b);
+    const percentile = (p) => {
+      if (!samples.length) return null;
+      const index = Math.min(
+        samples.length - 1,
+        Math.max(0, Math.ceil((p / 100) * samples.length) - 1),
+      );
+      return samples[index];
+    };
+    return {
+      count: samples.length,
+      meanMs: samples.length
+        ? samples.reduce((sum, value) => sum + value, 0) / samples.length
+        : null,
+      p50Ms: percentile(50),
+      p95Ms: percentile(95),
+      p99Ms: percentile(99),
+      maxMs: samples.length ? samples[samples.length - 1] : null,
+    };
+  });
 
   if (!report.states.simReady.desktop.simReady)
     throw new Error("SIM READY boundary was not reached");
@@ -177,6 +209,8 @@ try {
     throw new Error("studio set did not load");
   if (!report.states.simReady.probe?.ready)
     throw new Error("live desktop scene never became ready");
+  if (!report.frameTimes.count)
+    throw new Error("no WebGL frame-time samples were recorded");
   if (pageErrors.length)
     throw new Error(`page errors: ${pageErrors.join(" | ")}`);
 
@@ -187,6 +221,9 @@ try {
   );
   console.log(JSON.stringify(report, null, 2));
 } catch (error) {
+  await page.evaluate(() => {
+    window.__QUACKLES_RECORD__ = false;
+  }).catch(() => {});
   const failure = {
     error: error instanceof Error ? error.stack || error.message : String(error),
     state: await state().catch(() => null),

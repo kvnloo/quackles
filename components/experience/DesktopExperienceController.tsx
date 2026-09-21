@@ -47,6 +47,7 @@ export function DesktopExperienceController() {
   const phaseStartedAtRef = useRef(0);
   const phaseProgressRef = useRef(0);
   const frameRef = useRef(0);
+  const lastTickAtRef = useRef(0);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>(".desktop-shell");
@@ -138,6 +139,7 @@ export function DesktopExperienceController() {
       phaseStartedAtRef.current = now;
       phaseProgressRef.current = 0;
       launchIntentRef.current = 0;
+      lastTickAtRef.current = now;
       syncPresentation();
     };
 
@@ -168,11 +170,20 @@ export function DesktopExperienceController() {
 
     const tick = (now: number) => {
       frameRef.current = 0;
+      const previous = lastTickAtRef.current || now - 1000 / 60;
+      const elapsedSeconds = Math.max(
+        1 / 240,
+        Math.min(0.25, (now - previous) / 1000),
+      );
+      lastTickAtRef.current = now;
       const phase = phaseRef.current;
       if (phase === "inspect") {
         const delta = targetZoomRef.current - zoomRef.current;
         if (Math.abs(delta) > 0.0005) {
-          zoomRef.current += delta * 0.16;
+          // Time-based exponential damping: same feel at 60 Hz, 120 Hz,
+          // or under a temporarily slow renderer.
+          const alpha = 1 - Math.exp(-10 * elapsedSeconds);
+          zoomRef.current += delta * alpha;
         } else {
           zoomRef.current = targetZoomRef.current;
         }
@@ -257,6 +268,7 @@ export function DesktopExperienceController() {
       zoomRef.current = DESKTOP_EXPERIENCE.initialZoom;
       targetZoomRef.current = DESKTOP_EXPERIENCE.initialZoom;
       launchIntentRef.current = 0;
+      lastTickAtRef.current = 0;
       inspectPoseInto(poseRef.current, zoomRef.current);
       publish(0);
     };
