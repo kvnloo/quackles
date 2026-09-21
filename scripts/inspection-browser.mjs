@@ -133,7 +133,7 @@ try {
   await page.mouse.wheel(0, -180);
   await page.waitForTimeout(40);
   const early = await state(page);
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(1100);
   const settled = await state(page);
   const requestsSettled = await imageRequests(page);
 
@@ -177,9 +177,11 @@ try {
       );
   }
 
-  if (requestsSettled.length !== requestsBefore.length)
+  await page.waitForTimeout(350);
+  const requestsStable = await imageRequests(page);
+  if (requestsStable.length !== requestsSettled.length)
     throw new Error(
-      "viewfinder/inspection introduced an unexpected sequence image request",
+      "stable inspection kept issuing sequence image requests after detail settled",
     );
   if (
     settled.viewfinder.snapshotCount - before.viewfinder.snapshotCount >
@@ -329,6 +331,9 @@ try {
       released,
       requestsBefore: requestsBefore.length,
       requestsSettled: requestsSettled.length,
+      requestsStable: requestsStable.length,
+      rewound,
+      reinspected,
     },
     mobile: {
       before: mobileBefore,
