@@ -1,0 +1,833 @@
+{
+  "theme": "white",
+  "source_blend": "quality-final-white.blend",
+  "source_blend_sha256": "7b9f0b6dc09542b281d25d52129b6a9c892e8d9639da48403b98de2700e42421",
+  "robot_mesh_hash_before": "a81d06107f23d84afb65f99403b8bea27f82df697ac94a8e47ac16258820b38a",
+  "robot_mesh_hash_after": "a81d06107f23d84afb65f99403b8bea27f82df697ac94a8e47ac16258820b38a",
+  "source_geometry_unchanged": true,
+  "coordinates": "glTF Y-up metres; calibrated Blender pose0 transformed as (x,z-0.125,-y); node matrixWorld transforms local POSITION",
+  "rig_binding": "driveRig(poseAt0), update all world matrices, match bodyName and meshName, then transform patch geometry by patch.matrixWorld and inverse originalMesh.matrixWorld. Reuse original mesh transform. Match duplicates by closest world vertex centroid.",
+  "scope": "Only PHOTO-pigment-* head/body/thigh/foot meshes. Existing mechanical, face and lens meshes remain in the browser rig.",
+  "browser_geometry_limit": "This restores verified upstream STL surfaces. The older browser GLB has different mesh density; byte identity or surface equivalence to that asset has not been claimed or measured here.",
+  "source_normalization": "STL vertices rounded to 1e-7 m, coincident vertices welded, Blender validation; local positions and triangle/loop data exactly match the normalized source import.",
+  "materials": {
+    "Robot authored painted surface": {
+      "maps": {
+        "color": "robot-surface-color.png",
+        "metallic-roughness": "robot-surface-metallic-roughness.png",
+        "normal": "robot-surface-normal.png"
+      },
+      "width": 2048,
+      "emissive": false,
+      "channels": {
+        "color": "sRGB base color, no studio lighting",
+        "metallic-roughness": "linear RGB: R=1, G=roughness, B=metallic",
+        "normal": "linear tangent XYZ, positive Y"
+      },
+      "coat": 0.12,
+      "coatRoughness": 0.28
+    }
+  },
+  "objects": [
+    {
+      "bodyName": "ankle_left",
+      "meshName": "ankle_left.stl",
+      "sourceObjectName": "ankle_left__ankle_left.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "712488c2707191e5b0a35551eae10bc04c2e06df",
+      "normalized_mesh_sha256": "48657412519e73e39574e129c8b4be01dcaae955f11e752e9ed34124024ed86b",
+      "matrix_world_three_rows": [
+        [
+          0.7615365982055664,
+          0.7909641265869141,
+          0.0666256695985794,
+          0.0776558667421341
+        ],
+        [
+          -0.09587083011865616,
+          -2.682209014892578e-07,
+          1.0958153009414673,
+          0.03782765567302704
+        ],
+        [
+          0.7879540920257568,
+          -0.7644451856613159,
+          0.06893646717071533,
+          -0.052135441452264786
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.13654346764087677,
+        0.023963449522852898,
+        -0.02256368100643158
+      ],
+      "source_triangles": 4978,
+      "source_materials": [
+        "PHOTO-pigment-foot-near"
+      ]
+    },
+    {
+      "bodyName": "ankle_left",
+      "meshName": "foot_left.stl",
+      "sourceObjectName": "ankle_left__foot_left.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "43155ba3d9b1e40f6d8e6a4df7d30157ff202f75",
+      "normalized_mesh_sha256": "70124122e4827e2f8d5bf4d47ec9328df47a0bf2368e90947ba71acf844ef38b",
+      "matrix_world_three_rows": [
+        [
+          0.7615365982055664,
+          0.7909641265869141,
+          0.0666256695985794,
+          0.0776558667421341
+        ],
+        [
+          -0.09587083011865616,
+          -2.682209014892578e-07,
+          1.0958153009414673,
+          0.03782765567302704
+        ],
+        [
+          0.7879540920257568,
+          -0.7644451856613159,
+          0.06893646717071533,
+          -0.052135441452264786
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.12518881261348724,
+        0.00525028258562088,
+        -0.02562831901013851
+      ],
+      "source_triangles": 19904,
+      "source_materials": [
+        "PHOTO-pigment-foot-near"
+      ]
+    },
+    {
+      "bodyName": "ankle_left",
+      "meshName": "sole_left.stl",
+      "sourceObjectName": "ankle_left__sole_left.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "1fe55aac746723d2f2181d5f7aaa5aa1bfedcb73",
+      "normalized_mesh_sha256": "26235196747f9e1ef0f75c366968b0be1a1bb584ac7ad234d579abfc2f2b3c84",
+      "matrix_world_three_rows": [
+        [
+          0.7615365982055664,
+          0.7909641265869141,
+          0.0666256695985794,
+          0.0776558667421341
+        ],
+        [
+          -0.09587083011865616,
+          -2.682209014892578e-07,
+          1.0958153009414673,
+          0.03782765567302704
+        ],
+        [
+          0.7879540920257568,
+          -0.7644451856613159,
+          0.06893646717071533,
+          -0.052135441452264786
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.12627571821212769,
+        0.0046953777782619,
+        -0.027223041281104088
+      ],
+      "source_triangles": 15788,
+      "source_materials": [
+        "PHOTO-pigment-foot-near"
+      ]
+    },
+    {
+      "bodyName": "ankle_right",
+      "meshName": "ankle_right.stl",
+      "sourceObjectName": "ankle_right__ankle_right.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "e60bbf205af71d224bcb89cefc3646117238c51f",
+      "normalized_mesh_sha256": "8c9877d3ba4f7566469ee5919e0c291d596346b05022f8b2cb639686d0577505",
+      "matrix_world_three_rows": [
+        [
+          0.7615369558334351,
+          0.7909644842147827,
+          -0.06662534177303314,
+          0.08749806135892868
+        ],
+        [
+          0.09587085992097855,
+          -1.6391277313232422e-07,
+          1.0958147048950195,
+          0.03782767057418823
+        ],
+        [
+          0.7879544496536255,
+          -0.7644454836845398,
+          -0.06893669068813324,
+          -0.041951827704906464
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.059951018542051315,
+        0.023963939398527145,
+        -0.10180892795324326
+      ],
+      "source_triangles": 4976,
+      "source_materials": [
+        "PHOTO-pigment-foot-far"
+      ]
+    },
+    {
+      "bodyName": "ankle_right",
+      "meshName": "foot_right.stl",
+      "sourceObjectName": "ankle_right__foot_right.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "6971bbccdcfe1bf088f8ac618e772144d3a444fd",
+      "normalized_mesh_sha256": "38d4fd55a916f8ade88fd054d324cf1160c146c60f9d32e041bd0ade0a414e7c",
+      "matrix_world_three_rows": [
+        [
+          0.7615369558334351,
+          0.7909644842147827,
+          -0.06662534177303314,
+          0.08749806135892868
+        ],
+        [
+          0.09587085992097855,
+          -1.6391277313232422e-07,
+          1.0958147048950195,
+          0.03782767057418823
+        ],
+        [
+          0.7879544496536255,
+          -0.7644454836845398,
+          -0.06893669068813324,
+          -0.041951827704906464
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.06264187395572662,
+        0.005252895876765251,
+        -0.09030269086360931
+      ],
+      "source_triangles": 19894,
+      "source_materials": [
+        "PHOTO-pigment-foot-far"
+      ]
+    },
+    {
+      "bodyName": "ankle_right",
+      "meshName": "sole_right.stl",
+      "sourceObjectName": "ankle_right__sole_right.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "7d22f5cddcb7af58dff8f6deb356279e00b68485",
+      "normalized_mesh_sha256": "e5e4c17eb0ff5d0184da29b67fe9fb885ea36f7c6a2d6d5aebfc07c8b3ed611f",
+      "matrix_world_three_rows": [
+        [
+          0.7615369558334351,
+          0.7909644842147827,
+          -0.06662534177303314,
+          0.08749806135892868
+        ],
+        [
+          0.09587085992097855,
+          -1.6391277313232422e-07,
+          1.0958147048950195,
+          0.03782767057418823
+        ],
+        [
+          0.7879544496536255,
+          -0.7644454836845398,
+          -0.06893669068813324,
+          -0.041951827704906464
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.06404443830251694,
+        0.004712434485554695,
+        -0.0913659930229187
+      ],
+      "source_triangles": 15888,
+      "source_materials": [
+        "PHOTO-pigment-foot-far"
+      ]
+    },
+    {
+      "bodyName": "jaw_soft",
+      "meshName": "bottom_head_shell.stl",
+      "sourceObjectName": "jaw_soft__bottom_head_shell.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "643f11092df7f9f7c55e55c9c3e71d4e4c6cb27f",
+      "normalized_mesh_sha256": "4576a02e394c5f01643ef9da8088310514405920a004ab77c57ec009ca22924e",
+      "matrix_world_three_rows": [
+        [
+          0.764445424079895,
+          0.7323164343833923,
+          -0.2988930344581604,
+          0.06286665797233582
+        ],
+        [
+          -3.1195497740554856e-08,
+          0.41567298769950867,
+          1.018438458442688,
+          0.2544395625591278
+        ],
+        [
+          0.7909639477729797,
+          -0.7077640295028687,
+          0.28887197375297546,
+          -0.027994152158498764
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.06778250634670258,
+        0.25000640749931335,
+        -0.032911498099565506
+      ],
+      "source_triangles": 20970,
+      "source_materials": [
+        "PHOTO-pigment-head"
+      ]
+    },
+    {
+      "bodyName": "jaw_soft",
+      "meshName": "jaw.stl",
+      "sourceObjectName": "jaw_soft__jaw.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "d7b0e12b5aae0b482a0bf7ca36e97f93f435637d",
+      "normalized_mesh_sha256": "62de68e489ce88a8e96fdf9dbcb265689bd44ae69ebd78fcff69adba989b100d",
+      "matrix_world_three_rows": [
+        [
+          0.764445424079895,
+          0.7323164343833923,
+          -0.2988930344581604,
+          0.06292643398046494
+        ],
+        [
+          -3.1195497740554856e-08,
+          0.41567298769950867,
+          1.018438458442688,
+          0.2542358636856079
+        ],
+        [
+          0.7909639477729797,
+          -0.7077640295028687,
+          0.28887197375297546,
+          -0.02805192582309246
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.04499348625540733,
+        0.23899202048778534,
+        -0.004565645474940538
+      ],
+      "source_triangles": 9918,
+      "source_materials": [
+        "PHOTO-pigment-head"
+      ]
+    },
+    {
+      "bodyName": "jaw_soft",
+      "meshName": "jaw_soft.stl",
+      "sourceObjectName": "jaw_soft__jaw_soft.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "3c8bb13ec4028a479378d8cf0bfd6c5e5283655d",
+      "normalized_mesh_sha256": "6c5969de29bad80fb20bb70f35301cd43d95a4214d3029455741a675aa8c3951",
+      "matrix_world_three_rows": [
+        [
+          0.764445424079895,
+          0.7323164343833923,
+          -0.2988930344581604,
+          0.06295661628246307
+        ],
+        [
+          -3.1195497740554856e-08,
+          0.41567298769950867,
+          1.018438458442688,
+          0.2541341781616211
+        ],
+        [
+          0.7909639477729797,
+          -0.7077640295028687,
+          0.28887197375297546,
+          -0.028081094846129417
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.026118414476513863,
+        0.22585755586624146,
+        0.007509860210120678
+      ],
+      "source_triangles": 6726,
+      "source_materials": [
+        "PHOTO-pigment-head"
+      ]
+    },
+    {
+      "bodyName": "jaw_soft",
+      "meshName": "soft_mouth_top.stl",
+      "sourceObjectName": "jaw_soft__soft_mouth_top.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "43e95157dc9527478d9ad5bea4571bdce18e4a8b",
+      "normalized_mesh_sha256": "d2d141b81ecb0bf0e972691f2869d11ea5ebc90715e7cf488cefd34cb453317e",
+      "matrix_world_three_rows": [
+        [
+          0.764445424079895,
+          0.7323164343833923,
+          -0.2988930344581604,
+          0.06277738511562347
+        ],
+        [
+          -3.1195497740554856e-08,
+          0.41567298769950867,
+          1.018438458442688,
+          0.2545068562030792
+        ],
+        [
+          0.7909639477729797,
+          -0.7077640295028687,
+          0.28887197375297546,
+          -0.02790784277021885
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.02424308843910694,
+        0.2283424288034439,
+        0.00922160129994154
+      ],
+      "source_triangles": 7870,
+      "source_materials": [
+        "PHOTO-pigment-head"
+      ]
+    },
+    {
+      "bodyName": "jaw_soft",
+      "meshName": "top_head_shell.stl",
+      "sourceObjectName": "jaw_soft__top_head_shell.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "f446053309fc01ca0ddf866091995c173d9e1814",
+      "normalized_mesh_sha256": "32cd3700a6f79778364cd22fe95e95216b910a4815cab83eb0ea03eb8e7efeca",
+      "matrix_world_three_rows": [
+        [
+          0.764445424079895,
+          0.7323164343833923,
+          -0.2988930344581604,
+          0.06292643398046494
+        ],
+        [
+          -3.1195497740554856e-08,
+          0.41567298769950867,
+          1.018438458442688,
+          0.2542358636856079
+        ],
+        [
+          0.7909639477729797,
+          -0.7077640295028687,
+          0.28887197375297546,
+          -0.02805192582309246
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.05286850780248642,
+        0.2741211950778961,
+        -0.0184108205139637
+      ],
+      "source_triangles": 16120,
+      "source_materials": [
+        "PHOTO-pigment-head"
+      ]
+    },
+    {
+      "bodyName": "trunk_base",
+      "meshName": "left_shell.stl",
+      "sourceObjectName": "trunk_base__left_shell.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "9cb1656883bf27581c93479865a57d2be4956982",
+      "normalized_mesh_sha256": "dd135d94a789681122383550a6e3cd73320079f17c95b8e40aa0587dbda4ba52",
+      "matrix_world_three_rows": [
+        [
+          0.7644453644752502,
+          0.7909637689590454,
+          0.0,
+          0.09281893074512482
+        ],
+        [
+          0.0,
+          0.0,
+          1.100000023841858,
+          0.11531543731689453
+        ],
+        [
+          0.7909637689590454,
+          -0.7644453644752502,
+          0.0,
+          -0.05694221705198288
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.11263135075569153,
+        0.16307508945465088,
+        -0.04224882647395134
+      ],
+      "source_triangles": 20970,
+      "source_materials": [
+        "PHOTO-pigment-body"
+      ]
+    },
+    {
+      "bodyName": "trunk_base",
+      "meshName": "right_shell.stl",
+      "sourceObjectName": "trunk_base__right_shell.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "5879c3c7253fb9b2814227697ce6eb775d38df5a",
+      "normalized_mesh_sha256": "82712994613704241e3aeab7e5707591753fff9f0be2bd2fa76f21d3a708e2b1",
+      "matrix_world_three_rows": [
+        [
+          0.7644453644752502,
+          0.7909637689590454,
+          0.0,
+          0.09243670105934143
+        ],
+        [
+          0.0,
+          0.0,
+          1.100000023841858,
+          0.11540177464485168
+        ],
+        [
+          0.7909637689590454,
+          -0.7644453644752502,
+          0.0,
+          -0.05733770132064819
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.07833506911993027,
+        0.1632089614868164,
+        -0.07777193188667297
+      ],
+      "source_triangles": 20970,
+      "source_materials": [
+        "PHOTO-pigment-body"
+      ]
+    },
+    {
+      "bodyName": "upper_leg_left",
+      "meshName": "upper_leg_left.stl",
+      "sourceObjectName": "upper_leg_left__upper_leg_left.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "b02cccbc748e925bbb33a98f9dfce7346581e730",
+      "normalized_mesh_sha256": "eab7b81a2fbe94d6a26e3e6b47d51bf3ab66615d561a262c4081dd50137cac92",
+      "matrix_world_three_rows": [
+        [
+          0.7615364193916321,
+          -0.4771724343299866,
+          0.6343262195587158,
+          0.0928698256611824
+        ],
+        [
+          -0.09587080776691437,
+          -0.9279073476791382,
+          -0.5829219222068787,
+          0.11707952618598938
+        ],
+        [
+          0.7879539132118225,
+          0.34827515482902527,
+          -0.683983325958252,
+          -0.056889548897743225
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.15618707239627838,
+        0.09179800003767014,
+        -0.017569348216056824
+      ],
+      "source_triangles": 12250,
+      "source_materials": [
+        "PHOTO-pigment-thigh-near"
+      ]
+    },
+    {
+      "bodyName": "upper_leg_right",
+      "meshName": "upper_leg_right.stl",
+      "sourceObjectName": "upper_leg_right__upper_leg_right.stl",
+      "meshOccurrence": 0,
+      "git_blob_sha1": "8427f7e7ac30e0f93d226ef5f87766e66eb6f868",
+      "normalized_mesh_sha256": "47aab9beeb95b2ec29858f0a097f275a7f77166258844e5674ecd459c194331d",
+      "matrix_world_three_rows": [
+        [
+          0.7615364193916321,
+          -0.3643389344215393,
+          0.7052093148231506,
+          0.09276802837848663
+        ],
+        [
+          0.09587079286575317,
+          -0.9279071688652039,
+          -0.5829216241836548,
+          0.11707952618598938
+        ],
+        [
+          0.7879539132118225,
+          0.4650225043296814,
+          -0.6106411814689636,
+          -0.05699489265680313
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "world_vertex_centroid": [
+        0.05562910810112953,
+        0.0917980819940567,
+        -0.12161548435688019
+      ],
+      "source_triangles": 12250,
+      "source_materials": [
+        "PHOTO-pigment-thigh-far"
+      ]
+    }
+  ],
+  "export_audit": {
+    "objects": [
+      {
+        "sourceObjectName": "ankle_right__ankle_right.stl",
+        "source_vertices": 2476,
+        "exported_vertices_with_uv_normal_seams": 5166,
+        "source_triangles": 4976,
+        "exported_triangles": 4976,
+        "max_world_vertex_error_m": 6.376669858809692e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "ankle_right__foot_right.stl",
+        "source_vertices": 9925,
+        "exported_vertices_with_uv_normal_seams": 15294,
+        "source_triangles": 19894,
+        "exported_triangles": 19894,
+        "max_world_vertex_error_m": 6.376669858809692e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "ankle_right__sole_right.stl",
+        "source_vertices": 7946,
+        "exported_vertices_with_uv_normal_seams": 9030,
+        "source_triangles": 15888,
+        "exported_triangles": 15888,
+        "max_world_vertex_error_m": 6.295216792295832e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "upper_leg_right__upper_leg_right.stl",
+        "source_vertices": 6123,
+        "exported_vertices_with_uv_normal_seams": 9855,
+        "source_triangles": 12250,
+        "exported_triangles": 12250,
+        "max_world_vertex_error_m": 7.028863535651908e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "jaw_soft__bottom_head_shell.stl",
+        "source_vertices": 10477,
+        "exported_vertices_with_uv_normal_seams": 18675,
+        "source_triangles": 20970,
+        "exported_triangles": 20970,
+        "max_world_vertex_error_m": 7.11715699708293e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "jaw_soft__jaw.stl",
+        "source_vertices": 4949,
+        "exported_vertices_with_uv_normal_seams": 7719,
+        "source_triangles": 9918,
+        "exported_triangles": 9918,
+        "max_world_vertex_error_m": 7.190509876409124e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "jaw_soft__jaw_soft.stl",
+        "source_vertices": 3365,
+        "exported_vertices_with_uv_normal_seams": 3987,
+        "source_triangles": 6726,
+        "exported_triangles": 6726,
+        "max_world_vertex_error_m": 7.319034267538882e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "jaw_soft__soft_mouth_top.stl",
+        "source_vertices": 3937,
+        "exported_vertices_with_uv_normal_seams": 4516,
+        "source_triangles": 7870,
+        "exported_triangles": 7870,
+        "max_world_vertex_error_m": 7.99202837242774e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "jaw_soft__top_head_shell.stl",
+        "source_vertices": 8062,
+        "exported_vertices_with_uv_normal_seams": 11530,
+        "source_triangles": 16120,
+        "exported_triangles": 16120,
+        "max_world_vertex_error_m": 8.688795105626923e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "trunk_base__left_shell.stl",
+        "source_vertices": 10475,
+        "exported_vertices_with_uv_normal_seams": 20099,
+        "source_triangles": 20970,
+        "exported_triangles": 20970,
+        "max_world_vertex_error_m": 4.7706993910878737e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "trunk_base__right_shell.stl",
+        "source_vertices": 10475,
+        "exported_vertices_with_uv_normal_seams": 20353,
+        "source_triangles": 20970,
+        "exported_triangles": 20970,
+        "max_world_vertex_error_m": 3.650024282819686e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "ankle_left__ankle_left.stl",
+        "source_vertices": 2477,
+        "exported_vertices_with_uv_normal_seams": 5168,
+        "source_triangles": 4978,
+        "exported_triangles": 4978,
+        "max_world_vertex_error_m": 5.350040765961239e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "ankle_left__foot_left.stl",
+        "source_vertices": 9930,
+        "exported_vertices_with_uv_normal_seams": 15313,
+        "source_triangles": 19904,
+        "exported_triangles": 19904,
+        "max_world_vertex_error_m": 5.354294785320235e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "ankle_left__sole_left.stl",
+        "source_vertices": 7896,
+        "exported_vertices_with_uv_normal_seams": 9106,
+        "source_triangles": 15788,
+        "exported_triangles": 15788,
+        "max_world_vertex_error_m": 5.457582119561266e-08,
+        "oriented_triangle_connectivity_equal": true
+      },
+      {
+        "sourceObjectName": "upper_leg_left__upper_leg_left.stl",
+        "source_vertices": 6123,
+        "exported_vertices_with_uv_normal_seams": 9865,
+        "source_triangles": 12250,
+        "exported_triangles": 12250,
+        "max_world_vertex_error_m": 5.6189421115959703e-08,
+        "oriented_triangle_connectivity_equal": true
+      }
+    ],
+    "triangles": 209472,
+    "max_world_vertex_error_m": 8.688795105626923e-08,
+    "embedded_images": 3,
+    "materials": 1,
+    "bytes": 11771588,
+    "sha256": "fae6bffed1e358233345a230f50582d8491d62303cc4ce9bd267d2184b609a6c"
+  },
+  "validation_status": "Source/export geometry verified; phone-size visual review, articulation and browser performance pending.",
+  "themeColorMaps": {
+    "blue": "robot-surface-cobalt-color.webp",
+    "dark": "robot-surface-dark-color.webp"
+  },
+  "transport": {
+    "gzip": "robot-surface.glb.gz",
+    "raw": "robot-surface.glb",
+    "sha256": "fae6bffed1e358233345a230f50582d8491d62303cc4ce9bd267d2184b609a6c"
+  }
+}

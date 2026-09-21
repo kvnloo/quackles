@@ -6,7 +6,7 @@ import type { Pose } from "@/lib/pose";
 import { getThemeSnapshot } from "@/lib/theme";
 export function ContactShadow({ poseRef }: { poseRef: { current: Pose } }) {
   const mesh = useRef<Mesh>(null);
-  const uniforms = useMemo(() => ({ opacity: { value: 0.22 } }), []);
+  const uniforms = useMemo(() => ({ opacity: { value: 0.1 } }), []);
   useFrame(() => {
     const node = mesh.current;
     if (!node) return;
@@ -15,7 +15,7 @@ export function ContactShadow({ poseRef }: { poseRef: { current: Pose } }) {
     node.scale.setScalar(1 + p.explode * 0.8 + p.jump * 0.7);
     if (node.material instanceof ShaderMaterial)
       node.material.uniforms.opacity.value =
-        (0.22 + getThemeSnapshot() * 0.12) * (1 - p.jump * 0.78);
+        (0.1 + getThemeSnapshot() * 0.06) * (1 - p.jump * 0.78);
   });
   return (
     <mesh

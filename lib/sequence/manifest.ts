@@ -3,7 +3,7 @@ export type ThemeId = typeof THEME_IDS[number];
 export type Palette = { paper: string; deep: string; ink: string; cobalt: string };
 export type SequenceTheme = { id: ThemeId; label: string; palette: Palette };
 export type ImageAsset = { url: string; width: number; height: number; bytes?: number; sha256?: string };
-export type TileAsset = { width: number; height: number; tiles: { tileSize: number; columns: number; rows: number; urlTemplate: string } };
+export type TileAsset = { width: number; height: number; tiles: { tileSize: number; overlap: number; columns: number; rows: number; urlTemplate: string } };
 export type Variant = ImageAsset | TileAsset;
 export type SequenceFrame = { id: string; progress: number; phase: string; windPhase: number; assets: Record<ThemeId, Variant[]> };
 export type SequenceManifest = {
@@ -36,6 +36,11 @@ function number(value: unknown): number {
 function dimension(value: unknown): number {
   const n = number(value);
   if (!Number.isInteger(n) || n < 1 || n > 32768) throw new Error("Invalid sequence dimensions");
+  return n;
+}
+function overlap(value: unknown): number {
+  const n = number(value);
+  if (!Number.isInteger(n) || n < 0 || n > 16) throw new Error("Invalid sequence tile overlap");
   return n;
 }
 function list(value: unknown): unknown[] {
@@ -75,11 +80,11 @@ export function parseManifest(value: unknown, base: string): SequenceManifest {
         const asset = object(entry), width = dimension(asset.width), height = dimension(asset.height);
         if (Math.abs(width / height - aspect[0] / aspect[1]) > 0.002) throw new Error("Sequence variant framing differs");
         if (asset.tiles !== undefined) {
-          const tile = object(asset.tiles), tileSize = dimension(tile.tileSize), columns = dimension(tile.columns), rows = dimension(tile.rows);
+          const tile = object(asset.tiles), tileSize = dimension(tile.tileSize), columns = dimension(tile.columns), rows = dimension(tile.rows), tileOverlap = tile.overlap === undefined ? 0 : overlap(tile.overlap);
           if (columns !== Math.ceil(width / tileSize) || rows !== Math.ceil(height / tileSize)) throw new Error("Invalid sequence tile grid");
           const template = text(tile.urlTemplate);
           if (!template.includes("{x}") || !template.includes("{y}")) throw new Error("Tile URL requires x and y placeholders");
-          return { width, height, tiles: { tileSize, columns, rows, urlTemplate: url(template.replaceAll("{x}", "SEQUENCEX").replaceAll("{y}", "SEQUENCEY"), base).replaceAll("SEQUENCEX", "{x}").replaceAll("SEQUENCEY", "{y}") } };
+          return { width, height, tiles: { tileSize, overlap: tileOverlap, columns, rows, urlTemplate: url(template.replaceAll("{x}", "SEQUENCEX").replaceAll("{y}", "SEQUENCEY"), base).replaceAll("SEQUENCEX", "{x}").replaceAll("SEQUENCEY", "{y}") } };
         }
         return { url: url(asset.url, base), width, height, ...(asset.bytes === undefined ? {} : { bytes: number(asset.bytes) }), ...(asset.sha256 === undefined ? {} : { sha256: text(asset.sha256) }) };
       }).sort((a, b) => a.width - b.width);
@@ -114,11 +119,7 @@ export function spanAt(manifest: SequenceManifest, progress: number, reduced: bo
   }
   const after = frames[low], before = frames[Math.max(0, low - 1)];
   const span = after.progress - before.progress;
-  const t = span <= 0 ? 0 : (progress - before.progress) / span;
-  // Crossfading two Cycles poses double-exposes the robot (stop-motion ghosts)
-  // and retriggers decode every scroll pixel. Snap to the nearer still.
-  const frame = t < 0.5 ? before : after;
-  return { before: frame, after: frame, mix: 0 };
+  return { before, after, mix: span <= 0 ? 0 : (progress - before.progress) / span };
 }
 export function frameAt(manifest: SequenceManifest, progress: number, reduced: boolean): SequenceFrame {
   const { before, after, mix } = spanAt(manifest, progress, reduced);

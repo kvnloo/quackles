@@ -12,7 +12,7 @@ export function DuckCanvas() {
       camera={{ position: [0.41, 0.245, 0.71], fov: 32, near: 0.02, far: 10 }}
       dpr={[1, 1.5]}
       frameloop="demand"
-      shadows={false}
+      shadows="soft"
       resize={{ scroll: false, debounce: { resize: 150, scroll: 0 } }}
       gl={{
         antialias: true,

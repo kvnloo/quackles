@@ -220,3 +220,12 @@ Graph changes add `scroll-progress → spatial-scene-authority → phase-ownersh
 M16 now specifies eight checkpoints at 360 and 430 CSS pixels, dense forward/reverse traces, opacity 1, fixed set world matrices, continuous projected paths, intact pre-touchdown geometry, contact-owned explode onset, unchanged robot geometry and measured asset budgets. M17 compares one 1024-square PBR atlas with per-object textures on those same real set meshes. Both remain unpromoted until local evidence is recorded.
 
 The source retrieval was repeated after the PC restart. A registry verification page and documentation-navigation responses were replaced with official GitHub sources. Available disk capacity permitted this record to be saved. The final-trio visual review is separate in `work/research-engine/quality-trio-review.md`; it reports specific remaining material and lighting gaps rather than exact-match claims.
+
+
+## Round 7A — geometry identity constrains the codec search
+
+Recorded retrospectively after this bounded experiment, rather than presented as a preregistered test. The remaining geometry-transfer cost links source identity → permissible byte-preserving codecs → float entropy → compressed transfer → browser decode. Existing quantization advice does not satisfy the user's unchanged-mesh requirement. Read the official EXT meshopt specification and installed encoder documentation; compare identical channel and geometry bytes, including the final HTTP payload rather than intermediate GLB size.
+
+## Round 7B — reject the measured payload regression
+
+Encoded all 75 attribute/index views with EXT-compatible codec v0 and NONE filters. Decoding reproduced all 9,209,280 geometry bytes exactly; no quantization, index reorder, or simplification was used. Meshopt shrank the raw GLB from 11,771,588 to 9,270,488 bytes, but the final gzip grew from 7,492,826 to 7,991,460 bytes. Reject the treatment and its extra runtime decoder. The adopted transport is byte-identical ordinary gzip with a raw fallback. This is a local negative result, not a general claim against meshopt. Portable receipt: `receipts/robot-meshopt-receipt.json`; gzip control: `receipts/robot-transport.json`.

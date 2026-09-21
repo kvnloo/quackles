@@ -65,8 +65,7 @@ def apply_generated_limestone():
         cool.name = "LimestoneCool"
         cool.blend_type = "MULTIPLY"
         cool.inputs["Fac"].default_value = 1.0
-        # Day lock pedestals are mid gray concrete, not cream ivory.
-        cool.inputs[2].default_value = (0.28, 0.30, 0.34, 1.0)
+        cool.inputs[2].default_value = (0.52, 0.55, 0.60, 1.0)
         nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
         for tex in (diff, nor, rtex):
             nt.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])

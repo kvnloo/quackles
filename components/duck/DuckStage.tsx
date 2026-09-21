@@ -12,18 +12,22 @@ const LiveCanvas = dynamic(
 );
 
 export function DuckStage() {
-  const { setReady, setWebgl } = useExperience();
+  const { setWebgl } = useExperience();
   const [supported] = useState(() => detectWebGL());
+  const [fault, setFault] = useState(false);
+  useEffect(() => {
+    window.__QUACKLES_FAIL_CANVAS__ = () => setFault(true);
+    return () => { delete window.__QUACKLES_FAIL_CANVAS__; };
+  }, []);
 
   useEffect(() => {
     const id = window.setTimeout(() => {
       setWebgl(supported);
-      // Cycles plates are the first frame; do not hold the hatch on WebGL.
-      if (!supported) setReady(true);
     }, 0);
     return () => window.clearTimeout(id);
-  }, [supported, setReady, setWebgl]);
+  }, [supported, setWebgl]);
 
+  if (fault) throw new Error("Quackles controlled canvas error");
   if (!supported) return null;
   return <LiveCanvas />;
 }

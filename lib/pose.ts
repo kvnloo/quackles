@@ -11,6 +11,8 @@ export type Pose = {
   crouch: number;
   explode: number;
   jump: number;
+  /** 0 = authored cinematic joints; 1 = official simulator DEFAULT_POSE. */
+  simulatorBlend?: number;
   lookAt: Vec3;
   camPos: Vec3;
   fov: number;
@@ -24,24 +26,32 @@ export function smoothstep(t: number) {
 export function interval(p: number, start: number, end: number) {
   return smoothstep((p - start) / (end - start));
 }
-export function sceneMix(p: number) {
-  return interval(p, 0.06, 0.18);
-}
+export const CHOREOGRAPHY = {
+  cameraStart: 0.06,
+  cameraEnd: 0.26,
+  crouchStart: 0.26,
+  takeoff: 0.34,
+  impact: 0.56,
+  compressionEnd: 0.64,
+  exploded: 0.84,
+} as const;
+
 export function poseAtInto(out: Pose, progress: number): Pose {
   const p = clamp01(progress);
-  const enter = interval(p, 0.18, 0.32);
-  const explosion = interval(p, 0.22, 0.4) * (1 - interval(p, 0.44, 0.58));
-  const flight = clamp01((p - 0.7) / 0.21);
+  const orbit = interval(p, CHOREOGRAPHY.cameraStart, CHOREOGRAPHY.cameraEnd);
+  const inspection = interval(p, CHOREOGRAPHY.impact, 0.92);
+  const explosion = interval(p, CHOREOGRAPHY.impact, CHOREOGRAPHY.exploded);
+  const flight = clamp01((p - CHOREOGRAPHY.takeoff) / (CHOREOGRAPHY.impact - CHOREOGRAPHY.takeoff));
   const jump = Math.sin(Math.PI * flight) ** 2;
-  const squat = Math.sin(Math.PI * clamp01((p - 0.62) / 0.08)) ** 2;
-  const land = Math.sin(Math.PI * clamp01((p - 0.91) / 0.06)) ** 2;
-  out.duckPosition[0] = lerp(calibration.rootPosition[0], 0, enter);
-  out.duckPosition[1] = 0;
-  out.duckPosition[2] = lerp(calibration.rootPosition[2], 0, enter);
+  const squat = Math.sin(Math.PI * clamp01((p - CHOREOGRAPHY.crouchStart) / (CHOREOGRAPHY.takeoff - CHOREOGRAPHY.crouchStart))) ** 2;
+  const land = Math.sin(Math.PI * clamp01((p - CHOREOGRAPHY.impact) / (CHOREOGRAPHY.compressionEnd - CHOREOGRAPHY.impact))) ** 2;
+  out.duckPosition[0] = calibration.rootPosition[0];
+  out.duckPosition[1] = explosion * 0.34;
+  out.duckPosition[2] = calibration.rootPosition[2];
   out.duckRotation[0] = -jump * 0.08;
-  out.duckRotation[1] = lerp(calibration.rootYaw + Math.PI / 2, -0.3, enter);
+  out.duckRotation[1] = calibration.rootYaw + Math.PI / 2;
   out.duckRotation[2] = 0;
-  out.duckScale = lerp(calibration.rootScale, 1, enter);
+  out.duckScale = calibration.rootScale;
   out.headPitch = calibration.head - jump * 0.12;
   out.headYaw = 0;
   out.neckPitch = calibration.neck + squat * 0.08;
@@ -49,18 +59,19 @@ export function poseAtInto(out: Pose, progress: number): Pose {
   out.crouch = squat * 0.7 + land * 0.28;
   out.explode = explosion;
   out.jump = jump;
-  out.lookAt[0] = lerp(calibration.target[0], 0, enter);
-  out.lookAt[1] =
-    lerp(calibration.target[1], 0.18, enter) +
-    explosion * 0.08 -
-    interval(p, 0.94, 1) * 0.055;
-  out.lookAt[2] = lerp(calibration.target[2], 0, enter);
-  out.camPos[0] = lerp(calibration.position[0], 0.44, enter);
-  out.camPos[1] = lerp(calibration.position[1], 0.28, enter);
-  out.camPos[2] = lerp(calibration.position[2], 0.94, enter) + explosion * 0.2;
-  out.fov = lerp(calibration.verticalFov, 32, enter);
+  out.simulatorBlend = 0;
+  out.lookAt[0] = lerp(lerp(calibration.target[0], calibration.rootPosition[0], orbit), 0.096, inspection);
+  out.lookAt[1] = lerp(calibration.target[1], 0.16, orbit) + jump * 0.12 + explosion * 0.36;
+  out.lookAt[2] = lerp(lerp(calibration.target[2], calibration.rootPosition[2], orbit), -0.06, inspection);
+  const azimuth = lerp(0.35, -1.7, inspection);
+  const distance = lerp(0.8, 0.95, explosion);
+  out.camPos[0] = lerp(calibration.position[0], calibration.rootPosition[0] + Math.sin(azimuth) * distance, orbit);
+  out.camPos[1] = lerp(calibration.position[1], 0.21, orbit) + jump * 0.04 - explosion * 0.24;
+  out.camPos[2] = lerp(calibration.position[2], calibration.rootPosition[2] + Math.cos(azimuth) * distance, orbit);
+  out.fov = lerp(lerp(calibration.verticalFov, 43, orbit), 43, explosion);
   return out;
 }
+
 export function poseAt(p: number): Pose {
   return poseAtInto(
     {
@@ -82,5 +93,5 @@ export function poseAt(p: number): Pose {
   );
 }
 export function sectionIndex(p: number) {
-  return p < 0.18 ? 0 : p < 0.62 ? 1 : 2;
+  return p < CHOREOGRAPHY.crouchStart ? 0 : p < CHOREOGRAPHY.impact ? 1 : 2;
 }

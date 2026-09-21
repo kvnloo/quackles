@@ -50,7 +50,7 @@ export function PosterPlates() {
         sizes="(max-width:430px) 100vw,430px"
         width={1024}
         height={1536}
-        style={{ opacity: 1 }}
+        style={{ opacity: 0 }}
         decoding="async"
         alt=""
         aria-hidden

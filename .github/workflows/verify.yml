@@ -23,3 +23,32 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Start static preview
+        run: |
+          npm run preview > /tmp/quackles-preview.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:43217/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/quackles-preview.log
+          exit 1
+      - name: Validate cursor-anchored hero inspection
+        run: npm run test:inspection
+      - name: Upload hero inspection evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hero-inspection-${{ github.sha }}
+          path: artifacts/hero-inspection
+          if-no-files-found: warn
+      - name: Validate cinematic handoff
+        run: npm run test:cinematic
+      - name: Upload cinematic handoff evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-handoff-${{ github.sha }}
+          path: artifacts/cinematic-handoff
+          if-no-files-found: warn

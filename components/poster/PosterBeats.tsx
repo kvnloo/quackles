@@ -4,13 +4,13 @@ export function PosterBeats() {
     <div className="story-overlays">
       <section className="motion-copy explode-copy" aria-label="Exploded view">
         <p className="hero-kicker">
-          02 &nbsp; ASSEMBLY <i />
+          03 &nbsp; ASSEMBLY <i />
         </p>
         <h2>EXPLODE</h2>
       </section>
       <section className="motion-copy jump-copy" aria-label="Jump">
         <p className="hero-kicker">
-          03 &nbsp; MOTION <i />
+          02 &nbsp; MOTION <i />
         </p>
         <h2>JUMP</h2>
       </section>
@@ -28,7 +28,7 @@ export function PosterBeats() {
             </div>
           ))}
         </dl>
-        <a href={LINKS.source} target="_blank" rel="noreferrer">
+        <a href={LINKS.github} target="_blank" rel="noreferrer">
           EXPLORE THE SOURCE ↗
         </a>
       </section>

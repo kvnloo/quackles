@@ -1,7 +1,7 @@
 import { THEME_IDS, type SequenceManifest, type ThemeId } from "./manifest";
 
 type State = { progress: number; theme: number; target: number; reducedMotion: boolean };
-let state: State = { progress: 0, theme: 0, target: 0, reducedMotion: false };
+let state: State = { progress: 0, theme: 2, target: 2, reducedMotion: false };
 let manifest: SequenceManifest | null = null;
 let displayedTheme = -1;
 let animation = 0;
@@ -15,28 +15,20 @@ function mix(a: string, b: string, t: number) {
 }
 function publish(next: State) {
   state = next;
-  applyPalette(next.theme);
   listeners.forEach((listener) => listener());
 }
 export function applyPalette(theme: number) {
-  if (!manifest || typeof document === "undefined") return;
-  if (theme === displayedTheme) return;
-  const low = Math.floor(theme), high = Math.ceil(theme), fraction = theme - low;
-  const a = manifest.themes[low]?.palette, b = manifest.themes[high]?.palette;
-  if (!a || !b) return;
-  const root = document.documentElement;
-  const paper = mix(a.paper, b.paper, fraction);
-  const deep = mix(a.deep, b.deep, fraction);
-  const ink = mix(a.ink, b.ink, fraction);
-  const cobalt = mix(a.cobalt, b.cobalt, fraction);
-  root.style.setProperty("--paper", paper);
-  root.style.setProperty("--paper-deep", deep);
-  root.style.setProperty("--ink", ink);
-  root.style.setProperty("--cobalt", cobalt);
-  root.style.setProperty("--background", paper);
-  root.style.setProperty("--foreground", ink);
-  root.dataset.tone = THEME_IDS[Math.round(theme)] ?? root.dataset.tone;
-  displayedTheme = theme;
+  if (manifest && theme !== displayedTheme) {
+    const low = Math.floor(theme), high = Math.ceil(theme), fraction = theme - low;
+    const a = manifest.themes[low].palette, b = manifest.themes[high].palette;
+    const root = document.documentElement;
+    root.style.setProperty("--paper", mix(a.paper, b.paper, fraction));
+    root.style.setProperty("--paper-deep", mix(a.deep, b.deep, fraction));
+    root.style.setProperty("--ink", mix(a.ink, b.ink, fraction));
+    root.style.setProperty("--cobalt", mix(a.cobalt, b.cobalt, fraction));
+    root.dataset.tone = THEME_IDS[Math.round(theme)];
+    displayedTheme = theme;
+  }
 }
 export function configure(manifestValue: SequenceManifest) {
   manifest = manifestValue;

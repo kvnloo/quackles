@@ -14,16 +14,16 @@ const mono = localFont({
   display: "swap",
 });
 export const metadata: Metadata = {
-  title: "Quackles · fan study",
+  title: "Quackles · Microduck",
   description:
-    "Unofficial fan study: Hermes-style poster with Microduck in frame. Not Nous Research or Pollen Robotics.",
+    "A study of Microduck, the open source biped by Pollen Robotics. Product, exploded view, and jump.",
   other: { "microduck-build": BUILD_STAMP },
 };
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      data-tone="day"
+      data-tone="blue"
       className={`${display.variable} ${mono.variable}`}
     >
       <body>{children}</body>
