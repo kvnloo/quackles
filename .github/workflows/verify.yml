@@ -43,3 +43,74 @@ jobs:
           name: desktop-validation-${{ github.sha }}
           path: artifacts/desktop-validation
           if-no-files-found: warn
+
+
+  branch-visual-audit:
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/live-cinematic-sim-handoff'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: main
+            ref: main
+          - id: cursor-hq
+            ref: cursor/duck-hq-hero-757a
+          - id: cursor-quiet
+            ref: cursor/quiet-product-scroll-32fe
+          - id: nightly
+            ref: nightly
+          - id: nightly-source
+            ref: nightly-source
+          - id: dev
+            ref: dev
+          - id: recovery-day
+            ref: recovery/day-reference
+          - id: recovery-gigapixel
+            ref: recovery/gigapixel
+    steps:
+      - name: Checkout audit harness
+        uses: actions/checkout@v4
+        with:
+          path: harness
+      - name: Checkout visual candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+          path: target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: target/package-lock.json
+      - name: Install candidate
+        working-directory: target
+        run: npm ci
+      - name: Build candidate
+        working-directory: target
+        run: npm run build
+      - name: Start candidate
+        run: |
+          cd target
+          npm run preview > /tmp/quackles-${{ matrix.id }}.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:43217/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/quackles-${{ matrix.id }}.log
+          exit 1
+      - name: Capture actual pixels
+        run: node harness/scripts/branch-visual-audit.mjs
+        env:
+          LABEL: ${{ matrix.id }}
+          ARTIFACTS: artifacts/branch-visual
+      - name: Upload branch visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: branch-visual-${{ matrix.id }}-${{ github.sha }}
+          path: artifacts/branch-visual
+          if-no-files-found: warn
