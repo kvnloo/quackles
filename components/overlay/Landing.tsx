@@ -7,6 +7,7 @@ import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
 import { FeelEngine } from "@/components/feel/FeelEngine";
+import { MotionSurface } from "@/components/motion/MotionSurface";
 
 export function Landing() {
   return <main id="top" className="phone-shell" data-testid="experience">
@@ -15,6 +16,7 @@ export function Landing() {
     <div className="poster-stage">
       <SequenceFrame>
         <SequencePlayer />
+        <MotionSurface />
         <PosterNav />
         <PosterHeroCopy />
         <PosterBeats />
