@@ -3,6 +3,11 @@ import type { ImageAsset } from "./manifest";
 export const DECODED_BUDGET = 96 * 1024 * 1024;
 const COMPRESSED_BUDGET = 128 * 1024 * 1024;
 const HIGH_TIER = 12 * 1024 * 1024;
+export type FrameCacheOptions = {
+  decodedBudgetBytes?: number;
+  compressedBudgetBytes?: number;
+  maxActiveJobs?: number;
+};
 export type Decoded = { key: string; asset: ImageAsset; bitmap: ImageBitmap; bytes: number; touched: number };
 type Job = { asset: ImageAsset; priority: number; bytes: number; reserved: boolean; controller: AbortController; resolve: (image: Decoded) => void; reject: (error: Error) => void; promise: Promise<Decoded>; active: boolean };
 
@@ -11,7 +16,9 @@ class CompressedCache {
   private sizes = new Map<string, number>();
   private writes: Promise<void> = Promise.resolve();
   bytes = 0;
-  constructor(revision: string) {
+  readonly budgetBytes: number;
+  constructor(revision: string, budgetBytes = COMPRESSED_BUDGET) {
+    this.budgetBytes = budgetBytes;
     this.cache = this.open(revision);
   }
   private async open(revision: string) {
@@ -25,7 +32,7 @@ class CompressedCache {
         const bytes = Number(response?.headers.get("x-sequence-bytes")) || 0;
         this.sizes.set(key.url, bytes); this.bytes += bytes;
       }
-      while (this.bytes > COMPRESSED_BUDGET) {
+      while (this.bytes > this.budgetBytes) {
         const oldest = this.sizes.entries().next().value;
         if (!oldest) break;
         await cache.delete(oldest[0]); this.sizes.delete(oldest[0]); this.bytes -= oldest[1];
@@ -47,10 +54,10 @@ class CompressedCache {
   write(url: string, blob: Blob) {
     this.writes = this.writes.then(async () => {
       const cache = await this.cache;
-      if (!cache || blob.size > COMPRESSED_BUDGET) return;
+      if (!cache || blob.size > this.budgetBytes) return;
       const previous = this.sizes.get(url) ?? 0;
       if (previous) { await cache.delete(url); this.sizes.delete(url); this.bytes -= previous; }
-      while (this.bytes + blob.size > COMPRESSED_BUDGET && this.sizes.size) {
+      while (this.bytes + blob.size > this.budgetBytes && this.sizes.size) {
         const oldest = this.sizes.entries().next().value;
         if (!oldest) break;
         await cache.delete(oldest[0]); this.sizes.delete(oldest[0]); this.bytes -= oldest[1];
@@ -82,7 +89,16 @@ export class FrameCache {
   private completedDecodes = 0;
   private closedBitmaps = 0;
   private failures = 0;
-  constructor(revision: string) { this.disk = new CompressedCache(revision); }
+  private decodedBudgetBytes: number;
+  private maxActiveJobs: number;
+  constructor(revision: string, options: FrameCacheOptions = {}) {
+    this.decodedBudgetBytes = options.decodedBudgetBytes ?? DECODED_BUDGET;
+    this.maxActiveJobs = options.maxActiveJobs ?? 3;
+    this.disk = new CompressedCache(
+      revision,
+      options.compressedBudgetBytes ?? COMPRESSED_BUDGET,
+    );
+  }
   peek(key: string): Decoded | undefined {
     const image = this.decoded.get(key);
     if (image) image.touched = performance.now();
@@ -105,7 +121,7 @@ export class FrameCache {
     if (existing) { existing.priority = Math.max(existing.priority, priority); return existing.promise; }
     if (this.disposed) return Promise.reject(new DOMException("Player disposed", "AbortError"));
     const bytes = asset.width * asset.height * 4;
-    if (bytes > DECODED_BUDGET) return Promise.reject(new Error("Full image exceeds the decoded budget; use tiles"));
+    if (bytes > this.decodedBudgetBytes) return Promise.reject(new Error("Full image exceeds the decoded budget; use tiles"));
     let resolve!: Job["resolve"], reject!: Job["reject"];
     const promise = new Promise<Decoded>((success, failure) => { resolve = success; reject = failure; });
     this.jobs.set(asset.url, { asset, priority, bytes, reserved: false, controller: new AbortController(), resolve, reject, promise, active: false });
@@ -114,17 +130,17 @@ export class FrameCache {
   }
   private room(bytes: number) {
     const evictable = [...this.decoded.values()].filter((image) => !this.pinned.has(image.key)).sort((a, b) => a.touched - b.touched);
-    while (this.used + this.reserved + bytes > DECODED_BUDGET && evictable.length) {
+    while (this.used + this.reserved + bytes > this.decodedBudgetBytes && evictable.length) {
       const image = evictable.shift()!;
       this.decoded.delete(image.key); this.used -= image.bytes; this.close(image.bitmap);
     }
-    return this.used + this.reserved + bytes <= DECODED_BUDGET;
+    return this.used + this.reserved + bytes <= this.decodedBudgetBytes;
   }
   private pump() {
     if (this.disposed) return;
     const pending = [...this.jobs.values()].filter((job) => !job.active).sort((a, b) => b.priority - a.priority);
     for (const job of pending) {
-      if (this.active >= 3) break;
+      if (this.active >= this.maxActiveJobs) break;
       const high = job.bytes >= HIGH_TIER;
       if ((high && this.highActive) || !this.room(job.bytes)) continue;
       job.active = true; this.active++; if (high) this.highActive++;
@@ -170,7 +186,7 @@ export class FrameCache {
   }
   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
   stats() {
-    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: DECODED_BUDGET, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, compressedBytes: this.disk.bytes, compressedBudgetBytes: COMPRESSED_BUDGET };
+    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
   }
   dispose() {
     this.disposed = true;

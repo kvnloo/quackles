@@ -3,10 +3,11 @@
 import { useEffect, useRef } from "react";
 import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
-import { DECODED_BUDGET, FrameCache } from "@/lib/sequence/cache";
+import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId } from "@/lib/sequence/manifest";
 import { detailPlan, inspectionCrop, paintBase, paintDetail, viewportCrop } from "@/lib/sequence/render";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
+import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { applyPalette, configure, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
 import { applyStoryProgress } from "./SequenceScroll";
 
@@ -21,18 +22,20 @@ type SequenceDebug = {
     surfaceBytes: number;
     zoom: number;
     inspection: ReturnType<typeof inspectionSnapshot>;
+    profile: SequencePerfProfile;
   };
 };
 declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug } }
 
 export function SequencePlayer() {
-  const host = useRef<HTMLDivElement>(null), camera = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null);
+  const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null);
   useEffect(() => {
-    const container = host.current, cameraNode = camera.current, baseCanvas = base.current, detailCanvas = detail.current;
-    if (!container || !cameraNode || !baseCanvas || !detailCanvas) return;
+    const container = host.current, baseCanvas = base.current, detailCanvas = detail.current;
+    if (!container || !baseCanvas || !detailCanvas) return;
+    const profile = sequencePerfProfile();
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null;
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
-    let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "";
+    let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
     const waiting = new Set<string>(), failed = new Set<string>();
     const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0 };
@@ -61,18 +64,13 @@ export function SequencePlayer() {
       const afterAssets = span.mix > 0 && span.after !== span.before ? themes.map((theme) => imageAt(span.after, theme, 1024)) : [];
       const assets = [...beforeAssets, ...afterAssets];
       const rect = container!.getBoundingClientRect();
-      const inspection = inspectionSnapshot();
-      cameraNode!.style.transformOrigin = `${inspection.focusX * 100}% ${inspection.focusY * 100}%`;
-      cameraNode!.style.transform =
-        inspection.zoom > 1.0005 ? `scale(${inspection.zoom})` : "none";
-
       const sourceWidths = themes.map((theme) =>
         Math.max(...frame.assets[theme].map((variant) => variant.width)),
       );
       const maxSourceWidth = Math.min(...sourceWidths);
       setInspectionMaxZoom(
         Math.min(
-          8,
+          profile.maxZoomCap,
           Math.max(
             1,
             maxSourceWidth / Math.max(1, rect.width * devicePixelRatio),
@@ -93,7 +91,10 @@ export function SequencePlayer() {
               inspect.targetFocusY,
             )
           : nativeCrop;
-      const desiredWidth = Math.ceil(rect.width * devicePixelRatio * crop.scale);
+      const desiredWidth = Math.min(
+        profile.maxDetailWidth,
+        Math.ceil(rect.width * devicePixelRatio * crop.scale),
+      );
       const nextIntent = `${span.before.id}/${span.after.id}/${span.mix}/${current.theme}/${desiredWidth}`;
       if (nextIntent !== intentKey) { intentKey = nextIntent; generation++; }
       state.requested = { frameId: frame.id, frameProgress: frame.progress, progress: current.progress, themes, mix, tierWidth: desiredWidth, generation, urls: assets.map((asset) => asset.url) };
@@ -101,7 +102,15 @@ export function SequencePlayer() {
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
       let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
       if (settled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
-        const plan = detailPlan(frame.assets[themes[0]], desiredWidth, crop, DECODED_BUDGET - beforeAssets[0].width * beforeAssets[0].height * 4);
+        const plan = detailPlan(
+          frame.assets[themes[0]],
+          desiredWidth,
+          crop,
+          profile.decodedBudgetBytes -
+            beforeAssets[0].width * beforeAssets[0].height * 4,
+          profile.tileOverscan,
+          profile.maxDetailWidth,
+        );
         if (plan && plan.variant.width > beforeAssets[0].width) {
           detailVariant = plan.variant;
           detailTasks = plan.tasks;
@@ -133,6 +142,7 @@ export function SequencePlayer() {
         state.rendered = { ...state.requested, tierWidth: beforeAssets[0].width, urls: [...paintedKeys] };
         if (fallback.current) fallback.current.style.visibility = "hidden";
         baseCanvas!.style.visibility = "visible";
+        window.dispatchEvent(new Event("quackles:base-painted"));
       }
       if (baseKey === nextBase) applyStoryProgress(current.progress);
       if (detailVariant && detailTasks.length && baseKey === nextBase) {
@@ -152,14 +162,28 @@ export function SequencePlayer() {
       schedule();
     };
     const unsubscribe = subscribe(changed);
-    const unsubscribeInspection = subscribeInspection(schedule);
+    const inspectionChanged = () => {
+      const next = inspectionSnapshot();
+      const nextKey = [
+        next.active ? 1 : 0,
+        next.targetZoom.toFixed(4),
+        next.targetFocusX.toFixed(4),
+        next.targetFocusY.toFixed(4),
+        next.maxZoom.toFixed(3),
+      ].join("/");
+      if (nextKey === inspectionIntentKey) return;
+      inspectionIntentKey = nextKey;
+      schedule();
+    };
+    inspectionChanged();
+    const unsubscribeInspection = subscribeInspection(inspectionChanged);
     const observer = new ResizeObserver(changed); observer.observe(container);
     visualViewport?.addEventListener("resize", changed);
     visualViewport?.addEventListener("scroll", changed);
     window.__QUACKLES_SEQUENCE__ = {
       setProgress(value) { scrollTo({ top: Math.max(0, Math.min(1, value)) * Math.max(1, document.documentElement.scrollHeight - innerHeight), behavior: "instant" }); setProgress(value); },
       setTheme: selectTheme,
-      getState: () => ({ ...state, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot() }),
+      getState: () => ({ ...state, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot(), profile }),
     };
     const controller = new AbortController();
     void (async () => {
@@ -168,7 +192,12 @@ export function SequencePlayer() {
         if (!response.ok) throw new Error(`Sequence manifest failed: ${response.status}`);
         const parsed = parseManifest(await response.json(), response.url);
         if (cancelled) return;
-        manifest = parsed; cache = new FrameCache(parsed.id);
+        manifest = parsed;
+        cache = new FrameCache(parsed.id, {
+          decodedBudgetBytes: profile.decodedBudgetBytes,
+          compressedBudgetBytes: profile.compressedBudgetBytes,
+          maxActiveJobs: profile.maxActiveJobs,
+        });
         state.manifestId = parsed.id; state.frameCount = parsed.frames.length;
         state.frames = parsed.frames.map(({ id, progress, phase }) => ({ id, progress, phase }));
         configure(parsed); schedule();
@@ -184,7 +213,7 @@ export function SequencePlayer() {
     };
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">
-    <div ref={camera} className="sequence-camera">
+    <div className="sequence-camera">
       <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />
       <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
       <canvas ref={detail} className="sequence-detail" aria-hidden />

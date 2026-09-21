@@ -51,13 +51,38 @@ export function tileAssets(variant: TileAsset, crop: Crop, overscan = 1) {
   }
   return result;
 }
-export function detailPlan(variants: Variant[], desiredWidth: number, crop: Crop, budget: number) {
-  const preferred = variants.findIndex((variant) => variant.width >= desiredWidth);
-  for (let i = preferred < 0 ? variants.length - 1 : preferred; i >= 0; i--) {
-    const variant = variants[i];
-    for (const overscan of isImage(variant) ? [0] : [1, 0]) {
-      const tasks = isImage(variant) ? [{ asset: variant, x: 0, y: 0, sourceX: 0, sourceY: 0 }] : tileAssets(variant, crop, overscan);
-      const bytes = tasks.reduce((sum, { asset }) => sum + asset.width * asset.height * 4, 0);
+export function detailPlan(
+  variants: Variant[],
+  desiredWidth: number,
+  crop: Crop,
+  budget: number,
+  maxOverscan = 1,
+  maxVariantWidth = Number.POSITIVE_INFINITY,
+) {
+  const allowed = variants.filter((variant) => variant.width <= maxVariantWidth);
+  const candidates = allowed.length ? allowed : variants.slice(0, 1);
+  const preferred = candidates.findIndex(
+    (variant) => variant.width >= desiredWidth,
+  );
+  for (
+    let i = preferred < 0 ? candidates.length - 1 : preferred;
+    i >= 0;
+    i--
+  ) {
+    const variant = candidates[i];
+    const overscans = isImage(variant)
+      ? [0]
+      : maxOverscan > 0
+        ? [1, 0]
+        : [0];
+    for (const overscan of overscans) {
+      const tasks = isImage(variant)
+        ? [{ asset: variant, x: 0, y: 0, sourceX: 0, sourceY: 0 }]
+        : tileAssets(variant, crop, overscan);
+      const bytes = tasks.reduce(
+        (sum, { asset }) => sum + asset.width * asset.height * 4,
+        0,
+      );
       if (bytes <= budget) return { variant, tasks };
     }
   }

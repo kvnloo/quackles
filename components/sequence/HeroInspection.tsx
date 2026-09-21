@@ -32,7 +32,8 @@ function normalizedWheelDelta(event: WheelEvent) {
 export function HeroInspection() {
   useEffect(() => {
     const frame = document.querySelector<HTMLElement>(".poster-frame");
-    if (!frame) return;
+    const camera = document.querySelector<HTMLElement>(".sequence-camera");
+    if (!frame || !camera) return;
 
     const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
     let animation = 0;
@@ -40,7 +41,14 @@ export function HeroInspection() {
 
     const syncFrameState = (state: InspectionState) => {
       frame.dataset.inspecting = state.active ? "true" : "false";
-      frame.style.setProperty("--inspection-amount", String(Math.max(0, state.zoom - 1)));
+      frame.style.setProperty(
+        "--inspection-amount",
+        String(Math.max(0, state.zoom - 1)),
+      );
+      camera.style.transformOrigin =
+        `${state.focusX * 100}% ${state.focusY * 100}%`;
+      camera.style.transform =
+        state.zoom > 1.0005 ? `scale(${state.zoom})` : "none";
     };
 
     const tick = (now: number) => {
@@ -232,6 +240,8 @@ export function HeroInspection() {
       resetInspection();
       delete frame.dataset.inspecting;
       frame.style.removeProperty("--inspection-amount");
+      camera.style.transform = "none";
+      camera.style.transformOrigin = "50% 50%";
     };
   }, []);
 

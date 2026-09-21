@@ -17,7 +17,8 @@ const CHROME =
     "/usr/bin/chromium-browser",
   ].find((candidate) => fs.existsSync(candidate));
 
-if (!CHROME) throw new Error("Hero inspection validation requires Chrome/Chromium");
+if (!CHROME)
+  throw new Error("Hero inspection validation requires Chrome/Chromium");
 await fsp.mkdir(OUT, { recursive: true });
 
 const browser = await chromium.launch({
@@ -25,33 +26,90 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox", "--disable-dev-shm-usage"],
 });
-const context = await browser.newContext({
-  viewport: { width: 1440, height: 1000 },
-  deviceScaleFactor: 1,
-});
-const page = await context.newPage();
 const errors = [];
-page.on("pageerror", (error) => errors.push(error.message));
 
-const state = () =>
+const imageRequests = (page) =>
+  page.evaluate(() =>
+    performance
+      .getEntriesByType("resource")
+      .map((entry) => entry.name)
+      .filter((url) =>
+        /\/sequence\/.*\.(?:webp|png|avif)(?:\?|$)/i.test(url),
+      ),
+  );
+
+const state = (page) =>
   page.evaluate(() => ({
     inspection: window.__QUACKLES_INSPECTION__?.getState() ?? null,
     sequence: window.__QUACKLES_SEQUENCE__?.getState() ?? null,
+    viewfinder: window.__QUACKLES_VIEWFINDER__?.getState() ?? null,
     scrollY,
     transform: getComputedStyle(
       document.querySelector(".sequence-camera"),
     ).transform,
+    willChange: getComputedStyle(
+      document.querySelector(".sequence-camera"),
+    ).willChange,
     origin: getComputedStyle(
       document.querySelector(".sequence-camera"),
     ).transformOrigin,
+    viewfinderBounds: (() => {
+      const node = document.querySelector(".inspection-viewfinder");
+      const viewport = window.visualViewport;
+      if (!node || !viewport) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        viewportLeft: viewport.offsetLeft,
+        viewportTop: viewport.offsetTop,
+        viewportRight: viewport.offsetLeft + viewport.width,
+        viewportBottom: viewport.offsetTop + viewport.height,
+      };
+    })(),
   }));
 
-try {
+async function open(context) {
+  const page = await context.newPage();
+  page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(BASE, { waitUntil: "networkidle", timeout: 120000 });
   await page.waitForFunction(
     () =>
       window.__QUACKLES_SEQUENCE__?.getState().ready &&
-      window.__QUACKLES_INSPECTION__?.getState().maxZoom > 1.05,
+      window.__QUACKLES_VIEWFINDER__,
+    undefined,
+    { timeout: 30000 },
+  );
+  return page;
+}
+
+function expectedInspectionCrop(inspection) {
+  const scale = Math.max(1, inspection.zoom);
+  const width = 1 / scale;
+  const height = 1 / scale;
+  return {
+    x: Math.max(0, Math.min(1 - width, inspection.focusX * (1 - width))),
+    y: Math.max(0, Math.min(1 - height, inspection.focusY * (1 - height))),
+    width,
+    height,
+    scale,
+  };
+}
+
+function near(actual, expected, epsilon = 0.02) {
+  return Math.abs(actual - expected) <= epsilon;
+}
+
+try {
+  const desktopContext = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
+    deviceScaleFactor: 1,
+  });
+  const page = await open(desktopContext);
+  await page.waitForFunction(
+    () => window.__QUACKLES_INSPECTION__?.getState().maxZoom > 1.05,
     undefined,
     { timeout: 30000 },
   );
@@ -64,12 +122,19 @@ try {
   };
   await page.mouse.move(firstCursor.x, firstCursor.y);
 
-  const before = await state();
+  const requestsBefore = await imageRequests(page);
+  const before = await state(page);
+  if (before.viewfinder.active)
+    throw new Error("viewfinder should be hidden at 1x");
+  if (before.willChange !== "auto")
+    throw new Error("camera keeps will-change allocated while idle");
+
   await page.mouse.wheel(0, -180);
   await page.waitForTimeout(40);
-  const early = await state();
+  const early = await state(page);
   await page.waitForTimeout(700);
-  const settled = await state();
+  const settled = await state(page);
+  const requestsSettled = await imageRequests(page);
 
   if (before.scrollY !== 0 || early.scrollY !== 0 || settled.scrollY !== 0)
     throw new Error("inspection wheel input leaked into story scroll");
@@ -91,9 +156,40 @@ try {
     throw new Error("inspection camera did not settle near cursor focus");
   if (settled.transform === "none")
     throw new Error("inspection camera transform was not applied");
+  if (settled.willChange !== "transform")
+    throw new Error("camera was not promoted during active inspection");
+  if (!settled.viewfinder.active)
+    throw new Error("viewfinder did not appear during inspection");
+  if (
+    settled.viewfinder.backingBytes <= 0 ||
+    settled.viewfinder.backingBytes > 96 * 1024
+  )
+    throw new Error(
+      `viewfinder backing surface is unexpectedly large: ${settled.viewfinder.backingBytes}`,
+    );
+
+  const expected = expectedInspectionCrop(settled.inspection);
+  for (const key of ["x", "y", "width", "height"]) {
+    if (!near(settled.viewfinder.crop[key], expected[key]))
+      throw new Error(
+        `viewfinder ${key} differs from camera crop: ${settled.viewfinder.crop[key]} vs ${expected[key]}`,
+      );
+  }
+
+  if (requestsSettled.length !== requestsBefore.length)
+    throw new Error(
+      "viewfinder/inspection introduced an unexpected sequence image request",
+    );
+  if (
+    settled.viewfinder.snapshotCount - before.viewfinder.snapshotCount >
+    2
+  )
+    throw new Error("viewfinder copied the base canvas on camera frames");
+  if (settled.sequence.drawCount - before.sequence.drawCount > 1)
+    throw new Error("camera spring woke the full sequence renderer repeatedly");
 
   await page.screenshot({
-    path: path.join(OUT, "cursor-inspection.png"),
+    path: path.join(OUT, "cursor-inspection-viewfinder.png"),
     fullPage: false,
   });
 
@@ -103,11 +199,15 @@ try {
   };
   await page.mouse.move(secondCursor.x, secondCursor.y);
   await page.waitForTimeout(260);
-  const followed = await state();
+  const followed = await state(page);
   if (!(followed.inspection.focusX < settled.inspection.focusX))
     throw new Error("inspection camera did not follow the cursor laterally");
   if (!(followed.inspection.focusY < settled.inspection.focusY))
     throw new Error("inspection camera did not follow the cursor vertically");
+  if (!(followed.viewfinder.crop.x < settled.viewfinder.crop.x))
+    throw new Error("viewfinder did not track lateral camera focus");
+  if (!(followed.viewfinder.crop.y < settled.viewfinder.crop.y))
+    throw new Error("viewfinder did not track vertical camera focus");
 
   for (let i = 0; i < 8; i++) {
     await page.mouse.wheel(0, 240);
@@ -118,27 +218,113 @@ try {
     undefined,
     { timeout: 5000 },
   );
-  const home = await state();
+  await page.waitForTimeout(80);
+  const home = await state(page);
   if (Math.abs(home.inspection.zoom - 1) > 0.01)
     throw new Error("inspection camera did not return to 1x");
   if (home.scrollY !== 0)
     throw new Error("zoom-out consumed story position incorrectly");
+  if (home.viewfinder.active)
+    throw new Error("viewfinder remained visible after returning to 1x");
+  if (home.willChange !== "auto")
+    throw new Error("camera will-change was not released at rest");
 
   await page.mouse.wheel(0, 420);
   await page.waitForTimeout(250);
-  const released = await state();
+  const released = await state(page);
   if (!(released.scrollY > 0))
     throw new Error("normal downward story scroll was not released after zoom-out");
+
+  await desktopContext.close();
+
+  const mobileContext = await browser.newContext({
+    viewport: { width: 430, height: 932 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  });
+  await mobileContext.addInitScript(() => {
+    try {
+      Object.defineProperty(Navigator.prototype, "deviceMemory", {
+        configurable: true,
+        get: () => 4,
+      });
+      Object.defineProperty(Navigator.prototype, "hardwareConcurrency", {
+        configurable: true,
+        get: () => 4,
+      });
+    } catch {}
+  });
+  const mobile = await open(mobileContext);
+  const mobileBefore = await state(mobile);
+  if (mobileBefore.sequence.profile.id !== "balanced")
+    throw new Error(
+      `mobile capability policy did not select balanced profile: ${mobileBefore.sequence.profile.id}`,
+    );
+
+  const cdp = await mobileContext.newCDPSession(mobile);
+  await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
+  await mobile.waitForTimeout(350);
+  const mobileZoomed = await state(mobile);
+
+  if (!mobileZoomed.viewfinder.active)
+    throw new Error("native mobile pinch did not show the viewfinder");
+  if (!(mobileZoomed.viewfinder.crop.width < 0.75))
+    throw new Error("mobile viewfinder crop does not reflect pinch zoom");
+  const mobileBounds = mobileZoomed.viewfinderBounds;
+  if (
+    !mobileBounds ||
+    mobileBounds.left < mobileBounds.viewportLeft - 2 ||
+    mobileBounds.top < mobileBounds.viewportTop - 2 ||
+    mobileBounds.right > mobileBounds.viewportRight + 2 ||
+    mobileBounds.bottom > mobileBounds.viewportBottom + 2
+  )
+    throw new Error(
+      `mobile viewfinder escaped the visual viewport: ${JSON.stringify(mobileBounds)}`,
+    );
+  if (mobileZoomed.viewfinder.backingBytes > 64 * 1024)
+    throw new Error("mobile viewfinder backing surface exceeded 64 KiB");
+  if (mobileZoomed.sequence.profile.tileOverscan !== 0)
+    throw new Error("mobile profile retained tile overscan");
+  if (mobileZoomed.sequence.profile.maxActiveJobs > 2)
+    throw new Error("mobile profile allows too many concurrent jobs");
+  if (mobileZoomed.sequence.cache.budgetBytes > 64 * 1024 * 1024)
+    throw new Error("mobile decoded cache budget is too large");
+  if (mobileZoomed.sequence.profile.maxDetailWidth > 8192)
+    throw new Error("mobile profile can request an excessive detail tier");
+
+  await mobile.screenshot({
+    path: path.join(OUT, "mobile-pinch-viewfinder.png"),
+    fullPage: false,
+  });
+
+  await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+  await mobile.waitForTimeout(250);
+  const mobileHome = await state(mobile);
+  if (mobileHome.viewfinder.active)
+    throw new Error("mobile viewfinder remained visible after pinch reset");
+  await cdp.detach();
+  await mobileContext.close();
+
   if (errors.length) throw new Error(`page errors: ${errors.join(" | ")}`);
 
   const report = {
     base: BASE,
-    before,
-    early,
-    settled,
-    followed,
-    home,
-    released,
+    desktop: {
+      before,
+      early,
+      settled,
+      followed,
+      home,
+      released,
+      requestsBefore: requestsBefore.length,
+      requestsSettled: requestsSettled.length,
+    },
+    mobile: {
+      before: mobileBefore,
+      zoomed: mobileZoomed,
+      home: mobileHome,
+    },
     errors,
   };
   await fsp.writeFile(
