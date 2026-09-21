@@ -34,6 +34,7 @@ declare global {
       getState: () => DesktopState;
       reset: () => void;
       setZoom: (value: number) => void;
+      setZoomInstant: (value: number) => void;
       triggerJump: () => void;
       wheel: (deltaY: number) => void;
     };
@@ -322,6 +323,21 @@ export function DesktopExperienceController() {
         zoomVelocityRef.current = 0;
         lastInspectTickAtRef.current = 0;
         requestTick();
+      },
+      setZoomInstant(value) {
+        if (phaseRef.current !== "inspect") reset();
+        const next = Math.max(
+          DESKTOP_EXPERIENCE.nearZoom,
+          Math.min(DESKTOP_EXPERIENCE.farZoom, value),
+        );
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = 0;
+        zoomRef.current = next;
+        targetZoomRef.current = next;
+        zoomVelocityRef.current = 0;
+        lastInspectTickAtRef.current = 0;
+        inspectPoseInto(poseRef.current, next);
+        publish(0);
       },
       triggerJump() {
         targetZoomRef.current = DESKTOP_EXPERIENCE.farZoom;
