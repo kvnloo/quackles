@@ -1,5 +1,5 @@
-import { Landing } from "@/components/overlay/Landing";
+import { LiveRigLanding } from "@/components/overlay/LiveRigLanding";
 
 export default function Home() {
-  return <Landing />;
+  return <LiveRigLanding />;
 }
