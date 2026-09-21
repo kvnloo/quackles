@@ -34,9 +34,39 @@ const imageRequests = (page) =>
       .getEntriesByType("resource")
       .map((entry) => entry.name)
       .filter((url) =>
-        /\/sequence\/.*\.(?:webp|png|avif)(?:\?|$)/i.test(url),
+        /(?:\/sequence\/|\/quackles-assets\/).*\.(?:webp|png|avif)(?:\?|$)/i.test(url),
       ),
   );
+
+const dziRequests = (page) =>
+  page.evaluate(() =>
+    performance
+      .getEntriesByType("resource")
+      .map((entry) => entry.name)
+      .filter((url) => /\/quackles-assets\/.*\.webp(?:\?|$)/i.test(url)),
+  );
+
+const assetProxyResponses = [];
+async function installAssetProxy(context) {
+  await context.route("**/quackles-assets/**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const upstream = `https://kvnloo.github.io${requestUrl.pathname}`;
+    const response = await fetch(upstream);
+    const body = Buffer.from(await response.arrayBuffer());
+    const headers = Object.fromEntries(response.headers.entries());
+    assetProxyResponses.push({
+      requested: requestUrl.pathname,
+      upstream,
+      status: response.status,
+      contentType: response.headers.get("content-type"),
+    });
+    await route.fulfill({
+      status: response.status,
+      headers,
+      body,
+    });
+  });
+}
 
 const state = (page) =>
   page.evaluate(() => ({
@@ -106,8 +136,9 @@ function near(actual, expected, epsilon = 0.02) {
 try {
   const desktopContext = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
-    deviceScaleFactor: 1,
+    deviceScaleFactor: 2,
   });
+  await installAssetProxy(desktopContext);
   const page = await open(desktopContext);
   await page.waitForFunction(
     () => window.__QUACKLES_INSPECTION__?.getState().maxZoom > 1.05,
@@ -124,7 +155,10 @@ try {
   await page.mouse.move(firstCursor.x, firstCursor.y);
 
   const requestsBefore = await imageRequests(page);
+  const initialDziRequests = await dziRequests(page);
   const before = await state(page);
+  if (initialDziRequests.length)
+    throw new Error("initial 1x hero fetched DZI tiles before inspection");
   if (before.viewfinder.active)
     throw new Error("viewfinder should be hidden at 1x");
   if (before.willChange !== "auto")
@@ -212,7 +246,44 @@ try {
   if (!(followed.viewfinder.crop.y < settled.viewfinder.crop.y))
     throw new Error("viewfinder did not track vertical camera focus");
 
-  for (let i = 0; i < 8; i++) {
+  // Drive a real high-DPR deep inspection. The browser must progressively
+  // promote from the 1024px base into the published 200MP DZI pyramid.
+  for (let i = 0; i < 16; i++) {
+    await page.mouse.wheel(0, -180);
+    await page.waitForTimeout(24);
+  }
+  await page.waitForFunction(
+    () => {
+      const current = window.__QUACKLES_SEQUENCE__?.getState();
+      return (
+        (current?.detailWidth ?? 0) === 11584 &&
+        (current?.detailTiles ?? 0) > 0
+      );
+    },
+    undefined,
+    { timeout: 30000 },
+  );
+  const deep = await state(page);
+  const deepDziRequests = await dziRequests(page);
+  if (deep.sequence.detailWidth !== 11584)
+    throw new Error(`deep inspection stopped at ${deep.sequence.detailWidth}px instead of the 11584px DZI tier`);
+  if (!(deep.sequence.detailTiles > 0))
+    throw new Error("deep inspection did not paint DZI tiles");
+  if (!deepDziRequests.some((url) => /\/quackles-assets\/blue\/p0000000\/15\//.test(url)))
+    throw new Error("deep inspection never requested level-15 200MP tiles");
+  const failedDzi = assetProxyResponses.filter(
+    (entry) =>
+      entry.requested.includes("/quackles-assets/") &&
+      (entry.status !== 200 || !entry.contentType?.includes("image/webp")),
+  );
+  if (failedDzi.length)
+    throw new Error(`real DZI proxy returned invalid assets: ${JSON.stringify(failedDzi.slice(0, 4))}`);
+  const deepRequestCount = deepDziRequests.length;
+  await page.waitForTimeout(650);
+  if ((await dziRequests(page)).length !== deepRequestCount)
+    throw new Error("settled deep inspection kept issuing DZI requests");
+
+  for (let i = 0; i < 16; i++) {
     await page.mouse.wheel(0, 240);
     await page.waitForTimeout(24);
   }
@@ -252,13 +323,19 @@ try {
     { timeout: 6000 },
   );
   const rewound = await state(page);
-  if (rewound.viewfinder.active)
-    throw new Error("viewfinder remained visible after story rewind");
+  if (rewound.scrollY > 2 || rewound.sequence.current.progress > 0.012)
+    throw new Error("upward story rewind did not return to the hero boundary");
 
-  await page.mouse.move(firstCursor.x, firstCursor.y);
-  await page.mouse.wheel(0, -180);
-  await page.waitForTimeout(1000);
-  const reinspected = await state(page);
+  // Continuous upward input is allowed to cross directly from story rewind
+  // into inspection. If the rewind gesture ended exactly at hero, the next
+  // upward wheel must enter inspection without leaking back into story scroll.
+  let reinspected = rewound;
+  if (!rewound.viewfinder.active) {
+    await page.mouse.move(firstCursor.x, firstCursor.y);
+    await page.mouse.wheel(0, -180);
+    await page.waitForTimeout(1000);
+    reinspected = await state(page);
+  }
   if (!(reinspected.inspection?.zoom > 1.02))
     throw new Error("scroll-up after story rewind did not re-enter inspection");
   if (!reinspected.viewfinder.active)
@@ -274,6 +351,7 @@ try {
     isMobile: true,
     hasTouch: true,
   });
+  await installAssetProxy(mobileContext);
   await mobileContext.addInitScript(() => {
     try {
       Object.defineProperty(Navigator.prototype, "deviceMemory", {
