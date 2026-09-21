@@ -10,6 +10,21 @@ export function viewportCrop(element: HTMLElement): Crop {
   const y = Math.max(0, Math.min(1, (top - rect.top) / rect.height));
   return { x, y, width: Math.max(0, Math.min(1 - x, (right - Math.max(left, rect.left)) / rect.width)), height: Math.max(0, Math.min(1 - y, (bottom - Math.max(top, rect.top)) / rect.height)), scale: viewport?.scale ?? 1 };
 }
+
+export function inspectionCrop(
+  zoom: number,
+  focusX: number,
+  focusY: number,
+): Crop {
+  const scale = Math.max(1, zoom);
+  const width = 1 / scale, height = 1 / scale;
+  // The camera layer scales around its smoothly animated transform origin.
+  // Invert that transform so detail tiles cover exactly the source pixels that
+  // will be visible after the CSS camera move.
+  const x = Math.max(0, Math.min(1 - width, focusX * (1 - width)));
+  const y = Math.max(0, Math.min(1 - height, focusY * (1 - height)));
+  return { x, y, width, height, scale };
+}
 export function tileAssets(variant: TileAsset, crop: Crop, overscan = 1) {
   const { tileSize, columns, rows, urlTemplate } = variant.tiles;
   const firstX = Math.max(0, Math.floor(crop.x * variant.width / tileSize) - overscan);
