@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 import {
   DESKTOP_EXPERIENCE,
+  advanceInspectZoom,
   assembledPoseInto,
   cinematicPoseInto,
   inspectPoseInto,
@@ -18,6 +19,7 @@ type DesktopState = {
   phase: DesktopPhase;
   zoom: number;
   targetZoom: number;
+  zoomVelocity: number;
   launchIntent: number;
   launchThreshold: number;
   phaseProgress: number;
@@ -43,11 +45,12 @@ export function DesktopExperienceController() {
   const phaseRef = useRef<DesktopPhase>("inspect");
   const zoomRef = useRef<number>(DESKTOP_EXPERIENCE.initialZoom);
   const targetZoomRef = useRef<number>(DESKTOP_EXPERIENCE.initialZoom);
+  const zoomVelocityRef = useRef(0);
+  const lastInspectTickAtRef = useRef(0);
   const launchIntentRef = useRef(0);
   const phaseStartedAtRef = useRef(0);
   const phaseProgressRef = useRef(0);
   const frameRef = useRef(0);
-  const lastTickAtRef = useRef(0);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>(".desktop-shell");
@@ -62,6 +65,7 @@ export function DesktopExperienceController() {
       phase: phaseRef.current,
       zoom: zoomRef.current,
       targetZoom: targetZoomRef.current,
+      zoomVelocity: zoomVelocityRef.current,
       launchIntent: launchIntentRef.current,
       launchThreshold: DESKTOP_EXPERIENCE.launchThreshold,
       phaseProgress: phaseProgressRef.current,
@@ -138,8 +142,9 @@ export function DesktopExperienceController() {
       phaseRef.current = phase;
       phaseStartedAtRef.current = now;
       phaseProgressRef.current = 0;
+      zoomVelocityRef.current = 0;
+      lastInspectTickAtRef.current = 0;
       launchIntentRef.current = 0;
-      lastTickAtRef.current = now;
       syncPresentation();
     };
 
@@ -158,6 +163,8 @@ export function DesktopExperienceController() {
       if (phaseRef.current !== "inspect") return;
       zoomRef.current = DESKTOP_EXPERIENCE.farZoom;
       targetZoomRef.current = DESKTOP_EXPERIENCE.farZoom;
+      zoomVelocityRef.current = 0;
+      lastInspectTickAtRef.current = 0;
       if (reducedMotion) {
         assembledPoseInto(poseRef.current);
         setPhase("sim-ready");
@@ -170,27 +177,40 @@ export function DesktopExperienceController() {
 
     const tick = (now: number) => {
       frameRef.current = 0;
-      const previous = lastTickAtRef.current || now - 1000 / 60;
-      const elapsedSeconds = Math.max(
-        1 / 240,
-        Math.min(0.25, (now - previous) / 1000),
-      );
-      lastTickAtRef.current = now;
       const phase = phaseRef.current;
       if (phase === "inspect") {
-        const delta = targetZoomRef.current - zoomRef.current;
-        if (Math.abs(delta) > 0.0005) {
-          // Time-based exponential damping: same feel at 60 Hz, 120 Hz,
-          // or under a temporarily slow renderer.
-          const alpha = 1 - Math.exp(-10 * elapsedSeconds);
-          zoomRef.current += delta * alpha;
-        } else {
+        const elapsed =
+          lastInspectTickAtRef.current > 0
+            ? now - lastInspectTickAtRef.current
+            : 1000 / 60;
+        lastInspectTickAtRef.current = now;
+
+        if (reducedMotion) {
           zoomRef.current = targetZoomRef.current;
+          zoomVelocityRef.current = 0;
+        } else {
+          const next = advanceInspectZoom(
+            zoomRef.current,
+            zoomVelocityRef.current,
+            targetZoomRef.current,
+            elapsed,
+          );
+          zoomRef.current = next.zoom;
+          zoomVelocityRef.current = next.velocity;
         }
+
         inspectPoseInto(poseRef.current, zoomRef.current);
         publish(0);
-        if (Math.abs(targetZoomRef.current - zoomRef.current) > 0.0005)
+        if (
+          Math.abs(targetZoomRef.current - zoomRef.current) >
+            DESKTOP_EXPERIENCE.zoomSettleEpsilon ||
+          Math.abs(zoomVelocityRef.current) >
+            DESKTOP_EXPERIENCE.zoomVelocityEpsilon
+        ) {
           requestTick();
+        } else {
+          lastInspectTickAtRef.current = 0;
+        }
         return;
       }
       if (phase === "sim-ready") {
@@ -215,6 +235,9 @@ export function DesktopExperienceController() {
 
     const feedWheel = (deltaY: number) => {
       if (phaseRef.current !== "inspect") return;
+      const zoomDelta =
+        Math.sign(deltaY) *
+        Math.min(Math.abs(deltaY), DESKTOP_EXPERIENCE.maxWheelZoomDelta);
       if (deltaY < 0) {
         launchIntentRef.current = Math.max(
           0,
@@ -223,7 +246,7 @@ export function DesktopExperienceController() {
         targetZoomRef.current = Math.max(
           DESKTOP_EXPERIENCE.nearZoom,
           targetZoomRef.current +
-            deltaY * DESKTOP_EXPERIENCE.wheelSensitivity,
+            zoomDelta * DESKTOP_EXPERIENCE.wheelSensitivity,
         );
       } else if (
         targetZoomRef.current < DESKTOP_EXPERIENCE.farZoom - 0.001 ||
@@ -233,7 +256,7 @@ export function DesktopExperienceController() {
         targetZoomRef.current = Math.min(
           DESKTOP_EXPERIENCE.farZoom,
           targetZoomRef.current +
-            deltaY * DESKTOP_EXPERIENCE.wheelSensitivity,
+            zoomDelta * DESKTOP_EXPERIENCE.wheelSensitivity,
         );
         launchIntentRef.current = 0;
       } else {
@@ -267,8 +290,9 @@ export function DesktopExperienceController() {
       setPhase("inspect");
       zoomRef.current = DESKTOP_EXPERIENCE.initialZoom;
       targetZoomRef.current = DESKTOP_EXPERIENCE.initialZoom;
+      zoomVelocityRef.current = 0;
+      lastInspectTickAtRef.current = 0;
       launchIntentRef.current = 0;
-      lastTickAtRef.current = 0;
       inspectPoseInto(poseRef.current, zoomRef.current);
       publish(0);
     };
@@ -282,6 +306,8 @@ export function DesktopExperienceController() {
           DESKTOP_EXPERIENCE.nearZoom,
           Math.min(DESKTOP_EXPERIENCE.farZoom, value),
         );
+        zoomVelocityRef.current = 0;
+        lastInspectTickAtRef.current = 0;
         requestTick();
       },
       triggerJump() {

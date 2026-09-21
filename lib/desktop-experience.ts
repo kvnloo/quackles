@@ -19,6 +19,10 @@ export const DESKTOP_EXPERIENCE = {
   farZoom: 1.42,
   initialZoom: 1,
   wheelSensitivity: 0.00115,
+  maxWheelZoomDelta: 180,
+  zoomSpringOmega: 9.5,
+  zoomSettleEpsilon: 0.00035,
+  zoomVelocityEpsilon: 0.002,
   launchThreshold: 320,
   farTolerance: 0.025,
   jumpMs: 1120,
@@ -83,6 +87,55 @@ export function blendPoseInto(out: Pose, a: Pose, b: Pose, progress: number) {
   blendVec(out.camPos, a.camPos, b.camPos, t);
   out.fov = lerp(a.fov, b.fov, t);
   return out;
+}
+
+export function clampDesktopZoom(value: number) {
+  return Math.max(
+    DESKTOP_EXPERIENCE.nearZoom,
+    Math.min(DESKTOP_EXPERIENCE.farZoom, value),
+  );
+}
+
+export function advanceInspectZoom(
+  zoom: number,
+  velocity: number,
+  targetZoom: number,
+  elapsedMs: number,
+) {
+  const target = clampDesktopZoom(targetZoom);
+  // This is an exact spring solution, so large wall-clock gaps are safe. Keep
+  // enough elapsed time to converge even when the 3D scene renders slowly
+  // (for example SwiftShader CI), while bounding stale momentum after a long
+  // background-tab pause.
+  const dt = Math.max(0, Math.min(1000, elapsedMs)) / 1000;
+  if (!dt) return { zoom: clampDesktopZoom(zoom), velocity };
+
+  // Exact critically damped spring step. This gives the Lenis-like "attached"
+  // feeling without making the result depend on 60 Hz vs 120/144 Hz displays.
+  const omega = DESKTOP_EXPERIENCE.zoomSpringOmega;
+  const displacement = clampDesktopZoom(zoom) - target;
+  const decay = Math.exp(-omega * dt);
+  const spring = (velocity + omega * displacement) * dt;
+  let nextZoom = target + (displacement + spring) * decay;
+  let nextVelocity = (velocity - omega * spring) * decay;
+
+  nextZoom = clampDesktopZoom(nextZoom);
+  if (
+    Math.abs(nextZoom - target) <= DESKTOP_EXPERIENCE.zoomSettleEpsilon &&
+    Math.abs(nextVelocity) <= DESKTOP_EXPERIENCE.zoomVelocityEpsilon
+  ) {
+    nextZoom = target;
+    nextVelocity = 0;
+  }
+
+  if (
+    (nextZoom <= DESKTOP_EXPERIENCE.nearZoom && nextVelocity < 0) ||
+    (nextZoom >= DESKTOP_EXPERIENCE.farZoom && nextVelocity > 0)
+  ) {
+    nextVelocity = 0;
+  }
+
+  return { zoom: nextZoom, velocity: nextVelocity };
 }
 
 export function inspectPoseInto(out: Pose, zoom: number) {

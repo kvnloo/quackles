@@ -119,6 +119,56 @@ try {
   report.states.hero = await state();
   report.screenshots.hero = await screenshot("01-hero");
 
+  // Scroll-up must feel attached to the wheel without snapping to the target.
+  // Sample multiple points so a regression to a one-frame jump or wrong-way
+  // camera move fails even if the final clamp remains correct.
+  await page.evaluate(() => window.__QUACKLES_DESKTOP__?.reset());
+  await pause(32);
+  report.states.zoomStart = await state();
+  await page.mouse.wheel({ deltaY: -120 });
+  await pause(32);
+  report.states.scrollUpEarly = await state();
+  await pause(110);
+  report.states.scrollUpMid = await state();
+  await pause(520);
+  report.states.scrollUpSettled = await state();
+  report.screenshots.scrollUpSettled = await screenshot("01b-scroll-up-zoom");
+
+  const zoomStart = report.states.zoomStart.desktop;
+  const zoomEarly = report.states.scrollUpEarly.desktop;
+  const zoomMid = report.states.scrollUpMid.desktop;
+  const zoomSettled = report.states.scrollUpSettled.desktop;
+
+  if (!(zoomEarly.targetZoom < zoomStart.targetZoom))
+    throw new Error("scroll-up did not move the zoom target inward");
+  if (!(zoomEarly.zoom < zoomStart.zoom && zoomEarly.zoom > zoomEarly.targetZoom))
+    throw new Error("scroll-up zoom snapped or moved in the wrong direction");
+  if (!(zoomMid.zoom < zoomEarly.zoom))
+    throw new Error("scroll-up zoom did not continue smoothly toward the target");
+  if (Math.abs(zoomSettled.zoom - zoomSettled.targetZoom) > 0.004)
+    throw new Error("scroll-up zoom did not settle on its target");
+  if (zoomSettled.launchIntent !== 0 || zoomSettled.phase !== "inspect")
+    throw new Error("scroll-up incorrectly armed or launched the cinematic");
+
+  // Direction reversal must retarget cleanly instead of carrying stale inward
+  // momentum through the user's downward input.
+  await page.mouse.wheel({ deltaY: 90 });
+  await pause(120);
+  report.states.scrollReverse = await state();
+  if (
+    !(
+      report.states.scrollReverse.desktop.targetZoom >
+        zoomSettled.targetZoom &&
+      report.states.scrollReverse.desktop.zoom > zoomSettled.zoom
+    )
+  )
+    throw new Error("scroll direction reversal did not pull the camera back out");
+  if (report.states.scrollReverse.desktop.phase !== "inspect")
+    throw new Error("scroll reversal escaped inspect phase");
+
+  await page.evaluate(() => window.__QUACKLES_DESKTOP__?.reset());
+  await pause(32);
+
   await setZoom(0.1);
   report.states.near = await state();
   report.screenshots.near = await screenshot("02-near");
