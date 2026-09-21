@@ -11,6 +11,8 @@ export type Pose = {
   crouch: number;
   explode: number;
   jump: number;
+  /** 0 = cinematic joints; 1 = official simulator DEFAULT_POSE. */
+  simulatorBlend?: number;
   lookAt: Vec3;
   camPos: Vec3;
   fov: number;
@@ -57,6 +59,7 @@ export function poseAtInto(out: Pose, progress: number): Pose {
   out.crouch = squat * 0.7 + land * 0.28;
   out.explode = explosion;
   out.jump = jump;
+  out.simulatorBlend = 0;
   out.lookAt[0] = lerp(lerp(calibration.target[0], calibration.rootPosition[0], orbit), 0.096, inspection);
   out.lookAt[1] = lerp(calibration.target[1], 0.16, orbit) + jump * 0.12 + explosion * 0.36;
   out.lookAt[2] = lerp(lerp(calibration.target[2], calibration.rootPosition[2], orbit), -0.06, inspection);
