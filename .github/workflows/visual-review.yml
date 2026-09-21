@@ -120,7 +120,7 @@ jobs:
             fs.mkdirSync(dir, { recursive: true });
 
             const page = await browser.newPage();
-            await page.setViewport({ width: 430, height: 932, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+            await page.setViewport({ width: 430, height: 932, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
             const errors = [];
             page.on("pageerror", (error) => errors.push(String(error)));
             page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
@@ -221,19 +221,37 @@ jobs:
 
           instructions = """# Blind Quackles visual review
 
-          Candidate folders are letter-coded. Do not open the separate blind-map artifact until after scoring.
+          You are an independent fresh-context reviewer.
 
-          Review hero-frame.png against REFERENCE/day-reference.png when the reference is present.
+          Inputs are intentionally limited to the locked reference image, anonymous letter-coded candidate images, and this neutral rubric.
+
+          Do NOT inspect:
+          - branch mappings
+          - source code or scene files
+          - commit history
+          - builder notes
+          - prior reviewer reports
+          - implementation claims
+
+          Review full-resolution images and the zoom/detail crops. Do not judge from thumbnails.
+
+          For each anonymous candidate, return exactly one verdict:
+          - PASS
+          - FAIL
+          - INSUFFICIENT EVIDENCE
+
+          Then list specific observed mismatches only.
 
           DreamLoop critic pass:
-          1. Judge the whole frame first.
+          1. Judge the whole hero frame first.
           2. Inspect every zoom-* crop independently.
-          3. Name concrete mismatches in composition, materials, light, typography, robot pose, orb/reflections and plinth treatment.
-          4. Do not infer branch identity or reward novelty.
-          5. For motion, inspect hero / quarter / middle / three-quarter / end viewport captures in order and call out pose discontinuity or incoherent choreography.
+          3. Compare camera/composition, architecture/layout, robot identity/anatomy/pose, props, materials, environmental detail, lighting, color, orb/reflections, plinth treatment and typography.
+          4. Do not infer candidate identity or reward novelty.
+          5. For motion, inspect hero / quarter / middle / three-quarter / end viewport captures in order and call out pose discontinuity, temporal popping, incoherent choreography or reverse-state problems visible in the evidence.
           6. Record blockers before preferences.
+          7. If the locked reference is missing or the evidence cannot support a claim, use INSUFFICIENT EVIDENCE instead of guessing.
 
-          A technically successful build is not automatically a visually acceptable candidate.
+          A technically plausible or successful build is not automatically a visual PASS.
           """
           (blind / "REVIEW.md").write_text(instructions)
           PY
@@ -243,9 +261,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quackles-blind-review-${{ github.run_id }}
-          path: |
-            review/blind/
-            review/reference/
+          path: review/blind/
           retention-days: 30
 
       - name: Upload private branch map
