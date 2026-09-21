@@ -190,6 +190,122 @@ jobs:
                   }
                 }
               }
+
+              // Desktop reconciliation branches expose an explicit phase/debug
+              // surface. Capture it separately from the 2:3 Day-reference pass:
+              // desktop composition is sanity evidence, not a poster crop-gate.
+              await page.setViewport({
+                width: 1440,
+                height: 1000,
+                deviceScaleFactor: 1,
+                isMobile: false,
+                hasTouch: false,
+              });
+              await page.reload({ waitUntil: "domcontentloaded", timeout: 60000 });
+              await page.evaluate(async () => {
+                const settle = (async () => {
+                  if (document.fonts?.ready) await document.fonts.ready;
+                  await Promise.all([...document.images].map((img) => img.decode?.().catch(() => {})));
+                })();
+                await Promise.race([
+                  settle,
+                  new Promise((resolve) => setTimeout(resolve, 5000)),
+                ]);
+              });
+              await new Promise((resolve) => setTimeout(resolve, 1200));
+
+              await page.evaluate(() => {
+                const controls = [...document.querySelectorAll("button,[role=radio]")];
+                const day = controls.find((node) => {
+                  const text = (node.textContent || "").trim().toLowerCase();
+                  const aria = (node.getAttribute("aria-label") || "").trim().toLowerCase();
+                  return text === "day" || aria === "day";
+                });
+                if (day instanceof HTMLElement) day.click();
+                else window.__QUACKLES_SEQUENCE__?.setTheme?.("day");
+              });
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
+              const hasDesktopController = await page.evaluate(
+                () => Boolean(window.__QUACKLES_DESKTOP__?.seekPhase),
+              );
+              if (hasDesktopController) {
+                const desktopShot = async (name) => {
+                  await page.screenshot({
+                    path: path.join(dir, `desktop-${name}-viewport.png`),
+                    fullPage: false,
+                  });
+                  const frame = await page.$(".poster-frame");
+                  if (frame) {
+                    await frame.screenshot({
+                      path: path.join(dir, `desktop-${name}-frame.png`),
+                    });
+                  }
+                };
+
+                await desktopShot("hero");
+                await page.evaluate(() => window.__QUACKLES_DESKTOP__?.setZoomInstant?.(0.72));
+                await new Promise((resolve) => setTimeout(resolve, 80));
+                await desktopShot("inspect-near");
+                await page.evaluate(() => window.__QUACKLES_DESKTOP__?.setZoomInstant?.(1.42));
+                await new Promise((resolve) => setTimeout(resolve, 80));
+                await desktopShot("inspect-far");
+
+                const liveReady = await page
+                  .waitForFunction(
+                    () => Boolean(window.__QUACKLES_DEBUG__?.getState?.()?.ready),
+                    { timeout: 60000 },
+                  )
+                  .then(() => true)
+                  .catch(() => false);
+
+                if (liveReady) {
+                  const checkpoints = [
+                    ["jump", 0.58],
+                    ["explode", 0.62],
+                    ["reassemble", 0.55],
+                    ["sim-ready", 1],
+                  ];
+                  for (const [phase, progress] of checkpoints) {
+                    const before = await page.evaluate(
+                      () => window.__QUACKLES_DEBUG__?.getState?.()?.renderCount ?? 0,
+                    );
+                    await page.evaluate(
+                      ({ phase, progress }) =>
+                        window.__QUACKLES_DESKTOP__?.seekPhase?.(phase, progress),
+                      { phase, progress },
+                    );
+                    await page
+                      .waitForFunction(
+                        (previous) =>
+                          (window.__QUACKLES_DEBUG__?.getState?.()?.renderCount ?? 0) >
+                          previous,
+                        { timeout: 45000 },
+                        before,
+                      )
+                      .catch(() =>
+                        errors.push(`desktop ${phase} render did not complete before capture timeout`),
+                      );
+                    await desktopShot(phase);
+                  }
+                } else {
+                  fs.writeFileSync(
+                    path.join(dir, "desktop-live-not-ready.txt"),
+                    "Desktop controller mounted, but live rig/set did not reach ready in 60s.\n",
+                  );
+                }
+
+                const desktopState = await page.evaluate(() => ({
+                  desktop: window.__QUACKLES_DESKTOP__?.getState?.() ?? null,
+                  probe: window.__QUACKLES_DEBUG__?.getState?.() ?? null,
+                  phase: document.querySelector(".desktop-shell")?.getAttribute("data-phase") ?? null,
+                  liveReady: document.querySelector(".desktop-shell")?.getAttribute("data-live-ready") ?? null,
+                }));
+                fs.writeFileSync(
+                  path.join(dir, "desktop-state.json"),
+                  JSON.stringify(desktopState, null, 2),
+                );
+              }
             } catch (error) {
               errors.push(error instanceof Error ? error.stack || error.message : String(error));
             }
@@ -245,6 +361,19 @@ jobs:
                           if scale > 1:
                               c = c.resize((c.width*scale, c.height*scale), Image.Resampling.LANCZOS)
                           c.save(target / f"zoom-{name}.jpg", quality=94)
+                  elif source.name.startswith("desktop-") and source.name.endswith("-frame.png"):
+                      desktop_crops = {
+                          "left": (0.00, 0.02, 0.52, 0.82),
+                          "center": (0.20, 0.06, 0.80, 0.86),
+                          "right": (0.48, 0.02, 1.00, 0.82),
+                          "lower": (0.12, 0.42, 0.88, 1.00),
+                      }
+                      for name, box in desktop_crops.items():
+                          c = crop(img, box)
+                          scale = max(1, math.ceil(900 / max(1, c.width)))
+                          if scale > 1:
+                              c = c.resize((c.width*scale, c.height*scale), Image.Resampling.LANCZOS)
+                          c.save(target / f"{source.stem}-zoom-{name}.jpg", quality=94)
 
           ref_dir = Path("review/reference")
           refs = list(ref_dir.glob("day-reference.*"))
@@ -289,9 +418,10 @@ jobs:
           2. Inspect every zoom-* crop independently.
           3. Compare camera/composition, architecture/layout, robot identity/anatomy/pose, props, materials, environmental detail, lighting, color, orb/reflections, plinth treatment and typography.
           4. Do not infer candidate identity or reward novelty.
-          5. For motion, inspect hero / quarter / middle / three-quarter / end viewport captures in order and call out pose discontinuity, temporal popping, incoherent choreography or reverse-state problems visible in the evidence.
-          6. Record blockers before preferences.
-          7. If the locked reference is missing or the evidence cannot support a claim, use INSUFFICIENT EVIDENCE instead of guessing.
+          5. For mobile/sequence motion, inspect hero / quarter / middle / three-quarter / end viewport captures in order and call out pose discontinuity, temporal popping, incoherent choreography or reverse-state problems visible in the evidence.
+          6. When desktop-* checkpoints exist, inspect INSPECT near/far plus JUMP / EXPLODE / REASSEMBLE / SIM READY and every desktop crop. These are blind sanity evidence, not direct 2:3 Day-reference scores. Check camera tracking, robot identity/proportions, crossfade discontinuity, exploded-part coherence, reassembly, and handoff continuity.
+          7. Record blockers before preferences.
+          8. If the locked reference is missing or the evidence cannot support a claim, use INSUFFICIENT EVIDENCE instead of guessing.
 
           A technically plausible or successful build is not automatically a visual PASS.
           """
