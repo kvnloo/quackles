@@ -1,6 +1,10 @@
 name: visual-review
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/visual-review.yml"
   workflow_run:
     workflows: ["pages"]
     types: [completed]
@@ -17,6 +21,7 @@ concurrency:
 jobs:
   capture:
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
