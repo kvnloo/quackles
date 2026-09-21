@@ -8,6 +8,7 @@ const BASE = process.env.BASE_URL || "http://127.0.0.1:43217";
 const OUT = path.resolve(
   process.env.ARTIFACTS || "artifacts/hero-inspection",
 );
+const ASSET_ORIGIN = "https://kvnloo.github.io/quackles-assets";
 const CHROME =
   process.env.CHROME ||
   [
@@ -51,7 +52,7 @@ async function installAssetProxy(context) {
   await context.route("**/quackles-assets/**", async (route) => {
     const requestUrl = new URL(route.request().url());
     const assetPathname = requestUrl.pathname.replace(/^\/quackles-assets/, "");
-    const upstream = `https://raw.githubusercontent.com/kvnloo/quackles-assets/5ff80074ffc251fff8bc120c812e2fd8d89fb54b${assetPathname}`;
+    const upstream = `${ASSET_ORIGIN}${assetPathname}`;
     const response = await fetch(upstream);
     const body = Buffer.from(await response.arrayBuffer());
     const headers = Object.fromEntries(response.headers.entries());
@@ -300,7 +301,7 @@ try {
       );
     },
     undefined,
-    { timeout: 30000 },
+    { timeout: 90000 },
   );
   const deep = await state(page);
   const deepDziRequests = await dziRequests(page);
