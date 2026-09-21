@@ -150,11 +150,15 @@ try {
     throw new Error("inspection camera snapped instead of easing");
   if (Math.abs(settled.inspection.zoom - settled.inspection.targetZoom) > 0.01)
     throw new Error("inspection camera failed to settle");
+  const expectedFocus = {
+    x: 0.5 + (0.68 - 0.5) * 0.42,
+    y: 0.5 + (0.56 - 0.5) * 0.42,
+  };
   if (
-    Math.abs(settled.inspection.focusX - 0.68) > 0.04 ||
-    Math.abs(settled.inspection.focusY - 0.56) > 0.04
+    Math.abs(settled.inspection.focusX - expectedFocus.x) > 0.04 ||
+    Math.abs(settled.inspection.focusY - expectedFocus.y) > 0.04
   )
-    throw new Error("inspection camera did not settle near cursor focus");
+    throw new Error("inspection camera did not settle near damped cursor focus");
   if (settled.transform === "none")
     throw new Error("inspection camera transform was not applied");
   if (settled.willChange !== "transform")
@@ -179,7 +183,7 @@ try {
 
   if (requestsSettled.length !== requestsBefore.length)
     throw new Error(
-      "viewfinder/inspection introduced an unexpected sequence image request",
+      "low-zoom viewfinder motion requested detail assets before they were needed",
     );
   if (
     settled.viewfinder.snapshotCount - before.viewfinder.snapshotCount >
@@ -210,6 +214,30 @@ try {
   if (!(followed.viewfinder.crop.y < settled.viewfinder.crop.y))
     throw new Error("viewfinder did not track vertical camera focus");
 
+  // Progressive hero detail should promote only after the camera settles.
+  await page.mouse.wheel(0, -180);
+  await page.mouse.wheel(0, -180);
+  await page.waitForTimeout(700);
+  const promoted2k = await state(page);
+  if (!(promoted2k.sequence.detailWidth >= 2048))
+    throw new Error(
+      `hero inspection did not promote to the 2K tier: ${promoted2k.sequence.detailWidth}`,
+    );
+
+  await page.mouse.wheel(0, -180);
+  await page.waitForTimeout(800);
+  const promoted4k = await state(page);
+  if (!(promoted4k.sequence.detailWidth >= 4096))
+    throw new Error(
+      `hero inspection did not promote to the 4K tiled tier: ${promoted4k.sequence.detailWidth}`,
+    );
+  if (!(promoted4k.sequence.detailTiles > 0))
+    throw new Error("4K hero inspection did not use progressive tiles");
+
+  const detailRequests = await imageRequests(page);
+  if (detailRequests.length <= requestsSettled.length)
+    throw new Error("progressive inspection did not request higher-resolution assets");
+
   for (let i = 0; i < 8; i++) {
     await page.mouse.wheel(0, 240);
     await page.waitForTimeout(24);
@@ -235,14 +263,13 @@ try {
   const released = await state(page);
   if (released.cinematic) {
     if (released.scrollY !== 0)
-      throw new Error("cinematic launch intent leaked into page scroll");
-    if (
-      released.cinematic.phase === "idle" &&
-      !(released.cinematic.launchIntent > 0)
-    )
-      throw new Error("post-inspection wheel was not handed to cinematic authority");
+      throw new Error("desktop story wheel leaked into document scroll");
+    if (!(released.cinematic.storyProgress > 0))
+      throw new Error("post-inspection wheel was not handed to story authority");
+    if (released.viewfinder.active)
+      throw new Error("viewfinder appeared during downward story motion");
   } else if (!(released.scrollY > 0)) {
-    throw new Error("normal downward story scroll was not released after zoom-out");
+    throw new Error("normal downward mobile story scroll was not released after zoom-out");
   }
 
   await desktopContext.close();
@@ -327,8 +354,11 @@ try {
       followed,
       home,
       released,
+      promoted2k,
+      promoted4k,
       requestsBefore: requestsBefore.length,
       requestsSettled: requestsSettled.length,
+      detailRequests: detailRequests.length,
     },
     mobile: {
       before: mobileBefore,
