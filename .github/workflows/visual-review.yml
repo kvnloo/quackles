@@ -36,6 +36,13 @@ jobs:
       - name: Install crop tooling
         run: python3 -m pip install --quiet pillow
 
+      - name: Checkout Dream Loop critic skill
+        uses: actions/checkout@v4
+        with:
+          repository: kvnloo/dream-loop
+          ref: cursor/community-comfyui-loop-b0c2
+          path: dream-loop-critic
+
       - name: Fetch deployed manifest
         env:
           MANIFEST_URL: https://kvnloo.github.io/quackles/compare/manifest.json
@@ -256,6 +263,55 @@ jobs:
           (blind / "REVIEW.md").write_text(instructions)
           PY
           python3 /tmp/crops.py
+
+      - name: Run real Dream Loop overlays and crop gates
+        shell: bash
+        run: |
+          set -u
+          mkdir -p review/blind/DREAMLOOP
+          cp dream-loop-critic/references/classic/judge.md review/blind/DREAMLOOP/JUDGE.md
+          cp dream-loop-critic/references/pro-mode/workflow.md review/blind/DREAMLOOP/WORKFLOW.md
+
+          REF="$(find review/reference -maxdepth 1 -type f -name 'day-reference.*' | head -n 1 || true)"
+          if [ -z "$REF" ]; then
+            cat > review/blind/DREAMLOOP/REFERENCE_MISSING.txt <<'EOF'
+          The locked Day reference is not on a checked remote branch yet.
+          Candidate screenshots and zoom crops are still blind-ready.
+          Once the reference is pushed, this workflow will run the actual Dream Loop
+          overlay.py + crop_gate.py on the full hero and every focused crop.
+          EOF
+            exit 0
+          fi
+
+          for candidate in review/blind/[A-Z]; do
+            [ -d "$candidate" ] || continue
+            hero="$candidate/hero-frame.png"
+            [ -f "$hero" ] || continue
+
+            full="$candidate/dreamloop-full"
+            mkdir -p "$full"
+            python3 dream-loop-critic/scripts/overlay.py "$REF" "$hero" "$full" || true
+            set +e
+            python3 dream-loop-critic/scripts/crop_gate.py "$REF" "$hero" "$full" > "$full/crop-gate.txt" 2>&1
+            rc=$?
+            set -e
+            printf 'exit_code=%s\n' "$rc" >> "$full/crop-gate.txt"
+
+            for ref_crop in review/blind/REFERENCE/zoom-*.jpg; do
+              [ -f "$ref_crop" ] || continue
+              name="$(basename "$ref_crop")"
+              candidate_crop="$candidate/$name"
+              [ -f "$candidate_crop" ] || continue
+              region="$candidate/dreamloop-$(basename "$name" .jpg)"
+              mkdir -p "$region"
+              python3 dream-loop-critic/scripts/overlay.py "$ref_crop" "$candidate_crop" "$region" || true
+              set +e
+              python3 dream-loop-critic/scripts/crop_gate.py "$ref_crop" "$candidate_crop" "$region" > "$region/crop-gate.txt" 2>&1
+              rc=$?
+              set -e
+              printf 'exit_code=%s\n' "$rc" >> "$region/crop-gate.txt"
+            done
+          done
 
       - name: Upload blind review pack
         uses: actions/upload-artifact@v4
