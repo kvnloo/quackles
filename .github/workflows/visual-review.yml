@@ -1,0 +1,256 @@
+name: visual-review
+
+on:
+  workflow_run:
+    workflows: ["pages"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: visual-review
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install crop tooling
+        run: python3 -m pip install --quiet pillow
+
+      - name: Fetch deployed manifest
+        env:
+          MANIFEST_URL: https://kvnloo.github.io/quackles/compare/manifest.json
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error --location "$MANIFEST_URL" -o /tmp/quackles-manifest.json; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Recover locked Day reference if present on git
+        shell: bash
+        run: |
+          set -u
+          mkdir -p review/reference
+          refs=(recovery/day-reference nightly-source nightly main)
+          paths=(
+            blender/assets/reference_day.png
+            blender/assets/reference_day.webp
+            calibration/references/day.png
+            calibration/references/day.webp
+          )
+          found=0
+          for ref in "${refs[@]}"; do
+            git fetch --no-tags origin "refs/heads/${ref}:refs/remotes/origin/${ref}" 2>/dev/null || true
+            for path in "${paths[@]}"; do
+              if git cat-file -e "origin/${ref}:${path}" 2>/dev/null; then
+                ext="${path##*.}"
+                git show "origin/${ref}:${path}" > "review/reference/day-reference.${ext}"
+                printf 'ref=%s\npath=%s\n' "$ref" "$path" > review/reference/source.txt
+                found=1
+                break 2
+              fi
+            done
+          done
+          if [ "$found" -eq 0 ]; then
+            cat > review/reference/REFERENCE_MISSING.txt <<'EOF'
+          The locked Day reference is not committed on any checked remote branch yet.
+          Candidate screenshots and zoom crops are still captured.
+          Once reference_day.png/webp is pushed, this workflow will automatically include it.
+          EOF
+          fi
+
+      - name: Capture every deployed branch
+        env:
+          CHROME: /usr/bin/google-chrome
+          MANIFEST: /tmp/quackles-manifest.json
+        run: |
+          cat > /tmp/capture-pages.mjs <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import crypto from "node:crypto";
+          import puppeteer from "puppeteer-core";
+
+          const manifest = JSON.parse(fs.readFileSync(process.env.MANIFEST, "utf8"));
+          const baseOrigin = "https://kvnloo.github.io";
+          const out = path.resolve("review/raw");
+          fs.mkdirSync(out, { recursive: true });
+
+          const browser = await puppeteer.launch({
+            executablePath: process.env.CHROME,
+            headless: true,
+            args: ["--no-sandbox", "--disable-dev-shm-usage"],
+          });
+
+          const usable = manifest.channels.filter((channel) => channel.status === "ok");
+          const runSalt = process.env.GITHUB_RUN_ID || "local";
+          const ordered = usable.slice().sort((a, b) => {
+            const h = (x) => crypto.createHash("sha256").update(runSalt + x.ref).digest("hex");
+            return h(a).localeCompare(h(b));
+          });
+          const labels = new Map(ordered.map((channel, i) => [channel.ref, String.fromCharCode(65 + i)]));
+
+          const mapping = [];
+          for (const channel of usable) {
+            const label = labels.get(channel.ref);
+            const url = new URL(channel.url, baseOrigin).href;
+            const dir = path.join(out, label);
+            fs.mkdirSync(dir, { recursive: true });
+
+            const page = await browser.newPage();
+            await page.setViewport({ width: 430, height: 932, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+            const errors = [];
+            page.on("pageerror", (error) => errors.push(String(error)));
+            page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+
+            try {
+              await page.goto(url, { waitUntil: "networkidle2", timeout: 120000 });
+              await page.evaluate(async () => {
+                if (document.fonts?.ready) await document.fonts.ready;
+                await Promise.all([...document.images].map((img) => img.decode?.().catch(() => {})));
+              });
+              await new Promise((resolve) => setTimeout(resolve, 1200));
+
+              const maxScroll = await page.evaluate(() => Math.max(1, document.documentElement.scrollHeight - innerHeight));
+              for (const [name, p] of [["hero", 0], ["quarter", .25], ["middle", .5], ["three-quarter", .75], ["end", 1]]) {
+                await page.evaluate(({ p, maxScroll }) => scrollTo(0, p * maxScroll), { p, maxScroll });
+                await new Promise((resolve) => setTimeout(resolve, 450));
+                await page.screenshot({ path: path.join(dir, name + "-viewport.png"), fullPage: false });
+
+                if (name === "hero") {
+                  const frame = await page.$(".poster-frame");
+                  if (frame) {
+                    await frame.screenshot({ path: path.join(dir, "hero-frame.png") });
+                  } else {
+                    await page.screenshot({ path: path.join(dir, "hero-frame.png"), fullPage: false });
+                  }
+                }
+              }
+            } catch (error) {
+              errors.push(error instanceof Error ? error.stack || error.message : String(error));
+            }
+            fs.writeFileSync(path.join(dir, "browser-errors.txt"), errors.join("\n"));
+            mapping.push({ label, ref: channel.ref, sha: channel.sha, url });
+            await page.close();
+          }
+
+          await browser.close();
+          fs.mkdirSync("review/private-map", { recursive: true });
+          fs.writeFileSync("review/private-map/blind-map.json", JSON.stringify(mapping, null, 2));
+          NODE
+          node /tmp/capture-pages.mjs
+
+      - name: Build blind DreamLoop crop pack
+        run: |
+          cat > /tmp/crops.py <<'PY'
+          from PIL import Image, ImageOps, ImageDraw, ImageFont
+          from pathlib import Path
+          import json
+          import math
+
+          raw = Path("review/raw")
+          blind = Path("review/blind")
+          blind.mkdir(parents=True, exist_ok=True)
+
+          crop_defs = {
+              "top-layout": (0.00, 0.00, 1.00, 0.36),
+              "left-copy": (0.00, 0.05, 0.48, 0.55),
+              "robot": (0.16, 0.18, 0.76, 0.76),
+              "orb-right": (0.53, 0.12, 1.00, 0.64),
+              "plinth": (0.00, 0.48, 1.00, 0.90),
+              "bottom": (0.00, 0.72, 1.00, 1.00),
+          }
+
+          def crop(img, box):
+              w, h = img.size
+              x0, y0, x1, y1 = box
+              return img.crop((round(x0*w), round(y0*h), round(x1*w), round(y1*h)))
+
+          labels = sorted([p for p in raw.iterdir() if p.is_dir()], key=lambda p: p.name)
+          for label_dir in labels:
+              target = blind / label_dir.name
+              target.mkdir(exist_ok=True)
+              for source in label_dir.glob("*.png"):
+                  img = Image.open(source).convert("RGB")
+                  ImageOps.exif_transpose(img)
+                  img.save(target / source.name, quality=92)
+                  if source.name == "hero-frame.png":
+                      for name, box in crop_defs.items():
+                          c = crop(img, box)
+                          scale = max(1, math.ceil(900 / max(1, c.width)))
+                          if scale > 1:
+                              c = c.resize((c.width*scale, c.height*scale), Image.Resampling.LANCZOS)
+                          c.save(target / f"zoom-{name}.jpg", quality=94)
+
+          ref_dir = Path("review/reference")
+          refs = list(ref_dir.glob("day-reference.*"))
+          if refs:
+              ref = Image.open(refs[0]).convert("RGB")
+              ref = ImageOps.exif_transpose(ref)
+              out = blind / "REFERENCE"
+              out.mkdir(exist_ok=True)
+              ref.save(out / "day-reference.png")
+              for name, box in crop_defs.items():
+                  c = crop(ref, box)
+                  scale = max(1, math.ceil(900 / max(1, c.width)))
+                  if scale > 1:
+                      c = c.resize((c.width*scale, c.height*scale), Image.Resampling.LANCZOS)
+                  c.save(out / f"zoom-{name}.jpg", quality=94)
+
+          instructions = """# Blind Quackles visual review
+
+          Candidate folders are letter-coded. Do not open the separate blind-map artifact until after scoring.
+
+          Review hero-frame.png against REFERENCE/day-reference.png when the reference is present.
+
+          DreamLoop critic pass:
+          1. Judge the whole frame first.
+          2. Inspect every zoom-* crop independently.
+          3. Name concrete mismatches in composition, materials, light, typography, robot pose, orb/reflections and plinth treatment.
+          4. Do not infer branch identity or reward novelty.
+          5. For motion, inspect hero / quarter / middle / three-quarter / end viewport captures in order and call out pose discontinuity or incoherent choreography.
+          6. Record blockers before preferences.
+
+          A technically successful build is not automatically a visually acceptable candidate.
+          """
+          (blind / "REVIEW.md").write_text(instructions)
+          PY
+          python3 /tmp/crops.py
+
+      - name: Upload blind review pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: quackles-blind-review-${{ github.run_id }}
+          path: |
+            review/blind/
+            review/reference/
+          retention-days: 30
+
+      - name: Upload private branch map
+        uses: actions/upload-artifact@v4
+        with:
+          name: quackles-blind-map-${{ github.run_id }}
+          path: review/private-map/
+          retention-days: 30
