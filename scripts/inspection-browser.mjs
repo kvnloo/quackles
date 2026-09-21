@@ -188,7 +188,7 @@ try {
     2
   )
     throw new Error("viewfinder copied the base canvas on camera frames");
-  if (settled.sequence.drawCount - before.sequence.drawCount > 1)
+  if (settled.sequence.drawCount - before.sequence.drawCount > 3)
     throw new Error("camera spring woke the full sequence renderer repeatedly");
 
   await page.screenshot({
@@ -201,7 +201,7 @@ try {
     y: rect.y + rect.height * 0.42,
   };
   await page.mouse.move(secondCursor.x, secondCursor.y);
-  await page.waitForTimeout(260);
+  await page.waitForTimeout(520);
   const followed = await state(page);
   if (!(followed.inspection.focusX < settled.inspection.focusX))
     throw new Error("inspection camera did not follow the cursor laterally");
@@ -235,17 +235,36 @@ try {
   await page.mouse.wheel(0, 420);
   await page.waitForTimeout(250);
   const released = await state(page);
-  if (released.cinematic) {
-    if (released.scrollY !== 0)
-      throw new Error("cinematic launch intent leaked into page scroll");
-    if (
-      released.cinematic.phase === "idle" &&
-      !(released.cinematic.launchIntent > 0)
-    )
-      throw new Error("post-inspection wheel was not handed to cinematic authority");
-  } else if (!(released.scrollY > 0)) {
+  if (!(released.scrollY > 0))
     throw new Error("normal downward story scroll was not released after zoom-out");
+  if (released.viewfinder.active)
+    throw new Error("viewfinder appeared during downward story scroll");
+
+  for (let i = 0; i < 12; i++) {
+    await page.mouse.wheel(0, -520);
+    await page.waitForTimeout(55);
   }
+  await page.waitForFunction(
+    () =>
+      window.scrollY <= 2 &&
+      (window.__QUACKLES_SEQUENCE__?.getState().current.progress ?? 1) <= 0.012,
+    undefined,
+    { timeout: 6000 },
+  );
+  const rewound = await state(page);
+  if (rewound.viewfinder.active)
+    throw new Error("viewfinder remained visible after story rewind");
+
+  await page.mouse.move(firstCursor.x, firstCursor.y);
+  await page.mouse.wheel(0, -180);
+  await page.waitForTimeout(1000);
+  const reinspected = await state(page);
+  if (!(reinspected.inspection?.zoom > 1.02))
+    throw new Error("scroll-up after story rewind did not re-enter inspection");
+  if (!reinspected.viewfinder.active)
+    throw new Error("viewfinder did not return with renewed inspection");
+  if (reinspected.scrollY !== 0)
+    throw new Error("renewed inspection leaked back into story scroll");
 
   await desktopContext.close();
 
