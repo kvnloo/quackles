@@ -36,6 +36,9 @@ const EMPTY_CROP: Crop = {
   scale: 1,
 };
 
+const clamp = (value: number, low: number, high: number) =>
+  Math.max(low, Math.min(high, value));
+
 export function InspectionViewfinder() {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,6 +107,45 @@ export function InspectionViewfinder() {
       if (active && snapshotCount === 0) copySource();
 
       host.dataset.active = active ? "true" : "false";
+
+      // Native pinch magnifies normal page content, including absolutely
+      // positioned overlays. Counter-scale the navigator and anchor it inside
+      // the currently visible source crop so it remains a stable heads-up
+      // control instead of being zoomed offscreen with the poster.
+      const nativePinch =
+        nativeScale > 1.02 &&
+        !(inspection.active || inspection.zoom > 1.0005);
+      if (nativePinch) {
+        const baseSize = 0.21;
+        const size = baseSize / nativeScale;
+        const margin = 0.024 / nativeScale;
+        const left = clamp(
+          crop.x + crop.width - size - margin,
+          crop.x + margin,
+          1 - size,
+        );
+        const top = clamp(
+          crop.y + crop.height - size - margin,
+          crop.y + margin,
+          1 - size,
+        );
+        host.dataset.nativePinch = "true";
+        host.style.left = `${left * 100}%`;
+        host.style.top = `${top * 100}%`;
+        host.style.right = "auto";
+        host.style.bottom = "auto";
+        host.style.transformOrigin = "0 0";
+        host.style.transform = `scale(${1 / nativeScale})`;
+      } else {
+        delete host.dataset.nativePinch;
+        host.style.removeProperty("left");
+        host.style.removeProperty("top");
+        host.style.removeProperty("right");
+        host.style.removeProperty("bottom");
+        host.style.removeProperty("transform-origin");
+        host.style.removeProperty("transform");
+      }
+
       viewportRect.setAttribute("x", String(crop.x));
       viewportRect.setAttribute("y", String(crop.y));
       viewportRect.setAttribute("width", String(crop.width));
