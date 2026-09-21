@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: kvnloo/dream-loop
-          ref: cursor/community-comfyui-loop-b0c2
+          ref: 0dd0547d35ce779d606c4a900b09d1d00c58dd35
           path: dream-loop-critic
 
       - name: Fetch deployed manifest
@@ -236,7 +236,7 @@ jobs:
               target.mkdir(exist_ok=True)
               for source in label_dir.glob("*.png"):
                   img = Image.open(source).convert("RGB")
-                  ImageOps.exif_transpose(img)
+                  img = ImageOps.exif_transpose(img)
                   img.save(target / source.name, quality=92)
                   if source.name == "hero-frame.png":
                       for name, box in crop_defs.items():
