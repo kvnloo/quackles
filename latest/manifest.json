@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T04:50:41Z",
+  "generatedAt": "2026-09-21T07:22:46Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -54,9 +54,9 @@
     {
       "ref": "main",
       "slug": "main",
-      "sha": "8a38e7fa611ae3142df196b1e916d36dbe8b0abc",
+      "sha": "b1296655ec28239339b21541b6fd80af3c9d4fcd",
       "status": "ok",
-      "title": "Fix desktop audit Puppeteer module resolution ",
+      "title": "Merge PR #34: refresh Pages gallery for reconcile branches ",
       "url": "/quackles/compare/main/"
     },
     {
@@ -70,9 +70,9 @@
     {
       "ref": "nightly-source",
       "slug": "nightly-source",
-      "sha": "0d0531a8551cfd38637da1c51093639fe58c149e",
+      "sha": "e12a73702f3923c58c884bfb7f4e8a89140f3157",
       "status": "ok",
-      "title": "Refresh Pages gallery when this branch changes ",
+      "title": "Merge PR #31: zero-fetch zoom viewfinder + adaptive deep-zoom budgets ",
       "url": "/quackles/compare/nightly-source/"
     },
     {
@@ -82,6 +82,102 @@
       "status": "ok",
       "title": "Refresh Pages gallery when this branch changes ",
       "url": "/quackles/compare/preview/"
+    },
+    {
+      "ref": "reconcile/cinematic-handoff-v2",
+      "slug": "reconcile-cinematic-handoff-v2",
+      "sha": "190bb61d77db1556d50373d11cf920a20850758a",
+      "status": "ok",
+      "title": "reconcile: cinematic handoff on current inspection stack ",
+      "url": "/quackles/compare/reconcile-cinematic-handoff-v2/"
+    },
+    {
+      "ref": "reconcile/cursor-gigapixel-inspection",
+      "slug": "reconcile-cursor-gigapixel-inspection",
+      "sha": "a2571d6f173e69395d14126b2b7952cdac499dc4",
+      "status": "ok",
+      "title": "fix: register Gigapixel tiles without copying asset data ",
+      "url": "/quackles/compare/reconcile-cursor-gigapixel-inspection/"
+    },
+    {
+      "ref": "reconcile/day-materials",
+      "slug": "reconcile-day-materials",
+      "sha": "a8bd626a01cbdc8c2e6220089503d9433ca79a95",
+      "status": "ok",
+      "title": "Remove recovery-only Pages refresh plumbing ",
+      "url": "/quackles/compare/reconcile-day-materials/"
+    },
+    {
+      "ref": "reconcile/desktop-contract",
+      "slug": "reconcile-desktop-contract",
+      "sha": "b79b686b4d44bd834b2c186b7c7342c428ce7d0c",
+      "status": "ok",
+      "title": "Decouple cinematic timing validation from software rendering ",
+      "url": "/quackles/compare/reconcile-desktop-contract/"
+    },
+    {
+      "ref": "reconcile/gigapixel-generator",
+      "slug": "reconcile-gigapixel-generator",
+      "sha": "d3d1329124b3cce84b9dc149336d955dbe4b53b9",
+      "status": "ok",
+      "title": "Isolate Lenis behind scroll-driver adapter ",
+      "url": "/quackles/compare/reconcile-gigapixel-generator/"
+    },
+    {
+      "ref": "reconcile/gigapixel-source",
+      "slug": "reconcile-gigapixel-source",
+      "sha": "c2585dc853dfedf2db51cfc769781dfe51f53eff",
+      "status": "ok",
+      "title": "Remove recovery-only Pages refresh plumbing ",
+      "url": "/quackles/compare/reconcile-gigapixel-source/"
+    },
+    {
+      "ref": "reconcile/gigapixel-source-v2",
+      "slug": "reconcile-gigapixel-source-v2",
+      "sha": "7872f8c8453b77c10a21b6ad09e24fb124ea4582",
+      "status": "ok",
+      "title": "Preserve 200MP Blue render generator ",
+      "url": "/quackles/compare/reconcile-gigapixel-source-v2/"
+    },
+    {
+      "ref": "reconcile/haptics-no-audio",
+      "slug": "reconcile-haptics-no-audio",
+      "sha": "5b2568905884f98d3b81f9d4674fa365d04b4dc9",
+      "status": "ok",
+      "title": "Keep PWM haptics, disable rejected synthetic audio ",
+      "url": "/quackles/compare/reconcile-haptics-no-audio/"
+    },
+    {
+      "ref": "reconcile/inspection-viewfinder-perf",
+      "slug": "reconcile-inspection-viewfinder-perf",
+      "sha": "5269ce9d75c547a39833f29fe91b0545bb306021",
+      "status": "ok",
+      "title": "test: require viewfinder inside mobile visual viewport ",
+      "url": "/quackles/compare/reconcile-inspection-viewfinder-perf/"
+    },
+    {
+      "ref": "reconcile/live-motion-core",
+      "slug": "reconcile-live-motion-core",
+      "sha": "1b4d20657fd8aa922dd52dc1e64406aea6f5d173",
+      "status": "ok",
+      "title": "Layer live rig above sequence fallback ",
+      "url": "/quackles/compare/reconcile-live-motion-core/"
+    },
+    {
+      "ref": "reconcile/scroll-driver-adapter-v2",
+      "slug": "reconcile-scroll-driver-adapter-v2",
+      "sha": "378b990bac61c7346408b02ee1f616105a9b46fd",
+      "status": "ok",
+      "title": "Consume normalized progress from scroll driver ",
+      "url": "/quackles/compare/reconcile-scroll-driver-adapter-v2/"
+    },
+    {
+      "ref": "reconcile/smooth-scroll-kernel",
+      "slug": "reconcile-smooth-scroll-kernel",
+      "sha": "1c321db0593b3bcb74bc7421275ff4a98fcc10db",
+      "status": "ok",
+      "title": "Route sequence progress through smooth scroll adapter ",
+      "url": "/quackles/compare/reconcile-smooth-scroll-kernel/"
     },
     {
       "ref": "recovery/day-reference",
@@ -98,6 +194,22 @@
       "status": "ok",
       "title": "Refresh comparison gallery when branch changes ",
       "url": "/quackles/compare/gigapixel/"
+    },
+    {
+      "ref": "recovery/reconcile-live-rig",
+      "slug": "reconcile-live-rig",
+      "sha": "3ad157455618a26ac8a678e2f7b265202e894a81",
+      "status": "ok",
+      "title": "Use live-rig candidate on reconciliation branch ",
+      "url": "/quackles/compare/reconcile-live-rig/"
+    },
+    {
+      "ref": "recovery/reconcile-smooth-scroll",
+      "slug": "reconcile-smooth-scroll",
+      "sha": "9f44b07d5a93ead9abd35782175a453afe5f584f",
+      "status": "ok",
+      "title": "Transplant Lenis smoothing at sequence scroll boundary ",
+      "url": "/quackles/compare/reconcile-smooth-scroll/"
     },
     {
       "ref": "recovery/simulator",
