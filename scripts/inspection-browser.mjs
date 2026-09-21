@@ -50,7 +50,8 @@ const assetProxyResponses = [];
 async function installAssetProxy(context) {
   await context.route("**/quackles-assets/**", async (route) => {
     const requestUrl = new URL(route.request().url());
-    const upstream = `https://kvnloo.github.io${requestUrl.pathname}`;
+    const assetPathname = requestUrl.pathname.replace(/^\\/quackles-assets/, "");
+    const upstream = `https://raw.githubusercontent.com/kvnloo/quackles-assets/5ff80074ffc251fff8bc120c812e2fd8d89fb54b${assetPathname}`;
     const response = await fetch(upstream);
     const body = Buffer.from(await response.arrayBuffer());
     const headers = Object.fromEntries(response.headers.entries());
@@ -269,8 +270,8 @@ try {
     throw new Error(`deep inspection stopped at ${deep.sequence.detailWidth}px instead of the 11584px DZI tier`);
   if (!(deep.sequence.detailTiles > 0))
     throw new Error("deep inspection did not paint DZI tiles");
-  if (!deepDziRequests.some((url) => /\/quackles-assets\/blue\/p0000000\/15\//.test(url)))
-    throw new Error("deep inspection never requested level-15 200MP tiles");
+  if (!deepDziRequests.some((url) => /\/quackles-assets\/blue\/p0000000\/0\//.test(url)))
+    throw new Error("deep inspection never requested level-0 native 200MP tiles");
   const failedDzi = assetProxyResponses.filter(
     (entry) =>
       entry.requested.includes("/quackles-assets/") &&
