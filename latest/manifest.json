@@ -1,14 +1,62 @@
 {
-  "generatedAt": "2026-09-21T04:34:30Z",
+  "generatedAt": "2026-09-21T04:50:41Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
     {
+      "ref": "cursor/duck-hq-hero-757a",
+      "slug": "cursor-duck-hq-hero-757a",
+      "sha": "426d13c16bb93dc9a4e427dda0d8c75c56aaccde",
+      "status": "ok",
+      "title": "Allow Swiftshader hitch streaks when scoring ACES + MSAA. ",
+      "url": "/quackles/compare/cursor-duck-hq-hero-757a/"
+    },
+    {
+      "ref": "cursor/quiet-product-scroll-32fe",
+      "slug": "cursor-quiet-product-scroll-32fe",
+      "sha": "17132d9084c2d884842ef6a4ef01e9434a4544be",
+      "status": "ok",
+      "title": "Restore the quiet native-scroll product film on main. ",
+      "url": "/quackles/compare/cursor-quiet-product-scroll-32fe/"
+    },
+    {
+      "ref": "cursor/theme-slider-poster-match-530e",
+      "slug": "cursor-theme-slider-poster-match-530e",
+      "sha": "734d5ff8ac2e17d25aab083397afb1b382f5174b",
+      "status": "ok",
+      "title": "Restore the interpolating theme slider and cobalt poster first frame. ",
+      "url": "/quackles/compare/cursor-theme-slider-poster-match-530e/"
+    },
+    {
+      "ref": "cursor/three-state-theme-28f5",
+      "slug": "cursor-three-state-theme-28f5",
+      "sha": "dd36913e912a70fb9947235f73f6d1a2aff4a882",
+      "status": "ok",
+      "title": "Replace the infinite theme slider with three lerped studio states. ",
+      "url": "/quackles/compare/cursor-three-state-theme-28f5/"
+    },
+    {
+      "ref": "dev",
+      "slug": "dev",
+      "sha": "ae51575c506a02bc1b2fb821ca21132433617a00",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/dev/"
+    },
+    {
+      "ref": "feat/water",
+      "slug": "water",
+      "sha": "935e34d5b8908fec1469a6c98008e3c7be9b2edc",
+      "status": "ok",
+      "title": "Refresh Pages gallery when this branch changes ",
+      "url": "/quackles/compare/water/"
+    },
+    {
       "ref": "main",
       "slug": "main",
-      "sha": "4fe2a25f56e9dc72462174e1697710361d351759",
+      "sha": "8a38e7fa611ae3142df196b1e916d36dbe8b0abc",
       "status": "ok",
-      "title": "Auto-deploy all recovery branches in Pages lab ",
+      "title": "Fix desktop audit Puppeteer module resolution ",
       "url": "/quackles/compare/main/"
     },
     {
@@ -34,22 +82,6 @@
       "status": "ok",
       "title": "Refresh Pages gallery when this branch changes ",
       "url": "/quackles/compare/preview/"
-    },
-    {
-      "ref": "dev",
-      "slug": "dev",
-      "sha": "ae51575c506a02bc1b2fb821ca21132433617a00",
-      "status": "ok",
-      "title": "Refresh Pages gallery when this branch changes ",
-      "url": "/quackles/compare/dev/"
-    },
-    {
-      "ref": "feat/water",
-      "slug": "water",
-      "sha": "935e34d5b8908fec1469a6c98008e3c7be9b2edc",
-      "status": "ok",
-      "title": "Refresh Pages gallery when this branch changes ",
-      "url": "/quackles/compare/water/"
     },
     {
       "ref": "recovery/day-reference",
