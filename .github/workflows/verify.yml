@@ -4,7 +4,7 @@ name: verify
 on:
   pull_request:
   push:
-    branches: [main, preview, nightly, dev, feat/live-cinematic-sim-handoff]
+    branches: [main, preview, nightly, dev, feat/live-cinematic-sim-handoff, feat/scroll-up-zoom-in]
   workflow_dispatch:
 
 concurrency:
