@@ -26,14 +26,28 @@ export function inspectionCrop(
   return { x, y, width, height, scale };
 }
 export function tileAssets(variant: TileAsset, crop: Crop, overscan = 1) {
-  const { tileSize, columns, rows, urlTemplate } = variant.tiles;
+  const { tileSize, overlap, columns, rows, urlTemplate } = variant.tiles;
   const firstX = Math.max(0, Math.floor(crop.x * variant.width / tileSize) - overscan);
   const lastX = Math.min(columns - 1, Math.ceil((crop.x + crop.width) * variant.width / tileSize) - 1 + overscan);
   const firstY = Math.max(0, Math.floor(crop.y * variant.height / tileSize) - overscan);
   const lastY = Math.min(rows - 1, Math.ceil((crop.y + crop.height) * variant.height / tileSize) - 1 + overscan);
-  const result: { asset: ImageAsset; x: number; y: number }[] = [];
+  const result: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
   for (let y = firstY; y <= lastY; y++) for (let x = firstX; x <= lastX; x++) {
-    result.push({ x, y, asset: { url: urlTemplate.replaceAll("{x}", String(x)).replaceAll("{y}", String(y)), width: Math.min(tileSize, variant.width - x * tileSize), height: Math.min(tileSize, variant.height - y * tileSize) } });
+    const sourceX = Math.max(0, x * tileSize - (x > 0 ? overlap : 0));
+    const sourceY = Math.max(0, y * tileSize - (y > 0 ? overlap : 0));
+    const right = Math.min(variant.width, (x + 1) * tileSize + (x < columns - 1 ? overlap : 0));
+    const bottom = Math.min(variant.height, (y + 1) * tileSize + (y < rows - 1 ? overlap : 0));
+    result.push({
+      x,
+      y,
+      sourceX,
+      sourceY,
+      asset: {
+        url: urlTemplate.replaceAll("{x}", String(x)).replaceAll("{y}", String(y)),
+        width: right - sourceX,
+        height: bottom - sourceY,
+      },
+    });
   }
   return result;
 }
@@ -42,7 +56,7 @@ export function detailPlan(variants: Variant[], desiredWidth: number, crop: Crop
   for (let i = preferred < 0 ? variants.length - 1 : preferred; i >= 0; i--) {
     const variant = variants[i];
     for (const overscan of isImage(variant) ? [0] : [1, 0]) {
-      const tasks = isImage(variant) ? [{ asset: variant, x: 0, y: 0 }] : tileAssets(variant, crop, overscan);
+      const tasks = isImage(variant) ? [{ asset: variant, x: 0, y: 0, sourceX: 0, sourceY: 0 }] : tileAssets(variant, crop, overscan);
       const bytes = tasks.reduce((sum, { asset }) => sum + asset.width * asset.height * 4, 0);
       if (bytes <= budget) return { variant, tasks };
     }
@@ -71,7 +85,7 @@ export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: D
     context.globalAlpha = progressMix; context.drawImage(scratch, 0, 0, width, height); context.globalAlpha = 1;
   }
 }
-export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, variant: ImageAsset | TileAsset, images: { image: Decoded; x: number; y: number }[]) {
+export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, variant: ImageAsset | TileAsset, images: { image: Decoded; x: number; y: number; sourceX: number; sourceY: number }[]) {
   const rect = container.getBoundingClientRect();
   const width = Math.max(1, Math.ceil(rect.width * crop.width * devicePixelRatio * crop.scale));
   const height = Math.max(1, Math.ceil(rect.height * crop.height * devicePixelRatio * crop.scale));
@@ -84,8 +98,8 @@ export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, c
     context.drawImage(images[0].image.bitmap, crop.x * variant.width, crop.y * variant.height, crop.width * variant.width, crop.height * variant.height, 0, 0, canvas.width, canvas.height);
   } else {
     const scaleX = canvas.width / (crop.width * variant.width), scaleY = canvas.height / (crop.height * variant.height);
-    for (const { image, x, y } of images)
-      context.drawImage(image.bitmap, (x * variant.tiles.tileSize - crop.x * variant.width) * scaleX, (y * variant.tiles.tileSize - crop.y * variant.height) * scaleY, image.asset.width * scaleX, image.asset.height * scaleY);
+    for (const { image, sourceX, sourceY } of images)
+      context.drawImage(image.bitmap, (sourceX - crop.x * variant.width) * scaleX, (sourceY - crop.y * variant.height) * scaleY, image.asset.width * scaleX, image.asset.height * scaleY);
   }
   canvas.style.visibility = "visible";
 }
