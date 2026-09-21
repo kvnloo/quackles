@@ -120,7 +120,7 @@ a:focus-visible {
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 38%, transparent);
   background: linear-gradient(90deg, var(--paper) 68.4%, transparent 68.4%);
 }
-.sequence-player, .sequence-base {
+.sequence-player, .sequence-camera, .sequence-base {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -128,8 +128,18 @@ a:focus-visible {
   pointer-events: none;
 }
 .sequence-player { overflow: hidden; }
+.sequence-camera {
+  transform: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  backface-visibility: hidden;
+}
 .sequence-base, .sequence-detail { visibility: hidden; }
 .sequence-detail { position: absolute; pointer-events: none; }
+@media (hover: hover) and (pointer: fine) {
+  .poster-frame { cursor: zoom-in; }
+  .poster-frame[data-inspecting="true"] { cursor: crosshair; }
+}
 .wordmark {
   font-family: var(--font-display), sans-serif;
   font-size: 7cqw;
