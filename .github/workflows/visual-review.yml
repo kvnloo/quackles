@@ -15,7 +15,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: visual-review
+  group: visual-review-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
