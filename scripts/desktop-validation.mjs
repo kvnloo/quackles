@@ -130,7 +130,17 @@ try {
   report.states.scrollUpEarly = await state();
   await pause(110);
   report.states.scrollUpMid = await state();
-  await pause(520);
+  await page.waitForFunction(
+    () => {
+      const current = window.__QUACKLES_DESKTOP__?.getState();
+      return Boolean(
+        current &&
+          Math.abs(current.zoom - current.targetZoom) <= 0.004 &&
+          Math.abs(current.zoomVelocity) <= 0.002,
+      );
+    },
+    { timeout: 2500 },
+  );
   report.states.scrollUpSettled = await state();
   report.screenshots.scrollUpSettled = await screenshot("01b-scroll-up-zoom");
 
@@ -145,7 +155,10 @@ try {
     throw new Error("scroll-up zoom snapped or moved in the wrong direction");
   if (!(zoomMid.zoom < zoomEarly.zoom))
     throw new Error("scroll-up zoom did not continue smoothly toward the target");
-  if (Math.abs(zoomSettled.zoom - zoomSettled.targetZoom) > 0.004)
+  if (
+    Math.abs(zoomSettled.zoom - zoomSettled.targetZoom) > 0.004 ||
+    Math.abs(zoomSettled.zoomVelocity) > 0.002
+  )
     throw new Error("scroll-up zoom did not settle on its target");
   if (zoomSettled.launchIntent !== 0 || zoomSettled.phase !== "inspect")
     throw new Error("scroll-up incorrectly armed or launched the cinematic");
