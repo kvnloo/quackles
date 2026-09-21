@@ -402,6 +402,7 @@ a:focus-visible {
 /* Desktop live-rig experiment: preserve the mobile sequence below the breakpoint. */
 .desktop-shell {
   --desktop-zoom: 1;
+  --desktop-inspect-scale: 1;
   --launch-intent: 0;
   position: fixed;
   inset: 0;
@@ -446,6 +447,29 @@ a:focus-visible {
 .desktop-shell .duck-canvas {
   width: 100%;
   height: 100%;
+}
+.desktop-shell .sequence-player {
+  opacity: 1;
+  transform: scale(var(--desktop-inspect-scale));
+  transform-origin: 50% 50%;
+  transition: opacity 180ms ease;
+  will-change: transform, opacity;
+}
+.desktop-shell .duck-slot {
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.desktop-shell[data-live-ready="true"][data-phase="jump"] .sequence-player,
+.desktop-shell[data-live-ready="true"][data-phase="explode"] .sequence-player,
+.desktop-shell[data-live-ready="true"][data-phase="reassemble"] .sequence-player,
+.desktop-shell[data-live-ready="true"][data-phase="sim-ready"] .sequence-player {
+  opacity: 0;
+}
+.desktop-shell[data-live-ready="true"][data-phase="jump"] .duck-slot,
+.desktop-shell[data-live-ready="true"][data-phase="explode"] .duck-slot,
+.desktop-shell[data-live-ready="true"][data-phase="reassemble"] .duck-slot,
+.desktop-shell[data-live-ready="true"][data-phase="sim-ready"] .duck-slot {
+  opacity: 1;
 }
 .desktop-shell .hero-copy,
 .desktop-shell .jump-copy,
