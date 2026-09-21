@@ -158,7 +158,7 @@ export function HeroInspection() {
     const enterInspection = (clientX: number, clientY: number, zoom = 1.9) => {
       const current = inspectionSnapshot();
       const focus = targetFocus(clientX, clientY);
-      if (window.scrollY > 2 || sequenceSnapshot().progress > 0) {
+      if (window.scrollY > 0 || sequenceSnapshot().progress > 0) {
         window.dispatchEvent(new Event("quackles:reset-story-scroll"));
       }
       setInspectionState({
