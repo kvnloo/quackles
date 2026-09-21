@@ -47,16 +47,14 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const plates = document.querySelector<HTMLElement>(".poster-plates");
-    const canvas = document.querySelector<HTMLElement>(".duck-slot");
+    const shell = document.querySelector<HTMLElement>(".desktop-shell");
     const active = Boolean(ready && webgl);
     const q = ensureProbe();
     if (q) {
       q.ready = active;
       q.reducedMotion = reducedMotion;
     }
-    if (plates) plates.style.visibility = active ? "hidden" : "visible";
-    if (canvas) canvas.style.visibility = active ? "visible" : "hidden";
+    if (shell) shell.dataset.liveReady = active ? "true" : "false";
 
     window.__QUACKLES_DEBUG__ = {
       setProgress(progress) {
