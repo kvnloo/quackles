@@ -74,8 +74,8 @@ export function wheelZoomTarget(
   // Trackpads send many tiny deltas while mouse wheels send sparse large ones.
   // Exponential scaling keeps both continuous without letting one event teleport
   // the camera across the product.
-  const bounded = clamp(deltaY, -240, 240);
-  return clamp(current * Math.exp(-bounded * 0.0017), MIN_ZOOM, maxZoom);
+  const bounded = clamp(deltaY, -180, 180);
+  return clamp(current * Math.exp(-bounded * 0.00082), MIN_ZOOM, maxZoom);
 }
 
 export function advanceSpring(
