@@ -286,6 +286,38 @@ try {
     await page.mouse.wheel(0, -180);
     await page.waitForTimeout(24);
   }
+  await page.waitForTimeout(5000);
+  const deepProbe = await state(page);
+  console.log(
+    JSON.stringify(
+      {
+        deepProbe: {
+          inspection: deepProbe.inspection,
+          detailWidth: deepProbe.sequence.detailWidth,
+          detailTiles: deepProbe.sequence.detailTiles,
+          requestedTierWidth: deepProbe.sequence.requested?.tierWidth ?? null,
+          errors: deepProbe.sequence.errors,
+          cache: deepProbe.sequence.cache,
+          dziRequests: (await dziRequests(page)).length,
+          assetResponses: assetProxyResponses.slice(-8),
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  if (deepProbe.sequence.errors.length)
+    throw new Error(
+      `DZI load failed before native tier settled: ${JSON.stringify(deepProbe.sequence.errors.slice(-4))}`,
+    );
+  if (
+    deepProbe.sequence.detailWidth !== 11584 &&
+    deepProbe.sequence.cache.inflight === 0 &&
+    deepProbe.sequence.cache.queued === 0
+  )
+    throw new Error(
+      `native DZI stalled with no pending work: ${JSON.stringify({ detailWidth: deepProbe.sequence.detailWidth, detailTiles: deepProbe.sequence.detailTiles, requestedTierWidth: deepProbe.sequence.requested?.tierWidth ?? null, inspection: deepProbe.inspection, cache: deepProbe.sequence.cache })}`,
+    );
   await page.waitForFunction(
     () => {
       const current = window.__QUACKLES_SEQUENCE__?.getState();
