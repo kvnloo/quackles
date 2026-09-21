@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { createScrollDriver, type ScrollDriver } from "@/lib/sequence/scroll-driver";
 import { setProgress, setReducedMotion, snapshot, subscribe } from "@/lib/sequence/store";
 
 function interval(value: number, start: number, end: number) {
@@ -15,21 +16,37 @@ export function applyStoryProgress(p: number) {
 }
 export function SequenceScroll() {
   useEffect(() => {
-    let pending = 0;
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    let driver: ScrollDriver | null = null;
+
     const apply = () => {
       const p = snapshot().progress;
       const line = document.querySelector<HTMLElement>(".scroll-progress-fill");
       if (line) line.style.transform = `scaleX(${p})`;
     };
-    const read = () => { pending = 0; setProgress(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight)); };
-    const schedule = () => { if (!pending) pending = requestAnimationFrame(read); };
-    const media = matchMedia("(prefers-reduced-motion: reduce)");
-    const reduced = () => setReducedMotion(media.matches);
+
+    const startDriver = () => {
+      driver?.destroy();
+      setReducedMotion(media.matches);
+      driver = createScrollDriver({
+        reducedMotion: media.matches,
+        onProgress: setProgress,
+      });
+    };
+
+    const resize = () => driver?.resize();
     const unsubscribe = subscribe(apply);
-    reduced(); read();
-    addEventListener("scroll", schedule, { passive: true }); addEventListener("resize", schedule);
-    media.addEventListener("change", reduced);
-    return () => { cancelAnimationFrame(pending); unsubscribe(); removeEventListener("scroll", schedule); removeEventListener("resize", schedule); media.removeEventListener("change", reduced); };
+
+    startDriver();
+    addEventListener("resize", resize);
+    media.addEventListener("change", startDriver);
+
+    return () => {
+      driver?.destroy();
+      unsubscribe();
+      removeEventListener("resize", resize);
+      media.removeEventListener("change", startDriver);
+    };
   }, []);
   return null;
 }
