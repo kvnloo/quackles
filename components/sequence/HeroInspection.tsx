@@ -158,9 +158,10 @@ export function HeroInspection() {
     const enterInspection = (clientX: number, clientY: number, zoom = 1.9) => {
       const current = inspectionSnapshot();
       const focus = targetFocus(clientX, clientY);
-      if (window.scrollY > 0 || sequenceSnapshot().progress > 0) {
-        window.dispatchEvent(new Event("quackles:reset-story-scroll"));
-      }
+      // Entering inspection owns the hero boundary. Reset Lenis even when the
+      // DOM already reports 0 so latent story-scroll state cannot resume after
+      // the inspection wheel event has been consumed.
+      window.dispatchEvent(new Event("quackles:reset-story-scroll"));
       setInspectionState({
         active: true,
         targetZoom: Math.max(
