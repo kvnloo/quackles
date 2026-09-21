@@ -217,7 +217,11 @@ try {
   // Progressive hero detail should promote only after the camera settles.
   await page.mouse.wheel(0, -180);
   await page.mouse.wheel(0, -180);
-  await page.waitForTimeout(700);
+  await page.waitForFunction(
+    () => (window.__QUACKLES_SEQUENCE__?.getState().detailWidth ?? 0) >= 2048,
+    undefined,
+    { timeout: 10000 },
+  );
   const promoted2k = await state(page);
   if (!(promoted2k.sequence.detailWidth >= 2048))
     throw new Error(
@@ -225,7 +229,11 @@ try {
     );
 
   await page.mouse.wheel(0, -180);
-  await page.waitForTimeout(800);
+  await page.waitForFunction(
+    () => (window.__QUACKLES_SEQUENCE__?.getState().detailWidth ?? 0) >= 4096,
+    undefined,
+    { timeout: 10000 },
+  );
   const promoted4k = await state(page);
   if (!(promoted4k.sequence.detailWidth >= 4096))
     throw new Error(
