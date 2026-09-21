@@ -46,7 +46,9 @@ jobs:
 
 
   branch-visual-audit:
-    if: github.event_name == 'pull_request' && github.head_ref == 'feat/live-cinematic-sim-handoff'
+    if: >
+      (github.event_name == 'pull_request' && github.head_ref == 'feat/live-cinematic-sim-handoff') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/feat/live-cinematic-sim-handoff')
     runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
