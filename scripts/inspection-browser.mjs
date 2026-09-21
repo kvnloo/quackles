@@ -42,6 +42,7 @@ const state = (page) =>
   page.evaluate(() => ({
     inspection: window.__QUACKLES_INSPECTION__?.getState() ?? null,
     sequence: window.__QUACKLES_SEQUENCE__?.getState() ?? null,
+    cinematic: window.__QUACKLES_CINEMATIC__?.getState?.() ?? null,
     viewfinder: window.__QUACKLES_VIEWFINDER__?.getState() ?? null,
     scrollY,
     transform: getComputedStyle(
@@ -232,8 +233,17 @@ try {
   await page.mouse.wheel(0, 420);
   await page.waitForTimeout(250);
   const released = await state(page);
-  if (!(released.scrollY > 0))
+  if (released.cinematic) {
+    if (released.scrollY !== 0)
+      throw new Error("cinematic launch intent leaked into page scroll");
+    if (
+      released.cinematic.phase === "idle" &&
+      !(released.cinematic.launchIntent > 0)
+    )
+      throw new Error("post-inspection wheel was not handed to cinematic authority");
+  } else if (!(released.scrollY > 0)) {
     throw new Error("normal downward story scroll was not released after zoom-out");
+  }
 
   await desktopContext.close();
 

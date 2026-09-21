@@ -57,8 +57,14 @@ export async function applyRobotSurfaces(rig: Rig) {
   if (!receipt.ok) throw new Error(`Robot surface receipt failed: ${receipt.status}`);
   const manifest: unknown = await receipt.json();
   const theme = { value: getThemeSnapshot() };
+  // The Blender recovery surface is useful geometry, but its production color
+  // came from PHOTO-pigment-* camera projections. Keep that look opt-in for
+  // forensic A/B comparison instead of shipping poster imagery on the robot.
+  const projectedPigment =
+    typeof location !== "undefined" &&
+    new URLSearchParams(location.search).get("pigment") === "1";
   let themeMaps: { blue: Texture; dark: Texture; } | null = null;
-  if (typeof manifest === "object" && manifest !== null && "themeColorMaps" in manifest) {
+  if (projectedPigment && typeof manifest === "object" && manifest !== null && "themeColorMaps" in manifest) {
     const maps = manifest.themeColorMaps;
     if (typeof maps !== "object" || maps === null || !("blue" in maps) || !("dark" in maps) || typeof maps.blue !== "string" || typeof maps.dark !== "string")
       throw new Error("Robot theme maps require blue and dark file names");
@@ -114,25 +120,31 @@ export async function applyRobotSurfaces(rig: Rig) {
     assigned.add(original);
     if (!(patch.material instanceof MeshStandardMaterial))
       throw new Error(`Robot surface must use one PBR material: ${bodyName}/${meshName}`);
+    if (!(original.material instanceof MeshStandardMaterial))
+      throw new Error(`Official robot mesh must use one PBR material: ${bodyName}/${meshName}`);
+    const renderMaterial = projectedPigment ? patch.material : original.material;
     const geometry = patch.geometry.clone().applyMatrix4(patch.matrixWorld).applyMatrix4(inverse.copy(original.matrixWorld).invert());
-    meshes.push({ bodyName, meshName, sourceTriangles: (original.geometry.index?.count ?? original.geometry.getAttribute("position").count) / 3, renderTriangles: (geometry.index?.count ?? geometry.getAttribute("position").count) / 3, maxSurfaceDeviation: null, comparison: "previous-web-tessellation", materialName: patch.material.name, colorMap: textureInfo(patch.material.map), roughnessMap: textureInfo(patch.material.roughnessMap), normalMap: textureInfo(patch.material.normalMap) });
+    meshes.push({ bodyName, meshName, sourceTriangles: (original.geometry.index?.count ?? original.geometry.getAttribute("position").count) / 3, renderTriangles: (geometry.index?.count ?? geometry.getAttribute("position").count) / 3, maxSurfaceDeviation: null, comparison: "previous-web-tessellation", materialName: renderMaterial.name, colorMap: textureInfo(renderMaterial.map), roughnessMap: textureInfo(renderMaterial.roughnessMap), normalMap: textureInfo(renderMaterial.normalMap) });
     sources.push({ original: original.geometry, replacement: geometry });
     original.userData.robotSurface = true;
+    original.userData.robotSurfacePigment = projectedPigment;
     original.geometry = geometry;
-    if (themeMaps && !themed.has(patch.material)) {
+    if (projectedPigment && themeMaps && !themed.has(patch.material)) {
       if (!patch.material.map) throw new Error("Robot surface is missing its white color map");
       bindColorMapThemes({ material: patch.material, white: patch.material.map, ...themeMaps, theme });
       themed.add(patch.material);
     }
-    patch.material.userData.robotSurface = true;
-    original.material = patch.material;
+    if (projectedPigment) {
+      patch.material.userData.robotSurface = true;
+      original.material = patch.material;
+    }
     patch.geometry.dispose();
   });
   let pending: Promise<void> | null = null;
   let complete = false;
   return {
     dispose() { unsubscribe(); themeMaps?.blue.dispose(); themeMaps?.dark.dispose(); },
-    getAudit: () => ({ complete, method: "Symmetric nearest-triangle distances at unique vertices; sampled comparison with the previous web tessellation", meshes }),
+    getAudit: () => ({ complete, projectedPigment, method: "Symmetric nearest-triangle distances at unique vertices; sampled comparison with the previous web tessellation", meshes }),
     prepareAudit() {
       pending ??= (async () => {
         const { MeshBVH } = await import("three-mesh-bvh");
