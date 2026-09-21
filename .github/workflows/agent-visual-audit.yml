@@ -57,7 +57,7 @@ jobs:
         env:
           CHROME: /usr/bin/google-chrome
         run: |
-          cat > /tmp/quackles-agent-capture.mjs <<'NODE'
+          cat > .quackles-agent-capture.mjs <<'NODE'
           import fs from "node:fs";
           import path from "node:path";
           import crypto from "node:crypto";
@@ -139,7 +139,7 @@ jobs:
           fs.mkdirSync("review/private-map", { recursive: true });
           fs.writeFileSync("review/private-map/blind-map.json", JSON.stringify(mapping, null, 2));
           NODE
-          node /tmp/quackles-agent-capture.mjs
+          node .quackles-agent-capture.mjs
 
       - name: Build compact blind sheets
         run: |
