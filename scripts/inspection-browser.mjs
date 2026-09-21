@@ -280,12 +280,27 @@ try {
   if (!(followed.viewfinder.crop.y < settled.viewfinder.crop.y))
     throw new Error("viewfinder did not track vertical camera focus");
 
-  // Drive a real high-DPR deep inspection. The browser must progressively
-  // promote from the 1024px base into the published 200MP DZI pyramid.
-  for (let i = 0; i < 16; i++) {
+  // Drive a real high-DPR deep inspection all the way to the policy's max zoom.
+  // A fixed wheel-count is not a stable proxy for depth because the zoom curve
+  // is deliberately nonlinear and may change without changing the acceptance.
+  for (let i = 0; i < 64; i++) {
+    const current = await state(page);
+    if (
+      current.inspection.targetZoom >=
+      current.inspection.maxZoom - 0.01
+    )
+      break;
     await page.mouse.wheel(0, -180);
     await page.waitForTimeout(24);
   }
+  const driven = await state(page);
+  if (
+    driven.inspection.targetZoom <
+    driven.inspection.maxZoom - 0.01
+  )
+    throw new Error(
+      `deep inspection input stopped at targetZoom=${driven.inspection.targetZoom} of maxZoom=${driven.inspection.maxZoom}`,
+    );
   await page.waitForTimeout(5000);
   const deepProbe = await state(page);
   console.log(
