@@ -43,6 +43,30 @@ await page.setViewport({
   hasTouch: false,
 });
 
+// Headless Chromium reports no hover/fine pointer even with a desktop viewport.
+// Force only the exact capability gate used by DesktopLiveLayer so this test
+// exercises the desktop production path without changing production behavior.
+await page.evaluateOnNewDocument(() => {
+  const nativeMatchMedia = window.matchMedia.bind(window);
+  window.matchMedia = (query) => {
+    if (query !== "(hover: hover) and (pointer: fine)") {
+      return nativeMatchMedia(query);
+    }
+    return {
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent() {
+        return false;
+      },
+    };
+  };
+});
+
 const pageErrors = [];
 page.on("pageerror", (error) => pageErrors.push(error.message));
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
