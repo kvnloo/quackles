@@ -55,20 +55,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          refs=(
-            main
-            nightly
-            nightly-source
-            preview
-            dev
-            feat/water
-            recovery/day-reference
-            recovery/gigapixel
-            recovery/simulator
-          )
-          for ref in "${refs[@]}"; do
+          {
+            printf '%s\n' main nightly nightly-source preview dev feat/water
+            git ls-remote --heads origin 'refs/heads/recovery/*' |
+              awk '{sub("^refs/heads/", "", $2); print $2}' |
+              sort -u
+          } > comparison-refs.txt
+
+          while IFS= read -r ref; do
+            [ -n "$ref" ] || continue
             git fetch --no-tags origin "refs/heads/${ref}:refs/remotes/origin/${ref}"
-          done
+          done < comparison-refs.txt
+
+          echo "Comparison refs:"
+          cat comparison-refs.txt
 
       - name: Build stable root from nightly
         shell: bash
@@ -184,15 +184,22 @@ jobs:
             printf '%s\t%s\t%s\t%s\t%s\n' "$ref" "$slug" "$sha" "$status" "$title" >> pages-root/compare/builds.tsv
           }
 
-          build_channel main main
-          build_channel nightly nightly
-          build_channel nightly-source nightly-source
-          build_channel preview preview
-          build_channel dev dev
-          build_channel feat/water water
-          build_channel recovery/day-reference day-reference
-          build_channel recovery/gigapixel gigapixel
-          build_channel recovery/simulator simulator simulator
+          while IFS= read -r ref; do
+            [ -n "$ref" ] || continue
+            mode="normal"
+            case "$ref" in
+              main) slug="main" ;;
+              nightly) slug="nightly" ;;
+              nightly-source) slug="nightly-source" ;;
+              preview) slug="preview" ;;
+              dev) slug="dev" ;;
+              feat/water) slug="water" ;;
+              recovery/*) slug="${ref#recovery/}" ;;
+              *) continue ;;
+            esac
+            [ "$ref" = "recovery/simulator" ] && mode="simulator"
+            build_channel "$ref" "$slug" "$mode"
+          done < comparison-refs.txt
 
       - name: Generate comparison gallery and source manifest
         shell: bash
