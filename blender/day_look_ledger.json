@@ -1,0 +1,25 @@
+{
+  "reference": "/home/kvn/Documents/Codex/2026-09-16/c/work/cinematic/target-day-poster-lock.png",
+  "reference_sha256": "1481b570e247a9420c39a634d9019142d3b03160d07d00cb9051dffcfca27891",
+  "baseline": "/home/kvn/Documents/Codex/2026-09-16/c/work/cinematic/proofs-v6/day/p0000000-1024.png",
+  "color_management": {
+    "view_transform": "Khronos PBR Neutral",
+    "look": "None",
+    "exposure": 0.0,
+    "gamma": 1.0,
+    "display": "sRGB"
+  },
+  "iterations": [
+    {"id": 0, "hypothesis": "v6 day plate is the live render", "change": "none", "result": "full MAE 47.7; bust neon fraction 0.139 vs lock 0.006; plinth p50 [45,53,75] vs [91,87,85]", "keep": "baseline"},
+    {"id": 1, "hypothesis": "print emission 1 clips the bust", "change": "POSTER-bust and banner emission 0", "result": "bust L 115 to 82, full MAE 43.5, neon fraction still 0.14", "keep": true},
+    {"id": 2, "hypothesis": "uneven multiply will navy the clipped blue texture", "change": "tint (0.75, 0.62, 0.12)", "result": "bust highlights went gold", "keep": false},
+    {"id": 5, "hypothesis": "luminance ramp matches the lock navy print", "change": "linear ramp dark (0.0065,0.0176,0.093) to light (0.376,0.423,0.584)", "result": "bust p50 [6,32,94] vs [19,36,86], p95 [167,179,217] vs [165,174,201], neon 0.003", "keep": true},
+    {"id": 3, "hypothesis": "stone multiply (0.22,0.24,0.28) is too dark and blue", "change": "STONE_COOL (0.50, 0.44, 0.34)", "result": "plinth top p50 [114,101,89], overshot", "keep": false},
+    {"id": 4, "hypothesis": "70 percent of that step hits the lock gray", "change": "STONE_COOL (0.42, 0.38, 0.32)", "result": "front p50 [91,82,79] vs [89,84,81], MAE 23.5", "keep": true},
+    {"id": 6, "hypothesis": "POSTER-blue-frame is the electric slab", "change": "base (0.010,0.014,0.040), roughness 0.62, emission 0", "result": "frame MAE 34.7 to 27.1, slab gone, concrete step visible", "keep": true},
+    {"id": 7, "hypothesis": "shell albedo gain unclips sunlit cream", "change": "SHELL_GAIN 0.82 then 0.55", "result": "highlights stayed near 220", "keep": false},
+    {"id": 9, "hypothesis": "the sun, not the albedo, clips the shell", "change": "SUN_ENERGY 18 to 8", "result": "plinth fell to [62,53,47]; shell still clipped", "keep": false},
+    {"id": 10, "hypothesis": "a deep shell gain escapes the clip", "change": "SHELL_GAIN 0.25, sun restored to 18", "result": "shell went gray", "keep": false},
+    {"id": 11, "hypothesis": "0.70 keeps cream and shows speckle", "change": "SHELL_GAIN 0.70", "result": "full MAE 36.5 at 768/16; plinth front stays on the lock gray", "keep": true}
+  ]
+}
