@@ -22,6 +22,7 @@ export function applyStoryProgress(p: number) {
 export function SequenceScroll() {
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
+    const desktop = matchMedia("(hover: hover) and (pointer: fine)");
     let driver: ScrollDriver | null = null;
 
     const apply = () => {
@@ -32,7 +33,18 @@ export function SequenceScroll() {
 
     const startDriver = () => {
       driver?.destroy();
+      driver = null;
       setReducedMotion(media.matches);
+
+      // Desktop uses the explicit reversible product state machine. Native
+      // document scroll is reserved for touch/mobile where the poster remains
+      // a conventional scroll story.
+      if (desktop.matches) {
+        setProgress(0);
+        scrollTo({ top: 0, behavior: "instant" });
+        return;
+      }
+
       driver = createScrollDriver({
         reducedMotion: media.matches,
         onProgress: setProgress,
@@ -45,12 +57,14 @@ export function SequenceScroll() {
     startDriver();
     addEventListener("resize", resize);
     media.addEventListener("change", startDriver);
+    desktop.addEventListener("change", startDriver);
 
     return () => {
       driver?.destroy();
       unsubscribe();
       removeEventListener("resize", resize);
       media.removeEventListener("change", startDriver);
+      desktop.removeEventListener("change", startDriver);
     };
   }, []);
 
