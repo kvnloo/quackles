@@ -11,6 +11,10 @@ import {
   type Crop,
 } from "@/lib/sequence/render";
 import { sequencePerfProfile } from "@/lib/sequence/perf-profile";
+import {
+  snapshot as sequenceSnapshot,
+  subscribe as subscribeSequence,
+} from "@/lib/sequence/store";
 
 type ViewfinderState = {
   active: boolean;
@@ -101,7 +105,10 @@ export function InspectionViewfinder() {
       raf = 0;
       const inspection = inspectionSnapshot();
       const nativeScale = window.visualViewport?.scale ?? 1;
-      const active = inspection.zoom > 1.02 || nativeScale > 1.02;
+      const atHero = sequenceSnapshot().progress <= 0.006;
+      const active =
+        atHero &&
+        ((inspection.active && inspection.zoom > 1.04) || nativeScale > 1.02);
       const crop = active ? currentCrop() : EMPTY_CROP;
 
       if (active && snapshotCount === 0) copySource();
@@ -170,6 +177,7 @@ export function InspectionViewfinder() {
     };
 
     const unsubscribeInspection = subscribeInspection(schedule);
+    const unsubscribeSequence = subscribeSequence(schedule);
     const viewport = window.visualViewport;
     viewport?.addEventListener("resize", schedule);
     viewport?.addEventListener("scroll", schedule);
@@ -188,6 +196,7 @@ export function InspectionViewfinder() {
     return () => {
       cancelAnimationFrame(raf);
       unsubscribeInspection();
+      unsubscribeSequence();
       viewport?.removeEventListener("resize", schedule);
       viewport?.removeEventListener("scroll", schedule);
       window.removeEventListener("quackles:base-painted", onBasePainted);

@@ -16,8 +16,7 @@
     "test:mobile:timing": "MODE=timing node scripts/mobile-validation.mjs",
     "test:mobile:visual": "MODE=visual node scripts/mobile-validation.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
-    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs",
-    "test:cinematic": "node scripts/cinematic-browser.mjs"
+    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

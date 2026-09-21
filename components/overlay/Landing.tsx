@@ -1,85 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { DuckStage } from "@/components/duck/DuckStage";
-import { CinematicHandoffController } from "@/components/experience/CinematicHandoffController";
 import { FeelEngine } from "@/components/feel/FeelEngine";
 import { PosterBeats } from "@/components/poster/PosterBeats";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { PosterNav } from "@/components/poster/PosterNav";
 import { ThemeControl } from "@/components/poster/ThemeControl";
-import { ExperienceProvider } from "@/components/providers/ExperienceProvider";
 import { HeroInspection } from "@/components/sequence/HeroInspection";
 import { InspectionViewfinder } from "@/components/sequence/InspectionViewfinder";
 import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
 
-function DesktopLiveLayer() {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    const media = matchMedia("(hover: hover) and (pointer: fine)");
-    const sync = () => setEnabled(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
-
-  if (!enabled) return null;
-
+export function Landing() {
   return (
-    <>
-      <CinematicHandoffController />
-      <div
-        className="duck-slot cinematic-live-rig"
-        data-testid="cinematic-live-rig"
-        aria-hidden
-      >
-        <DuckStage />
-      </div>
-    </>
-  );
-}
-
-function Experience() {
-  return (
-    <main id="top" className="phone-shell" data-testid="experience">
+    <main id="top" className="experience-shell" data-testid="experience">
       <SequenceScroll />
       <HeroInspection />
       <FeelEngine />
+
       <div className="poster-stage">
         <SequenceFrame>
           <SequencePlayer />
-          <DesktopLiveLayer />
           <InspectionViewfinder />
           <PosterNav />
           <PosterHeroCopy />
           <PosterBeats />
-        </SequenceFrame>
-        <div className="scene-dock">
-          <ThemeControl />
-          <div className="scroll-line">
-            <span className="cinematic-scroll-copy">↑ INSPECT · ↓ EXPLORE</span>
-            <span className="cinematic-phase-copy" aria-live="polite">↕</span>
-          </div>
-          <div className="scroll-progress">
-            <div className="scroll-progress-fill" />
-          </div>
-        </div>
-      </div>
-      <div className="scroll-space" aria-hidden />
-      <footer className="credit">
-        MICRODUCK BY POLLEN ROBOTICS <span>FAN STUDY</span>
-      </footer>
-    </main>
-  );
-}
 
-export function Landing() {
-  return (
-    <ExperienceProvider>
-      <Experience />
-    </ExperienceProvider>
+          <div className="scene-hud" aria-label="Scene controls and interaction hints">
+            <ThemeControl />
+            <div className="interaction-hints" aria-hidden>
+              <span className="interaction-hint interaction-hint-theme">
+                DRAG ← → TO CHANGE SCENE COLOR
+              </span>
+              <span className="interaction-hint interaction-hint-inspect">
+                SCROLL ↑ OR CLICK TO INSPECT
+              </span>
+              <span className="interaction-hint interaction-hint-specs">
+                SCROLL ↓ TO SEE SPECS
+              </span>
+            </div>
+            <div className="scroll-progress" aria-hidden>
+              <div className="scroll-progress-fill" />
+            </div>
+          </div>
+        </SequenceFrame>
+      </div>
+
+      <div className="scroll-space" aria-hidden />
+    </main>
   );
 }

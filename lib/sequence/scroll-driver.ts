@@ -12,6 +12,7 @@ type ScrollDriverOptions = {
 export type ScrollDriver = {
   destroy: () => void;
   resize: () => void;
+  scrollToTop: () => void;
 };
 
 /**
@@ -53,6 +54,10 @@ export function createScrollDriver({
     resize() {
       lenis.resize();
       publishNativePosition();
+    },
+    scrollToTop() {
+      lenis.scrollTo(0, { immediate: true, force: true });
+      onProgress(0);
     },
     destroy() {
       cancelAnimationFrame(raf);
