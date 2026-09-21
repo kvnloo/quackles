@@ -14,6 +14,8 @@ You are a contributor, not a maintainer. Workers open PRs. They never merge `mai
 
 This project follows the [Verified OSS Loop](https://github.com/kvnloo/verified-oss-loop). Issues are not claims. AI work is untrusted until proven.
 
+Before any model-assisted Quackles work, read `.github/AI_REVIEW_POLICY.md`. OpenRouter/free models are scouts only: they may inventory, measure, capture evidence, summarize diffs, or implement candidates, but they must not choose visual winners, declare reference parity, choose motion/simulator architecture, judge audio quality, promote recovery branches, or decide merge readiness.
+
 Remotes: `github` is [kvnloo/quackles](https://github.com/kvnloo/quackles). `origin` is the Cursor clone. Fetch both. Use `gh -R kvnloo/quackles`. Do not push to `nightly-pages` / [kvnloo/quackles-nightly](https://github.com/kvnloo/quackles-nightly) unless a human asked.
 
 ## First 60 seconds
