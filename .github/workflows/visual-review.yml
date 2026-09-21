@@ -151,6 +151,30 @@ jobs:
               });
               await new Promise((resolve) => setTimeout(resolve, 1500));
 
+              // Preserve the branch's natural first impression, then normalize to Day
+              // for reference judging when a Day control/debug surface exists.
+              const defaultFrame = await page.$(".poster-frame");
+              if (defaultFrame) {
+                await defaultFrame.screenshot({ path: path.join(dir, "default-hero-frame.png") });
+              } else {
+                await page.screenshot({ path: path.join(dir, "default-hero-frame.png"), fullPage: false });
+              }
+
+              await page.evaluate(() => {
+                const controls = [...document.querySelectorAll("button,[role=radio]")];
+                const day = controls.find((node) => {
+                  const text = (node.textContent || "").trim().toLowerCase();
+                  const aria = (node.getAttribute("aria-label") || "").trim().toLowerCase();
+                  return text === "day" || aria === "day";
+                });
+                if (day instanceof HTMLElement) {
+                  day.click();
+                  return;
+                }
+                window.__QUACKLES_SEQUENCE__?.setTheme?.("day");
+              });
+              await new Promise((resolve) => setTimeout(resolve, 800));
+
               const maxScroll = await page.evaluate(() => Math.max(1, document.documentElement.scrollHeight - innerHeight));
               for (const [name, p] of [["hero", 0], ["quarter", .25], ["middle", .5], ["three-quarter", .75], ["end", 1]]) {
                 await page.evaluate(({ p, maxScroll }) => scrollTo(0, p * maxScroll), { p, maxScroll });
