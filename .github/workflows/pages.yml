@@ -7,7 +7,7 @@ on:
       - ".github/workflows/visual-review.yml"
       - ".github/AI_REVIEW_POLICY.md"
   schedule:
-    - cron: "0 5 * * *"
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
 
 permissions:
