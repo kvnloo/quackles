@@ -35,6 +35,7 @@ export function SequencePlayer() {
     const profile = sequencePerfProfile();
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null;
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
+    let inspectionSettleTimer = 0, inspectionSettled = true;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
     const waiting = new Set<string>(), failed = new Set<string>();
@@ -68,13 +69,12 @@ export function SequencePlayer() {
         Math.max(...frame.assets[theme].map((variant) => variant.width)),
       );
       const maxSourceWidth = Math.min(...sourceWidths);
+      const sourceLimitedZoom =
+        maxSourceWidth / Math.max(1, rect.width * devicePixelRatio);
       setInspectionMaxZoom(
         Math.min(
           profile.maxZoomCap,
-          Math.max(
-            1,
-            maxSourceWidth / Math.max(1, rect.width * devicePixelRatio),
-          ),
+          Math.max(1.5, sourceLimitedZoom),
         ),
       );
 
@@ -101,7 +101,7 @@ export function SequencePlayer() {
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
       let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
-      if (settled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
+      if (settled && inspectionSettled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
         const plan = detailPlan(
           frame.assets[themes[0]],
           desiredWidth,
@@ -173,6 +173,14 @@ export function SequencePlayer() {
       ].join("/");
       if (nextKey === inspectionIntentKey) return;
       inspectionIntentKey = nextKey;
+
+      inspectionSettled = false;
+      window.clearTimeout(inspectionSettleTimer);
+      detailCanvas!.style.visibility = "hidden";
+      inspectionSettleTimer = window.setTimeout(() => {
+        inspectionSettled = true;
+        schedule();
+      }, 180);
       schedule();
     };
     inspectionChanged();
@@ -207,7 +215,7 @@ export function SequencePlayer() {
     })();
     return () => {
       cancelled = true; controller.abort(); unsubscribe(); unsubscribeInspection(); observer.disconnect();
-      cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer);
+      cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(inspectionSettleTimer);
       visualViewport?.removeEventListener("resize", changed); visualViewport?.removeEventListener("scroll", changed);
       delete window.__QUACKLES_SEQUENCE__; cache?.dispose();
     };
