@@ -35,6 +35,7 @@ declare global {
       reset: () => void;
       setZoom: (value: number) => void;
       setZoomInstant: (value: number) => void;
+      seekPhase: (phase: DesktopPhase, progress?: number) => void;
       triggerJump: () => void;
       wheel: (deltaY: number) => void;
     };
@@ -345,6 +346,25 @@ export function DesktopExperienceController() {
         lastInspectTickAtRef.current = 0;
         inspectPoseInto(poseRef.current, next);
         publish(0);
+      },
+      seekPhase(phase, progress = 0) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = 0;
+        const t = Math.max(0, Math.min(1, progress));
+        if (phase === "inspect") {
+          setPhase("inspect");
+          inspectPoseInto(poseRef.current, zoomRef.current);
+          publish(0);
+          return;
+        }
+        setPhase(phase);
+        if (phase === "sim-ready") {
+          assembledPoseInto(poseRef.current);
+          publish(1);
+          return;
+        }
+        cinematicPoseInto(poseRef.current, phase, t);
+        publish(t);
       },
       triggerJump() {
         targetZoomRef.current = DESKTOP_EXPERIENCE.farZoom;
