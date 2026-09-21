@@ -56,7 +56,7 @@ function DesktopLiveLanding() {
       >
         <DesktopExperienceController />
         <div className="poster-stage">
-          <SequenceFrame>
+          <div className="poster-frame" data-testid="scene">
             <PosterPlates />
             <div className="duck-slot">
               <DuckStage />
@@ -64,7 +64,7 @@ function DesktopLiveLanding() {
             <PosterNav />
             <PosterHeroCopy />
             <PosterBeats />
-          </SequenceFrame>
+          </div>
           <div className="scene-dock">
             <ThemeControl />
             <div className="scroll-line">
