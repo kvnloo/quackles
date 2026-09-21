@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { DuckStage } from "@/components/duck/DuckStage";
 import { DesktopExperienceController } from "@/components/experience/DesktopExperienceController";
 import { PosterBeats } from "@/components/poster/PosterBeats";
-import { PosterPlates } from "@/components/poster/PosterChrome";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { PosterNav } from "@/components/poster/PosterNav";
 import { ThemeControl } from "@/components/poster/ThemeControl";
@@ -57,8 +56,8 @@ function DesktopLiveLanding() {
         <DesktopExperienceController />
         <div className="poster-stage">
           <div className="poster-frame" data-testid="scene">
-            <PosterPlates />
-            <div className="duck-slot">
+            <SequencePlayer />
+            <div className="duck-slot" data-testid="desktop-live-rig">
               <DuckStage />
             </div>
             <PosterNav />
