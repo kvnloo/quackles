@@ -83,7 +83,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: target/package-lock.json
+          cache-dependency-path: |
+            harness/package-lock.json
+            target/package-lock.json
+      - name: Install audit harness
+        working-directory: harness
+        run: npm ci
       - name: Install candidate
         working-directory: target
         run: npm ci
