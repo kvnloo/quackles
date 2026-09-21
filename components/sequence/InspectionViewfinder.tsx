@@ -11,6 +11,7 @@ import {
   type Crop,
 } from "@/lib/sequence/render";
 import { sequencePerfProfile } from "@/lib/sequence/perf-profile";
+import { snapshot as sequenceSnapshot } from "@/lib/sequence/store";
 
 type ViewfinderState = {
   active: boolean;
@@ -101,7 +102,15 @@ export function InspectionViewfinder() {
       raf = 0;
       const inspection = inspectionSnapshot();
       const nativeScale = window.visualViewport?.scale ?? 1;
-      const active = inspection.zoom > 1.02 || nativeScale > 1.02;
+      const atHero =
+        sequenceSnapshot().progress <= 0.002 &&
+        frame.dataset.cinematicPhase === "idle";
+      const nativePinchActive = nativeScale > 1.02;
+      const active =
+        atHero &&
+        (inspection.zoom > 1.02 ||
+          inspection.targetZoom > 1.02 ||
+          nativePinchActive);
       const crop = active ? currentCrop() : EMPTY_CROP;
 
       if (active && snapshotCount === 0) copySource();
@@ -113,6 +122,7 @@ export function InspectionViewfinder() {
       // the currently visible source crop so it remains a stable heads-up
       // control instead of being zoomed offscreen with the poster.
       const nativePinch =
+        active &&
         nativeScale > 1.02 &&
         !(inspection.active || inspection.zoom > 1.0005);
       if (nativePinch) {
