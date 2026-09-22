@@ -369,7 +369,9 @@ def _pedestal_surface(mat):
     mapping = nt.nodes.new("ShaderNodeMapping")
     # Mesh is only 0.125 m tall. Scale is in 1/m so the face shows several
     # tiles instead of one stretched patch.
-    mapping.inputs["Scale"].default_value = (24.0, 24.0, 24.0)
+    # 200 px of the reference front face is about 0.10 m of stone.
+    # Scale 10 puts that grain on the 0.406 m block without stretching it.
+    mapping.inputs["Scale"].default_value = (10.0, 10.0, 10.0)
     nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
     tex = nt.nodes.new("ShaderNodeTexImage")
     tex.name = "PedestalStone"
@@ -391,35 +393,24 @@ def _pedestal_surface(mat):
     chip_col.inputs[1].default_value = (0.16, 0.15, 0.14, 1.0)
     chip_col.inputs[2].default_value = (0.70, 0.68, 0.64, 1.0)
     nt.links.new(chip.outputs["Result"], chip_col.inputs["Fac"])
-    grade = nt.nodes.new("ShaderNodeBrightContrast")
-    grade.inputs["Bright"].default_value = -0.16
-    grade.inputs["Contrast"].default_value = 0.85
-    nt.links.new(tex.outputs["Color"], grade.inputs["Color"])
-    body = nt.nodes.new("ShaderNodeMixRGB")
-    body.inputs["Fac"].default_value = 0.72
-    nt.links.new(grade.outputs["Color"], body.inputs[1])
-    nt.links.new(chip_col.outputs[0], body.inputs[2])
-    pore = nt.nodes.new("ShaderNodeMapRange")
-    pore.inputs["From Min"].default_value = 0.58
-    pore.inputs["From Max"].default_value = 0.86
-    pore.inputs["To Min"].default_value = 1.0
-    pore.inputs["To Max"].default_value = 0.28
-    nt.links.new(noise.outputs["Fac"], pore.inputs["Value"])
-    pore_mix = nt.nodes.new("ShaderNodeMixRGB")
-    pore_mix.blend_type = "MULTIPLY"
-    pore_mix.inputs["Fac"].default_value = 1.0
-    nt.links.new(body.outputs[0], pore_mix.inputs[1])
-    nt.links.new(pore.outputs["Result"], pore_mix.inputs[2])
-    settle = nt.nodes.new("ShaderNodeMixRGB")
-    settle.blend_type = "MULTIPLY"
-    settle.inputs["Fac"].default_value = 1.0
-    settle.inputs[2].default_value = (0.70, 0.68, 0.66, 1.0)
-    nt.links.new(pore_mix.outputs[0], settle.inputs[1])
     creation = next((node for node in nt.nodes if node.name == "CreationMix"), None)
     target = creation.inputs[1] if creation else bs.inputs["Base Color"]
     for link in list(target.links):
         nt.links.remove(link)
-    nt.links.new(settle.outputs[0], target)
+    nt.links.new(tex.outputs["Color"], target)
+    # The hands PNG is never transparent, so it was painting paper over the stone.
+    # Keep the ink, drop the paper.
+    if creation and creation.inputs[0].links:
+        src = creation.inputs[0].links[0].from_socket
+        gate = nt.nodes.new("ShaderNodeMapRange")
+        gate.name = "CreationInkOnly"
+        gate.inputs["From Min"].default_value = 0.62
+        gate.inputs["From Max"].default_value = 0.92
+        gate.clamp = True
+        for link in list(creation.inputs[0].links):
+            nt.links.remove(link)
+        nt.links.new(src, gate.inputs["Value"])
+        nt.links.new(gate.outputs["Result"], creation.inputs[0])
     rtex = nt.nodes.new("ShaderNodeTexImage")
     rtex.image = rough
     nt.links.new(mapping.outputs["Vector"], rtex.inputs["Vector"])
@@ -441,11 +432,11 @@ def _pedestal_surface(mat):
     else:
         for link in list(nmap.inputs["Color"].links):
             nt.links.remove(link)
-    nmap.inputs["Strength"].default_value = 1.15
+    nmap.inputs["Strength"].default_value = 0.35
     nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
     bump = nt.nodes.new("ShaderNodeBump")
-    bump.inputs["Strength"].default_value = 0.85
-    bump.inputs["Distance"].default_value = 0.0012
+    bump.inputs["Strength"].default_value = 0.35
+    bump.inputs["Distance"].default_value = 0.00045
     nt.links.new(noise.outputs["Fac"], bump.inputs["Height"])
     nt.links.new(nmap.outputs["Normal"], bump.inputs["Normal"])
     for link in list(bs.inputs["Normal"].links):
