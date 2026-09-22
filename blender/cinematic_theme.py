@@ -153,9 +153,17 @@ def configure_theme(scene,theme):
         # Cooler key — warm (1,.87,.62) + cream albedo washed lock concrete to ivory.
         sun.energy=14;sun.color=(1.0,.90,.76);sun.angle=.04
         sun_obj=bpy.data.objects.new('Cinematic day sun',sun);scene.collection.objects.link(sun_obj)
+        # Lower and more camera-side so the vertical pedestal face is lit,
+        # matching the reference front. This does not add a groove.
         sun_obj.location=cam.location+1.55*right+0.35*fwd+1.55*up
-        aim=Vector((.04,0,.36))-sun_obj.location
-        sun_obj.rotation_euler=aim.to_track_quat('-Z','Y').to_euler()
+        # The old aim was straight down, so the camera-facing vertical face
+        # got no sun and its texture could not be measured. Rays now hit that
+        # face and the top. They do not add a groove.
+        # Visible front is the face at screen left-center, normal (-0.74, 0.68, 0).
+        # The previous aim lit the off-screen opposite face.
+        face=Vector((-0.74,0.68,0.0))
+        sun_dir=(-0.8*face+Vector((0,0,-0.7))).normalized()
+        sun_obj.rotation_euler=sun_dir.to_track_quat('-Z','Y').to_euler()
         # Day changes the sun only. Wall and shell albedo stay on the shared set.
         import importlib.util
         day_path = Path(__file__).resolve().parent / "day_look.py"

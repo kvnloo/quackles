@@ -344,15 +344,81 @@ def _sharpen_plinth():
         return False
     for mod in hero.modifiers:
         if mod.type == "SUBSURF":
-            mod.render_levels = 2
-            mod.levels = 2
+            mod.render_levels = 0
+            mod.levels = 0
     return True
 
 
-def _pedestal_surface(mat):
-    """Replace the flat limestone tint with a matte aggregate stone.
+def _triplanar(nt, image, scale, name):
+    """Project a tile onto XY, XZ, and YZ so a vertical face is not one stretched row."""
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    obj = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nrm = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(coord.outputs["Object"], obj.inputs["Vector"])
+    nt.links.new(coord.outputs["Normal"], nrm.inputs["Vector"])
 
-    Layout, UVs for the hands print, and every other material stay put.
+    def axis_pair(a, b):
+        comb = nt.nodes.new("ShaderNodeCombineXYZ")
+        for src, dest in ((a, "X"), (b, "Y")):
+            mul = nt.nodes.new("ShaderNodeMath")
+            mul.operation = "MULTIPLY"
+            mul.inputs[1].default_value = scale
+            nt.links.new(src, mul.inputs[0])
+            nt.links.new(mul.outputs[0], comb.inputs[dest])
+        tex = nt.nodes.new("ShaderNodeTexImage")
+        tex.image = image
+        tex.extension = "REPEAT"
+        nt.links.new(comb.outputs["Vector"], tex.inputs["Vector"])
+        return tex
+
+    tex_x = axis_pair(obj.outputs["Y"], obj.outputs["Z"])
+    tex_y = axis_pair(obj.outputs["X"], obj.outputs["Z"])
+    tex_z = axis_pair(obj.outputs["X"], obj.outputs["Y"])
+    tex_z.name = name
+
+    def weight(sock):
+        ab = nt.nodes.new("ShaderNodeMath")
+        ab.operation = "ABSOLUTE"
+        nt.links.new(sock, ab.inputs[0])
+        pw = nt.nodes.new("ShaderNodeMath")
+        pw.operation = "POWER"
+        pw.inputs[1].default_value = 4.0
+        nt.links.new(ab.outputs[0], pw.inputs[0])
+        return pw.outputs[0]
+
+    wx, wy, wz = weight(nrm.outputs["X"]), weight(nrm.outputs["Y"]), weight(nrm.outputs["Z"])
+    sum_xy = nt.nodes.new("ShaderNodeMath")
+    sum_xy.operation = "ADD"
+    nt.links.new(wx, sum_xy.inputs[0])
+    nt.links.new(wy, sum_xy.inputs[1])
+    fac_y = nt.nodes.new("ShaderNodeMath")
+    fac_y.operation = "DIVIDE"
+    nt.links.new(wy, fac_y.inputs[0])
+    nt.links.new(sum_xy.outputs[0], fac_y.inputs[1])
+    mix_xy = nt.nodes.new("ShaderNodeMixRGB")
+    nt.links.new(fac_y.outputs[0], mix_xy.inputs["Fac"])
+    nt.links.new(tex_x.outputs["Color"], mix_xy.inputs[1])
+    nt.links.new(tex_y.outputs["Color"], mix_xy.inputs[2])
+    sum_all = nt.nodes.new("ShaderNodeMath")
+    sum_all.operation = "ADD"
+    nt.links.new(sum_xy.outputs[0], sum_all.inputs[0])
+    nt.links.new(wz, sum_all.inputs[1])
+    fac_z = nt.nodes.new("ShaderNodeMath")
+    fac_z.operation = "DIVIDE"
+    nt.links.new(wz, fac_z.inputs[0])
+    nt.links.new(sum_all.outputs[0], fac_z.inputs[1])
+    mix = nt.nodes.new("ShaderNodeMixRGB")
+    nt.links.new(fac_z.outputs[0], mix.inputs["Fac"])
+    nt.links.new(mix_xy.outputs[0], mix.inputs[1])
+    nt.links.new(tex_z.outputs["Color"], mix.inputs[2])
+    return mix.outputs[0]
+
+
+def _pedestal_surface(mat):
+    """Reference stone, sampled in the plane of each face.
+
+    A single object-space UV uses only X and Y, so the vertical face was one
+    texture row stretched into vertical ribs. Triplanar removes that.
     """
     bs = _principal(mat)
     if not bs:
@@ -362,44 +428,15 @@ def _pedestal_surface(mat):
         return True
     albedo = _load("T_pedestal_albedo.png", "sRGB")
     rough = _load("T_pedestal_roughness.png", "Non-Color")
-    normal = _load("T_pedestal_normal.png", "Non-Color")
-    if albedo is None or rough is None or normal is None:
+    if albedo is None or rough is None:
         return False
-    coord = nt.nodes.new("ShaderNodeTexCoord")
-    mapping = nt.nodes.new("ShaderNodeMapping")
-    # Mesh is only 0.125 m tall. Scale is in 1/m so the face shows several
-    # tiles instead of one stretched patch.
-    # 200 px of the reference front face is about 0.10 m of stone.
-    # Scale 10 puts that grain on the 0.406 m block without stretching it.
-    mapping.inputs["Scale"].default_value = (10.0, 10.0, 10.0)
-    nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
-    tex = nt.nodes.new("ShaderNodeTexImage")
-    tex.name = "PedestalStone"
-    tex.image = albedo
-    nt.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
-    noise = nt.nodes.new("ShaderNodeTexNoise")
-    noise.inputs["Scale"].default_value = 40.0
-    noise.inputs["Detail"].default_value = 8.0
-    noise.inputs["Roughness"].default_value = 0.55
-    nt.links.new(coord.outputs["Object"], noise.inputs["Vector"])
-    voro = nt.nodes.new("ShaderNodeTexVoronoi")
-    voro.inputs["Scale"].default_value = 28.0
-    nt.links.new(coord.outputs["Object"], voro.inputs["Vector"])
-    chip = nt.nodes.new("ShaderNodeMapRange")
-    chip.inputs["From Min"].default_value = 0.02
-    chip.inputs["From Max"].default_value = 0.2
-    nt.links.new(voro.outputs["Distance"], chip.inputs["Value"])
-    chip_col = nt.nodes.new("ShaderNodeMixRGB")
-    chip_col.inputs[1].default_value = (0.16, 0.15, 0.14, 1.0)
-    chip_col.inputs[2].default_value = (0.70, 0.68, 0.64, 1.0)
-    nt.links.new(chip.outputs["Result"], chip_col.inputs["Fac"])
+    color = _triplanar(nt, albedo, 16.0, "PedestalStone")
+    rough_c = _triplanar(nt, rough, 16.0, "PedestalRough")
     creation = next((node for node in nt.nodes if node.name == "CreationMix"), None)
     target = creation.inputs[1] if creation else bs.inputs["Base Color"]
     for link in list(target.links):
         nt.links.remove(link)
-    nt.links.new(tex.outputs["Color"], target)
-    # The hands PNG is never transparent, so it was painting paper over the stone.
-    # Keep the ink, drop the paper.
+    nt.links.new(color, target)
     if creation and creation.inputs[0].links:
         src = creation.inputs[0].links[0].from_socket
         gate = nt.nodes.new("ShaderNodeMapRange")
@@ -411,37 +448,13 @@ def _pedestal_surface(mat):
             nt.links.remove(link)
         nt.links.new(src, gate.inputs["Value"])
         nt.links.new(gate.outputs["Result"], creation.inputs[0])
-    rtex = nt.nodes.new("ShaderNodeTexImage")
-    rtex.image = rough
-    nt.links.new(mapping.outputs["Vector"], rtex.inputs["Vector"])
-    rspan = nt.nodes.new("ShaderNodeMapRange")
-    rspan.inputs["From Min"].default_value = 0.0
-    rspan.inputs["From Max"].default_value = 1.0
-    rspan.inputs["To Min"].default_value = 0.84
-    rspan.inputs["To Max"].default_value = 0.98
-    nt.links.new(rtex.outputs["Color"], rspan.inputs["Value"])
     for link in list(bs.inputs["Roughness"].links):
         nt.links.remove(link)
-    nt.links.new(rspan.outputs["Result"], bs.inputs["Roughness"])
-    ntex = nt.nodes.new("ShaderNodeTexImage")
-    ntex.image = normal
-    nt.links.new(mapping.outputs["Vector"], ntex.inputs["Vector"])
-    nmap = next((node for node in nt.nodes if node.type == "NORMAL_MAP"), None)
-    if nmap is None:
-        nmap = nt.nodes.new("ShaderNodeNormalMap")
-    else:
-        for link in list(nmap.inputs["Color"].links):
-            nt.links.remove(link)
-    nmap.inputs["Strength"].default_value = 0.35
-    nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
-    bump = nt.nodes.new("ShaderNodeBump")
-    bump.inputs["Strength"].default_value = 0.35
-    bump.inputs["Distance"].default_value = 0.00045
-    nt.links.new(noise.outputs["Fac"], bump.inputs["Height"])
-    nt.links.new(nmap.outputs["Normal"], bump.inputs["Normal"])
+    nt.links.new(rough_c, bs.inputs["Roughness"])
+    # Flat geometric normal. The previous normal map was one stretched row
+    # and drew the vertical grooves.
     for link in list(bs.inputs["Normal"].links):
         nt.links.remove(link)
-    nt.links.new(bump.outputs["Normal"], bs.inputs["Normal"])
     if "Specular IOR Level" in bs.inputs:
         bs.inputs["Specular IOR Level"].default_value = 0.2
     if "Metallic" in bs.inputs:
@@ -465,6 +478,9 @@ def _pedestals():
         obj = bpy.data.objects.get(name)
         if not obj:
             continue
+        for mod in obj.modifiers:
+            if mod.type == "DISPLACE":
+                mod.strength = 0.0
         for slot in obj.material_slots:
             mat = slot.material
             if not mat or mat.name in done or mat.name.startswith("Canonical arch"):
