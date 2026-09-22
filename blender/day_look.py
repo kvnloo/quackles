@@ -26,9 +26,9 @@ SHELL_GAIN = 0.70
 # Plinth front p50 landed on the lock gray. Sun 8 darkened the plinth, reverted.
 STONE_COOL = (0.42, 0.38, 0.32, 1.0)
 STONE_FAC = 1.0
-SUN_ENERGY = 18.0
-SUN_COLOR = (0.88, 0.92, 1.0)
-SUN_ANGLE = 0.014
+SUN_ENERGY = 14.0
+SUN_COLOR = (1.0, 0.90, 0.76)
+SUN_ANGLE = 0.04
 
 
 def _principal(mat):
@@ -126,28 +126,14 @@ def _gain_shells(gain):
 
 
 def apply_day_overrides(scene):
-    """Refine the existing day rig. Does not rebuild lights or the robot."""
-    hit = {
-        "POSTER-bust": _emission("POSTER-bust", BUST_EMISSION),
-        "QUALITY-banner-header": _emission("QUALITY-banner-header", BANNER_EMISSION),
-        "bust_grade": _remap_print("POSTER-bust"),
-        "banner_grade": _remap_print("QUALITY-banner-header"),
-        "frame": _solid("POSTER-blue-frame", FRAME_COLOR, FRAME_ROUGH),
-        "shells": _gain_shells(SHELL_GAIN),
-    }
-    for name in ("QUALITY-quarried-stone", "POSTER-limestone", "POSTER-plinth"):
-        mat = bpy.data.materials.get(name)
-        if not mat or not mat.use_nodes:
-            continue
-        cool = next((n for n in mat.node_tree.nodes if n.name == "LimestoneCool"), None)
-        if cool:
-            cool.inputs[2].default_value = STONE_COOL
-            cool.inputs["Fac"].default_value = STONE_FAC
+    """Warm the day sun only. Materials live in canonical_set."""
+    hit = {"sun": False}
     sun = bpy.data.objects.get("Cinematic day sun")
     if sun and sun.type == "LIGHT":
         sun.data.energy = SUN_ENERGY
         sun.data.color = SUN_COLOR
         sun.data.angle = SUN_ANGLE
+        hit["sun"] = True
     view = scene.view_settings
     emitters = []
     for mat in bpy.data.materials:

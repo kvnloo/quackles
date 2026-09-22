@@ -1,0 +1,26 @@
+{
+  "found_on_disk": [
+    {"path": "blender/assets/T_limestone_albedo.png", "res": "1024", "channels": "albedo", "use": "base stone, still the majority of the plinth"},
+    {"path": "blender/assets/T_limestone_normal.png", "res": "1024", "channels": "normal", "use": "stone normal, strength 0.55"},
+    {"path": "blender/assets/T_limestone_roughness.png", "res": "1024", "channels": "roughness", "use": "stone roughness"},
+    {"path": "blender/assets/T_robot_shell_albedo.png", "res": "1024", "channels": "albedo", "use": "robot shell, under CanonicalWear"},
+    {"path": "blender/assets/T_robot_shell_normal.png", "res": "1024", "channels": "normal", "use": "robot shell"},
+    {"path": "blender/assets/T_robot_shell_roughness.png", "res": "1024", "channels": "roughness", "use": "replaced on shell by wear noise"},
+    {"path": "calibration/references/{day,white,cobalt,dark,night}.png", "res": "1024x1536", "channels": "reference plates", "use": "visual authority, not textures"}
+  ],
+  "not_found": "No Megascans, travertine, or terrazzo packs under Documents, zer0, or the Blender share tree.",
+  "generated": [
+    {
+      "file": "blender/assets/T_concrete_albedo.png",
+      "prompt": "Seamless tileable texture, top-down photograph of premium architectural cast concrete. Medium gray with warm sunlit bias, visible fine aggregate, small air pores, subtle trowel variation, no text.",
+      "tool": "image_gen",
+      "use": "mixed at 0.22 over limestone. Full mix plus the derived normal read as boards, so the normal is not wired."
+    },
+    {
+      "file": "blender/assets/T_blue_marble_albedo.png",
+      "prompt": "Seamless tileable texture of polished blue marble, deep cobalt and indigo veins on a slightly lighter blue-gray ground, no text.",
+      "tool": "image_gen",
+      "use": "Blue theme only, Rear limestone and Orb limestone, roughness pinned to 0.18."
+    }
+  ]
+}

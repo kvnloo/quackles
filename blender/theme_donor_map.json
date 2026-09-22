@@ -1,0 +1,11 @@
+{
+  "robot_shell_wear": {"donor": "Day reference grime", "use": "CanonicalWear noise on every theme, strongest on Day, lightest on Night so glow stays readable"},
+  "robot_blue_lines": {"donor": "authored shell albedo plus Night fresnel glow", "use": "Day/White/Blue keep the printed lines in the albedo. Night still adds the existing fresnel emission. Dark keeps the pigment glow test already in the night block's sibling path and is not given Night's full blackout."},
+  "orb": {"donor": "Dark/tuned cobalt absorption in plinth_look.tune_day_orb", "use": "unchanged; canonical_set does not edit the orb"},
+  "stone": {"donor": "Day lock concrete plus generated T_concrete_*", "use": "shared concrete mix, theme multiply only"},
+  "blue_marble": {"donor": "generated T_blue_marble_*", "use": "Blue rear block and orb pedestal only"},
+  "arch": {"donor": "Architectural shadow former mesh, previously an unlit black card", "use": "same mesh, stone material, theme tint"},
+  "poster_day": {"donor": "Day lock navy print", "use": "luminance ramp"},
+  "poster_blue": {"donor": "Blue reference saturated plate", "use": "blue multiply and emission 0.55"},
+  "poster_night": {"donor": "Night luminous language", "use": "blue multiply and emission 0.85, left intact by the night emission wipe"}
+}

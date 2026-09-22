@@ -1,0 +1,38 @@
+{
+  "branch_base": "fix/day-visual a9239e7, which already held the Day grade. New branch fix/canonical-set keeps that history.",
+  "objects_in_reference_and_blend": [
+    "duck_root robot",
+    "Hero limestone",
+    "Empty foreground limestone",
+    "Orb limestone",
+    "Rear limestone",
+    "Cobalt optical glass",
+    "Cobalt frame bottom/left/right/top",
+    "Creation print",
+    "Classical print",
+    "Banner through top edge",
+    "Architectural shadow former",
+    "Studio back",
+    "Studio floor",
+    "Studio leaf 0-4",
+    "Plinth maker / Plinth statement / Plinth cobalt bar"
+  ],
+  "mismatches_found": [
+    "No separate arch mesh named Arched studio insert. The arch curve is Architectural shadow former, and it was an unlit black Shadow caster, so the arch did not read as stone.",
+    "Hero limestone is one beveled cube with subsurf, not the reference's stacked cast blocks. Front-face aggregate still does not match the lock.",
+    "Creation print sat partly below the frame. It is lifted 42mm and scaled 1.28 before the UV projection.",
+    "Classical print (right panel) was one blueprint treatment for every theme.",
+    "Cobalt frame was either neon or, on Day, nearly black.",
+    "Shell maps are 1024 and flat in roughness, so the robot read cleaner than the references."
+  ],
+  "layout_changes": [
+    "Same object list for every theme. No theme adds or removes set pieces.",
+    "Hands card seated higher on the plinth before projection.",
+    "Hero subsurf render levels forced to 2 in canonical_set and in calibration/render_cinematic.py so the block stays architectural. The render script was previously forcing level 6 after the theme."
+  ],
+  "not_changed": [
+    "Robot mesh, skinning, and camera.",
+    "Orb absorption. tune_day_orb is untouched.",
+    "Night fresnel glow on the eye, bearings, and neck, and the night volume in the orb."
+  ]
+}

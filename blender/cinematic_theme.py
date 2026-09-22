@@ -85,6 +85,12 @@ def configure_theme(scene,theme):
         set_input(bs,'Roughness',.92)
         set_input(bs,'Sheen Weight',.14)
     pin_prints(scene)
+    import importlib.util
+    _canon_path = Path(__file__).resolve().parent / "canonical_set.py"
+    _canon_spec = importlib.util.spec_from_file_location("quackles_canonical_set", _canon_path)
+    _canon = importlib.util.module_from_spec(_canon_spec)
+    _canon_spec.loader.exec_module(_canon)
+    _canon.seat_creation_print()
     apply_plinth_look(scene)
     frame=principal(bpy.data.materials.get('POSTER-blue-frame'))
     if frame:
@@ -120,7 +126,7 @@ def configure_theme(scene,theme):
         bpy.data.objects['Bounce'].data.energy=0
         sun=bpy.data.lights.new('Cinematic day sun','SUN')
         # Cooler key — warm (1,.87,.62) + cream albedo washed lock concrete to ivory.
-        sun.energy=18;sun.color=(.88,.92,1.0);sun.angle=.014
+        sun.energy=14;sun.color=(1.0,.90,.76);sun.angle=.04
         sun_obj=bpy.data.objects.new('Cinematic day sun',sun);scene.collection.objects.link(sun_obj)
         sun_obj.location=cam.location+1.55*right+0.35*fwd+1.55*up
         aim=Vector((.04,0,.36))-sun_obj.location
@@ -128,8 +134,8 @@ def configure_theme(scene,theme):
         wall=principal(bpy.data.materials.get('POSTER-wall'))
         if wall:
             # Unlit cool charcoal so AgX+sun cannot tint it olive.
-            set_input(wall,'Base Color',(.006,.007,.01,1))
-            set_input(wall,'Emission Color',(.012,.013,.016,1))
+            set_input(wall,'Base Color',(.008,.008,.009,1))
+            set_input(wall,'Emission Color',(.012,.012,.013,1))
             set_input(wall,'Emission Strength',1)
             set_input(wall,'Roughness',1)
         ivory=principal(bpy.data.materials.get('POSTER-ivory'))
@@ -142,35 +148,14 @@ def configure_theme(scene,theme):
         for name in ('POSTER-floor','QUALITY-cyclorama'):
             node=principal(bpy.data.materials.get(name))
             if node: set_input(node,'Base Color',(.04,.04,.045,1))
-        # plinth_look rebuilds stone with LimestoneCool; push gray concrete harder for day lock.
-        for name in ('QUALITY-quarried-stone','POSTER-limestone','POSTER-plinth'):
-            mat=bpy.data.materials.get(name)
-            if not mat or not mat.use_nodes: continue
-            cool=next((n for n in mat.node_tree.nodes if n.name=='LimestoneCool'),None)
-            if cool:
-                cool.inputs[2].default_value=(0.22,0.24,0.28,1.0)
-                cool.inputs['Fac'].default_value=1.0
-            else:
-                bs=principal(mat)
-                if bs: set_input(bs,'Base Color',(.30,.31,.33,1))
-            # Punch Creation fingers print (lock shows strong blue hands on stone).
-            mix=next((n for n in mat.node_tree.nodes if n.name=='CreationMix'),None)
-            tex=next((n for n in mat.node_tree.nodes if n.name=='CreationPrint'),None)
-            if mix and tex:
-                # Prefer texture alpha; lift visibility if almost transparent.
-                if not mix.inputs[0].is_linked:
-                    mix.inputs[0].default_value=1.0
-                bs=principal(mat)
-                if bs and 'Emission Strength' in bs.inputs:
-                    # faint cool lift so print reads under AgX
-                    pass
-        # Day plate overrides live in the day-fix branch. Other themes skip this.
+        # Day plate sun polish. Stone, arch, poster, and wear are canonical.
         import importlib.util
         day_path = Path(__file__).resolve().parent / "day_look.py"
         spec = importlib.util.spec_from_file_location("quackles_day_look", day_path)
         day_look = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(day_look)
         day_look.apply_day_overrides(scene)
+    _canon.apply_canonical(scene, theme)
     if theme!='night':return
     for obj in scene.objects:
         if obj.type=='LIGHT':obj.data.energy=0
