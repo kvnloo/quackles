@@ -349,11 +349,147 @@ def _sharpen_plinth():
     return True
 
 
+def _pedestal_surface(mat):
+    """Replace the flat limestone tint with a matte aggregate stone.
+
+    Layout, UVs for the hands print, and every other material stay put.
+    """
+    bs = _principal(mat)
+    if not bs:
+        return False
+    nt = mat.node_tree
+    if any(node.name == "PedestalStone" for node in nt.nodes):
+        return True
+    albedo = _load("T_pedestal_albedo.png", "sRGB")
+    rough = _load("T_pedestal_roughness.png", "Non-Color")
+    normal = _load("T_pedestal_normal.png", "Non-Color")
+    if albedo is None or rough is None or normal is None:
+        return False
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    mapping = nt.nodes.new("ShaderNodeMapping")
+    # Mesh is only 0.125 m tall. Scale is in 1/m so the face shows several
+    # tiles instead of one stretched patch.
+    mapping.inputs["Scale"].default_value = (24.0, 24.0, 24.0)
+    nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.name = "PedestalStone"
+    tex.image = albedo
+    nt.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
+    noise = nt.nodes.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 40.0
+    noise.inputs["Detail"].default_value = 8.0
+    noise.inputs["Roughness"].default_value = 0.55
+    nt.links.new(coord.outputs["Object"], noise.inputs["Vector"])
+    voro = nt.nodes.new("ShaderNodeTexVoronoi")
+    voro.inputs["Scale"].default_value = 28.0
+    nt.links.new(coord.outputs["Object"], voro.inputs["Vector"])
+    chip = nt.nodes.new("ShaderNodeMapRange")
+    chip.inputs["From Min"].default_value = 0.02
+    chip.inputs["From Max"].default_value = 0.2
+    nt.links.new(voro.outputs["Distance"], chip.inputs["Value"])
+    chip_col = nt.nodes.new("ShaderNodeMixRGB")
+    chip_col.inputs[1].default_value = (0.16, 0.15, 0.14, 1.0)
+    chip_col.inputs[2].default_value = (0.70, 0.68, 0.64, 1.0)
+    nt.links.new(chip.outputs["Result"], chip_col.inputs["Fac"])
+    grade = nt.nodes.new("ShaderNodeBrightContrast")
+    grade.inputs["Bright"].default_value = -0.16
+    grade.inputs["Contrast"].default_value = 0.85
+    nt.links.new(tex.outputs["Color"], grade.inputs["Color"])
+    body = nt.nodes.new("ShaderNodeMixRGB")
+    body.inputs["Fac"].default_value = 0.72
+    nt.links.new(grade.outputs["Color"], body.inputs[1])
+    nt.links.new(chip_col.outputs[0], body.inputs[2])
+    pore = nt.nodes.new("ShaderNodeMapRange")
+    pore.inputs["From Min"].default_value = 0.58
+    pore.inputs["From Max"].default_value = 0.86
+    pore.inputs["To Min"].default_value = 1.0
+    pore.inputs["To Max"].default_value = 0.28
+    nt.links.new(noise.outputs["Fac"], pore.inputs["Value"])
+    pore_mix = nt.nodes.new("ShaderNodeMixRGB")
+    pore_mix.blend_type = "MULTIPLY"
+    pore_mix.inputs["Fac"].default_value = 1.0
+    nt.links.new(body.outputs[0], pore_mix.inputs[1])
+    nt.links.new(pore.outputs["Result"], pore_mix.inputs[2])
+    settle = nt.nodes.new("ShaderNodeMixRGB")
+    settle.blend_type = "MULTIPLY"
+    settle.inputs["Fac"].default_value = 1.0
+    settle.inputs[2].default_value = (0.70, 0.68, 0.66, 1.0)
+    nt.links.new(pore_mix.outputs[0], settle.inputs[1])
+    creation = next((node for node in nt.nodes if node.name == "CreationMix"), None)
+    target = creation.inputs[1] if creation else bs.inputs["Base Color"]
+    for link in list(target.links):
+        nt.links.remove(link)
+    nt.links.new(settle.outputs[0], target)
+    rtex = nt.nodes.new("ShaderNodeTexImage")
+    rtex.image = rough
+    nt.links.new(mapping.outputs["Vector"], rtex.inputs["Vector"])
+    rspan = nt.nodes.new("ShaderNodeMapRange")
+    rspan.inputs["From Min"].default_value = 0.0
+    rspan.inputs["From Max"].default_value = 1.0
+    rspan.inputs["To Min"].default_value = 0.84
+    rspan.inputs["To Max"].default_value = 0.98
+    nt.links.new(rtex.outputs["Color"], rspan.inputs["Value"])
+    for link in list(bs.inputs["Roughness"].links):
+        nt.links.remove(link)
+    nt.links.new(rspan.outputs["Result"], bs.inputs["Roughness"])
+    ntex = nt.nodes.new("ShaderNodeTexImage")
+    ntex.image = normal
+    nt.links.new(mapping.outputs["Vector"], ntex.inputs["Vector"])
+    nmap = next((node for node in nt.nodes if node.type == "NORMAL_MAP"), None)
+    if nmap is None:
+        nmap = nt.nodes.new("ShaderNodeNormalMap")
+    else:
+        for link in list(nmap.inputs["Color"].links):
+            nt.links.remove(link)
+    nmap.inputs["Strength"].default_value = 1.15
+    nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.85
+    bump.inputs["Distance"].default_value = 0.0012
+    nt.links.new(noise.outputs["Fac"], bump.inputs["Height"])
+    nt.links.new(nmap.outputs["Normal"], bump.inputs["Normal"])
+    for link in list(bs.inputs["Normal"].links):
+        nt.links.remove(link)
+    nt.links.new(bump.outputs["Normal"], bs.inputs["Normal"])
+    if "Specular IOR Level" in bs.inputs:
+        bs.inputs["Specular IOR Level"].default_value = 0.2
+    if "Metallic" in bs.inputs:
+        bs.inputs["Metallic"].default_value = 0.0
+    if "Emission Strength" in bs.inputs:
+        bs.inputs["Emission Strength"].default_value = 0.0
+    return True
+
+
+def _pedestals():
+    """Stone only on the pedestal blocks. The arch keeps its own copy."""
+    names = (
+        "Hero limestone",
+        "Empty foreground limestone",
+        "Rear limestone",
+        "Orb limestone",
+    )
+    done = set()
+    count = 0
+    for name in names:
+        obj = bpy.data.objects.get(name)
+        if not obj:
+            continue
+        for slot in obj.material_slots:
+            mat = slot.material
+            if not mat or mat.name in done or mat.name.startswith("Canonical arch"):
+                continue
+            if _pedestal_surface(mat):
+                done.add(mat.name)
+                count += 1
+    return count
+
+
 def apply_canonical(scene, theme):
     report = {
         "theme": theme,
         "stone": _tint_stone(theme),
         "arch": _arch(theme),
+        "pedestal": _pedestals(),
         "marble": _marble_accent(theme),
         "poster": _poster(theme),
         "frame": _frame(theme),
