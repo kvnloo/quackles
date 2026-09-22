@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json.schemastore.org/hosting-config.json",
+  "project": {
+    "name": "quackles-v0",
+    "scope": "kvnloos-projects",
+    "productionHost": "https://quackles-v0.vercel.app"
+  },
+  "assetOrigin": {
+    "envVar": "NEXT_PUBLIC_ASSET_ORIGIN",
+    "description": "External origin for DZI tiles and frame images. Must contain blue/, white/, dark/, night/ subdirectories.",
+    "fallback": "same-origin (empty)",
+    "providers": [
+      {
+        "name": "GitHub Pages",
+        "url": "https://kvnloo.github.io/quackles-assets",
+        "status": "active",
+        "notes": "Fallback mirror; Blob store suspended"
+      },
+      {
+        "name": "Vercel Blob",
+        "url": "https://<store>.public.blob.vercel-storage.com",
+        "status": "suspended",
+        "notes": "Store quackles-assets suspended; re-enable when budget allows"
+      }
+    ]
+  },
+  "deploy": {
+    "cleanWorktree": true,
+    "buildEnv": [
+      "NEXT_PUBLIC_ASSET_ORIGIN",
+      "NEXT_PUBLIC_BUILD_SHA",
+      "NEXT_PUBLIC_BUILD_TIME"
+    ],
+    "productionEnv": [
+      "NEXT_PUBLIC_ASSET_ORIGIN"
+    ],
+    "previewEnv": [
+      "NEXT_PUBLIC_ASSET_ORIGIN"
+    ]
+  },
+  "verification": {
+    "sequenceState": {
+      "ready": true,
+      "manifestId": "non-null",
+      "frameCount": ">0",
+      "errors": "[]",
+      "inspectionMaxZoom": ">1"
+    },
+    "consoleClean": true,
+    "noAbsoluteUrlsInManifest": true
+  }
+}
