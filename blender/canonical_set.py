@@ -193,17 +193,51 @@ def _marble_accent(theme):
     return changed
 
 
+def _restore_print(mat):
+    """The bust PNG is clipped in blue, so the halftone only exists in R/G.
+
+    One luminance ramp for every theme. This is the print's albedo, not a light.
+    """
+    bs = _principal(mat)
+    if not bs:
+        return False
+    if "Emission Strength" in bs.inputs:
+        _set(bs, "Emission Strength", 0.0)
+    base = bs.inputs["Base Color"]
+    if not base.links:
+        return False
+    nt = mat.node_tree
+    if any(node.name == "CanonicalPoster" for node in nt.nodes):
+        return True
+    src = base.links[0].from_socket
+    bw = nt.nodes.new("ShaderNodeRGBToBW")
+    span = nt.nodes.new("ShaderNodeMapRange")
+    span.inputs["From Min"].default_value = 0.15
+    span.inputs["From Max"].default_value = 0.55
+    span.clamp = True
+    nt.links.new(src, bw.inputs["Color"])
+    nt.links.new(bw.outputs["Val"], span.inputs["Value"])
+    mix = nt.nodes.new("ShaderNodeMixRGB")
+    mix.name = "CanonicalPoster"
+    mix.inputs[1].default_value = (0.02, 0.05, 0.16, 1.0)
+    mix.inputs[2].default_value = (0.72, 0.78, 0.92, 1.0)
+    nt.links.new(span.outputs["Result"], mix.inputs["Fac"])
+    for link in list(base.links):
+        nt.links.remove(link)
+    nt.links.new(mix.outputs[0], base)
+    return True
+
+
 def _poster(theme):
-    """Same bust texture on every theme. Emission off so light cannot reprint it."""
+    """Same bust albedo on every theme."""
     del theme
     ok = False
-    for name in ("POSTER-bust", "QUALITY-banner-header", "POSTER-hands"):
-        bs = _principal(bpy.data.materials.get(name))
-        if not bs:
-            continue
-        if "Emission Strength" in bs.inputs:
-            _set(bs, "Emission Strength", 0.0)
-        ok = True
+    for name in ("POSTER-bust", "QUALITY-banner-header"):
+        if _restore_print(bpy.data.materials.get(name)):
+            ok = True
+    hands = _principal(bpy.data.materials.get("POSTER-hands"))
+    if hands and "Emission Strength" in hands.inputs:
+        _set(hands, "Emission Strength", 0.0)
     return ok
 
 
