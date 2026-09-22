@@ -430,8 +430,8 @@ def _pedestal_surface(mat):
     rough = _load("T_pedestal_roughness.png", "Non-Color")
     if albedo is None or rough is None:
         return False
-    color = _triplanar(nt, albedo, 16.0, "PedestalStone")
-    rough_c = _triplanar(nt, rough, 16.0, "PedestalRough")
+    color = _triplanar(nt, albedo, 4.0, "PedestalStone")
+    rough_c = _triplanar(nt, rough, 4.0, "PedestalRough")
     creation = next((node for node in nt.nodes if node.name == "CreationMix"), None)
     target = creation.inputs[1] if creation else bs.inputs["Base Color"]
     for link in list(target.links):
