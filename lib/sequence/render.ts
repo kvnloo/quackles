@@ -1,7 +1,6 @@
 import type { Decoded } from "./cache";
 import { isImage, type ImageAsset, type TileAsset, type Variant } from "./manifest";
-
-const ASSET_ORIGIN = (process.env.NEXT_PUBLIC_ASSET_ORIGIN ?? "").replace(/\/+$/, "") + "/";
+import { resolveAssetUrl } from "../paths";
 
 export type Crop = { x: number; y: number; width: number; height: number; scale: number };
 export function viewportCrop(element: HTMLElement): Crop {
@@ -45,7 +44,7 @@ export function tileAssets(variant: TileAsset, crop: Crop, overscan = 1) {
       sourceX,
       sourceY,
       asset: {
-        url: ASSET_ORIGIN + urlTemplate.replaceAll("{x}", String(x)).replaceAll("{y}", String(y)),
+        url: resolveAssetUrl(urlTemplate.replaceAll("{x}", String(x)).replaceAll("{y}", String(y)), ""),
         width: right - sourceX,
         height: bottom - sourceY,
       },

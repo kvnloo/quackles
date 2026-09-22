@@ -109,7 +109,41 @@ async function open(context) {
     undefined,
     { timeout: 30000 },
   );
+  await validateInitialSequenceState(page);
   return page;
+}
+
+async function validateInitialSequenceState(page) {
+  const state = await page.evaluate(() => {
+    const s = window.__QUACKLES_SEQUENCE__?.getState();
+    const i = window.__QUACKLES_INSPECTION__?.getState();
+    return {
+      ready: s?.ready,
+      manifestId: s?.manifestId,
+      frameCount: s?.frameCount,
+      errors: s?.errors,
+      detailWidth: s?.detailWidth,
+      detailTiles: s?.detailTiles,
+      inspection: {
+        active: i?.active,
+        maxZoom: i?.maxZoom,
+        zoom: i?.zoom,
+      },
+    };
+  });
+
+  const failures = [];
+  if (state.ready !== true) failures.push(`ready: expected true, got ${state.ready}`);
+  if (state.manifestId == null) failures.push(`manifestId: expected non-null, got ${state.manifestId}`);
+  if (!Number.isFinite(state.frameCount) || state.frameCount <= 0) failures.push(`frameCount: expected > 0, got ${state.frameCount}`);
+  if (!Array.isArray(state.errors) || state.errors.length > 0) failures.push(`errors: expected empty, got ${JSON.stringify(state.errors)}`);
+  if (!Number.isFinite(state.inspection?.maxZoom) || state.inspection.maxZoom <= 1) failures.push(`inspection.maxZoom: expected > 1, got ${state.inspection?.maxZoom}`);
+
+  if (failures.length > 0) {
+    throw new Error(`Sequence initial state validation failed:\n${failures.map(f => `  - ${f}`).join("\n")}`);
+  }
+
+  console.log("Sequence initial state OK:", JSON.stringify(state, null, 2));
 }
 
 function expectedInspectionCrop(inspection) {

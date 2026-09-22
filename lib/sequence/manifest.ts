@@ -1,4 +1,5 @@
-import { assetPath } from "../paths";
+import { resolveAssetUrl, assertAllowedAssetOrigin, getAssetOrigin } from "../paths";
+
 export const THEME_IDS = ["day", "white", "blue", "dark", "night"] as const;
 export type ThemeId = typeof THEME_IDS[number];
 export type Palette = { paper: string; deep: string; ink: string; cobalt: string };
@@ -55,10 +56,9 @@ function themeId(value: unknown): ThemeId {
 }
 function url(value: unknown, base: string): string {
   const raw = text(value);
-  const scoped = raw.startsWith("/") ? assetPath(raw) : raw;
-  const result = new URL(scoped, base);
-  if (result.origin !== new URL(base).origin) throw new Error("Sequence assets must share the manifest origin");
-  return result.href;
+  const resolved = resolveAssetUrl(raw, base);
+  assertAllowedAssetOrigin(resolved, { manifest: base, asset: getAssetOrigin() });
+  return resolved;
 }
 
 export function parseManifest(value: unknown, base: string): SequenceManifest {

@@ -99,7 +99,7 @@
               "overlap": 0,
               "columns": 3,
               "rows": 5,
-              "urlTemplate": "https://kvnloo.github.io/quackles-assets/blue/p0000000/3/{x}_{y}.webp"
+              "urlTemplate": "/quackles-assets/blue/p0000000/3/{x}_{y}.webp"
             }
           },
           {
@@ -110,7 +110,7 @@
               "overlap": 0,
               "columns": 6,
               "rows": 9,
-              "urlTemplate": "https://kvnloo.github.io/quackles-assets/blue/p0000000/2/{x}_{y}.webp"
+              "urlTemplate": "/quackles-assets/blue/p0000000/2/{x}_{y}.webp"
             }
           },
           {
@@ -121,7 +121,7 @@
               "overlap": 0,
               "columns": 12,
               "rows": 17,
-              "urlTemplate": "https://kvnloo.github.io/quackles-assets/blue/p0000000/1/{x}_{y}.webp"
+              "urlTemplate": "/quackles-assets/blue/p0000000/1/{x}_{y}.webp"
             }
           },
           {
@@ -132,7 +132,7 @@
               "overlap": 0,
               "columns": 23,
               "rows": 34,
-              "urlTemplate": "https://kvnloo.github.io/quackles-assets/blue/p0000000/0/{x}_{y}.webp"
+              "urlTemplate": "/quackles-assets/blue/p0000000/0/{x}_{y}.webp"
             }
           }
         ],
