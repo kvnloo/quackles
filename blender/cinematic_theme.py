@@ -138,6 +138,12 @@ def configure_theme(scene,theme):
     for n in scene.world.node_tree.nodes:
         if n.type=='BACKGROUND' and n.name!='Cinematic camera background':
             n.inputs['Strength'].default_value=env_strength[theme]
+            # Day ablation: warm world at 0.22 dropped front residual
+            # variation from 14.4 to 4.0 and pores from 0.14 to 0.
+            # Neutral strength 1 is the stage E setting that restored them.
+            if theme=='day':
+                n.inputs['Color'].default_value=(1,1,1,1)
+                n.inputs['Strength'].default_value=1.0
             if theme in env_flat:
                 set_input(n,'Color',env_flat[theme])
     if theme=='day':
