@@ -349,8 +349,15 @@ def _sharpen_plinth():
     return True
 
 
-def _triplanar(nt, image, scale, name):
-    """Project a tile onto XY, XZ, and YZ so a vertical face is not one stretched row."""
+def _triplanar(nt, image, scale, name, scale_z=None):
+    """Project a tile onto XY, XZ, and YZ so a vertical face is not one stretched row.
+
+    scale_z may differ from scale. The hero front is an XZ projection, and that
+    face is steeper in screen Y than in screen X, so one scalar magnifies pores
+    vertically. Object Y uses `scale` (the top face stays square).
+    """
+    scale_z = scale if scale_z is None else scale_z
+    axis_scale = {"X": scale, "Y": scale, "Z": scale_z}
     coord = nt.nodes.new("ShaderNodeTexCoord")
     obj = nt.nodes.new("ShaderNodeSeparateXYZ")
     nrm = nt.nodes.new("ShaderNodeSeparateXYZ")
@@ -362,7 +369,7 @@ def _triplanar(nt, image, scale, name):
         for src, dest in ((a, "X"), (b, "Y")):
             mul = nt.nodes.new("ShaderNodeMath")
             mul.operation = "MULTIPLY"
-            mul.inputs[1].default_value = scale
+            mul.inputs[1].default_value = axis_scale[src.name]
             nt.links.new(src, mul.inputs[0])
             nt.links.new(mul.outputs[0], comb.inputs[dest])
         tex = nt.nodes.new("ShaderNodeTexImage")
@@ -430,8 +437,11 @@ def _pedestal_surface(mat):
     rough = _load("T_pedestal_roughness.png", "Non-Color")
     if albedo is None or rough is None:
         return False
-    color = _triplanar(nt, albedo, 4.0, "PedestalStone")
-    rough_c = _triplanar(nt, rough, 4.0, "PedestalRough")
+    # Locked-crop emission sweep. Screen Jacobian at 1024 is 5.63 px per
+    # unit X scale and 8.01 per unit Z scale. X=6.2, Z=8.8 is the minimum
+    # pore-distribution distance (footprint 0.91 by 0.91 px/texel).
+    color = _triplanar(nt, albedo, 6.2, "PedestalStone", scale_z=8.8)
+    rough_c = _triplanar(nt, rough, 6.2, "PedestalRough", scale_z=8.8)
     creation = next((node for node in nt.nodes if node.name == "CreationMix"), None)
     target = creation.inputs[1] if creation else bs.inputs["Base Color"]
     for link in list(target.links):
