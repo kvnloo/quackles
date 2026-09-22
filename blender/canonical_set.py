@@ -13,38 +13,9 @@ from mathutils import Vector
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 
-# Multiply on the generated limestone, after the concrete mix.
-STONE = {
-    "day": (0.58, 0.56, 0.52, 1.0),
-    "white": (0.90, 0.88, 0.84, 1.0),
-    "blue": (0.58, 0.66, 0.92, 1.0),
-    "dark": (0.26, 0.27, 0.30, 1.0),
-    "night": (0.11, 0.12, 0.15, 1.0),
-}
-ARCH = {
-    "day": (0.66, 0.64, 0.60, 1.0),
-    "white": (0.98, 0.96, 0.92, 1.0),
-    "blue": (0.42, 0.52, 0.95, 1.0),
-    "dark": (0.20, 0.21, 0.24, 1.0),
-    "night": (0.07, 0.08, 0.10, 1.0),
-}
-# color, roughness, emission
-FRAME = {
-    "day": ((0.02, 0.045, 0.16, 1.0), 0.42, 0.0),
-    "white": ((0.70, 0.76, 0.90, 1.0), 0.48, 0.0),
-    "blue": ((0.015, 0.05, 0.55, 1.0), 0.30, 0.2),
-    "dark": ((0.008, 0.012, 0.035, 1.0), 0.5, 0.0),
-    "night": ((0.004, 0.02, 0.09, 1.0), 0.32, 0.55),
-}
-# How hard the shell grime map darkens. Night stays lighter so the glow reads.
-WEAR = {"day": 0.40, "white": 0.16, "blue": 0.26, "dark": 0.22, "night": 0.14}
-POSTER_EMIT = {"day": 0.0, "white": 0.0, "blue": 0.55, "dark": 0.22, "night": 0.85}
-POSTER_TINT = {
-    "white": (0.82, 0.88, 1.0, 1.0),
-    "blue": (0.22, 0.38, 1.0, 1.0),
-    "dark": (0.18, 0.28, 0.55, 1.0),
-    "night": (0.12, 0.32, 1.0, 1.0),
-}
+# One albedo for every theme. Theme names must not change these.
+STONE = (0.62, 0.60, 0.56, 1.0)
+FRAME = ((0.04, 0.07, 0.22, 1.0), 0.4, 0.0)
 
 
 def _principal(mat):
@@ -147,14 +118,15 @@ def _mix_maps(mat, albedo_name, rough_name, normal_name, fac):
 
 
 def _tint_stone(theme):
-    tint = STONE[theme]
+    del theme
+    tint = STONE
     hit = 0
     for name in ("QUALITY-quarried-stone", "POSTER-limestone", "POSTER-plinth"):
         mat = bpy.data.materials.get(name)
         if not mat or not mat.use_nodes:
             continue
         # Fac stays low: the derived normal made the plinth read as boards.
-        _mix_maps(mat, "T_concrete_albedo.png", "T_concrete_roughness.png", "T_concrete_normal.png", 0.22)
+        _mix_maps(mat, "T_concrete_albedo.png", "T_concrete_roughness.png", "T_concrete_normal.png", 0.0)
         cool = next((n for n in mat.node_tree.nodes if n.name == "LimestoneCool"), None)
         if cool:
             cool.inputs[2].default_value = tint
@@ -176,7 +148,7 @@ def _arch(theme):
     src.data.materials[0] = arch
     cool = next((n for n in arch.node_tree.nodes if n.name == "LimestoneCool"), None)
     if cool:
-        cool.inputs[2].default_value = ARCH[theme]
+        cool.inputs[2].default_value = STONE
         cool.inputs["Fac"].default_value = 1.0
     bs = _principal(arch)
     if bs and "Roughness" in bs.inputs and not bs.inputs["Roughness"].links:
@@ -185,7 +157,9 @@ def _arch(theme):
 
 
 def _marble_accent(theme):
-    """Blue only: rear block and orb pedestal use the marble set."""
+    """Marble is not a theme. Albedo stays on the shared stone."""
+    del theme
+    return 0
     if theme != "blue":
         return 0
     albedo = _load("T_blue_marble_albedo.png", "sRGB")
@@ -220,61 +194,22 @@ def _marble_accent(theme):
 
 
 def _poster(theme):
-    """Theme the bust plate. Day keeps the navy luminance ramp."""
-    mat = bpy.data.materials.get("POSTER-bust")
-    bs = _principal(mat)
-    if not bs:
-        return False
-    _set(bs, "Emission Strength", POSTER_EMIT[theme])
-    if theme == "day":
-        return _day_ramp(mat)
-    tint = POSTER_TINT[theme]
-    nt = mat.node_tree
-    base = bs.inputs["Base Color"]
-    if not base.links:
-        _set(bs, "Base Color", tint)
-        return True
-    mix = nt.nodes.new("ShaderNodeMixRGB")
-    mix.name = "CanonicalPoster"
-    mix.blend_type = "MULTIPLY"
-    mix.inputs["Fac"].default_value = 1.0
-    mix.inputs[2].default_value = tint
-    nt.links.new(base.links[0].from_socket, mix.inputs[1])
-    for link in list(base.links):
-        nt.links.remove(link)
-    nt.links.new(mix.outputs[0], base)
-    if "Emission Color" in bs.inputs:
-        nt.links.new(mix.outputs[0], bs.inputs["Emission Color"])
-    return True
-
-
-def _day_ramp(mat):
-    bs = _principal(mat)
-    base = bs.inputs["Base Color"]
-    if not base.links:
-        return False
-    nt = mat.node_tree
-    src = base.links[0].from_socket
-    bw = nt.nodes.new("ShaderNodeRGBToBW")
-    span = nt.nodes.new("ShaderNodeMapRange")
-    span.inputs["From Min"].default_value = 0.15
-    span.inputs["From Max"].default_value = 0.55
-    span.clamp = True
-    nt.links.new(src, bw.inputs["Color"])
-    nt.links.new(bw.outputs["Val"], span.inputs["Value"])
-    mix = nt.nodes.new("ShaderNodeMixRGB")
-    mix.name = "CanonicalPoster"
-    mix.inputs[1].default_value = (0.0065, 0.0176, 0.0931, 1.0)
-    mix.inputs[2].default_value = (0.3763, 0.4233, 0.5841, 1.0)
-    nt.links.new(span.outputs["Result"], mix.inputs["Fac"])
-    for link in list(base.links):
-        nt.links.remove(link)
-    nt.links.new(mix.outputs[0], base)
-    return True
+    """Same bust texture on every theme. Emission off so light cannot reprint it."""
+    del theme
+    ok = False
+    for name in ("POSTER-bust", "QUALITY-banner-header", "POSTER-hands"):
+        bs = _principal(bpy.data.materials.get(name))
+        if not bs:
+            continue
+        if "Emission Strength" in bs.inputs:
+            _set(bs, "Emission Strength", 0.0)
+        ok = True
+    return ok
 
 
 def _frame(theme):
-    color, rough, emit = FRAME[theme]
+    del theme
+    color, rough, emit = FRAME
     bs = _principal(bpy.data.materials.get("POSTER-blue-frame"))
     if not bs:
         return False
@@ -290,7 +225,11 @@ def _frame(theme):
 
 
 def _wear(theme):
-    amount = WEAR[theme]
+    """Shell albedo stays the authored cream map. No per-theme grime."""
+    del theme
+    changed = 0
+    return changed
+    amount = 0.0
     changed = 0
     for mat in bpy.data.materials:
         if not mat.use_nodes:
@@ -365,8 +304,18 @@ def _wear(theme):
     return changed
 
 
+def _sharpen_plinth():
+    hero = bpy.data.objects.get("Hero limestone")
+    if not hero:
+        return False
+    for mod in hero.modifiers:
+        if mod.type == "SUBSURF":
+            mod.render_levels = 2
+            mod.levels = 2
+    return True
+
+
 def apply_canonical(scene, theme):
-    theme = theme if theme in STONE else "day"
     report = {
         "theme": theme,
         "stone": _tint_stone(theme),
@@ -375,6 +324,7 @@ def apply_canonical(scene, theme):
         "poster": _poster(theme),
         "frame": _frame(theme),
         "wear": _wear(theme),
+        "plinth": _sharpen_plinth(),
     }
     print("CANONICAL_SET", report, flush=True)
     return report

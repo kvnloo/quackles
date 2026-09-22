@@ -57,6 +57,31 @@ def camera_background(scene,theme):
     camera.inputs['Color'].default_value=colors[theme];camera.inputs['Strength'].default_value=1
     mix=nt.nodes.new('ShaderNodeMixShader');nt.links.new(light_path.outputs['Is Camera Ray'],mix.inputs[0]);nt.links.new(prior,mix.inputs[1]);nt.links.new(camera.outputs[0],mix.inputs[2]);nt.links.new(mix.outputs[0],output.inputs['Surface'])
 
+def _illuminate(scene, theme):
+    """Lights and exposure only. Does not touch base color, textures, or decals."""
+    exposure = {'day': 0.0, 'white': 0.2, 'blue': -0.15, 'dark': -0.55, 'night': -0.35}[theme]
+    scene.view_settings.exposure = exposure
+    if theme == 'day':
+        return
+    if theme == 'white':
+        return
+    tint = {'blue': (0.45, 0.62, 1.0), 'dark': (0.72, 0.78, 1.0), 'night': (0.35, 0.5, 1.0)}[theme]
+    gain = {'blue': 0.85, 'dark': 0.45, 'night': 0.35}[theme]
+    for obj in scene.objects:
+        if obj.type != 'LIGHT':
+            continue
+        obj.data.color = tint
+        obj.data.energy = float(obj.data.energy) * gain
+    if scene.world and scene.world.use_nodes:
+        for node in scene.world.node_tree.nodes:
+            if node.type != 'BACKGROUND' or node.name == 'Cinematic camera background':
+                continue
+            strength = {'blue': 0.35, 'dark': 0.04, 'night': 0.0}[theme]
+            node.inputs['Strength'].default_value = strength
+            if theme == 'blue':
+                node.inputs['Color'].default_value = (0.15, 0.25, 0.55, 1.0)
+
+
 def configure_theme(scene,theme):
     assert theme in THEMES
     scene['cinematic_theme']=theme
@@ -81,7 +106,7 @@ def configure_theme(scene,theme):
         if texture:
             mat.node_tree.links.new(texture.outputs['Color'],bs.inputs['Base Color'])
             mat.node_tree.links.new(texture.outputs['Color'],bs.inputs['Emission Color'])
-        set_input(bs,'Emission Strength',1)
+        set_input(bs,'Emission Strength',0)
         set_input(bs,'Roughness',.92)
         set_input(bs,'Sheen Weight',.14)
     pin_prints(scene)
@@ -131,24 +156,7 @@ def configure_theme(scene,theme):
         sun_obj.location=cam.location+1.55*right+0.35*fwd+1.55*up
         aim=Vector((.04,0,.36))-sun_obj.location
         sun_obj.rotation_euler=aim.to_track_quat('-Z','Y').to_euler()
-        wall=principal(bpy.data.materials.get('POSTER-wall'))
-        if wall:
-            # Unlit cool charcoal so AgX+sun cannot tint it olive.
-            set_input(wall,'Base Color',(.008,.008,.009,1))
-            set_input(wall,'Emission Color',(.012,.012,.013,1))
-            set_input(wall,'Emission Strength',1)
-            set_input(wall,'Roughness',1)
-        ivory=principal(bpy.data.materials.get('POSTER-ivory'))
-        if ivory:
-            set_input(ivory,'Base Color',(.78,.75,.68,1))
-            set_input(ivory,'Roughness',.55)
-        for name in ('POSTER-arch','POSTER-alcove','POSTER-arched-insert','POSTER-limestone'):
-            node=principal(bpy.data.materials.get(name))
-            if node: set_input(node,'Base Color',(.36,.36,.37,1))
-        for name in ('POSTER-floor','QUALITY-cyclorama'):
-            node=principal(bpy.data.materials.get(name))
-            if node: set_input(node,'Base Color',(.04,.04,.045,1))
-        # Day plate sun polish. Stone, arch, poster, and wear are canonical.
+        # Day changes the sun only. Wall and shell albedo stay on the shared set.
         import importlib.util
         day_path = Path(__file__).resolve().parent / "day_look.py"
         spec = importlib.util.spec_from_file_location("quackles_day_look", day_path)
@@ -156,7 +164,8 @@ def configure_theme(scene,theme):
         spec.loader.exec_module(day_look)
         day_look.apply_day_overrides(scene)
     _canon.apply_canonical(scene, theme)
-    if theme!='night':return
+    _illuminate(scene, theme)
+    return
     for obj in scene.objects:
         if obj.type=='LIGHT':obj.data.energy=0
     if scene.world and scene.world.use_nodes:
