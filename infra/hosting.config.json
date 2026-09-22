@@ -48,5 +48,11 @@
     },
     "consoleClean": true,
     "noAbsoluteUrlsInManifest": true
+  },
+  "notes": {
+    "productionAssetOrigin": "NEXT_PUBLIC_ASSET_ORIGIN=https://kvnloo.github.io/quackles-assets (GitHub Pages; Blob store suspended)",
+    "manifestEntries": "Logical paths only (e.g. /quackles-assets/blue/p0000000/3/{x}_{y}.webp). No baked absolute URLs.",
+    "vercelTile404Expected": "The Vercel static export does not serve /quackles-assets/*. A direct fetch of a logical tile path on the Vercel host returns 404. Tiles resolve client-side via NEXT_PUBLIC_ASSET_ORIGIN to GitHub Pages, where they return 200 image/webp.",
+    "verifyTileCorrectly": "To verify tile availability, fetch against the asset origin: https://kvnloo.github.io/quackles-assets/blue/p0000000/3/0_0.webp (expect 200 image/webp)."
   }
 }
