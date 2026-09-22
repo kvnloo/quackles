@@ -1,7 +1,7 @@
 import type { Decoded } from "./cache";
 import { isImage, type ImageAsset, type TileAsset, type Variant } from "./manifest";
 
-const ASSET_ORIGIN = process.env.NEXT_PUBLIC_ASSET_ORIGIN ?? "";
+const ASSET_ORIGIN = (process.env.NEXT_PUBLIC_ASSET_ORIGIN ?? "").replace(/\/+$/, "") + "/";
 
 export type Crop = { x: number; y: number; width: number; height: number; scale: number };
 export function viewportCrop(element: HTMLElement): Crop {
