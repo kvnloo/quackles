@@ -17,7 +17,7 @@
  *   CHROME    – Chromium executable (default: /usr/bin/chromium)
  */
 
-import { chromium } from '../node_modules/playwright-core/index.mjs';
+import { chromium } from '../../node_modules/playwright-core/index.mjs';
 
 const BASE_URL = process.env.BASE_URL || 'https://quackles-v0.vercel.app';
 const MANIFEST_URL = `${BASE_URL}/preview-scene/sequence/manifest.json`;
@@ -110,7 +110,7 @@ async function main() {
       const detailAsset = bpFrame.assets.blue.find(a => a.tiles);
       if (detailAsset?.tiles?.urlTemplate) {
         const tpl = detailAsset.tiles.urlTemplate;
-        const concreteUrl = tpl.replace('{level}','0').replace('{x}','0').replace('{y}','0');
+        const concreteUrl = BASE_URL + tpl.replace('{level}','0').replace('{x}','0').replace('{y}','0');
         log(`Sample tile URL: ${concreteUrl}`);
         const tileResp = await fetch(concreteUrl);
         log(`Tile status: ${tileResp.status}`);
