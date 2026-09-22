@@ -16,6 +16,7 @@
     "test:mobile:timing": "MODE=timing node scripts/mobile-validation.mjs",
     "test:mobile:visual": "MODE=visual node scripts/mobile-validation.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
+    "test:inspection:static": "node scripts/static-server.mjs --port 43217 --directory out & NodePID=$! && sleep 2 && node scripts/inspection-browser.mjs && kill $NodePID 2>/dev/null || true",
     "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs"
   },
   "dependencies": {
