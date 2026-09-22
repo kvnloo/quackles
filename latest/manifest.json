@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T01:50:00Z",
+  "generatedAt": "2026-09-22T07:40:08Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -62,17 +62,17 @@
     {
       "ref": "nightly",
       "slug": "nightly",
-      "sha": "cd62cd66ecdd364a4d7508620113179645f2f131",
+      "sha": "dd027bf49b28f13a2a435a2d0f0b9386479ffaf3",
       "status": "ok",
-      "title": "Promote merged PR #39 state to nightly ",
+      "title": "chore: ignore Python cache, document deployment contract in hosting config ",
       "url": "/quackles/compare/nightly/"
     },
     {
       "ref": "nightly-source",
       "slug": "nightly-source",
-      "sha": "e68219a8941c46ac87e29ccaa8763432e33e602e",
+      "sha": "a1e3ad1f779ae26faf2fb54ecc138f71148686df",
       "status": "ok",
-      "title": "feat: integrate 200MP Blue DZI deep zoom for hero inspection (#39) ",
+      "title": "chore: replace shell-based test:inspection:static with Node.js harness ",
       "url": "/quackles/compare/nightly-source/"
     },
     {
