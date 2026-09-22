@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T23:34:22Z",
+  "generatedAt": "2026-09-22T01:50:00Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -62,17 +62,17 @@
     {
       "ref": "nightly",
       "slug": "nightly",
-      "sha": "314a1d646d7ced0cbb95a4435268a299956afb1f",
+      "sha": "cd62cd66ecdd364a4d7508620113179645f2f131",
       "status": "ok",
-      "title": "Stage PR #39 DZI candidate on nightly ",
+      "title": "Promote merged PR #39 state to nightly ",
       "url": "/quackles/compare/nightly/"
     },
     {
       "ref": "nightly-source",
       "slug": "nightly-source",
-      "sha": "8442a34791af5989594c229045c4bfcf66c687fa",
+      "sha": "e68219a8941c46ac87e29ccaa8763432e33e602e",
       "status": "ok",
-      "title": "Merge PR #38: defer deep-zoom decode until inspect camera settles ",
+      "title": "feat: integrate 200MP Blue DZI deep zoom for hero inspection (#39) ",
       "url": "/quackles/compare/nightly-source/"
     },
     {
