@@ -91,6 +91,9 @@ export class FrameCache {
   private failures = 0;
   private decodedBudgetBytes: number;
   private maxActiveJobs: number;
+  private warming = new Set<string>();
+  private warmQueue: ImageAsset[] = [];
+  private warmActive = 0;
   constructor(revision: string, options: FrameCacheOptions = {}) {
     this.decodedBudgetBytes = options.decodedBudgetBytes ?? DECODED_BUDGET;
     this.maxActiveJobs = options.maxActiveJobs ?? 3;
@@ -128,6 +131,32 @@ export class FrameCache {
     this.pump();
     return promise;
   }
+  warm(asset: ImageAsset) {
+    if (this.disposed || this.decoded.has(asset.url) || this.jobs.has(asset.url) || this.warming.has(asset.url)) return;
+    this.warming.add(asset.url);
+    this.warmQueue.push(asset);
+    this.pumpWarm();
+  }
+  private pumpWarm() {
+    if (this.disposed || this.active > 0) return;
+    while (this.warmActive < 4 && this.warmQueue.length) {
+      const asset = this.warmQueue.shift()!;
+      this.warmActive++;
+      void this.warmOne(asset).finally(() => {
+        this.warmActive--;
+        this.warming.delete(asset.url);
+        this.pumpWarm();
+      });
+    }
+  }
+  private async warmOne(asset: ImageAsset) {
+    try {
+      if (await this.disk.read(asset.url)) return;
+      const response = await fetch(asset.url);
+      if (!response.ok) return;
+      this.disk.write(asset.url, await response.blob());
+    } catch { /* a missed warm just means the zoom fetch does the work */ }
+  }
   private room(bytes: number) {
     const evictable = [...this.decoded.values()].filter((image) => !this.pinned.has(image.key)).sort((a, b) => a.touched - b.touched);
     while (this.used + this.reserved + bytes > this.decodedBudgetBytes && evictable.length) {
@@ -149,7 +178,7 @@ export class FrameCache {
       void this.run(job).finally(() => {
         this.active--; if (high) this.highActive--;
         if (job.reserved) this.reserved -= job.bytes;
-        this.jobs.delete(job.asset.url); this.pump();
+        this.jobs.delete(job.asset.url); this.pump(); this.pumpWarm();
       });
     }
   }

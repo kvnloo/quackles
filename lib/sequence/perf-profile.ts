@@ -41,7 +41,7 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
     id: "balanced",
     decodedBudgetBytes: 64 * MIB,
     compressedBudgetBytes: 96 * MIB,
-    maxActiveJobs: 2,
+    maxActiveJobs: 6,
     maxZoomCap: 12,
     maxDetailWidth: 11584,
     tileOverscan: 0,

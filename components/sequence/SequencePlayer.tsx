@@ -5,7 +5,7 @@ import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId } from "@/lib/sequence/manifest";
-import { detailPlan, inspectionCrop, paintBase, paintDetail, viewportCrop } from "@/lib/sequence/render";
+import { detailPlan, inspectionCrop, paintBase, paintDetail, tileAssets, viewportCrop } from "@/lib/sequence/render";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { applyPalette, configure, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
@@ -38,7 +38,7 @@ export function SequencePlayer() {
     let inspectionSettleTimer = 0, inspectionSettled = true;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
-    const waiting = new Set<string>(), failed = new Set<string>();
+  const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
     const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0 };
     const schedule = () => { if (!pendingFrame && !cancelled) pendingFrame = requestAnimationFrame(render); };
     const request = (asset: ImageAsset, priority: number) => {
@@ -51,6 +51,21 @@ export function SequencePlayer() {
         }
       }).finally(() => { waiting.delete(asset.url); schedule(); });
     };
+    function warmTheme(theme: ThemeId) {
+      if (!manifest || !cache || warmed.has(theme)) return;
+      const hero = manifest.frames.find((item) => item.id === "p0000000") ?? manifest.frames[0];
+      if (!hero) return;
+      const tiled = hero.assets[theme].filter((variant) => !isImage(variant));
+      if (!tiled.length) { warmed.add(theme); return; }
+      warmed.add(theme);
+      const mid = tiled.find((variant) => variant.width >= 2896) ?? tiled[0];
+      const top = tiled[tiled.length - 1];
+      if (isImage(mid) || isImage(top)) return;
+      for (const tile of [
+        ...tileAssets(mid, { x: 0, y: 0, width: 1, height: 1, scale: 1 }, 0),
+        ...tileAssets(top, { x: 0.22, y: 0.18, width: 0.56, height: 0.5, scale: 4 }, 0),
+      ]) cache.warm(tile.asset);
+    }
     function render() {
       pendingFrame = 0;
       if (!manifest || !cache || cancelled) return;
@@ -107,7 +122,7 @@ export function SequencePlayer() {
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
       let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
-      if (detailEligible && settled && inspectionSettled && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
+      if (detailEligible && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
         const plan = detailPlan(
           frame.assets[themes[0]],
           desiredWidth,
@@ -135,6 +150,9 @@ export function SequencePlayer() {
       cache.pin([...assets.map((asset) => asset.url), ...detailTasks.map(({ asset }) => asset.url)]);
       cache.retain(tasks.map(({ asset }) => asset.url));
       for (const task of tasks) request(task.asset, task.priority);
+      const selectedTheme = THEME_IDS[selected];
+      if (selectedTheme) warmTheme(selectedTheme);
+      warmTheme("blue");
       const beforeImages = beforeAssets.map((asset) => cache!.peek(asset.url));
       const afterImages = afterAssets.map((asset) => cache!.peek(asset.url));
       const nextBase = `${span.before.id}/${span.after.id}/${span.mix.toFixed(3)}/${current.theme.toFixed(3)}/${rect.width}/${devicePixelRatio}`;
@@ -180,16 +198,12 @@ export function SequencePlayer() {
       if (nextKey === inspectionIntentKey) return;
       inspectionIntentKey = nextKey;
 
-      // Camera transforms stay compositor-only while the pointer/zoom spring is
-      // moving. Expensive detail planning resumes after a short quiet period,
-      // so high-resolution tile decode never competes with interaction frames.
       inspectionSettled = false;
       window.clearTimeout(inspectionSettleTimer);
-      detailCanvas!.style.visibility = "hidden";
       inspectionSettleTimer = window.setTimeout(() => {
         inspectionSettled = true;
         schedule();
-      }, 180);
+      }, 32);
       schedule();
     };
     inspectionChanged();
@@ -217,7 +231,7 @@ export function SequencePlayer() {
         });
         state.manifestId = parsed.id; state.frameCount = parsed.frames.length;
         state.frames = parsed.frames.map(({ id, progress, phase }) => ({ id, progress, phase }));
-        configure(parsed); schedule();
+        configure(parsed); schedule(); warmTheme("blue");
       } catch (error) {
         if (!cancelled) state.errors.push(error instanceof Error ? error.message : String(error));
       }

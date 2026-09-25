@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, type ReactNode } from "react";
+import { inspectionSnapshot, subscribeInspection } from "@/lib/sequence/inspection";
 import { dragTheme, snapshot } from "@/lib/sequence/store";
 
 export function SequenceFrame({ children }: { children: ReactNode }) {
@@ -20,17 +21,21 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
       if (previous?.horizontal && node.hasPointerCapture(previous.id)) node.releasePointerCapture(previous.id);
       if (previous?.horizontal) clearThemeDragging();
     };
-    const zoom = () => {
-      const zoomed = (visualViewport?.scale ?? 1) > 1.01;
-      if (zoomed) cancel();
-      node.style.touchAction = "pan-y";
+    const inspecting = () => {
+      const state = inspectionSnapshot();
+      return state.zoom > 1.02 || state.targetZoom > 1.02;
+    };
+    const syncTouch = () => {
+      node.style.touchAction = inspecting() ? "none" : "pan-y";
     };
     const down = (event: PointerEvent) => {
+      if (inspecting()) return;
       if (!event.isPrimary) { cancel(); return; }
       if (event.button !== 0 || (visualViewport?.scale ?? 1) > 1.01 || (event.target instanceof Element && event.target.closest("a,button"))) return;
       gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, theme: snapshot().theme, horizontal: false };
     };
     const move = (event: PointerEvent) => {
+      if (inspecting()) { cancel(); return; }
       if (!gesture || event.pointerId !== gesture.id) return;
       const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
       if (!gesture.horizontal) {
@@ -48,11 +53,14 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
       if (gesture.horizontal) clearThemeDragging();
       gesture = null;
     };
-    zoom(); visualViewport?.addEventListener("resize", zoom);
+    syncTouch();
+    const unsubscribeInspection = subscribeInspection(syncTouch);
+    visualViewport?.addEventListener("resize", syncTouch);
     node.addEventListener("pointerdown", down); node.addEventListener("pointermove", move, { passive: false });
     node.addEventListener("pointerup", up); node.addEventListener("pointercancel", cancel); node.addEventListener("lostpointercapture", cancel);
     return () => {
-      visualViewport?.removeEventListener("resize", zoom);
+      unsubscribeInspection();
+      visualViewport?.removeEventListener("resize", syncTouch);
       node.removeEventListener("pointerdown", down); node.removeEventListener("pointermove", move);
       window.clearTimeout(clearDragging);
       node.removeEventListener("pointerup", up); node.removeEventListener("pointercancel", cancel); node.removeEventListener("lostpointercapture", cancel);

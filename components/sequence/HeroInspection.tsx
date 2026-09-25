@@ -296,6 +296,7 @@ export function HeroInspection() {
       sourceY: number;
     } | null = null;
     const tracked = () => [...pointers.values()];
+    let pan: { x: number; y: number; focusX: number; focusY: number; zoom: number } | null = null;
     const onPinchDown = (event: PointerEvent) => {
       if (event.pointerType === "mouse" || !atHero()) return;
       if (
@@ -304,7 +305,22 @@ export function HeroInspection() {
       )
         return;
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (pointers.size < 2) return;
+      if (pointers.size < 2) {
+        const current = inspectionSnapshot();
+        if (current.targetZoom > 1.02) {
+          pan = {
+            x: event.clientX,
+            y: event.clientY,
+            focusX: current.targetFocusX,
+            focusY: current.targetFocusY,
+            zoom: current.targetZoom,
+          };
+          claimHeroBoundary();
+          frame.setPointerCapture(event.pointerId);
+        }
+        return;
+      }
+      pan = null;
       updateRect();
       const current = inspectionSnapshot();
       const [a, b] = tracked();
@@ -331,7 +347,25 @@ export function HeroInspection() {
       if (!point) return;
       point.x = event.clientX;
       point.y = event.clientY;
-      if (!pinch || pointers.size < 2) return;
+      if (pointers.size < 2) {
+        if (!pan) return;
+        event.preventDefault();
+        updateRect();
+        const zoom = pan.zoom;
+        const span = 1 / zoom;
+        const cropX = Math.max(0, Math.min(1 - span, (pan.focusX * (zoom - 1)) / zoom - (event.clientX - pan.x) / Math.max(1, frameRect.width) * span));
+        const cropY = Math.max(0, Math.min(1 - span, (pan.focusY * (zoom - 1)) / zoom - (event.clientY - pan.y) / Math.max(1, frameRect.height) * span));
+        setInspectionState({
+          active: true,
+          targetZoom: zoom,
+          targetFocusX: (cropX * zoom) / (zoom - 1),
+          targetFocusY: (cropY * zoom) / (zoom - 1),
+        });
+        requestTick();
+        return;
+      }
+      pan = null;
+      if (!pinch) return;
       event.preventDefault();
       const [a, b] = tracked();
       const current = inspectionSnapshot();
@@ -366,6 +400,7 @@ export function HeroInspection() {
     const onPinchEnd = (event: PointerEvent) => {
       pointers.delete(event.pointerId);
       if (pointers.size < 2) pinch = null;
+      if (!pointers.size) pan = null;
     };
 
 

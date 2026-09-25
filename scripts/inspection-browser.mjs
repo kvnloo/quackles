@@ -520,7 +520,7 @@ try {
     throw new Error("mobile viewfinder backing surface exceeded 64 KiB");
   if (mobileZoomed.sequence.profile.tileOverscan !== 0)
     throw new Error("mobile profile retained tile overscan");
-  if (mobileZoomed.sequence.profile.maxActiveJobs > 2)
+  if (mobileZoomed.sequence.profile.maxActiveJobs > 6)
     throw new Error("mobile profile allows too many concurrent jobs");
   if (mobileZoomed.sequence.cache.budgetBytes > 64 * 1024 * 1024)
     throw new Error("mobile decoded cache budget is too large");

@@ -616,7 +616,8 @@ a:focus-visible {
   top: 52%;
   opacity: 0.62;
 }
-.poster-frame[data-inspecting="true"] .interaction-hint-inspect {
+ .poster-frame[data-inspecting="true"] .interaction-hint-theme,
+ .poster-frame[data-inspecting="true"] .interaction-hint-inspect {
   opacity: 0.35;
 }
 .poster-frame[data-inspecting="true"] .interaction-hint-specs {
