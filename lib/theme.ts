@@ -239,42 +239,49 @@ export function subscribeTheme(listener: () => void) {
   };
 }
 
-export function applyThemeT(t: number) {
-  if (typeof document === "undefined") return;
+export function applyThemeT(t: number, options?: { css?: boolean }) {
   const next = Math.min(1, Math.max(0, t));
   themeSnapshot = next;
-  const pal = paletteAt(next);
-  const tone = nearestThemeState(next).tone;
-  const rootEl = document.documentElement;
-  rootEl.style.setProperty("--paper", pal.paper);
-  rootEl.style.setProperty("--paper-deep", pal.deep);
-  rootEl.style.setProperty("--ink", pal.ink);
-  rootEl.style.setProperty("--cobalt", pal.cobalt);
-  rootEl.style.setProperty("--background", pal.paper);
-  rootEl.style.setProperty("--foreground", pal.ink);
-  rootEl.dataset.tone = tone;
+  if (options?.css !== false && typeof document !== "undefined") {
+    const pal = paletteAt(next);
+    const tone = nearestThemeState(next).tone;
+    const rootEl = document.documentElement;
+    rootEl.style.setProperty("--paper", pal.paper);
+    rootEl.style.setProperty("--paper-deep", pal.deep);
+    rootEl.style.setProperty("--ink", pal.ink);
+    rootEl.style.setProperty("--cobalt", pal.cobalt);
+    rootEl.style.setProperty("--background", pal.paper);
+    rootEl.style.setProperty("--foreground", pal.ink);
+    rootEl.dataset.tone = tone;
+  }
   themeListeners.forEach((fn) => fn());
 }
 
-export function animateThemeTo(target: number, ms = THEME_LERP_MS) {
-  if (typeof document === "undefined") return;
+export function animateThemeTo(target: number, ms = THEME_LERP_MS, options?: { css?: boolean }) {
+  if (typeof document === "undefined" && typeof window === "undefined") return;
+  const css = options?.css !== false;
   themeTarget = Math.min(1, Math.max(0, target));
   const from = themeSnapshot;
   const reduce =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce || ms <= 0) {
-    applyThemeT(themeTarget);
+    applyThemeT(themeTarget, { css });
     return;
   }
   if (animFrame) cancelAnimationFrame(animFrame);
   const start = performance.now();
   const tick = (now: number) => {
     const u = Math.min(1, (now - start) / ms);
-    applyThemeT(from + (themeTarget - from) * easeHermes(u));
+    applyThemeT(from + (themeTarget - from) * easeHermes(u), { css });
     if (u < 1) animFrame = requestAnimationFrame(tick);
     else animFrame = 0;
   };
   animFrame = requestAnimationFrame(tick);
+}
+
+/** Move the 3-anchor live rig without clobbering the five-theme sequence palette. */
+export function animateThemeLightsTo(target: number, ms = THEME_LERP_MS) {
+  animateThemeTo(target, ms, { css: false });
 }
 
 export function selectTheme(id: ThemeStateId) {

@@ -22,10 +22,14 @@ export function applyPalette(theme: number) {
     const low = Math.floor(theme), high = Math.ceil(theme), fraction = theme - low;
     const a = manifest.themes[low].palette, b = manifest.themes[high].palette;
     const root = document.documentElement;
-    root.style.setProperty("--paper", mix(a.paper, b.paper, fraction));
+    const paper = mix(a.paper, b.paper, fraction);
+    const ink = mix(a.ink, b.ink, fraction);
+    root.style.setProperty("--paper", paper);
     root.style.setProperty("--paper-deep", mix(a.deep, b.deep, fraction));
-    root.style.setProperty("--ink", mix(a.ink, b.ink, fraction));
+    root.style.setProperty("--ink", ink);
     root.style.setProperty("--cobalt", mix(a.cobalt, b.cobalt, fraction));
+    root.style.setProperty("--background", paper);
+    root.style.setProperty("--foreground", ink);
     root.dataset.tone = THEME_IDS[Math.round(theme)];
     displayedTheme = theme;
   }

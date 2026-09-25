@@ -55,6 +55,7 @@ export function SequencePlayer() {
       pendingFrame = 0;
       if (!manifest || !cache || cancelled) return;
       const current = snapshot(), span = spanAt(manifest, current.progress, current.reducedMotion);
+      applyPalette(current.theme);
       const frame = span.mix < 0.5 ? span.before : span.after;
       const nextLoadIntent = `${frame.id}/${current.target}`;
       if (nextLoadIntent !== loadIntentKey) { loadIntentKey = nextLoadIntent; failed.clear(); }

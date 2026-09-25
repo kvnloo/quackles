@@ -3,16 +3,16 @@ import { useSyncExternalStore } from "react";
 import { THEME_IDS } from "@/lib/sequence/manifest";
 import { feelThemeStop } from "@/lib/feel/drive";
 import { selectTheme, snapshot, subscribe } from "@/lib/sequence/store";
-import { animateThemeTo } from "@/lib/theme";
+import { animateThemeLightsTo } from "@/lib/theme";
 
-// The current live-R3F lighting model has three calibrated anchor states.
-// Map the five authored sequence themes onto those anchors without teaching the
-// sequence layer about the live renderer.
+// Live R3F still has three light anchors. Day/White share the paper rig,
+// Dark/Night share the ink rig, Blue stays on the poster rig. That map must
+// not write CSS: the sequence manifest owns --paper and data-tone.
 const LIVE_THEME_TARGETS = [0, 0, 0.5, 1, 1] as const;
 
 function selectEverywhere(index: number) {
   selectTheme(THEME_IDS[index]);
-  animateThemeTo(LIVE_THEME_TARGETS[index]);
+  animateThemeLightsTo(LIVE_THEME_TARGETS[index]);
 }
 
 export function ThemeControl() {
