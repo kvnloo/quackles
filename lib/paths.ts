@@ -50,9 +50,11 @@ export function resolveAssetUrl(raw: string, manifestBase: string): string {
     }
   }
 
-  // Relative or same-origin absolute path.
   const scoped = raw.startsWith("/") ? assetPath(raw) : raw;
-  return new URL(scoped, manifestBase).href;
+  const base =
+    manifestBase ||
+    (typeof location !== "undefined" ? location.href : "http://127.0.0.1/");
+  return new URL(scoped, base).href;
 }
 
 /** Allowed asset origins for validation. */

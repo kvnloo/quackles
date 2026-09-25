@@ -76,6 +76,7 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
           NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
           NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
+          NEXT_PUBLIC_ASSET_ORIGIN: https://kvnloo.github.io/quackles-assets
       - name: Stage pinned Gigapixel asset pyramid
         env:
           QUACKLES_ASSET_SHA: 5ff80074ffc251fff8bc120c812e2fd8d89fb54b
