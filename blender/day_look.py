@@ -125,9 +125,67 @@ def _gain_shells(gain):
     return changed
 
 
+def _split_pedestal_lobes():
+    """Day only. The pore map stays on diffuse. Glossy is a flat coat at the
+    locked specular weight, so roughness no longer drives the highlight.
+    Projection, the unlinked normal, and specular 0.20 are not changed.
+    """
+    names = (
+        "Hero limestone",
+        "Empty foreground limestone",
+        "Rear limestone",
+        "Orb limestone",
+    )
+    done = 0
+    for name in names:
+        obj = bpy.data.objects.get(name)
+        if not obj:
+            continue
+        for slot in obj.material_slots:
+            mat = slot.material
+            if not mat or not mat.use_nodes or mat.name.startswith("Canonical arch"):
+                continue
+            nt = mat.node_tree
+            if any(node.name == "DayLobeSplit" for node in nt.nodes):
+                done += 1
+                continue
+            bs = _principal(mat)
+            out = next((node for node in nt.nodes if node.type == "OUTPUT_MATERIAL"), None)
+            if not bs or not out:
+                continue
+            diffuse = nt.nodes.new("ShaderNodeBsdfDiffuse")
+            diffuse.name = "DayDiffuseLobe"
+            glossy = nt.nodes.new("ShaderNodeBsdfGlossy")
+            glossy.name = "DayGlossyLobe"
+            glossy.inputs["Roughness"].default_value = 0.55
+            mix = nt.nodes.new("ShaderNodeMixShader")
+            mix.name = "DayLobeSplit"
+            mix.inputs["Fac"].default_value = 0.20
+            base = bs.inputs["Base Color"]
+            if base.links:
+                nt.links.new(base.links[0].from_socket, diffuse.inputs["Color"])
+            else:
+                diffuse.inputs["Color"].default_value = tuple(base.default_value)
+            rough = bs.inputs["Roughness"]
+            if rough.links:
+                nt.links.new(rough.links[0].from_socket, diffuse.inputs["Roughness"])
+            else:
+                diffuse.inputs["Roughness"].default_value = rough.default_value
+            nt.links.new(diffuse.outputs[0], mix.inputs[1])
+            nt.links.new(glossy.outputs[0], mix.inputs[2])
+            surface = out.inputs["Surface"]
+            for link in list(surface.links):
+                nt.links.remove(link)
+            nt.links.new(mix.outputs[0], surface)
+            if "Specular IOR Level" in bs.inputs:
+                bs.inputs["Specular IOR Level"].default_value = 0.2
+            done += 1
+    return done
+
+
 def apply_day_overrides(scene):
-    """Warm the day sun only. Materials live in canonical_set."""
-    hit = {"sun": False}
+    """Warm the day sun, then split the stone lobes. Other themes never call this."""
+    hit = {"sun": False, "lobes": _split_pedestal_lobes()}
     sun = bpy.data.objects.get("Cinematic day sun")
     if sun and sun.type == "LIGHT":
         sun.data.energy = SUN_ENERGY
@@ -152,7 +210,7 @@ def apply_day_overrides(scene):
             "sun_energy": SUN_ENERGY,
             "sun_color": SUN_COLOR,
             "sun_angle": SUN_ANGLE,
-            "applied": hit,
+            "lobes": hit["lobes"],
             "view_transform": view.view_transform,
             "look": view.look,
             "exposure": view.exposure,
