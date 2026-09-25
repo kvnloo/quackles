@@ -3,8 +3,5 @@
   "buildCommand": "npm run build",
   "installCommand": "npm ci",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "images": {
-    "domains": []
-  }
+  "regions": ["iad1"]
 }
