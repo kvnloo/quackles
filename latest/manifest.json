@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T12:04:27Z",
+  "generatedAt": "2026-09-25T16:16:52Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -79,7 +79,7 @@
       "ref": "preview",
       "slug": "preview",
       "sha": "95b45152a06f5b21abce27f31fbdc3e4ea389941",
-      "status": "failed",
+      "status": "ok",
       "title": "Refresh Pages gallery when this branch changes ",
       "url": "/quackles/compare/preview/"
     },
