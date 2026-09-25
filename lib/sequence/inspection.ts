@@ -15,7 +15,7 @@ export type InspectionState = {
 };
 
 const MIN_ZOOM = 1;
-const MAX_ZOOM_CAP = 8;
+const MAX_ZOOM_CAP = 12;
 const INITIAL: InspectionState = {
   active: false,
   zoom: 1,

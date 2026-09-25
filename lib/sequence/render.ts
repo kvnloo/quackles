@@ -4,12 +4,42 @@ import { resolveAssetUrl } from "../paths";
 
 export type Crop = { x: number; y: number; width: number; height: number; scale: number };
 export function viewportCrop(element: HTMLElement): Crop {
-  const rect = element.getBoundingClientRect(), viewport = window.visualViewport;
-  const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0;
-  const right = left + (viewport?.width ?? innerWidth), bottom = top + (viewport?.height ?? innerHeight);
-  const x = Math.max(0, Math.min(1, (left - rect.left) / rect.width));
-  const y = Math.max(0, Math.min(1, (top - rect.top) / rect.height));
-  return { x, y, width: Math.max(0, Math.min(1 - x, (right - Math.max(left, rect.left)) / rect.width)), height: Math.max(0, Math.min(1 - y, (bottom - Math.max(top, rect.top)) / rect.height)), scale: viewport?.scale ?? 1 };
+  const rect = element.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const scale = viewport?.scale ?? 1;
+  const offsetLeft = viewport?.offsetLeft ?? 0;
+  const offsetTop = viewport?.offsetTop ?? 0;
+  const viewWidth = viewport?.width ?? innerWidth;
+  const viewHeight = viewport?.height ?? innerHeight;
+  // visualViewport offsets are layout CSS pixels. Chrome's rect is already
+  // in that space. Safari shrinks the rect with the pinch, so convert it
+  // back before intersecting or the detail canvas misses the visible crop.
+  const layoutWidth = element.offsetWidth || rect.width;
+  const visualSpace =
+    scale > 1.01 &&
+    rect.width > 0 &&
+    rect.width * scale < layoutWidth * 0.92;
+  const left = visualSpace ? rect.left * scale + offsetLeft : rect.left;
+  const top = visualSpace ? rect.top * scale + offsetTop : rect.top;
+  const width = visualSpace ? rect.width * scale : rect.width;
+  const height = visualSpace ? rect.height * scale : rect.height;
+  const viewRight = offsetLeft + viewWidth;
+  const viewBottom = offsetTop + viewHeight;
+  const x = width > 0 ? Math.max(0, Math.min(1, (offsetLeft - left) / width)) : 0;
+  const y = height > 0 ? Math.max(0, Math.min(1, (offsetTop - top) / height)) : 0;
+  return {
+    x,
+    y,
+    width:
+      width > 0
+        ? Math.max(0, Math.min(1 - x, (viewRight - Math.max(offsetLeft, left)) / width))
+        : 0,
+    height:
+      height > 0
+        ? Math.max(0, Math.min(1 - y, (viewBottom - Math.max(offsetTop, top)) / height))
+        : 0,
+    scale,
+  };
 }
 
 export function inspectionCrop(

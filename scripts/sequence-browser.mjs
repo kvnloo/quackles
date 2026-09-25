@@ -224,7 +224,7 @@ async function gestures() {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await page.waitForTimeout(500);
     const pinch = await state(page);
     check(`${viewport.width}: two finger gesture keeps the selected theme`, pinch.current.target === beforePinch.current.target, { zoom: pinch.zoom, before: beforePinch.current.target, after: pinch.current.target });
-    check(`${viewport.width}: native pinch increases visual viewport scale`, pinch.zoom > 1.1, { scale: pinch.zoom });
+    check(`${viewport.width}: pinch zooms the inspection camera or the visual viewport`, pinch.zoom > 1.1 || pinch.inspection.targetZoom > 1.1, { scale: pinch.zoom, inspection: pinch.inspection.targetZoom });
     await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 }); await cdp.detach();
     await page.getByTestId('theme-white').focus(); await page.keyboard.press('ArrowRight'); await page.waitForTimeout(350);
     const keyboard = await state(page); check(`${viewport.width}: keyboard theme control`, keyboard.current.target === 2, keyboard.current);

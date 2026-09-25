@@ -78,6 +78,7 @@ a:focus-visible {
   aspect-ratio: 2/3;
   container-type: inline-size;
   overflow: hidden;
+  touch-action: pan-y;
   background: var(--paper);
 }
 .poster-plates,

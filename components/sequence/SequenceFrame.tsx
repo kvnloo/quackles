@@ -23,7 +23,7 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
     const zoom = () => {
       const zoomed = (visualViewport?.scale ?? 1) > 1.01;
       if (zoomed) cancel();
-      node.style.touchAction = zoomed ? "auto" : "pan-y pinch-zoom";
+      node.style.touchAction = "pan-y";
     };
     const down = (event: PointerEvent) => {
       if (!event.isPrimary) { cancel(); return; }

@@ -288,12 +288,89 @@ export function HeroInspection() {
       resetInspection();
       syncFrameState(inspectionSnapshot());
     };
+    const pointers = new Map<number, { x: number; y: number }>();
+    let pinch: {
+      distance: number;
+      zoom: number;
+      sourceX: number;
+      sourceY: number;
+    } | null = null;
+    const tracked = () => [...pointers.values()];
+    const onPinchDown = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" || !atHero()) return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest("a,button,input,textarea,select")
+      )
+        return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size < 2) return;
+      updateRect();
+      const current = inspectionSnapshot();
+      const [a, b] = tracked();
+      const midX = (a.x + b.x) / 2;
+      const midY = (a.y + b.y) / 2;
+      const fx = (midX - frameRect.left) / Math.max(1, frameRect.width);
+      const fy = (midY - frameRect.top) / Math.max(1, frameRect.height);
+      const crop = inspectionCrop(
+        Math.max(current.zoom, 1),
+        current.focusX,
+        current.focusY,
+      );
+      pinch = {
+        distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+        zoom: Math.max(current.targetZoom, 1),
+        sourceX: crop.x + fx * crop.width,
+        sourceY: crop.y + fy * crop.height,
+      };
+      claimHeroBoundary();
+      frame.setPointerCapture(event.pointerId);
+    };
+    const onPinchMove = (event: PointerEvent) => {
+      const point = pointers.get(event.pointerId);
+      if (!point) return;
+      point.x = event.clientX;
+      point.y = event.clientY;
+      if (!pinch || pointers.size < 2) return;
+      event.preventDefault();
+      const [a, b] = tracked();
+      const current = inspectionSnapshot();
+      const zoom = Math.max(
+        1,
+        Math.min(
+          current.maxZoom,
+          pinch.zoom *
+            (Math.hypot(a.x - b.x, a.y - b.y) / pinch.distance),
+        ),
+      );
+      updateRect();
+      const fx = Math.max(
+        0,
+        Math.min(1, ((a.x + b.x) / 2 - frameRect.left) / Math.max(1, frameRect.width)),
+      );
+      const fy = Math.max(
+        0,
+        Math.min(1, ((a.y + b.y) / 2 - frameRect.top) / Math.max(1, frameRect.height)),
+      );
+      const span = 1 / zoom;
+      const cropX = Math.max(0, Math.min(1 - span, pinch.sourceX - fx * span));
+      const cropY = Math.max(0, Math.min(1 - span, pinch.sourceY - fy * span));
+      setInspectionState({
+        active: zoom > 1.002,
+        targetZoom: zoom,
+        targetFocusX: zoom <= 1.001 ? 0.5 : (cropX * zoom) / (zoom - 1),
+        targetFocusY: zoom <= 1.001 ? 0.5 : (cropY * zoom) / (zoom - 1),
+      });
+      requestTick();
+    };
+    const onPinchEnd = (event: PointerEvent) => {
+      pointers.delete(event.pointerId);
+      if (pointers.size < 2) pinch = null;
+    };
+
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") resetTarget();
-    };
-    const onPointerCapabilityChange = () => {
-      if (!finePointer.matches) resetImmediately();
     };
     const unsubscribeSequence = subscribeSequence(() => {
       if (sequenceSnapshot().progress > 0.006) resetImmediately();
@@ -322,22 +399,28 @@ export function HeroInspection() {
 
     syncFrameState(inspectionSnapshot());
     frame.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    frame.addEventListener("pointerdown", onPinchDown);
     frame.addEventListener("pointermove", onPointerMove, { passive: true });
+    frame.addEventListener("pointermove", onPinchMove, { passive: false });
+    frame.addEventListener("pointerup", onPinchEnd);
+    frame.addEventListener("pointercancel", onPinchEnd);
     frame.addEventListener("click", onClick);
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("keydown", onKeyDown);
-    finePointer.addEventListener("change", onPointerCapabilityChange);
 
     return () => {
       cancelAnimationFrame(animation);
       resizeObserver.disconnect();
       unsubscribeSequence();
       frame.removeEventListener("wheel", onWheel, { capture: true });
+      frame.removeEventListener("pointerdown", onPinchDown);
       frame.removeEventListener("pointermove", onPointerMove);
+      frame.removeEventListener("pointermove", onPinchMove);
+      frame.removeEventListener("pointerup", onPinchEnd);
+      frame.removeEventListener("pointercancel", onPinchEnd);
       frame.removeEventListener("click", onClick);
       removeEventListener("scroll", onScroll);
       removeEventListener("keydown", onKeyDown);
-      finePointer.removeEventListener("change", onPointerCapabilityChange);
       delete window.__QUACKLES_INSPECTION__;
       resetInspection();
       delete frame.dataset.inspecting;

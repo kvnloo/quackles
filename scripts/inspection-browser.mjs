@@ -171,8 +171,8 @@ try {
   await installAssetProxy(desktopContext);
   // The native-tier acceptance deliberately exercises the full desktop policy.
   // GitHub's standard ubuntu runner exposes only four CPUs, which correctly
-  // selects the balanced production profile and caps detail at 8192px. Make
-  // this fixture deterministic instead of depending on CI host capacity.
+  // selects the balanced production profile. The desktop fixture below forces
+  // the full policy instead of depending on CI host capacity.
   await desktopContext.addInitScript(() => {
     try {
       Object.defineProperty(Navigator.prototype, "deviceMemory", {
@@ -524,8 +524,8 @@ try {
     throw new Error("mobile profile allows too many concurrent jobs");
   if (mobileZoomed.sequence.cache.budgetBytes > 64 * 1024 * 1024)
     throw new Error("mobile decoded cache budget is too large");
-  if (mobileZoomed.sequence.profile.maxDetailWidth > 8192)
-    throw new Error("mobile profile can request an excessive detail tier");
+  if (mobileZoomed.sequence.profile.maxDetailWidth > 11584)
+    throw new Error("mobile profile can request a tier above the blue pyramid");
 
   await mobile.screenshot({
     path: path.join(OUT, "mobile-pinch-viewfinder.png"),

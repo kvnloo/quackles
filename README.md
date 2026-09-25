@@ -21,7 +21,7 @@ npm run build
 npm run preview
 ```
 
-The sequence keeps the last complete Cycles frame visible while another frame or theme is loading. Theme swipes crossfade between adjacent authored themes, vertical scroll selects the nearest authored pose, and native pinch zoom promotes to a bounded detail tier when that tier exists. The older WebGL scene remains in the tree for comparison, but it is not the active landing path.
+The sequence keeps the last complete Cycles frame visible while another frame or theme is loading. Theme swipes crossfade between adjacent authored themes, vertical scroll selects the nearest authored pose, and a two-finger pinch drives the inspection camera onto the authored tile pyramid instead of letting the browser magnify the 1024 plate. The older WebGL scene remains in the tree for comparison, but it is not the active landing path.
 
 ## Validate
 
