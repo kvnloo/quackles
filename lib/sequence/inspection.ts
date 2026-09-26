@@ -12,6 +12,8 @@ export type InspectionState = {
   focusVelocityX: number;
   focusVelocityY: number;
   maxZoom: number;
+  /** True only while the camera is moving. Still zoom leaves this false. */
+  cameraMoving: boolean;
 };
 
 const MIN_ZOOM = 1;
@@ -28,6 +30,7 @@ const INITIAL: InspectionState = {
   focusVelocityX: 0,
   focusVelocityY: 0,
   maxZoom: 1,
+  cameraMoving: false,
 };
 
 let state: InspectionState = { ...INITIAL };

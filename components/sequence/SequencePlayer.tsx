@@ -8,6 +8,7 @@ import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, ty
 import { detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, tileAssets, viewportCrop } from "@/lib/sequence/render";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
+import { MOTION_SCALE_START, motionDesiredWidth, nextMotionScale } from "@/lib/sequence/motion-quality";
 import { applyPalette, configure, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
 import { applyStoryProgress } from "./SequenceScroll";
 
@@ -37,6 +38,7 @@ export function SequencePlayer() {
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null;
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
     let inspectionSettleTimer = 0, inspectionSettled = true;
+    let motionScale = MOTION_SCALE_START, lastMotionFrame = 0;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
@@ -101,18 +103,25 @@ export function SequencePlayer() {
       // can start decoding before the eased camera has physically arrived.
       const nativeCrop = viewportCrop(container!);
       const inspect = inspectionSnapshot();
+      const moving = inspect.cameraMoving;
+      if (moving) {
+        const now = performance.now();
+        if (lastMotionFrame) motionScale = nextMotionScale(motionScale, now - lastMotionFrame);
+        lastMotionFrame = now;
+      }
       const crop =
         inspect.active || inspect.targetZoom > 1.0005
           ? inspectionCrop(
-              inspect.targetZoom,
-              inspect.targetFocusX,
-              inspect.targetFocusY,
+              moving ? Math.max(inspect.zoom, inspect.targetZoom) : inspect.targetZoom,
+              moving ? inspect.focusX : inspect.targetFocusX,
+              moving ? inspect.focusY : inspect.targetFocusY,
             )
           : nativeCrop;
-      const desiredWidth = Math.min(
+      const settledWidth = Math.min(
         profile.maxDetailWidth,
         Math.ceil(rect.width * devicePixelRatio * crop.scale),
       );
+      const desiredWidth = moving ? motionDesiredWidth(settledWidth, motionScale) : settledWidth;
       const detailEligible =
         inspect.active ||
         inspect.targetZoom > 1.0005 ||
@@ -130,7 +139,7 @@ export function SequencePlayer() {
           crop,
           profile.decodedBudgetBytes -
             beforeAssets[0].width * beforeAssets[0].height * 4,
-          profile.tileOverscan,
+          moving ? 1 : profile.tileOverscan,
           profile.maxDetailWidth,
         );
         if (plan && plan.variant.width > beforeAssets[0].width) {
@@ -182,6 +191,8 @@ export function SequencePlayer() {
           detailKey = nextDetail; detailKeys = detailTasks.map(({ asset }) => asset.url);
           state.detailWidth = detailVariant.width; state.detailTiles = isImage(detailVariant) ? 0 : detailTasks.length; state.drawCount++;
           if (state.rendered) state.rendered = { ...state.rendered, tierWidth: detailVariant.width, urls: [...paintedKeys, ...detailKeys], generation };
+        } else if (moving && nextDetail !== detailKey) {
+          detailCanvas!.style.visibility = "hidden";
         }
       }
     }
@@ -193,11 +204,16 @@ export function SequencePlayer() {
     const unsubscribe = subscribe(changed);
     const inspectionChanged = () => {
       const next = inspectionSnapshot();
+      const places = next.cameraMoving ? 3 : 4;
+      const followX = next.cameraMoving ? next.focusX : next.targetFocusX;
+      const followY = next.cameraMoving ? next.focusY : next.targetFocusY;
+      const followZoom = next.cameraMoving ? next.zoom : next.targetZoom;
       const nextKey = [
+        next.cameraMoving ? 1 : 0,
         next.active ? 1 : 0,
-        next.targetZoom.toFixed(4),
-        next.targetFocusX.toFixed(4),
-        next.targetFocusY.toFixed(4),
+        followZoom.toFixed(places),
+        followX.toFixed(places),
+        followY.toFixed(places),
         next.maxZoom.toFixed(3),
       ].join("/");
       if (nextKey === inspectionIntentKey) return;

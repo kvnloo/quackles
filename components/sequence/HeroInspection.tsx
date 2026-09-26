@@ -11,6 +11,7 @@ import {
   type InspectionState,
 } from "@/lib/sequence/inspection";
 import { inspectionCrop } from "@/lib/sequence/render";
+import { flickFocusTarget, flickPixelsPerSecond } from "@/lib/sequence/motion-quality";
 import {
   snapshot as sequenceSnapshot,
   subscribe as subscribeSequence,
@@ -72,6 +73,7 @@ export function HeroInspection() {
 
     const tick = (now: number) => {
       animation = 0;
+      if (pan) return;
       const current = inspectionSnapshot();
       const elapsed = lastTick ? now - lastTick : 1000 / 60;
       lastTick = now;
@@ -87,7 +89,9 @@ export function HeroInspection() {
           focusY: active ? current.targetFocusY : 0.5,
           focusVelocityX: 0,
           focusVelocityY: 0,
+          cameraMoving: false,
         };
+        if (pan) return;
         setInspectionState(next);
         syncFrameState(next);
         return;
@@ -129,13 +133,15 @@ export function HeroInspection() {
         active,
         zoom: active ? zoom.value : 1,
         zoomVelocity: active ? zoom.velocity : 0,
-        focusX: active ? focusX.value : 0.5,
-        focusY: active ? focusY.value : 0.5,
-        focusVelocityX: active ? focusX.velocity : 0,
-        focusVelocityY: active ? focusY.velocity : 0,
+        focusX: active ? Math.min(1, Math.max(0, focusX.value)) : 0.5,
+        focusY: active ? Math.min(1, Math.max(0, focusY.value)) : 0.5,
+        focusVelocityX: active && focusX.value > 0 && focusX.value < 1 ? focusX.velocity : 0,
+        focusVelocityY: active && focusY.value > 0 && focusY.value < 1 ? focusY.velocity : 0,
         targetFocusX: active ? current.targetFocusX : 0.5,
         targetFocusY: active ? current.targetFocusY : 0.5,
+        cameraMoving: active && !settled,
       };
+      if (pan) return;
       setInspectionState(next);
       syncFrameState(next);
 
@@ -296,7 +302,7 @@ export function HeroInspection() {
       sourceY: number;
     } | null = null;
     const tracked = () => [...pointers.values()];
-    let pan: { x: number; y: number; focusX: number; focusY: number; zoom: number; pendingX: number; pendingY: number } | null = null;
+    let pan: { x: number; y: number; focusX: number; focusY: number; zoom: number; pendingX: number; pendingY: number; samples: { t: number; x: number; y: number }[] } | null = null;
     const onPinchDown = (event: PointerEvent) => {
       if (event.pointerType === "mouse" || !atHero()) return;
       if (
@@ -316,14 +322,12 @@ export function HeroInspection() {
             zoom: current.targetZoom,
             pendingX: current.targetFocusX,
             pendingY: current.targetFocusY,
+            samples: [{ t: performance.now(), x: event.clientX, y: event.clientY }],
           };
-          claimHeroBoundary();
-          frame.setPointerCapture(event.pointerId);
+          try { frame.setPointerCapture(event.pointerId); } catch { /* already released */ }
           cancelAnimationFrame(animation);
           animation = 0;
           lastTick = 0;
-          const detail = frame.querySelector<HTMLElement>(".sequence-detail");
-          if (detail) detail.style.visibility = "hidden";
         }
         return;
       }
@@ -347,7 +351,7 @@ export function HeroInspection() {
         sourceY: crop.y + fy * crop.height,
       };
       claimHeroBoundary();
-      frame.setPointerCapture(event.pointerId);
+      try { frame.setPointerCapture(event.pointerId); } catch { /* already released */ }
     };
     const onPinchMove = (event: PointerEvent) => {
       const point = pointers.get(event.pointerId);
@@ -366,6 +370,9 @@ export function HeroInspection() {
         const focusY = (cropY * zoom) / (zoom - 1);
         pan.pendingX = focusX;
         pan.pendingY = focusY;
+        pan.samples.push({ t: performance.now(), x: event.clientX, y: event.clientY });
+        if (pan.samples.length > 8) pan.samples.shift();
+        const moved = Math.hypot(event.clientX - pan.x, event.clientY - pan.y) > 2;
         syncFrameState({
           ...inspectionSnapshot(),
           active: true,
@@ -375,6 +382,7 @@ export function HeroInspection() {
           focusY,
           targetFocusX: focusX,
           targetFocusY: focusY,
+          cameraMoving: moved,
         });
         return;
       }
@@ -415,6 +423,21 @@ export function HeroInspection() {
       pointers.delete(event.pointerId);
       if (pointers.size < 2) pinch = null;
       if (!pointers.size && pan) {
+        const now = performance.now();
+        const reduced = sequenceSnapshot().reducedMotion;
+        const flickX = reduced ? { focus: pan.pendingX, velocity: 0 } : flickFocusTarget({
+          focus: pan.pendingX,
+          zoom: pan.zoom,
+          framePx: frameRect.width,
+          pixelsPerSecond: flickPixelsPerSecond(pan.samples.map((sample) => ({ t: sample.t, p: sample.x })), now),
+        });
+        const flickY = reduced ? { focus: pan.pendingY, velocity: 0 } : flickFocusTarget({
+          focus: pan.pendingY,
+          zoom: pan.zoom,
+          framePx: frameRect.height,
+          pixelsPerSecond: flickPixelsPerSecond(pan.samples.map((sample) => ({ t: sample.t, p: sample.y })), now),
+        });
+        const coast = Math.hypot(flickX.velocity, flickY.velocity) > 0.05;
         const placed = {
           ...inspectionSnapshot(),
           active: pan.zoom > 1.02,
@@ -423,14 +446,16 @@ export function HeroInspection() {
           zoomVelocity: 0,
           focusX: pan.pendingX,
           focusY: pan.pendingY,
-          targetFocusX: pan.pendingX,
-          targetFocusY: pan.pendingY,
-          focusVelocityX: 0,
-          focusVelocityY: 0,
+          targetFocusX: flickX.focus,
+          targetFocusY: flickY.focus,
+          focusVelocityX: flickX.velocity,
+          focusVelocityY: flickY.velocity,
+          cameraMoving: coast,
         };
         setInspectionState(placed);
         syncFrameState(placed);
         pan = null;
+        if (coast) requestTick();
       }
     };
 
