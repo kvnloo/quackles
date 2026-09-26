@@ -11,6 +11,7 @@ import {
   type Crop,
 } from "@/lib/sequence/render";
 import { sequencePerfProfile } from "@/lib/sequence/perf-profile";
+import { shouldResampleViewfinder } from "@/lib/sequence/viewfinder-sample";
 import {
   snapshot as sequenceSnapshot,
   subscribe as subscribeSequence,
@@ -172,7 +173,12 @@ export function InspectionViewfinder() {
     };
 
     const onBasePainted = () => {
-      copySource();
+      const inspection = inspectionSnapshot();
+      const nativeScale = window.visualViewport?.scale ?? 1;
+      const atHero = sequenceSnapshot().progress <= 0.006;
+      const active = atHero && ((inspection.active && inspection.zoom > 1.04) || nativeScale > 1.02);
+      const themeDragging = frame.dataset.themeDragging === "true";
+      if (shouldResampleViewfinder({ active, themeDragging })) copySource();
       schedule();
     };
 

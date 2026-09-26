@@ -2,18 +2,8 @@
 import { useSyncExternalStore } from "react";
 import { THEME_IDS } from "@/lib/sequence/manifest";
 import { feelThemeStop } from "@/lib/feel/drive";
-import { selectTheme, snapshot, subscribe } from "@/lib/sequence/store";
-import { animateThemeLightsTo } from "@/lib/theme";
-
-// Live R3F still has three light anchors. Day/White share the paper rig,
-// Dark/Night share the ink rig, Blue stays on the poster rig. That map must
-// not write CSS: the sequence manifest owns --paper and data-tone.
-const LIVE_THEME_TARGETS = [0, 0, 0.5, 1, 1] as const;
-
-function selectEverywhere(index: number) {
-  selectTheme(THEME_IDS[index]);
-  animateThemeLightsTo(LIVE_THEME_TARGETS[index]);
-}
+import { selectLiveTheme } from "@/lib/sequence/live-theme";
+import { snapshot, subscribe } from "@/lib/sequence/store";
 
 export function ThemeControl() {
   const theme = useSyncExternalStore(subscribe, () => snapshot().theme, () => 2);
@@ -28,12 +18,12 @@ export function ThemeControl() {
       tabIndex={index === nearest ? 0 : -1}
       data-testid={`theme-${id}`}
       className="theme-seg-btn"
-      onClick={() => { selectEverywhere(index); feelThemeStop(); }}
+      onClick={() => { selectLiveTheme(index); feelThemeStop(); }}
       onKeyDown={(event) => {
         const offset = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
         const next = event.key === "Home" ? 0 : event.key === "End" ? 4 : (index + offset + 5) % 5;
         if (!offset && event.key !== "Home" && event.key !== "End") return;
-        event.preventDefault(); selectEverywhere(next); feelThemeStop();
+        event.preventDefault(); selectLiveTheme(next); feelThemeStop();
         document.querySelector<HTMLButtonElement>(`[data-testid="theme-${THEME_IDS[next]}"]`)?.focus();
       }}
     ><i className={`swatch swatch-${id}`} aria-hidden />{id[0].toUpperCase() + id.slice(1)}</button>)}
