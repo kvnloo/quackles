@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T19:31:57Z",
+  "generatedAt": "2026-09-26T04:31:58Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -62,9 +62,9 @@
     {
       "ref": "nightly",
       "slug": "nightly",
-      "sha": "dd027bf49b28f13a2a435a2d0f0b9386479ffaf3",
+      "sha": "8d535fa9c0780164e4407b43e4bcfadee33429e0",
       "status": "ok",
-      "title": "chore: ignore Python cache, document deployment contract in hosting config ",
+      "title": "fix: coast a zoomed flick and scale detail only while the camera moves ",
       "url": "/quackles/compare/nightly/"
     },
     {
