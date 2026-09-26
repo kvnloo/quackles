@@ -6,6 +6,7 @@ import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { shouldHidePlate, shouldReleaseDetailOverlay } from "@/lib/sequence/inspection-surface";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
@@ -185,6 +186,7 @@ export function SequencePlayer() {
       const layers: { plan: Planned; alpha: number }[] = [];
       if (detailEligible && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > plateWidth) {
         const budget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4;
+
         if (eggShown && mushroomPyramid.length) {
           const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio);
           if (planned && planned.variant.width > plateWidth) layers.push({ plan: planned, alpha: 1 });
@@ -283,11 +285,13 @@ export function SequencePlayer() {
           if (state.rendered) state.rendered = { ...state.rendered, tierWidth: state.detailWidth, urls: [...paintedKeys, ...detailKeys], generation };
         }
       }
-      if (inspecting) {
+      const detailReady = detailCanvas!.style.visibility === "visible" && detailCanvas!.width > 1;
+      if (shouldHidePlate({ inspecting, detailReady })) {
         baseCanvas!.style.visibility = "hidden";
         if (fallback.current) fallback.current.style.visibility = "hidden";
       } else if (baseKey) {
         baseCanvas!.style.visibility = "visible";
+        if (shouldReleaseDetailOverlay({ inspecting, nativeScale: nativeCrop.scale })) releaseDetail();
       }
     }
     const changed = () => {
