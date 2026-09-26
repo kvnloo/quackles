@@ -67,11 +67,11 @@
       "assets": {
         "day": [
           {
-            "url": "cinematic-proof-v2/day/p0000000-1024.webp",
+            "url": "cinematic-proof-v2/day/p0000000-1024.png",
             "width": 1024,
             "height": 1536,
-            "bytes": 271068,
-            "sha256": "45e90bf3da00b58d67a02f71066ccc266ad20dae8141b88a3806afc549777a05"
+            "bytes": 4252894,
+            "sha256": "26884144fcad9503c18dc615aa28e4f18d6d6fd08e6ef288032a7f618875c8c7"
           }
         ],
         "white": [

@@ -296,7 +296,7 @@ export function HeroInspection() {
       sourceY: number;
     } | null = null;
     const tracked = () => [...pointers.values()];
-    let pan: { x: number; y: number; focusX: number; focusY: number; zoom: number } | null = null;
+    let pan: { x: number; y: number; focusX: number; focusY: number; zoom: number; pendingX: number; pendingY: number } | null = null;
     const onPinchDown = (event: PointerEvent) => {
       if (event.pointerType === "mouse" || !atHero()) return;
       if (
@@ -314,6 +314,8 @@ export function HeroInspection() {
             focusX: current.targetFocusX,
             focusY: current.targetFocusY,
             zoom: current.targetZoom,
+            pendingX: current.targetFocusX,
+            pendingY: current.targetFocusY,
           };
           claimHeroBoundary();
           frame.setPointerCapture(event.pointerId);
@@ -355,13 +357,20 @@ export function HeroInspection() {
         const span = 1 / zoom;
         const cropX = Math.max(0, Math.min(1 - span, (pan.focusX * (zoom - 1)) / zoom - (event.clientX - pan.x) / Math.max(1, frameRect.width) * span));
         const cropY = Math.max(0, Math.min(1 - span, (pan.focusY * (zoom - 1)) / zoom - (event.clientY - pan.y) / Math.max(1, frameRect.height) * span));
-        setInspectionState({
+        const focusX = (cropX * zoom) / (zoom - 1);
+        const focusY = (cropY * zoom) / (zoom - 1);
+        pan.pendingX = focusX;
+        pan.pendingY = focusY;
+        syncFrameState({
+          ...inspectionSnapshot(),
           active: true,
+          zoom,
           targetZoom: zoom,
-          targetFocusX: (cropX * zoom) / (zoom - 1),
-          targetFocusY: (cropY * zoom) / (zoom - 1),
+          focusX,
+          focusY,
+          targetFocusX: focusX,
+          targetFocusY: focusY,
         });
-        requestTick();
         return;
       }
       pan = null;
@@ -400,7 +409,16 @@ export function HeroInspection() {
     const onPinchEnd = (event: PointerEvent) => {
       pointers.delete(event.pointerId);
       if (pointers.size < 2) pinch = null;
-      if (!pointers.size) pan = null;
+      if (!pointers.size && pan) {
+        setInspectionState({
+          active: pan.zoom > 1.02,
+          targetZoom: pan.zoom,
+          targetFocusX: pan.pendingX,
+          targetFocusY: pan.pendingY,
+        });
+        pan = null;
+        requestTick();
+      }
     };
 
 

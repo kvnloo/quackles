@@ -26,7 +26,9 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
       return state.zoom > 1.02 || state.targetZoom > 1.02;
     };
     const syncTouch = () => {
-      node.style.touchAction = inspecting() ? "none" : "pan-y";
+      const zoomed = inspecting();
+      node.style.touchAction = zoomed ? "none" : "pan-y";
+      document.documentElement.style.overscrollBehavior = zoomed ? "none" : "";
     };
     const down = (event: PointerEvent) => {
       if (inspecting()) return;

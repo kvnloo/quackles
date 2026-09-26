@@ -4,6 +4,7 @@ import { FeelEngine } from "@/components/feel/FeelEngine";
 import { PosterBeats } from "@/components/poster/PosterBeats";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
 import { PosterNav } from "@/components/poster/PosterNav";
+import { TextSelect } from "@/components/poster/TextSelect";
 import { ThemeControl } from "@/components/poster/ThemeControl";
 import { HeroInspection } from "@/components/sequence/HeroInspection";
 import { InspectionViewfinder } from "@/components/sequence/InspectionViewfinder";
@@ -14,6 +15,7 @@ import { SequenceScroll } from "@/components/sequence/SequenceScroll";
 export function Landing() {
   return (
     <main id="top" className="experience-shell" data-testid="experience">
+      <TextSelect />
       <SequenceScroll />
       <HeroInspection />
       <FeelEngine />

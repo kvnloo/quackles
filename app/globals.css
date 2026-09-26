@@ -21,9 +21,30 @@ body {
 html {
   overflow-x: clip;
   scroll-behavior: auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+html[data-text-select="on"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 body {
   overflow-x: clip;
+  overscroll-behavior: none;
+}
+.text-select-offer {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 8px 12px;
+  font: 11px/1 var(--font-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 a {
   color: inherit;
