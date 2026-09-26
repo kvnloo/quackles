@@ -89,35 +89,102 @@ export function detailPlan(
   budget: number,
   maxOverscan = 1,
   maxVariantWidth = Number.POSITIVE_INFINITY,
+  minWidth = 0,
 ) {
-  const allowed = variants.filter((variant) => variant.width <= maxVariantWidth);
-  const candidates = allowed.length ? allowed : variants.slice(0, 1);
-  const preferred = candidates.findIndex(
-    (variant) => variant.width >= desiredWidth,
-  );
-  for (
-    let i = preferred < 0 ? candidates.length - 1 : preferred;
-    i >= 0;
-    i--
-  ) {
-    const variant = candidates[i];
-    const overscans = isImage(variant)
-      ? [0]
-      : maxOverscan > 0
-        ? [1, 0]
-        : [0];
+  let allowed = variants.filter((variant) => variant.width <= maxVariantWidth);
+  if (!allowed.length) allowed = variants.slice(0, 1);
+  allowed = allowed.filter((variant) => variant.width >= minWidth);
+  if (!allowed.length) return null;
+  const preferred = allowed.findIndex((variant) => variant.width >= desiredWidth);
+  for (let i = preferred < 0 ? allowed.length - 1 : preferred; i >= 0; i--) {
+    const variant = allowed[i];
+    const overscans = isImage(variant) ? [0] : maxOverscan > 0 ? [1, 0] : [0];
     for (const overscan of overscans) {
       const tasks = isImage(variant)
         ? [{ asset: variant, x: 0, y: 0, sourceX: 0, sourceY: 0 }]
         : tileAssets(variant, crop, overscan);
-      const bytes = tasks.reduce(
-        (sum, { asset }) => sum + asset.width * asset.height * 4,
-        0,
-      );
+      const bytes = tasks.reduce((sum, { asset }) => sum + asset.width * asset.height * 4, 0);
       if (bytes <= budget) return { variant, tasks };
     }
   }
   return null;
+}
+
+export function bufferedCrop(crop: Crop, margin: number): Crop {
+  const padX = crop.width * margin;
+  const padY = crop.height * margin;
+  const x = Math.max(0, crop.x - padX);
+  const y = Math.max(0, crop.y - padY);
+  const right = Math.min(1, crop.x + crop.width + padX);
+  const bottom = Math.min(1, crop.y + crop.height + padY);
+  return { x, y, width: Math.max(crop.width, right - x), height: Math.max(crop.height, bottom - y), scale: crop.scale };
+}
+
+/** True when the camera crop is still inside an already painted source rect. */
+export function cropInside(inner: Crop, outer: Crop, inset = 0): boolean {
+  return inner.x >= outer.x + inset
+    && inner.y >= outer.y + inset
+    && inner.x + inner.width <= outer.x + outer.width - inset
+    && inner.y + inner.height <= outer.y + outer.height - inset;
+}
+
+export const DETAIL_CANVAS_CAP = 4096;
+
+/** Grow the painted source rect until the backing store would exceed the cap. */
+export function fittedBuffer(cssWidth: number, cssHeight: number, crop: Crop, dpr: number, cap = DETAIL_CANVAS_CAP, margin = 0.4): Crop {
+  let pad = margin;
+  while (pad > 0.001) {
+    const buffered = bufferedCrop(crop, pad);
+    const width = cssWidth * buffered.width * dpr * crop.scale;
+    const height = cssHeight * buffered.height * dpr * crop.scale;
+    if (width <= cap && height <= cap) return buffered;
+    pad *= 0.6;
+  }
+  return crop;
+}
+
+export function detailBackingSize(cssWidth: number, cssHeight: number, crop: Crop, dpr: number, cap = DETAIL_CANVAS_CAP) {
+  const width = Math.max(1, Math.ceil(cssWidth * crop.width * dpr * crop.scale));
+  const height = Math.max(1, Math.ceil(cssHeight * crop.height * dpr * crop.scale));
+  const limit = Math.max(width / cap, height / cap, 1);
+  return { width: Math.max(1, Math.round(width / limit)), height: Math.max(1, Math.round(height / limit)) };
+}
+
+/**
+ * Lock the tier to what the visible crop can afford, then take as much
+ * surrounding source as that same tier still fits. Never returns a softer tier
+ * than the tight crop.
+ */
+export function sharpPlan(
+  variants: Variant[],
+  desiredWidth: number,
+  crop: Crop,
+  budget: number,
+  cssWidth: number,
+  cssHeight: number,
+  dpr: number,
+) {
+  const tight = detailPlan(variants, desiredWidth, crop, budget, 0);
+  if (!tight) return null;
+  const floor = tight.variant.width;
+  for (const margin of [0.4, 0.2, 0]) {
+    const coverage = margin === 0 ? crop : fittedBuffer(cssWidth, cssHeight, crop, dpr, DETAIL_CANVAS_CAP, margin);
+    const plan = detailPlan(variants, floor, coverage, budget, margin > 0 ? 1 : 0, Number.POSITIVE_INFINITY, floor);
+    if (plan) return { ...plan, coverage };
+  }
+  return { ...tight, coverage: crop };
+}
+
+/** Abut adjacent tiles. Pyramid tiles have no overlap, so float dest rects leave a dark seam. */
+export function tileDest(sourceX: number, sourceY: number, sourceW: number, sourceH: number, originX: number, originY: number, scaleX: number, scaleY: number) {
+  const x = Math.floor((sourceX - originX) * scaleX);
+  const y = Math.floor((sourceY - originY) * scaleY);
+  return {
+    x,
+    y,
+    w: Math.ceil((sourceX + sourceW - originX) * scaleX) - x,
+    h: Math.ceil((sourceY + sourceH - originY) * scaleY) - y,
+  };
 }
 function composite(context: CanvasRenderingContext2D, images: Decoded[], mix: number, width: number, height: number) {
   context.globalAlpha = 1; context.drawImage(images[0].bitmap, 0, 0, width, height);
@@ -154,21 +221,41 @@ export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: D
    context.drawImage(image.bitmap, 0, 0, canvas.width, canvas.height);
    context.globalAlpha = 1;
  }
-export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, variant: ImageAsset | TileAsset, images: { image: Decoded; x: number; y: number; sourceX: number; sourceY: number }[]) {
+export type DetailStamp = { image: Decoded; x: number; y: number; sourceX: number; sourceY: number };
+export type DetailLayer = { variant: ImageAsset | TileAsset; images: DetailStamp[]; alpha: number };
+
+export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, layers: DetailLayer[]) {
   const rect = container.getBoundingClientRect();
-  const width = Math.max(1, Math.ceil(rect.width * crop.width * devicePixelRatio * crop.scale));
-  const height = Math.max(1, Math.ceil(rect.height * crop.height * devicePixelRatio * crop.scale));
-  canvas.width = Math.min(2048, width); canvas.height = Math.min(4096, height);
-  canvas.style.left = `${crop.x * 100}%`; canvas.style.top = `${crop.y * 100}%`;
-  canvas.style.width = `${crop.width * 100}%`; canvas.style.height = `${crop.height * 100}%`;
+  const backing = detailBackingSize(rect.width, rect.height, crop, devicePixelRatio);
+  if (canvas.width !== backing.width || canvas.height !== backing.height) {
+    canvas.width = backing.width;
+    canvas.height = backing.height;
+  }
+  canvas.style.left = `${crop.x * 100}%`;
+  canvas.style.top = `${crop.y * 100}%`;
+  canvas.style.width = `${crop.width * 100}%`;
+  canvas.style.height = `${crop.height * 100}%`;
   const context = canvas.getContext("2d", { alpha: false });
   if (!context) throw new Error("Canvas2D is unavailable");
-  if ("url" in variant) {
-    context.drawImage(images[0].image.bitmap, crop.x * variant.width, crop.y * variant.height, crop.width * variant.width, crop.height * variant.height, 0, 0, canvas.width, canvas.height);
-  } else {
-    const scaleX = canvas.width / (crop.width * variant.width), scaleY = canvas.height / (crop.height * variant.height);
-    for (const { image, sourceX, sourceY } of images)
-      context.drawImage(image.bitmap, (sourceX - crop.x * variant.width) * scaleX, (sourceY - crop.y * variant.height) * scaleY, image.asset.width * scaleX, image.asset.height * scaleY);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  for (const layer of layers) {
+    context.globalAlpha = layer.alpha;
+    if ("url" in layer.variant) {
+      const image = layer.images[0]?.image;
+      if (!image) continue;
+      context.drawImage(image.bitmap, crop.x * layer.variant.width, crop.y * layer.variant.height, crop.width * layer.variant.width, crop.height * layer.variant.height, 0, 0, canvas.width, canvas.height);
+    } else {
+      const originX = crop.x * layer.variant.width;
+      const originY = crop.y * layer.variant.height;
+      const scaleX = canvas.width / (crop.width * layer.variant.width);
+      const scaleY = canvas.height / (crop.height * layer.variant.height);
+      for (const { image, sourceX, sourceY } of layer.images) {
+        const dest = tileDest(sourceX, sourceY, image.asset.width, image.asset.height, originX, originY, scaleX, scaleY);
+        context.drawImage(image.bitmap, dest.x, dest.y, dest.w, dest.h);
+      }
+    }
   }
+  context.globalAlpha = 1;
   canvas.style.visibility = "visible";
 }

@@ -5,7 +5,7 @@ import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
-import { detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, tileAssets, viewportCrop } from "@/lib/sequence/render";
+import { cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
@@ -42,6 +42,13 @@ export function SequencePlayer() {
     let motionScale = MOTION_SCALE_START, lastMotionFrame = 0;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
+    let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "";
+    const releaseDetail = () => {
+      detailCanvas.style.visibility = "hidden";
+      if (detailCanvas.width !== 1 || detailCanvas.height !== 1) { detailCanvas.width = 1; detailCanvas.height = 1; }
+      detailKeys = []; detailKey = ""; paintedCoverage = null; paintedMix = -1;
+      state.detailWidth = 0; state.detailTiles = 0;
+    };
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
     const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0 };
     const schedule = () => { if (!pendingFrame && !cancelled) pendingFrame = requestAnimationFrame(render); };
@@ -124,36 +131,60 @@ export function SequencePlayer() {
             )
           : nativeCrop;
       const settledWidth = Math.ceil(rect.width * devicePixelRatio * crop.scale);
-      const desiredWidth = moving ? motionDesiredWidth(settledWidth, motionScale) : settledWidth;
-      const detailEligible =
-        inspect.active ||
-        inspect.targetZoom > 1.0005 ||
-        nativeCrop.scale > 1.02;
+      const inspecting = inspect.active || inspect.targetZoom > 1.0005;
+      const plateWidth = beforeAssets[0].width;
+      const sharpUp = state.detailWidth > plateWidth;
+      const desiredWidth = moving && !sharpUp ? motionDesiredWidth(settledWidth, motionScale) : settledWidth;
+      const detailEligible = inspecting || nativeCrop.scale > 1.02;
       const nextIntent = `${span.before.id}/${span.after.id}/${span.mix}/${current.theme}/${desiredWidth}`;
       if (nextIntent !== intentKey) { intentKey = nextIntent; generation++; }
       state.requested = { frameId: frame.id, frameProgress: frame.progress, progress: current.progress, themes, mix, tierWidth: desiredWidth, generation, urls: assets.map((asset) => asset.url) };
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
-      let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
-      let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
+      const detailMix = Math.round(mix * 50) / 50;
+      const known = (variants: Variant[]) => variants.filter((variant) => isImage(variant) || !variant.tiles.urlTemplate.includes("/gp/") || tierKnown(variant) === true);
       const eggShown = eggWeight(current.theme) > 0.5 && frame.id === "p0000000";
-      const rawDetail = eggShown ? mushroomPyramid : frame.assets[themes[0]];
-      for (const variant of rawDetail) {
+      const probeSource = eggShown ? mushroomPyramid : frame.assets[themes[0]];
+      for (const variant of probeSource) {
         if (!isImage(variant) && variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
       }
-      const detailSource = rawDetail.filter((variant) => isImage(variant) || !variant.tiles.urlTemplate.includes("/gp/") || tierKnown(variant) === true);
-      if (detailEligible && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width && detailSource.length && (!eggShown || mushroomPyramid.length)) {
-        const plan = detailPlan(
-          detailSource,
-          desiredWidth,
-          crop,
-          profile.decodedBudgetBytes -
-            beforeAssets[0].width * beforeAssets[0].height * 4,
-          moving ? 1 : profile.tileOverscan,
-        );
-        if (plan && plan.variant.width > beforeAssets[0].width) {
-          detailVariant = plan.variant;
-          detailTasks = plan.tasks;
-          tasks.push(...detailTasks.map(({ asset }) => ({ asset, priority: 90 })));
+      if (inspecting && frame.id === "p0000000") {
+        for (const theme of themes.length > 1 ? themes : THEME_IDS) {
+          for (const variant of frame.assets[theme]) {
+            if (!isImage(variant) && variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
+          }
+        }
+      }
+      type Planned = NonNullable<ReturnType<typeof sharpPlan>>;
+      const layers: { plan: Planned; alpha: number }[] = [];
+      if (detailEligible && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > plateWidth) {
+        const budget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4;
+        if (eggShown && mushroomPyramid.length) {
+          const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio);
+          if (planned && planned.variant.width > plateWidth) layers.push({ plan: planned, alpha: 1 });
+        } else if (!eggShown) {
+          const sources = themes.map((theme) => known(frame.assets[theme]));
+          const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio) : null;
+          if (primary && primary.variant.width > plateWidth) {
+            layers.push({ plan: primary, alpha: 1 });
+            if (themes.length > 1 && sources[1]?.length) {
+              const secondary = detailPlan(sources[1], primary.variant.width, primary.coverage, budget, 1, Number.POSITIVE_INFINITY, primary.variant.width);
+              if (secondary) layers.push({ plan: { ...secondary, coverage: primary.coverage }, alpha: detailMix });
+            } else if (!moving && detailKey) {
+              for (const offset of [-1, 1]) {
+                const neighbor = THEME_IDS[low + offset];
+                if (!neighbor) continue;
+                const same = known(frame.assets[neighbor]).find((variant) => variant.width === primary.variant.width);
+                if (!same || isImage(same)) continue;
+                for (const tile of tileAssets(same, primary.coverage, 0)) tasks.push({ asset: tile.asset, priority: 35 });
+              }
+            }
+          }
+        }
+        for (const layer of layers) tasks.push(...layer.plan.tasks.map(({ asset }) => ({ asset, priority: 90 })));
+        const coverageId = layers[0] ? `${layers[0].plan.coverage.x.toFixed(3)}/${layers[0].plan.coverage.y.toFixed(3)}` : "";
+        if (coverageId && coverageId !== failCrop) {
+          for (const url of [...failed]) if (url.includes("/gp/")) failed.delete(url);
+          failCrop = coverageId;
         }
       }
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
@@ -167,7 +198,7 @@ export function SequencePlayer() {
       }
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
-      cache.pin([...assets.map((asset) => asset.url), ...detailTasks.map(({ asset }) => asset.url)]);
+      cache.pin([...assets.map((asset) => asset.url), ...layers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url))]);
       cache.retain(tasks.map(({ asset }) => asset.url));
       for (const task of tasks) request(task.asset, task.priority);
       const selectedTheme = THEME_IDS[selected];
@@ -182,25 +213,42 @@ export function SequencePlayer() {
         if (eggImage && egg > 0.001) paintEgg(baseCanvas!, eggImage, egg);
         applyPalette(current.theme);
         baseKey = nextBase; paintedKeys = assets.map((asset) => asset.url);
-        detailCanvas!.style.visibility = "hidden"; detailCanvas!.width = 1; detailCanvas!.height = 1; detailKeys = []; detailKey = "";
-        state.detailWidth = 0; state.detailTiles = 0;
+        if (!inspecting || span.mix > 0) releaseDetail();
         state.ready = true; state.drawCount++;
-        state.rendered = { ...state.requested, tierWidth: beforeAssets[0].width, urls: [...paintedKeys] };
+        state.rendered = { ...state.requested, tierWidth: state.detailWidth || plateWidth, urls: [...paintedKeys, ...detailKeys] };
         if (fallback.current) fallback.current.style.visibility = "hidden";
         baseCanvas!.style.visibility = "visible";
         window.dispatchEvent(new Event("quackles:base-painted"));
       }
       if (baseKey === nextBase) applyStoryProgress(current.progress);
-      if (detailVariant && detailTasks.length && baseKey === nextBase) {
-        const decoded = detailTasks.map((task) => ({ ...task, image: cache!.peek(task.asset.url) }));
-        const nextDetail = `${frame.id}/${low}/${detailVariant.width}/${JSON.stringify(crop)}`;
-        if (decoded.every((task) => task.image !== undefined) && nextDetail !== detailKey) {
-          paintDetail(detailCanvas!, container!, crop, detailVariant, decoded.map(({ image, x, y, sourceX, sourceY }) => ({ image: image!, x, y, sourceX, sourceY })));
-          detailKey = nextDetail; detailKeys = detailTasks.map(({ asset }) => asset.url);
-          state.detailWidth = detailVariant.width; state.detailTiles = isImage(detailVariant) ? 0 : detailTasks.length; state.drawCount++;
-          if (state.rendered) state.rendered = { ...state.rendered, tierWidth: detailVariant.width, urls: [...paintedKeys, ...detailKeys], generation };
-        } else if (moving && nextDetail !== detailKey) {
-          detailCanvas!.style.visibility = "hidden";
+      if (layers.length && baseKey === nextBase) {
+        const coverage = layers[0].plan.coverage;
+        const decoded = layers.map((layer) => ({
+          ...layer,
+          images: layer.plan.tasks.map((task) => ({ ...task, image: cache!.peek(task.asset.url) })),
+        }));
+        const expected = eggShown || themes.length === 1 ? 1 : 2;
+        const ready = (layer: (typeof decoded)[number]) => layer.images.every((task) => task.image !== undefined);
+        const allReady = decoded.length === expected && decoded.every(ready);
+        const primaryReady = ready(decoded[0]);
+        const mixChanged = Math.abs(detailMix - paintedMix) > 0.001;
+        const upgrade = layers[0].plan.variant.width > state.detailWidth;
+        const escaping = !paintedCoverage || !cropInside(crop, paintedCoverage, crop.width * 0.12);
+        const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
+        if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
+          paintDetail(detailCanvas!, container!, coverage, paintLayers.map((layer) => ({
+            variant: layer.plan.variant,
+            alpha: layer.alpha,
+            images: layer.images.map(({ image, x, y, sourceX, sourceY }) => ({ image: image!, x, y, sourceX, sourceY })),
+          })));
+          detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
+          detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
+          paintedCoverage = coverage;
+          paintedMix = allReady ? detailMix : 0;
+          state.detailWidth = paintLayers[0].plan.variant.width;
+          state.detailTiles = paintLayers.reduce((sum, layer) => sum + (isImage(layer.plan.variant) ? 0 : layer.plan.tasks.length), 0);
+          state.drawCount++;
+          if (state.rendered) state.rendered = { ...state.rendered, tierWidth: state.detailWidth, urls: [...paintedKeys, ...detailKeys], generation };
         }
       }
     }
