@@ -5,7 +5,7 @@ import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId } from "@/lib/sequence/manifest";
-import { detailPlan, inspectionCrop, paintBase, paintDetail, tileAssets, viewportCrop } from "@/lib/sequence/render";
+import { detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, tileAssets, viewportCrop } from "@/lib/sequence/render";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { applyPalette, configure, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
@@ -33,6 +33,7 @@ export function SequencePlayer() {
     const container = host.current, baseCanvas = base.current, detailCanvas = detail.current;
     if (!container || !baseCanvas || !detailCanvas) return;
     const profile = sequencePerfProfile();
+    const eggAsset: ImageAsset = { url: assetPath("/preview-scene/sequence/hidden/night-moss.png"), width: 768, height: 1152 };
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null;
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
     let inspectionSettleTimer = 0, inspectionSettled = true;
@@ -147,6 +148,8 @@ export function SequencePlayer() {
         const theme = THEME_IDS[selected + offset];
         if (theme) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 });
       }
+      const egg = eggWeight(current.theme);
+      if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
       cache.pin([...assets.map((asset) => asset.url), ...detailTasks.map(({ asset }) => asset.url)]);
       cache.retain(tasks.map(({ asset }) => asset.url));
       for (const task of tasks) request(task.asset, task.priority);
@@ -155,9 +158,11 @@ export function SequencePlayer() {
       warmTheme("blue");
       const beforeImages = beforeAssets.map((asset) => cache!.peek(asset.url));
       const afterImages = afterAssets.map((asset) => cache!.peek(asset.url));
-      const nextBase = `${span.before.id}/${span.after.id}/${span.mix.toFixed(3)}/${current.theme.toFixed(3)}/${rect.width}/${devicePixelRatio}`;
+      const eggImage = cache!.peek(eggAsset.url);
+      const nextBase = `${span.before.id}/${span.after.id}/${span.mix.toFixed(3)}/${current.theme.toFixed(3)}/${rect.width}/${devicePixelRatio}/${egg.toFixed(3)}/${eggImage ? 1 : 0}`;
       if (beforeImages.every((image) => image !== undefined) && afterImages.every((image) => image !== undefined) && nextBase !== baseKey) {
         paintBase(baseCanvas!, beforeImages as NonNullable<(typeof beforeImages)[number]>[], afterImages.length ? afterImages as NonNullable<(typeof afterImages)[number]>[] : undefined, span.mix, mix, rect.width);
+        if (eggImage && egg > 0.001) paintEgg(baseCanvas!, eggImage, egg);
         applyPalette(current.theme);
         baseKey = nextBase; paintedKeys = assets.map((asset) => asset.url);
         detailCanvas!.style.visibility = "hidden"; detailCanvas!.width = 1; detailCanvas!.height = 1; detailKeys = []; detailKey = "";

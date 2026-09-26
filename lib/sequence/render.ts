@@ -140,7 +140,20 @@ export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: D
     composite(extra, after, themeMix, width, height);
     context.globalAlpha = progressMix; context.drawImage(scratch, 0, 0, width, height); context.globalAlpha = 1;
   }
-}
+ }
+ export function eggWeight(theme: number) {
+   const distance = Math.abs(theme - 3.6);
+   if (distance >= 0.28) return 0;
+   const x = 1 - distance / 0.28;
+   return x * x * (3 - 2 * x);
+ }
+ export function paintEgg(canvas: HTMLCanvasElement, image: Decoded, weight: number) {
+   const context = canvas.getContext("2d");
+   if (!context || weight <= 0.001) return;
+   context.globalAlpha = weight;
+   context.drawImage(image.bitmap, 0, 0, canvas.width, canvas.height);
+   context.globalAlpha = 1;
+ }
 export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, variant: ImageAsset | TileAsset, images: { image: Decoded; x: number; y: number; sourceX: number; sourceY: number }[]) {
   const rect = container.getBoundingClientRect();
   const width = Math.max(1, Math.ceil(rect.width * crop.width * devicePixelRatio * crop.scale));

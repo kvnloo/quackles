@@ -319,6 +319,11 @@ export function HeroInspection() {
           };
           claimHeroBoundary();
           frame.setPointerCapture(event.pointerId);
+          cancelAnimationFrame(animation);
+          animation = 0;
+          lastTick = 0;
+          const detail = frame.querySelector<HTMLElement>(".sequence-detail");
+          if (detail) detail.style.visibility = "hidden";
         }
         return;
       }
@@ -410,14 +415,22 @@ export function HeroInspection() {
       pointers.delete(event.pointerId);
       if (pointers.size < 2) pinch = null;
       if (!pointers.size && pan) {
-        setInspectionState({
+        const placed = {
+          ...inspectionSnapshot(),
           active: pan.zoom > 1.02,
+          zoom: pan.zoom,
           targetZoom: pan.zoom,
+          zoomVelocity: 0,
+          focusX: pan.pendingX,
+          focusY: pan.pendingY,
           targetFocusX: pan.pendingX,
           targetFocusY: pan.pendingY,
-        });
+          focusVelocityX: 0,
+          focusVelocityY: 0,
+        };
+        setInspectionState(placed);
+        syncFrameState(placed);
         pan = null;
-        requestTick();
       }
     };
 
