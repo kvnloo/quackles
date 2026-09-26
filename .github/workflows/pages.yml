@@ -88,10 +88,15 @@ jobs:
           git -C /tmp/quackles-assets checkout --detach "$QUACKLES_ASSET_SHA"
           test "$(git -C /tmp/quackles-assets rev-parse HEAD)" = "$QUACKLES_ASSET_SHA"
           mkdir -p out/quackles-assets
-          cp -a /tmp/quackles-assets/blue out/quackles-assets/
+          shopt -s nullglob
+          for scene in /tmp/quackles-assets/*/; do
+            name="$(basename "$scene")"
+            if [ -d "$scene/p0000000" ]; then
+              cp -a "$scene" "out/quackles-assets/$name"
+              test -f "out/quackles-assets/$name/p0000000/0/0_0.webp"
+            fi
+          done
           test -f out/quackles-assets/blue/p0000000/0/0_0.webp
-          test -f out/quackles-assets/blue/p0000000/3/0_0.webp
-          test "$(find out/quackles-assets/blue/p0000000 -name '*.webp' | wc -l | tr -d ' ')" = "1055"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

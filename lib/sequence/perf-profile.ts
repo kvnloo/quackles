@@ -9,7 +9,6 @@ export type SequencePerfProfile = {
   compressedBudgetBytes: number;
   maxActiveJobs: number;
   maxZoomCap: number;
-  maxDetailWidth: number;
   tileOverscan: 0 | 1;
   viewfinderBackingWidth: number;
 };
@@ -33,7 +32,6 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
     compressedBudgetBytes: 64 * MIB,
     maxActiveJobs: 2,
     maxZoomCap: 2.5,
-    maxDetailWidth: 4096,
     tileOverscan: 0,
     viewfinderBackingWidth: 80,
   },
@@ -43,7 +41,6 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
     compressedBudgetBytes: 96 * MIB,
     maxActiveJobs: 6,
     maxZoomCap: 24,
-    maxDetailWidth: 11584,
     tileOverscan: 0,
     viewfinderBackingWidth: 96,
   },
@@ -53,7 +50,6 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
     compressedBudgetBytes: 128 * MIB,
     maxActiveJobs: 3,
     maxZoomCap: 24,
-    maxDetailWidth: 16384,
     tileOverscan: 1,
     viewfinderBackingWidth: 112,
   },

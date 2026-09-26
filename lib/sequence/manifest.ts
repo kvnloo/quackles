@@ -37,7 +37,7 @@ function number(value: unknown): number {
 }
 function dimension(value: unknown): number {
   const n = number(value);
-  if (!Number.isInteger(n) || n < 1 || n > 32768) throw new Error("Invalid sequence dimensions");
+  if (!Number.isSafeInteger(n) || n < 1) throw new Error("Invalid sequence dimensions");
   return n;
 }
 function overlap(value: unknown): number {

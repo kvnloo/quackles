@@ -4,8 +4,9 @@ import { useEffect, useRef } from "react";
 import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
-import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId } from "@/lib/sequence/manifest";
+import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, tileAssets, viewportCrop } from "@/lib/sequence/render";
+import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { MOTION_SCALE_START, motionDesiredWidth, nextMotionScale } from "@/lib/sequence/motion-quality";
@@ -35,7 +36,7 @@ export function SequencePlayer() {
     if (!container || !baseCanvas || !detailCanvas) return;
     const profile = sequencePerfProfile();
     const eggAsset: ImageAsset = { url: assetPath("/preview-scene/sequence/hidden/night-moss.png"), width: 768, height: 1152 };
-    let manifest: SequenceManifest | null = null, cache: FrameCache | null = null;
+    let manifest: SequenceManifest | null = null, cache: FrameCache | null = null, mushroomPyramid: Variant[] = [];
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
     let inspectionSettleTimer = 0, inspectionSettled = true;
     let motionScale = MOTION_SCALE_START, lastMotionFrame = 0;
@@ -58,11 +59,16 @@ export function SequencePlayer() {
       if (!manifest || !cache || warmed.has(theme)) return;
       const hero = manifest.frames.find((item) => item.id === "p0000000") ?? manifest.frames[0];
       if (!hero) return;
-      const tiled = hero.assets[theme].filter((variant) => !isImage(variant));
+      const tiled = hero.assets[theme].filter((variant): variant is TileAsset => !isImage(variant));
       if (!tiled.length) { warmed.add(theme); return; }
+      const present = tiled.filter((variant) => !variant.tiles.urlTemplate.includes("/gp/") || tierKnown(variant) === true);
+      for (const variant of tiled) {
+        if (variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
+      }
+      if (!present.length) return;
       warmed.add(theme);
-      const mid = tiled.find((variant) => variant.width >= 2896) ?? tiled[0];
-      const top = tiled[tiled.length - 1];
+      const mid = present.find((variant) => variant.width >= 2896) ?? present[0];
+      const top = present[present.length - 1];
       if (isImage(mid) || isImage(top)) return;
       for (const tile of [
         ...tileAssets(mid, { x: 0, y: 0, width: 1, height: 1, scale: 1 }, 0),
@@ -117,10 +123,7 @@ export function SequencePlayer() {
               moving ? inspect.focusY : inspect.targetFocusY,
             )
           : nativeCrop;
-      const settledWidth = Math.min(
-        profile.maxDetailWidth,
-        Math.ceil(rect.width * devicePixelRatio * crop.scale),
-      );
+      const settledWidth = Math.ceil(rect.width * devicePixelRatio * crop.scale);
       const desiredWidth = moving ? motionDesiredWidth(settledWidth, motionScale) : settledWidth;
       const detailEligible =
         inspect.active ||
@@ -132,15 +135,20 @@ export function SequencePlayer() {
       const tasks = assets.map((asset) => ({ asset, priority: 100 }));
       let detailVariant: ReturnType<typeof imageAt> | Exclude<(typeof frame.assets.white)[number], ImageAsset> | null = null;
       let detailTasks: { asset: ImageAsset; x: number; y: number; sourceX: number; sourceY: number }[] = [];
-      if (detailEligible && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width) {
+      const eggShown = eggWeight(current.theme) > 0.5 && frame.id === "p0000000";
+      const rawDetail = eggShown ? mushroomPyramid : frame.assets[themes[0]];
+      for (const variant of rawDetail) {
+        if (!isImage(variant) && variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
+      }
+      const detailSource = rawDetail.filter((variant) => isImage(variant) || !variant.tiles.urlTemplate.includes("/gp/") || tierKnown(variant) === true);
+      if (detailEligible && low === high && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > beforeAssets[0].width && detailSource.length && (!eggShown || mushroomPyramid.length)) {
         const plan = detailPlan(
-          frame.assets[themes[0]],
+          detailSource,
           desiredWidth,
           crop,
           profile.decodedBudgetBytes -
             beforeAssets[0].width * beforeAssets[0].height * 4,
           moving ? 1 : profile.tileOverscan,
-          profile.maxDetailWidth,
         );
         if (plan && plan.variant.width > beforeAssets[0].width) {
           detailVariant = plan.variant;
@@ -243,6 +251,11 @@ export function SequencePlayer() {
         const response = await fetch(assetPath(`/preview-scene/sequence/manifest.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (!response.ok) throw new Error(`Sequence manifest failed: ${response.status}`);
         const parsed = parseManifest(await response.json(), response.url);
+        const hidden = await fetch(assetPath(`/preview-scene/sequence/hidden-pyramids.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
+        if (hidden.ok) {
+          const body = await hidden.json() as { mushroom?: { variants?: Variant[] } };
+          mushroomPyramid = (body.mushroom?.variants ?? []).slice().sort((a, b) => a.width - b.width);
+        }
         if (cancelled) return;
         manifest = parsed;
         cache = new FrameCache(parsed.id, {

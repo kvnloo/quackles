@@ -359,29 +359,41 @@ try {
     throw new Error(
       `DZI load failed before native tier settled: ${JSON.stringify(deepProbe.sequence.errors.slice(-4))}`,
     );
+  const nativeWidth = await page.evaluate(async () => {
+    const sequence = window.__QUACKLES_SEQUENCE__?.getState();
+    const theme = sequence?.rendered?.themes?.[0] ?? "blue";
+    const frameId = sequence?.rendered?.frameId ?? "p0000000";
+    const manifestUrl = performance.getEntriesByType("resource").find((entry) => /\/sequence\/manifest\.json/.test(entry.name))?.name;
+    if (!manifestUrl) throw new Error("sequence manifest was not requested");
+    const manifest = await (await fetch(manifestUrl)).json();
+    const frame = manifest.frames.find((row) => row.id === frameId);
+    const widths = frame?.assets?.[theme]?.map((variant) => variant.width) ?? [];
+    if (!widths.length) throw new Error(`no variants for ${theme} ${frameId}`);
+    return Math.max(...widths);
+  });
   if (
-    deepProbe.sequence.detailWidth !== 11584 &&
+    deepProbe.sequence.detailWidth !== nativeWidth &&
     deepProbe.sequence.cache.inflight === 0 &&
     deepProbe.sequence.cache.queued === 0
   )
     throw new Error(
-      `native DZI stalled with no pending work: ${JSON.stringify({ detailWidth: deepProbe.sequence.detailWidth, detailTiles: deepProbe.sequence.detailTiles, requestedTierWidth: deepProbe.sequence.requested?.tierWidth ?? null, inspection: deepProbe.inspection, cache: deepProbe.sequence.cache })}`,
+      `native DZI stalled with no pending work: ${JSON.stringify({ detailWidth: deepProbe.sequence.detailWidth, nativeWidth, detailTiles: deepProbe.sequence.detailTiles, requestedTierWidth: deepProbe.sequence.requested?.tierWidth ?? null, inspection: deepProbe.inspection, cache: deepProbe.sequence.cache })}`,
     );
   await page.waitForFunction(
-    () => {
+    (width) => {
       const current = window.__QUACKLES_SEQUENCE__?.getState();
       return (
-        (current?.detailWidth ?? 0) === 11584 &&
+        (current?.detailWidth ?? 0) === width &&
         (current?.detailTiles ?? 0) > 0
       );
     },
-    undefined,
+    nativeWidth,
     { timeout: 90000 },
   );
   const deep = await state(page);
   const deepDziRequests = await dziRequests(page);
-  if (deep.sequence.detailWidth !== 11584)
-    throw new Error(`deep inspection stopped at ${deep.sequence.detailWidth}px instead of the 11584px DZI tier`);
+  if (deep.sequence.detailWidth !== nativeWidth)
+    throw new Error(`deep inspection stopped at ${deep.sequence.detailWidth}px instead of the ${nativeWidth}px native tier`);
   if (!(deep.sequence.detailTiles > 0))
     throw new Error("deep inspection did not paint DZI tiles");
   if (!deepDziRequests.some((url) => /\/quackles-assets\/blue\/p0000000\/0\//.test(url)))
@@ -524,8 +536,7 @@ try {
     throw new Error("mobile profile allows too many concurrent jobs");
   if (mobileZoomed.sequence.cache.budgetBytes > 64 * 1024 * 1024)
     throw new Error("mobile decoded cache budget is too large");
-  if (mobileZoomed.sequence.profile.maxDetailWidth > 11584)
-    throw new Error("mobile profile can request a tier above the blue pyramid");
+
 
   await mobile.screenshot({
     path: path.join(OUT, "mobile-pinch-viewfinder.png"),
