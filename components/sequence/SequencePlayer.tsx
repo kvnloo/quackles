@@ -241,6 +241,7 @@ export function SequencePlayer() {
             alpha: layer.alpha,
             images: layer.images.map(({ image, x, y, sourceX, sourceY }) => ({ image: image!, x, y, sourceX, sourceY })),
           })));
+          window.dispatchEvent(new Event("quackles:detail-painted"));
           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
           paintedCoverage = coverage;
@@ -250,6 +251,12 @@ export function SequencePlayer() {
           state.drawCount++;
           if (state.rendered) state.rendered = { ...state.rendered, tierWidth: state.detailWidth, urls: [...paintedKeys, ...detailKeys], generation };
         }
+      }
+      if (inspecting) {
+        baseCanvas!.style.visibility = "hidden";
+        if (fallback.current) fallback.current.style.visibility = "hidden";
+      } else if (baseKey) {
+        baseCanvas!.style.visibility = "visible";
       }
     }
     const changed = () => {

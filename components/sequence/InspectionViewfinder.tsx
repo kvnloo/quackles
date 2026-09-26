@@ -11,7 +11,7 @@ import {
   type Crop,
 } from "@/lib/sequence/render";
 import { sequencePerfProfile } from "@/lib/sequence/perf-profile";
-import { shouldResampleViewfinder } from "@/lib/sequence/viewfinder-sample";
+import { shouldResampleViewfinder, zoomedViewSource } from "@/lib/sequence/viewfinder-sample";
 import {
   snapshot as sequenceSnapshot,
   subscribe as subscribeSequence,
@@ -70,12 +70,21 @@ export function InspectionViewfinder() {
     };
 
     const copySource = () => {
-      if (source.width < 2 || source.height < 2) return false;
+      const detail = document.querySelector<HTMLCanvasElement>(".sequence-detail");
+      const inspection = inspectionSnapshot();
+      const inspecting = inspection.active || inspection.zoom > 1.0005;
+      const detailReady = !!detail && detail.width > 1 && getComputedStyle(detail).visibility === "visible";
+      const choice = zoomedViewSource({ inspecting, detailReady });
+      if (choice === "none" || (choice === "detail" && !detail)) {
+        canvas.style.visibility = "hidden";
+        viewportRect.setAttribute("width", "0");
+        viewportRect.setAttribute("height", "0");
+        return false;
+      }
+      const sample = choice === "detail" ? detail! : source;
+      if (sample.width < 2 || sample.height < 2) return false;
       const width = profile.viewfinderBackingWidth;
-      const height = Math.max(
-        1,
-        Math.round(width * (source.height / source.width)),
-      );
+      const height = Math.max(1, Math.round(width * (sample.height / sample.width)));
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
@@ -84,7 +93,14 @@ export function InspectionViewfinder() {
       if (!context) return false;
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
-      context.drawImage(source, 0, 0, width, height);
+      context.drawImage(sample, 0, 0, width, height);
+      canvas.style.visibility = "visible";
+      if (choice === "detail") {
+        viewportRect.setAttribute("x", "0");
+        viewportRect.setAttribute("y", "0");
+        viewportRect.setAttribute("width", "1");
+        viewportRect.setAttribute("height", "1");
+      }
       snapshotCount++;
       backingBytes = width * height * 4;
       return true;
@@ -112,7 +128,7 @@ export function InspectionViewfinder() {
         ((inspection.active && inspection.zoom > 1.04) || nativeScale > 1.02);
       const crop = active ? currentCrop() : EMPTY_CROP;
 
-      if (active && snapshotCount === 0) copySource();
+      if (active || snapshotCount === 0) copySource();
 
       host.dataset.active = active ? "true" : "false";
 
@@ -154,10 +170,17 @@ export function InspectionViewfinder() {
         host.style.removeProperty("transform");
       }
 
-      viewportRect.setAttribute("x", String(crop.x));
-      viewportRect.setAttribute("y", String(crop.y));
-      viewportRect.setAttribute("width", String(crop.width));
-      viewportRect.setAttribute("height", String(crop.height));
+      const detail = document.querySelector<HTMLCanvasElement>(".sequence-detail");
+      const detailReady = !!detail && detail.width > 1 && getComputedStyle(detail).visibility === "visible";
+      const mapSource = zoomedViewSource({
+        inspecting: inspection.active || inspection.zoom > 1.0005,
+        detailReady,
+      });
+      const shown = mapSource === "detail" ? { x: 0, y: 0, width: 1, height: 1 } : mapSource === "none" ? { x: 0, y: 0, width: 0, height: 0 } : crop;
+      viewportRect.setAttribute("x", String(shown.x));
+      viewportRect.setAttribute("y", String(shown.y));
+      viewportRect.setAttribute("width", String(shown.width));
+      viewportRect.setAttribute("height", String(shown.height));
 
       lastState = {
         active,
@@ -188,6 +211,7 @@ export function InspectionViewfinder() {
     viewport?.addEventListener("resize", schedule);
     viewport?.addEventListener("scroll", schedule);
     window.addEventListener("quackles:base-painted", onBasePainted);
+    window.addEventListener("quackles:detail-painted", onBasePainted);
 
     window.__QUACKLES_VIEWFINDER__ = {
       getState: () => lastState,
@@ -206,6 +230,7 @@ export function InspectionViewfinder() {
       viewport?.removeEventListener("resize", schedule);
       viewport?.removeEventListener("scroll", schedule);
       window.removeEventListener("quackles:base-painted", onBasePainted);
+      window.removeEventListener("quackles:detail-painted", onBasePainted);
       delete window.__QUACKLES_VIEWFINDER__;
     };
   }, []);
