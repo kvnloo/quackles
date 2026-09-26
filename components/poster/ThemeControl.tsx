@@ -6,7 +6,7 @@ import { selectLiveTheme } from "@/lib/sequence/live-theme";
 import { snapshot, subscribe } from "@/lib/sequence/store";
 
 export function ThemeControl() {
-  const theme = useSyncExternalStore(subscribe, () => snapshot().theme, () => 2);
+  const theme = useSyncExternalStore(subscribe, () => snapshot().presented, () => 2);
   const nearest = Math.round(theme);
   return <div className="theme-seg" role="radiogroup" aria-label="Studio theme">
     <span className="theme-thumb" style={{ left: `${theme * 20}%` }} aria-hidden />

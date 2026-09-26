@@ -1,7 +1,7 @@
 import { THEME_IDS, type SequenceManifest, type ThemeId } from "./manifest";
 
-type State = { progress: number; theme: number; target: number; reducedMotion: boolean };
-let state: State = { progress: 0, theme: 2, target: 2, reducedMotion: false };
+type State = { progress: number; theme: number; target: number; presented: number; reducedMotion: boolean };
+let state: State = { progress: 0, theme: 2, target: 2, presented: 2, reducedMotion: false };
 let manifest: SequenceManifest | null = null;
 let displayedTheme = -1;
 let animation = 0;
@@ -38,12 +38,17 @@ export function configure(manifestValue: SequenceManifest) {
   manifest = manifestValue;
   displayedTheme = -1;
   const theme = Math.max(0, THEME_IDS.indexOf(manifestValue.defaultTheme));
-  publish({ ...state, theme, target: theme });
+  publish({ ...state, theme, target: theme, presented: theme });
 }
 export function setProgress(progress: number) { publish({ ...state, progress: Math.max(0, Math.min(1, progress)) }); }
+export function presentTheme(value: number) {
+  const presented = Math.max(0, Math.min(4, value));
+  if (Math.abs(presented - state.presented) < 0.0001) return;
+  publish({ ...state, presented });
+}
 export function setReducedMotion(reducedMotion: boolean) {
   if (reducedMotion) cancelAnimationFrame(animation);
-  publish({ ...state, reducedMotion, theme: reducedMotion ? state.target : state.theme });
+  publish({ ...state, reducedMotion, theme: reducedMotion ? state.target : state.theme, presented: reducedMotion ? state.target : state.presented });
 }
 export function dragTheme(theme: number) {
   cancelAnimationFrame(animation);

@@ -10,7 +10,8 @@ import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { MOTION_SCALE_START, motionDesiredWidth, nextMotionScale } from "@/lib/sequence/motion-quality";
-import { applyPalette, configure, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
+import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
+import { syncedTheme, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
@@ -43,6 +44,8 @@ export function SequencePlayer() {
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
     let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "";
+    let heldTheme = 2;
+    let themeRelease: ThemeRelease | null = null;
     const releaseDetail = () => {
       detailCanvas.style.visibility = "hidden";
       if (detailCanvas.width !== 1 || detailCanvas.height !== 1) { detailCanvas.width = 1; detailCanvas.height = 1; }
@@ -86,8 +89,8 @@ export function SequencePlayer() {
       pendingFrame = 0;
       if (!manifest || !cache || cancelled) return;
       const current = snapshot(), span = spanAt(manifest, current.progress, current.reducedMotion);
-      applyPalette(current.theme);
       const frame = span.mix < 0.5 ? span.before : span.after;
+
       const nextLoadIntent = `${frame.id}/${current.target}`;
       if (nextLoadIntent !== loadIntentKey) { loadIntentKey = nextLoadIntent; failed.clear(); }
       const low = Math.floor(current.theme), high = Math.ceil(current.theme), mix = current.theme - low;
@@ -154,6 +157,30 @@ export function SequencePlayer() {
           }
         }
       }
+      let visible = current.theme;
+      if (inspecting && frame.id === "p0000000" && !eggShown && crop.width > 0 && desiredWidth > plateWidth) {
+        const syncBudget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4;
+        const ready = [false, false, false, false, false];
+        const want = new Set([Math.floor(current.theme), Math.ceil(current.theme), Math.floor(heldTheme), Math.ceil(heldTheme)]);
+        for (const index of want) {
+          const id = THEME_IDS[index];
+          if (!id) continue;
+          const plan = detailPlan(known(frame.assets[id]), desiredWidth, crop, syncBudget, 0);
+          ready[index] = !!plan && plan.variant.width > plateWidth && plan.tasks.every((task) => cache!.peek(task.asset.url) !== undefined);
+          if (plan && !ready[index]) for (const task of plan.tasks) tasks.push({ asset: task.asset, priority: 100 });
+        }
+        const synced = syncedTheme({ requested: current.theme, held: heldTheme, ready, now: performance.now(), release: themeRelease });
+        themeRelease = synced.release;
+        visible = synced.theme;
+        if (themeRelease) schedule();
+      } else {
+        themeRelease = null;
+      }
+      heldTheme = visible;
+      presentTheme(visible);
+      applyPalette(visible);
+      const showLow = Math.floor(visible), showHigh = Math.ceil(visible), showMix = visible - showLow;
+      const showThemes = (showLow === showHigh ? [showLow] : [showLow, showHigh]).map((index) => THEME_IDS[index]);
       type Planned = NonNullable<ReturnType<typeof sharpPlan>>;
       const layers: { plan: Planned; alpha: number }[] = [];
       if (detailEligible && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > plateWidth) {
@@ -162,25 +189,29 @@ export function SequencePlayer() {
           const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio);
           if (planned && planned.variant.width > plateWidth) layers.push({ plan: planned, alpha: 1 });
         } else if (!eggShown) {
-          const sources = themes.map((theme) => known(frame.assets[theme]));
-          const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio) : null;
-          if (primary && primary.variant.width > plateWidth) {
-            layers.push({ plan: primary, alpha: 1 });
-            if (themes.length > 1 && sources[1]?.length) {
-              const secondary = detailPlan(sources[1], primary.variant.width, primary.coverage, budget, 1, Number.POSITIVE_INFINITY, primary.variant.width);
-              if (secondary) layers.push({ plan: { ...secondary, coverage: primary.coverage }, alpha: detailMix });
-            } else if (!moving && detailKey) {
-              for (const offset of [-1, 1]) {
-                const neighbor = THEME_IDS[low + offset];
-                if (!neighbor) continue;
-                const same = known(frame.assets[neighbor]).find((variant) => variant.width === primary.variant.width);
-                if (!same || isImage(same)) continue;
-                for (const tile of tileAssets(same, primary.coverage, 0)) tasks.push({ asset: tile.asset, priority: 35 });
+          const sources = showThemes.map((theme) => known(frame.assets[theme]));
+          if (showThemes.length > 1 && sources[0]?.length && sources[1]?.length) {
+            const from = detailPlan(sources[0], desiredWidth, crop, budget, 0);
+            const to = sources[1] ? detailPlan(sources[1], from?.variant.width ?? desiredWidth, crop, budget, 0, Number.POSITIVE_INFINITY, from?.variant.width ?? 0) : null;
+            if (from && from.variant.width > plateWidth) layers.push({ plan: { ...from, coverage: crop }, alpha: 1 });
+            if (from && to) layers.push({ plan: { ...to, coverage: crop }, alpha: showMix });
+          } else {
+            const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio) : null;
+            if (primary && primary.variant.width > plateWidth) {
+              layers.push({ plan: primary, alpha: 1 });
+              if (!moving) {
+                for (const offset of [-1, 1]) {
+                  const neighbor = THEME_IDS[showLow + offset];
+                  if (!neighbor) continue;
+                  const same = known(frame.assets[neighbor]).find((variant) => variant.width === primary.variant.width);
+                  if (!same || isImage(same)) continue;
+                  for (const tile of tileAssets(same, crop, 0)) tasks.push({ asset: tile.asset, priority: 80 });
+                }
               }
             }
           }
         }
-        for (const layer of layers) tasks.push(...layer.plan.tasks.map(({ asset }) => ({ asset, priority: 90 })));
+        for (const layer of layers) tasks.push(...layer.plan.tasks.map(({ asset }) => ({ asset, priority: showThemes.length > 1 ? 100 : 90 })));
         const coverageId = layers[0] ? `${layers[0].plan.coverage.x.toFixed(3)}/${layers[0].plan.coverage.y.toFixed(3)}` : "";
         if (coverageId && coverageId !== failCrop) {
           for (const url of [...failed]) if (url.includes("/gp/")) failed.delete(url);
@@ -221,17 +252,17 @@ export function SequencePlayer() {
         window.dispatchEvent(new Event("quackles:base-painted"));
       }
       if (baseKey === nextBase) applyStoryProgress(current.progress);
-      if (layers.length && baseKey === nextBase) {
+      if (layers.length && (baseKey === nextBase || inspecting)) {
         const coverage = layers[0].plan.coverage;
         const decoded = layers.map((layer) => ({
           ...layer,
           images: layer.plan.tasks.map((task) => ({ ...task, image: cache!.peek(task.asset.url) })),
         }));
-        const expected = eggShown || themes.length === 1 ? 1 : 2;
+        const expected = eggShown || showThemes.length === 1 ? 1 : 2;
         const ready = (layer: (typeof decoded)[number]) => layer.images.every((task) => task.image !== undefined);
         const allReady = decoded.length === expected && decoded.every(ready);
         const primaryReady = ready(decoded[0]);
-        const mixChanged = Math.abs(detailMix - paintedMix) > 0.001;
+        const mixChanged = Math.abs(showMix - paintedMix) > 0.001;
         const upgrade = layers[0].plan.variant.width > state.detailWidth;
         const escaping = !paintedCoverage || !cropInside(crop, paintedCoverage, crop.width * 0.12);
         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
@@ -245,7 +276,7 @@ export function SequencePlayer() {
           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
           paintedCoverage = coverage;
-          paintedMix = allReady ? detailMix : 0;
+          paintedMix = allReady ? showMix : 0;
           state.detailWidth = paintLayers[0].plan.variant.width;
           state.detailTiles = paintLayers.reduce((sum, layer) => sum + (isImage(layer.plan.variant) ? 0 : layer.plan.tasks.length), 0);
           state.drawCount++;
