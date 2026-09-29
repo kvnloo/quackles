@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-29T02:16:58Z",
+  "generatedAt": "2026-09-29T13:12:12Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -23,7 +23,7 @@
       "ref": "cursor/theme-slider-poster-match-530e",
       "slug": "cursor-theme-slider-poster-match-530e",
       "sha": "734d5ff8ac2e17d25aab083397afb1b382f5174b",
-      "status": "failed",
+      "status": "ok",
       "title": "Restore the interpolating theme slider and cobalt poster first frame. ",
       "url": "/quackles/compare/cursor-theme-slider-poster-match-530e/"
     },
@@ -79,7 +79,7 @@
       "ref": "preview",
       "slug": "preview",
       "sha": "95b45152a06f5b21abce27f31fbdc3e4ea389941",
-      "status": "failed",
+      "status": "ok",
       "title": "Refresh Pages gallery when this branch changes ",
       "url": "/quackles/compare/preview/"
     },
