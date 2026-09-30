@@ -10,7 +10,7 @@
  *  the effective resolution of the top-most painted layer covering it: detail, underlay (when the build has one), else the
  *  1024 plate. Layer coverage comes from window.__QUACKLES_PAINT__ (painted tile rects with their resolution) when the build
  *  publishes it, else from the detail canvas's data-crop + detailWidth (all-or-nothing builds). A read-back cross-check compares the reported rects with the
- *  detail canvas pixels at rest (reportMismatch).
+ *  detail canvas pixels at rest (reportMismatch = samples reported painted that are not opaque; gated).
  *  Metrics (per pass):
  *   hqLatency    lift -> every sample at >= the required resolution (frame device px x zoom, capped at the top tier), held >= 200 ms
  *                or until the next touch. p50/p90 over lifts that end zoomed; a lift the next touch interrupts first counts
@@ -25,7 +25,8 @@
  *   frameMs     rAF delta p50/p95 while a finger is down.
  *  GATE=1 exits 1 when a plain-pass target misses: hq p90 <= 500 ms, under-resolved < 10%, plate-edge 0, blank 0, blue 0,
  *  redecodes <= 5% of decodes; blank/blue also gated in the throttled pass.
- *  OUT_DIR (+BASE_PATH), PORT, ASSETS, LATENCY, TRACE, PASSES=plain,throttled, DEVICE_MEMORY, OUT_JSON, SEED. */
+ *  Raster: the host GPU (GPU=0: SwiftShader). Frame times are desktop-GPU raster with the phone's CPU emulated at 1x / 4x.
+ *  OUT_DIR (+BASE_PATH), PORT, ASSETS, LATENCY, TRACE, PASSES=plain,throttled, DEVICE_MEMORY, GPU, TIERS, PLATE, OUT_JSON, SEED. */
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -133,14 +134,22 @@ function readback() {
   const paint = window.__QUACKLES_PAINT__, el = document.querySelector(".sequence-detail");
   if (!paint?.detail?.rects?.length || !el || el.style.visibility !== "visible" || !el.dataset.crop) return null;
   const [x, y, w, h] = el.dataset.crop.split(",").map(Number);
-  const ctx = el.getContext("2d"); let mismatch = 0, n = 0;
+  // Read a scaled copy, never the layer itself: getImageData on the app's canvas makes Chrome demote it to software raster.
+  const copy = document.createElement("canvas"); copy.width = 90; copy.height = 130;
+  const ctx = copy.getContext("2d", { willReadFrequently: true }); ctx.drawImage(el, 0, 0, 90, 130);
+  const px = ctx.getImageData(0, 0, 90, 130).data; let mismatch = 0, fringe = 0, n = 0; const details = [];
   for (let j = 0; j < 13; j++) for (let i = 0; i < 9; i++) {
     const u = x + w * (i + 0.5) / 9, v = y + h * (j + 0.5) / 13;
+    // Skip samples within half a copy pixel of a tile edge (the scaled copy blends across it).
+    const near = (paint.detail.rects || []).some((r) => Math.min(Math.abs(u - r[0]), Math.abs(u - r[2])) < w / 180 || Math.min(Math.abs(v - r[1]), Math.abs(v - r[3])) < h / 260);
+    if (near) continue;
     const said = (paint.detail.rects || []).some((r) => u >= r[0] && u <= r[2] && v >= r[1] && v <= r[3]);
-    const a = ctx.getImageData(Math.floor((i + 0.5) / 9 * el.width), Math.floor((j + 0.5) / 13 * el.height), 1, 1).data[3];
-    n++; if (said !== a > 0) mismatch++;
+    const a = px[((Math.floor((j + 0.5) / 13 * 130)) * 90 + Math.floor((i + 0.5) / 9 * 90)) * 4 + 3];
+    // Gate on over-claims only (reported painted, not opaque: a hole the metrics would miss). A faint fringe outside a
+    // reported rect (bilinear self-copy) is an under-claim and only counted.
+    n++; if (said && a < 250) { mismatch++; details.push(`${u.toFixed(4)},${v.toFixed(4)} said ${said} alpha ${a}`); } else if (!said && a > 0) fringe++;
   }
-  return { n, mismatch };
+  return { n, mismatch, fringe, details, crop: [x, y, w, h], rects: paint.detail.rects.length };
 }
 
 const pct = (xs, q) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); return +s[Math.min(s.length - 1, Math.floor(q * s.length))].toFixed(1); };
@@ -215,9 +224,16 @@ function analyse(name, data, fetched, checks, pageErrors) {
     return { closed: next.closedBitmaps - g.stats.closedBitmaps, evictions: next.evictions != null ? next.evictions - (g.stats.evictions ?? 0) : null };
   });
   // Long frames (> 25 ms) in the 1 s after each lift and the 300 ms after each detail paint (a synchronous repaint shows here).
-  const dtAt = (from, to) => { const out = []; for (let k = 1; k < rows.length; k++) if (rows[k].t > from && rows[k].t <= to) out.push(rows[k].t - rows[k - 1].t); return out; };
-  const liftDts = data.gestures.filter((g) => g.end != null).flatMap((g) => dtAt(g.end, g.end + 1000));
-  const paintDts = data.paints.flatMap((t) => dtAt(t, t + 300));
+  // Each frame counted once, however many lifts/paints precede it.
+  const inWindow = (starts, span) => { const out = []; for (let k = 1; k < rows.length; k++) if (starts.some((t) => rows[k].t > t && rows[k].t <= t + span)) out.push(rows[k].t - rows[k - 1].t); return out; };
+  const liftDts = inWindow(data.gestures.filter((g) => g.end != null).map((g) => g.end), 1000);
+  const paintDts = inWindow(data.paints, 300);
+  const longFrames = [];
+  for (let k = 1; k < rows.length; k++) {
+    const dt = rows[k].t - rows[k - 1].t; if (dt <= 25) continue;
+    const lift = data.gestures.filter((g) => g.end != null && g.end <= rows[k].t).at(-1), paint = data.paints.filter((t) => t <= rows[k].t).at(-1);
+    longFrames.push(`${Math.round(rows[k].t)}:${Math.round(dt)}ms n${rows[k].n} lift+${lift ? Math.round(rows[k].t - lift.end) : "-"} paint+${paint ? Math.round(rows[k].t - paint) : "-"}`);
+  }
   // Settle lag: after a lift, the last frame the camera moved faster than 20 CSS px/s on screen -> the first frame cameraMoving clears.
   const settleLag = [];
   data.gestures.forEach((g, i) => {
@@ -263,20 +279,23 @@ function analyse(name, data, fetched, checks, pageErrors) {
     frameMs: { fingerDownP50: pct(dts, 0.5), fingerDownP95: pct(dts, 0.95), allP95: pct(allDts, 0.95), afterLiftMax: pct(liftDts, 1), afterLiftOver25: liftDts.filter((d) => d > 25).length, afterPaintMax: pct(paintDts, 1), afterPaintOver25: paintDts.filter((d) => d > 25).length },
     settleLagMs: { n: settleLag.length, p50: pct(settleLag, 0.5), p90: pct(settleLag, 0.9) },
     failures: data.end.failures, errors: data.errors.length, pageErrors: pageErrors.length,
-    reportMismatch: checks.length ? checks.reduce((a, c) => a + c.mismatch, 0) : null,
-    windows,
+    reportMismatch: checks.length ? checks.reduce((a, c) => a + c.mismatch, 0) : null, reportFringe: checks.length ? checks.reduce((a, c) => a + c.fringe, 0) : null,
+    windows, longFrames, readbacks: checks.filter((c) => c.mismatch),
   };
   return res;
 }
 
 const server = spawn("node", ["scripts/static-server.mjs", "--port", port, "--directory", dir], { stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 1500));
-const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox"] });
+// GPU raster by default (the phone rasterises canvases on its GPU; default headless Chrome uses SwiftShader, where one large
+// canvas blit alone costs 30-50 ms). GPU=0 measures on SwiftShader.
+const GPU_ARGS = process.env.GPU === "0" ? [] : ["--enable-gpu", "--use-angle=vulkan", "--enable-features=Vulkan", "--ignore-gpu-blocklist"];
+const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox", ...GPU_ARGS] });
 const results = [];
 try { for (const name of PASSES) results.push(await runPass(browser, name)); }
 finally { await browser.close(); server.kill(); }
-const brief = results.map(({ hq, windows, ...r }) => ({ ...r, windows: process.env.VERBOSE ? windows : undefined, hq: { ...hq, perLift: hq.perLift.map((l) => `g${l.g}@${l.zoom}:${Math.round(l.ms)}${l.censored ? "+" : ""}`).join(" ") } }));
-console.log(JSON.stringify({ build: process.env.LABEL || dir, latency: latHi > 0 ? `${latLo}-${latHi}` : "0", deviceMemory: DEVICE_MEMORY, results: brief }, null, 1));
+const brief = results.map(({ hq, windows, longFrames, readbacks, ...r }) => ({ ...r, readbacks: process.env.VERBOSE ? readbacks : undefined, windows: process.env.VERBOSE ? windows : undefined, longFrames: process.env.VERBOSE ? longFrames : undefined, hq: { ...hq, perLift: hq.perLift.map((l) => `g${l.g}@${l.zoom}:${Math.round(l.ms)}${l.censored ? "+" : ""}`).join(" ") } }));
+console.log(JSON.stringify({ build: process.env.LABEL || dir, latency: latHi > 0 ? `${latLo}-${latHi}` : "0", deviceMemory: DEVICE_MEMORY, gpu: GPU_ARGS.length > 0, results: brief }, null, 1));
 if (process.env.OUT_JSON) fs.writeFileSync(process.env.OUT_JSON, JSON.stringify({ latency: [latLo, latHi], deviceMemory: DEVICE_MEMORY, results }, null, 1));
 const bad = [];
 for (const r of results) {
