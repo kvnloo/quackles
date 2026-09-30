@@ -33,6 +33,7 @@
     "test:scroll-feel": "node scripts/scroll-feel-browser.mjs",
     "test:camera-arrival": "node scripts/camera-arrival-browser.mjs",
     "test:fuzz": "SEED=1 STEPS=45 node scripts/fuzz-browser.mjs",
+    "test:gigapixel-feel": "node scripts/gigapixel-feel-browser.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
     "test:feel": "node scripts/feel-contracts.mjs",
     "test:sequence": "node --import ./scripts/register-ts-resolve.mjs scripts/sequence-contracts.mjs",
