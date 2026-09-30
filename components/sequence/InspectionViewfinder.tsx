@@ -128,7 +128,10 @@ export function InspectionViewfinder() {
         ((inspection.active && inspection.zoom > 1.04) || nativeScale > 1.02);
       const crop = active ? currentCrop() : EMPTY_CROP;
 
-      if (active || snapshotCount === 0) copySource();
+      // While the camera moves only the crop rectangle changes; the thumbnail source changes only on a paint
+      // (quackles:*-painted resamples it). Re-sampling the big detail canvas every moving frame was per-frame GPU work.
+      const wasActive = host.dataset.active === "true";
+      if ((active && (!inspection.cameraMoving || !wasActive)) || snapshotCount === 0) copySource();
 
       host.dataset.active = active ? "true" : "false";
 
