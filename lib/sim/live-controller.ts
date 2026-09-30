@@ -605,6 +605,13 @@ export class LiveSimController {
     r.invalidate();
   }
 
+  debugRenderer() {
+    const r = this.renderer;
+    if (!r) return null;
+    const bg = r.scene.background as { isColor?: boolean; getHexString?: () => string } | null;
+    return { background: bg ? (bg.isColor ? bg.getHexString?.() : "texture") : null, clearAlpha: r.gl.getClearAlpha(), robotOnly: !!this.robotOnlySaved };
+  }
+
   /** Parity/registration only: show the live rig at a story pose regardless of phase. */
   setDebugLive(opacity: number | null, storyProgress = 1) {
     this.storyProgress = storyProgress;
