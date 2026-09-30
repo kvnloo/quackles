@@ -467,11 +467,14 @@ try {
   if (rewound.scrollY > 2 || rewound.sequence.current.progress > 0.012)
     throw new Error("upward story rewind did not return to the hero boundary");
 
-  // Continuous upward input is allowed to cross directly from story rewind
-  // into inspection. If the rewind gesture ended exactly at hero, the next
-  // upward wheel must enter inspection without leaking back into story scroll.
+  // D19: continuous upward input must NOT cross from story rewind into
+  // inspection (it carried momentum into 13.6x zoom); the rewind gesture ends
+  // at the hero. The next upward wheel of a NEW gesture (after a short rest)
+  // must enter inspection without leaking back into story scroll.
+  if (rewound.inspection?.zoom > 1.002) throw new Error("story rewind momentum leaked into inspection zoom");
   let reinspected = rewound;
   if (!rewound.viewfinder.active) {
+    await page.waitForTimeout(450);
     await page.mouse.move(firstCursor.x, firstCursor.y);
     await page.mouse.wheel(0, -180);
     await page.waitForTimeout(1000);
