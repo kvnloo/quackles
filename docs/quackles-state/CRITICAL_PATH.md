@@ -1,5 +1,5 @@
 # CRITICAL_PATH (durable state — update every slice)
-head: see `git log -1` on fix/41-day-material-fidelity (last pushed abf9d60 + uncommitted slice 4 in progress) · base nightly c2d84b6
+head: 64c1789 on fix/41-day-material-fidelity (pushed) · base nightly c2d84b6
 worktrees: wt-day (work) · wt-base (clean baseline c2d84b6, out/ built) · wt-exp (scratch build; removable)
 evidence: /mnt/zer0models/project-artifacts/quackles/issue-43-evidence/  · z0: /home/kvn/zer0/z0-quackles (orient/verify; claims.json)
 frozen: DECISIONS.md D1-D2. canonical: Blue=legacy-201mp. Day=candidate-1gp, White/Dark/Night=disabled (D5).
@@ -23,7 +23,10 @@ frozen: DECISIONS.md D1-D2. canonical: Blue=legacy-201mp. Day=candidate-1gp, Whi
 - physical S25/120Hz; deployed-build verification (F)
 - hands-poster plate-vs-201MP: NOT a blocker (D1); 201MP bust-poster top banding artefact = asset defect, logged
 
+- D6 settle-time promotion (fling 166->34 req, 0 promotions while moving; wheel: sharp lock ~= baseline, blank 18->0); hidden mushroom policy; as-deployed-config build + live-baseline receipts
+- z2/z4 D6-vs-pre parity diffs explained by ground truth (D6 closer)
+
 ## active hypothesis / next three
-1. commit+push slice 4 (theme-hold + crossfade fixes, blank-frame E2E); rerun full regression (in progress)
-2. mushroom/egg 1GP pyramid bypasses inspection policy -> add to policy + audit its family vs authored look
-3. F: verify built/deployed (GitHub Pages nightly URL) -> then G Blue perf/render defects -> H Day (harness ca62d53 kept; recovered f85df1a/3dc142a/0f42a30 available as hist/* refs)
+1. independent verifier #2 (slices 4-6, head 75d1d00) in flight; then verifier #3 for D6 (fad6e66) — fix any valid findings
+2. post receipt on #43 (draft: scratchpad/receipt43c.md) once verifiers report
+3. H: Day via evidence-first (shell mask -> compare recovered hist/* candidates f85df1a/3dc142a/0f42a30 -> only then a Cycles render); G leftovers: warm fetch not abortable (low), asset defects (bust-poster banding, arch noise)
