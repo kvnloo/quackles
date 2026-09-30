@@ -19,8 +19,8 @@ function publish(next: State) {
 }
 export function applyPalette(theme: number) {
   if (manifest && theme !== displayedTheme) {
-    const low = Math.floor(theme), high = Math.ceil(theme), fraction = theme - low;
-    const a = manifest.themes[low].palette, b = manifest.themes[high].palette;
+    const { indices, mix: fraction } = themeIndices(theme);
+    const a = manifest.themes[indices[0]].palette, b = manifest.themes[indices[indices.length - 1]].palette;
     const root = document.documentElement;
     const paper = mix(a.paper, b.paper, fraction);
     const ink = mix(a.ink, b.ink, fraction);
@@ -30,7 +30,7 @@ export function applyPalette(theme: number) {
     root.style.setProperty("--cobalt", mix(a.cobalt, b.cobalt, fraction));
     root.style.setProperty("--background", paper);
     root.style.setProperty("--foreground", ink);
-    root.dataset.tone = THEME_IDS[Math.round(theme)];
+    root.dataset.tone = THEME_IDS[Math.round(indices[0] + fraction)];
     displayedTheme = theme;
   }
 }
@@ -41,8 +41,16 @@ export function configure(manifestValue: SequenceManifest) {
   publish({ ...state, theme, target: theme, presented: theme });
 }
 export function setProgress(progress: number) { publish({ ...state, progress: Math.max(0, Math.min(1, progress)) }); }
+const MAX_THEME = THEME_IDS.length - 1;
+const clampTheme = (value: number, fallback: number) => (Number.isNaN(value) ? fallback : Math.max(0, Math.min(MAX_THEME, value)));
+/** Valid THEME_IDS indices (1 or 2) and blend for a possibly-fractional theme. */
+export function themeIndices(theme: number): { indices: number[]; mix: number } {
+  const t = clampTheme(theme, 0);
+  const low = Math.floor(t), high = Math.min(MAX_THEME, Math.ceil(t)), mix = t - low;
+  return low === high || mix < 1e-9 ? { indices: [low], mix: 0 } : { indices: [low, high], mix };
+}
 export function presentTheme(value: number) {
-  const presented = Math.max(0, Math.min(4, value));
+  const presented = clampTheme(value, state.presented);
   if (Math.abs(presented - state.presented) < 0.0001) return;
   publish({ ...state, presented });
 }
@@ -52,12 +60,13 @@ export function setReducedMotion(reducedMotion: boolean) {
 }
 export function dragTheme(theme: number) {
   cancelAnimationFrame(animation);
-  const next = Math.max(0, Math.min(4, theme));
+  const next = clampTheme(theme, state.theme);
   publish({ ...state, theme: next, target: next });
 }
 export function selectTheme(id: ThemeId) {
   cancelAnimationFrame(animation);
   const target = THEME_IDS.indexOf(id), from = state.theme;
+  if (target < 0) return;
   publish({ ...state, target });
   if (state.reducedMotion) { publish({ ...state, theme: target }); return; }
   const started = performance.now();

@@ -13,7 +13,7 @@ import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { requestedDetailWidth } from "@/lib/sequence/motion-quality";
 import { armLockFade, startLockFade } from "@/lib/sequence/lock-fade";
-import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
+import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe, themeIndices } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
 
@@ -98,8 +98,7 @@ export function SequencePlayer() {
 
       const nextLoadIntent = `${frame.id}/${current.target}`;
       if (nextLoadIntent !== loadIntentKey) { loadIntentKey = nextLoadIntent; failed.clear(); }
-      const low = Math.floor(current.theme), high = Math.ceil(current.theme), mix = current.theme - low;
-      const indices = low === high ? [low] : [low, high];
+      const { indices, mix } = themeIndices(current.theme);
       const themes = indices.map((i) => THEME_IDS[i]);
       const beforeAssets = themes.map((theme) => imageAt(span.before, theme, 1024));
       const afterAssets = span.mix > 0 && span.after !== span.before ? themes.map((theme) => imageAt(span.after, theme, 1024)) : [];
