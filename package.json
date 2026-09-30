@@ -40,6 +40,7 @@
     "test:sim-handoff": "node scripts/sim-handoff-browser.mjs",
     "test:sim-budget": "node scripts/sim-budget-browser.mjs",
     "report:sim-parity": "node scripts/sim-parity-browser.mjs",
+    "test:sim-parity": "GATE=1 POSES=1 node scripts/sim-parity-browser.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",

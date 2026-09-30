@@ -12,6 +12,7 @@ import { poseAt, poseAtInto, type Pose } from "@/lib/pose";
 import { assetPath } from "@/lib/paths";
 import { snapshot as storySnapshot, subscribe as subscribeStory } from "@/lib/sequence/store";
 import { applyThemeT } from "@/lib/theme";
+import { setGradeOverrides, setGradeTheme } from "@/lib/sim/render-grade";
 import { HANDOFF, handoffWeights, initialHandoff, loadStage, reduceHandoff, type HandoffEvent, type HandoffPhase, type HandoffState } from "./handoff-machine";
 import { liveBridge, type SimSeed, type SimSnapshot } from "./live-bridge";
 import { loadRobotSurfaceSource } from "./robot-surfaces";
@@ -567,6 +568,7 @@ export class LiveSimController {
     const wasEnterable = this.progress >= HANDOFF.enterProgress;
     this.progress = story.progress;
     if (this.progress >= HANDOFF.enterProgress !== wasEnterable) this.emit();
+    setGradeTheme(story.presented);
     const t = liveThemeT(story.presented);
     if (Math.abs(t - this.lastTheme) > 1e-4) { this.lastTheme = t; applyThemeT(t, { css: false }); }
     const stage = loadStage(this.progress);
@@ -618,6 +620,12 @@ export class LiveSimController {
     if (!r) return null;
     const bg = r.scene.background as { isColor?: boolean; getHexString?: () => string } | null;
     return { background: bg ? (bg.isColor ? bg.getHexString?.() : "texture") : null, clearAlpha: r.gl.getClearAlpha(), robotOnly: !!this.robotOnlySaved };
+  }
+
+  /** Calibration only: shallow per-theme grade overrides (see lib/sim/render-grade.ts); null restores the table. */
+  setDebugGrade(overrides: Parameters<typeof setGradeOverrides>[0]) {
+    setGradeOverrides(overrides);
+    this.renderer?.invalidate();
   }
 
   /** Parity/registration only: show the live rig at a story pose regardless of phase. */

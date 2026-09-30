@@ -16,7 +16,7 @@ declare global {
       getState: () => ReturnType<LiveSimController["getState"]>;
       enter: () => void;
       exit: () => void;
-      debug: { live: (opacity: number | null, storyProgress?: number) => void; robotOnly: (enabled: boolean) => void; renderer: () => ReturnType<LiveSimController["debugRenderer"]> };
+      debug: { live: (opacity: number | null, storyProgress?: number) => void; robotOnly: (enabled: boolean) => void; renderer: () => ReturnType<LiveSimController["debugRenderer"]>; grade: LiveSimController["setDebugGrade"] };
     };
   }
 }
@@ -43,7 +43,7 @@ function LiveSim() {
       getState: () => controller.getState(),
       enter: () => controller.enter(),
       exit: () => controller.exit(),
-      debug: { live: (opacity, storyProgress) => controller.setDebugLive(opacity, storyProgress), robotOnly: (enabled) => controller.setRobotOnly(enabled), renderer: () => controller.debugRenderer() },
+      debug: { live: (opacity, storyProgress) => controller.setDebugLive(opacity, storyProgress), robotOnly: (enabled) => controller.setRobotOnly(enabled), renderer: () => controller.debugRenderer(), grade: (overrides) => controller.setDebugGrade(overrides) },
     };
     return () => {
       delete window.__QUACKLES_SIM__;

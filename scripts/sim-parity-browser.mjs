@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Parity REPORT (not a gate yet): the live robot at a story pose vs the authored p1000000 plate, per theme.
+/** Parity REPORT + CONTRACT: the live robot at a story pose vs the authored p1000000 plate, per theme.
  * For each of the five themes and each candidate pose (poseAt(1) = shipped EXPLODED_STORY_PROGRESS, and the old
  * poseAt(0.84)), captures the plate, the live render at the same frame, and a robot-only live render over a key
  * colour, then reports:
@@ -7,6 +7,8 @@
  *   - robot dE: mean per-pixel CIE76 dE plate vs live inside the mask intersection (+ dE of the mean colours),
  *   - background dE: same, outside the union of both masks.
  * Screenshots + report.json go to ARTIFACTS (default /mnt/zer0models/project-artifacts/quackles/overnight/sim).
+ * GATE=1 (npm run test:sim-parity) turns the report into a contract on poseAt(1): every theme must meet PARITY_GATE
+ * (robot dE, background dE, silhouette IoU) or the run exits 1 with the failures listed.
  * OUT_DIR (+BASE_PATH) or TARGET_URL; PORT; ASSETS. */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,6 +21,26 @@ const ART = process.env.ARTIFACTS || "/mnt/zer0models/project-artifacts/quackles
 const THEMES = ["day", "white", "blue", "dark", "night"];
 const POSES = (process.env.POSES || "1,0.84").split(",").map(Number);
 const PLATE_THRESHOLD = Number(process.env.PLATE_DE || 14);
+const GATE = process.env.GATE === "1";
+/** Contract at poseAt(1), CIE76 dE on sRGB 8-bit captures (swiftshader, 1280x860, DPR 1).
+ *  backgroundDE <= 5: the backdrop is a flat camera-ray colour in every plate, so only encoding error remains; 5 dE is
+ *    below what reads as "a different grey" side by side (JND ~2.3; 5 = barely noticeable at a seam).
+ *  robotMeanColourDE <= 5: dE of the mean robot colour — what the grade (light colour, exposure, tone curve) controls.
+ *    A wrong key colour or tone curve costs 8-24 here (baseline); a matched grade lands at 1.4-4.5.
+ *  robotDE (per-pixel mean in the mask intersection): TARGET 12 is reported, not gated — lighting/tone alone bottoms
+ *    out at 16-25 (texture/material + Cycles GI/area shadows vs raster; the theme-invariant zebra print buys ~2), and
+ *    night's robot is only its additive glow, which the live rig has no mask for. The gate is a no-regression ceiling
+ *    (measured + ~1.5).
+ *  Night: robot colour terms are not gated (glow asset missing); backdrop and IoU are.
+ *  silhouetteIoU: geometry is not this contract's subject, but it must not regress below the baseline (-0.02 slack). */
+const ROBOT_DE_TARGET = 12;
+const PARITY_GATE = {
+  day: { robotDE: 25, robotMeanColourDE: 5, backgroundDE: 5, silhouetteIoU: 0.45 },
+  white: { robotDE: 18, robotMeanColourDE: 5, backgroundDE: 5, silhouetteIoU: 0.88 },
+  blue: { robotDE: 26.5, robotMeanColourDE: 5, backgroundDE: 5, silhouetteIoU: 0.95 },
+  dark: { robotDE: 20, robotMeanColourDE: 5, backgroundDE: 5, silhouetteIoU: 0.40 },
+  night: { robotDE: null, robotMeanColourDE: null, backgroundDE: 5, silhouetteIoU: 0.29 },
+};
 fs.mkdirSync(ART, { recursive: true });
 const server = process.env.TARGET_URL ? null : spawn("node", ["scripts/static-server.mjs", "--port", port, "--directory", dir], { stdio: "ignore" });
 await new Promise((r) => setTimeout(r, server ? 1500 : 0));
@@ -133,10 +155,25 @@ try {
     await page.evaluate(() => window.__QUACKLES_SIM__.debug.live(null, 1));
   }
   R.summary = Object.fromEntries(POSES.map((p) => { const tag = `pose${String(p).replace(".", "")}`; const rows = THEMES.map((t) => R.themes[t][tag]); return [tag, { meanIoU: +(rows.reduce((s, r) => s + r.silhouetteIoU, 0) / rows.length).toFixed(3), meanRobotDE: +(rows.reduce((s, r) => s + r.robotDE, 0) / rows.length).toFixed(1), meanBackgroundDE: +(rows.reduce((s, r) => s + r.backgroundDE, 0) / rows.length).toFixed(1) }]; }));
+  if (GATE) {
+    const failures = [];
+    for (const theme of THEMES) {
+      const m = R.themes[theme].pose1, g = PARITY_GATE[theme];
+      if (!m) { failures.push(`${theme}: poseAt(1) not measured`); continue; }
+      if (g.robotDE !== null && m.robotDE > g.robotDE) failures.push(`${theme}: robot dE ${m.robotDE} > ${g.robotDE}`);
+      if (g.robotMeanColourDE !== null && m.robotMeanColourDE > g.robotMeanColourDE) failures.push(`${theme}: robot mean-colour dE ${m.robotMeanColourDE} > ${g.robotMeanColourDE}`);
+      if (m.backgroundDE > g.backgroundDE) failures.push(`${theme}: background dE ${m.backgroundDE} > ${g.backgroundDE}`);
+      if (m.silhouetteIoU < g.silhouetteIoU) failures.push(`${theme}: silhouette IoU ${m.silhouetteIoU} < ${g.silhouetteIoU}`);
+    }
+    const unmetTarget = THEMES.filter((t) => !(R.themes[t].pose1?.robotDE <= ROBOT_DE_TARGET)).map((t) => `${t}: robot dE ${R.themes[t].pose1?.robotDE} (target ${ROBOT_DE_TARGET})`);
+    R.gate = { thresholds: PARITY_GATE, pass: failures.length === 0, failures, robotDETarget: ROBOT_DE_TARGET, unmetTarget };
+    if (unmetTarget.length) console.error(`sim parity: per-pixel robot target not met (reported, not gated):\n  ${unmetTarget.join("\n  ")}`);
+  }
 } catch (error) {
   R.error = error.message.split("\n")[0];
 }
 fs.writeFileSync(path.join(ART, "parity-report.json"), JSON.stringify(R, null, 1));
 console.log(JSON.stringify(R, null, 1));
 await browser.close(); server?.kill();
-if (R.error) process.exit(1);
+if (R.gate && !R.gate.pass) console.error(`sim parity FAILED:\n  ${R.gate.failures.join("\n  ")}`);
+if (R.error || (R.gate && !R.gate.pass)) process.exit(1);
