@@ -20,7 +20,7 @@ jobs:
           # pull_request workflows otherwise test GitHub's synthetic merge ref.
           # The evidence gate is explicitly about the submitted head revision.
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
