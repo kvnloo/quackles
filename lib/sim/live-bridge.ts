@@ -36,8 +36,8 @@ type Bridge = {
   applyNow: (() => void) | null;
   /** Trunk world position of the last applied frame. */
   trunkWorld: (() => [number, number, number] | null) | null;
-  /** World XZ direction of the trunk's forward (MJCF +x) axis, normalized. */
-  trunkHeading: (() => [number, number] | null) | null;
+  /** Map an MJCF-frame point (or direction) through the rig root to world. */
+  mjcfToWorld: ((v: ArrayLike<number>, direction?: boolean) => [number, number, number] | null) | null;
   /** Hide everything but the robot (parity/silhouette measurement only). */
   robotOnly: ((enabled: boolean) => void) | null;
   /** World-space trunk distance between the cinematic frame and the first native frame, mm. */
@@ -52,7 +52,7 @@ export const liveBridge: Bridge = {
   captureSeed: null,
   applyNow: null,
   trunkWorld: null,
-  trunkHeading: null,
+  mjcfToWorld: null,
   robotOnly: null,
   seedWorldJumpMm: null,
   appliedFrames: 0,

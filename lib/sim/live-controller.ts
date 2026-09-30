@@ -57,7 +57,7 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /** Keep-in margin from the plinth top edge (world m, feet half-length). */
 const FENCE_MARGIN = 0.045;
 /** Stopping distance allowance for the walking policy at 0.25 m/s (world m). */
-const FENCE_LOOKAHEAD = 0.07;
+const FENCE_LOOKAHEAD = 0.08;
 type Fence = { minX: number; maxX: number; minZ: number; maxZ: number };
 
 export class LiveSimController {
@@ -537,11 +537,19 @@ export class LiveSimController {
    * zeroed (turning stays free). Re-evaluated on every snapshot. */
   private sendCommand() {
     let vx = this.twist[0];
-    const fence = this.fence, trunk = liveBridge.trunkWorld?.(), heading = liveBridge.trunkHeading?.();
-    if (vx !== 0 && fence && trunk && heading && liveBridge.authority === "native") {
-      const sign = Math.sign(vx);
-      const x = trunk[0] + heading[0] * sign * FENCE_LOOKAHEAD, z = trunk[2] + heading[1] * sign * FENCE_LOOKAHEAD;
-      if (x < fence.minX || x > fence.maxX || z < fence.minZ || z > fence.maxZ) { vx = 0; this.fenceBlocks++; }
+    // Evaluated on the latest PHYSICS state (not the last rendered frame, which
+    // can lag far behind at low frame rates), mapped through the rig root.
+    const snap = this.lastSnapshot, fence = this.fence, toWorld = liveBridge.mjcfToWorld;
+    if (vx !== 0 && fence && snap && toWorld && liveBridge.authority === "native") {
+      const [w, x, y, z] = [snap.quaternion[0], snap.quaternion[1], snap.quaternion[2], snap.quaternion[3]];
+      const trunk = toWorld(snap.position);
+      const dir = toWorld([1 - 2 * (y * y + z * z), 2 * (x * y + w * z), 2 * (x * z - w * y)], true);
+      const n = dir ? Math.hypot(dir[0], dir[2]) : 0;
+      if (trunk && dir && n > 1e-6) {
+        const sign = Math.sign(vx);
+        const px = trunk[0] + (dir[0] / n) * sign * FENCE_LOOKAHEAD, pz = trunk[2] + (dir[2] / n) * sign * FENCE_LOOKAHEAD;
+        if (px < fence.minX || px > fence.maxX || pz < fence.minZ || pz > fence.maxZ) { vx = 0; this.fenceBlocks++; }
+      }
     }
     const next: [number, number, number] = [vx, this.twist[1], this.twist[2]];
     if (next[0] === this.applied[0] && next[1] === this.applied[1] && next[2] === this.applied[2]) return;
@@ -629,7 +637,7 @@ export class LiveSimController {
       phase: this.state.phase, stage: this.stage, prefetch: this.prefetch, liveReady: this.liveReady, reduced: this.state.reduced,
       backend: this.backend, token: this.token, entries: this.state.entries, exits: this.state.exits,
       steps: this.steps, simTime: this.simTime, twist: [...this.twist], appliedTwist: [...this.applied],
-      fence: this.fence, fenceBlocks: this.fenceBlocks, trunkWorld: liveBridge.authority === "native" ? liveBridge.trunkWorld?.() ?? null : null,
+      fence: this.fence, fenceBlocks: this.fenceBlocks, trunkWorld: snap && liveBridge.mjcfToWorld ? liveBridge.mjcfToWorld(snap.position) : null,
       root: snap ? Array.from(snap.position) : [], joints: snap ? Array.from(snap.joints) : [],
       seed: this.seed ? { position: [...this.seed.position], quaternion: [...this.seed.quaternion], joints: [...this.seed.joints] } : null,
       seedJointError: this.seedJointError, seedWorldJumpMm: liveBridge.seedWorldJumpMm, loadMs: this.loadMs,

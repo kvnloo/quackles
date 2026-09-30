@@ -160,12 +160,11 @@ export function OfficialDuck({
           };
         };
         liveBridge.applyNow = () => { applyNative(rig); invalidate(); };
-        liveBridge.trunkHeading = () => {
-          const body = rig.bodies.get("trunk_base");
-          if (!body) return null;
-          const e = body.matrixWorld.elements;
-          const n = Math.hypot(e[0], e[2]);
-          return n > 1e-6 ? [e[0] / n, e[2] / n] : null;
+        liveBridge.mjcfToWorld = (v, direction = false) => {
+          _point.set(v[0], v[1], v[2]);
+          if (direction) _point.transformDirection(rig.root.matrixWorld);
+          else _point.applyMatrix4(rig.root.matrixWorld);
+          return [_point.x, _point.y, _point.z];
         };
         liveBridge.robotOnly = (enabled: boolean) => {
           const inRig = (node: Object3D) => { for (let n: Object3D | null = node; n; n = n.parent) if (n === rig.placer) return true; return false; };
@@ -214,7 +213,7 @@ export function OfficialDuck({
       liveBridge.captureSeed = null;
       liveBridge.applyNow = null;
       liveBridge.trunkWorld = null;
-      liveBridge.trunkHeading = null;
+      liveBridge.mjcfToWorld = null;
       liveBridge.robotOnly = null;
       liveBridge.authority = "cinematic";
       liveBridge.snapshot = null;

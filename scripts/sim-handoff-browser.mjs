@@ -239,6 +239,37 @@ try {
   const rl = await sim();
   R.reload = { steps: rl.steps, jointError: rl.seedJointError, seedDeltaMm: +(dist(rl.seed.position, s0.seed.position) * 1000).toFixed(4) };
   check(rl.seedJointError < 1e-6 && R.reload.seedDeltaMm < 1, `reload seed ${JSON.stringify(R.reload)}`);
+  await page.evaluate(() => window.__QUACKLES_SIM__.exit());
+  await waitPhase("story", 20000);
+  // Reduced motion: wheel never enters; the explicit button enters with no reassembly animation; exit is instant.
+  const rmCtx = await browser.newContext({ viewport: { width: 1280, height: 860 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
+  const rm = await rmCtx.newPage();
+  rm.on("pageerror", (e) => errors.push(`rm: ${e.message.slice(0, 200)}`));
+  await rm.goto(url, { waitUntil: "load" });
+  await rm.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0, null, { timeout: 60000 });
+  await rm.evaluate(() => window.__QUACKLES_SEQUENCE__.setProgress(1));
+  await rm.waitForFunction(() => window.__QUACKLES_SIM__?.getState?.().liveReady, null, { timeout: 120000 });
+  const rbox = await rm.locator(".poster-frame").boundingBox();
+  await rm.mouse.move(rbox.x + rbox.width / 2, rbox.y + rbox.height / 2);
+  for (let i = 0; i < 4; i++) { await rm.mouse.wheel(0, 150); await rm.waitForTimeout(40); }
+  await rm.waitForTimeout(500);
+  const rs = () => rm.evaluate(() => window.__QUACKLES_SIM__.getState());
+  R.reduced = { afterWheel: (await rs()).phase, reduced: (await rs()).reduced };
+  check(R.reduced.reduced === true && R.reduced.afterWheel === "story", `reduced motion: wheel entered (${JSON.stringify(R.reduced)})`);
+  await rm.locator('[data-testid="sim-enter"]').click();
+  await rm.waitForFunction(() => window.__QUACKLES_SIM__.getState().phase === "sim", null, { timeout: 120000 });
+  await rm.waitForFunction(() => window.__QUACKLES_SIM__.getState().steps > 0, null, { timeout: 60000 });
+  const re = await rs();
+  R.reduced.entryLog = re.phaseLog; R.reduced.jointError = re.seedJointError;
+  check(re.phaseLog.every((p) => p === "await" || p === "sim"), `reduced motion animated the entry: ${re.phaseLog.join(">")}`);
+  await rm.keyboard.press("Escape");
+  const rx = await rs();
+  R.reduced.exitPhase = rx.phase; R.reduced.opacityAfterExit = rx.liveOpacity;
+  check(rx.phase === "story", `reduced motion exit not instant (${rx.phase})`);
+  await rm.waitForTimeout(1500);
+  R.reduced.workers = (await rs()).workers;
+  check(R.reduced.workers === 0, "reduced motion exit left a worker");
+  await rmCtx.close();
   R.errors = [...errors, ...((await sim()).errors ?? [])];
   check(R.errors.length === 0, `page errors: ${R.errors.slice(0, 3).join(" | ")}`);
 } catch (error) {
