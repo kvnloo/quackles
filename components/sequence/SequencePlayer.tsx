@@ -7,7 +7,7 @@ import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, describeInspectionSources, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { PREVIEW } from "@/lib/preview";
-import { mushroomScene, previewManifest, previewNote, previewPolicy, previewThemeIndices } from "@/lib/sequence/preview-policy";
+import { mushroomScene, previewManifest, previewNote, previewPolicy, previewPrefetch, previewThemeIndices } from "@/lib/sequence/preview-policy";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
 import { placeDetail, centreFirst, cropInside, detailBackingSize, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, prefetchCrop, sharpPlan, tileAssets, tilePriority, underlayPlan, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { TileSurface, type PaintedRect, type SurfaceStamp } from "@/lib/sequence/tile-surface";
@@ -216,8 +216,11 @@ export function SequencePlayer() {
       if (detailEligible && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > plateWidth) {
         // The pinned underlay takes its own share first, so the pinned detail plan always fits beside it.
         const budget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4 - profile.underlayBudgetBytes;
+        // The pan margin gets a third: the worst visible crop at a tier boundary (~70 MiB) still fits beside it, so the
+        // previous tier stays resident across the boundary (no evict/re-decode thrash on zooming back).
+        const marginBudget = budget / 3;
         if (eggShown && mushroomPyramid.length) {
-          const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan);
+          const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan, marginBudget);
           if (planned && planned.variant.width > plateWidth) layers.push({ plan: planned, alpha: 1 });
         } else if (!eggShown) {
           const sources = showThemes.map((theme) => known(frame.assets[theme]));
@@ -230,7 +233,7 @@ export function SequencePlayer() {
           } else if (showThemes.length === 1) {
             // Single visible theme only: during a crossfade where one side has no tiles, painting the other side's
             // detail at full alpha would show one scene's art over the mix.
-            const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan) : null;
+            const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan, marginBudget) : null;
             if (primary && primary.variant.width > plateWidth) {
               layers.push({ plan: primary, alpha: 1 });
               if (!moving) {
@@ -272,7 +275,7 @@ export function SequencePlayer() {
       if (landing) {
         const landingWidth = Math.ceil(rect.width * devicePixelRatio * landing.scale);
         const landingBudget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4 - profile.underlayBudgetBytes;
-        const ahead = sharpPlan(underlaySource!, landingWidth, landing, landingBudget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan);
+        const ahead = sharpPlan(underlaySource!, landingWidth, landing, landingBudget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan, landingBudget / 3);
         if (ahead && ahead.variant.width > plateWidth) {
           centreFirst(ahead.tasks, ahead.variant, landing).forEach((entry, i) => tasks.push({ asset: entry.task.asset, priority: tilePriority(entry, i) + 3 }));
           const aheadUnder = underlayPlan(underlaySource!, ahead.variant.width, landing, plateWidth, profile.underlayBudgetBytes);
@@ -290,13 +293,15 @@ export function SequencePlayer() {
       const floorTodo = floorPlan ? floorPlan.tasks.filter((task) => !floorSurface.has(task.asset.url)) : [];
       for (const { asset } of floorTodo) tasks.push({ asset, priority: 60 });
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
-      for (const offset of [1, -1, 2, 3]) {
+      // Only plates the preview can show (a single still has no story frames and one theme): each is 6 MiB decoded.
+      const reach = previewPrefetch(PREVIEW);
+      if (reach.adjacentFrames) for (const offset of [1, -1, 2, 3]) {
         const adjacent = manifest.frames[center + offset];
         if (adjacent) tasks.push({ asset: imageAt(adjacent, THEME_IDS[selected], 1024), priority: 20 - Math.abs(offset) });
       }
       for (const offset of [-1, 1]) {
         const theme = THEME_IDS[selected + offset];
-        if (theme) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 });
+        if (theme && reach.themes.includes(selected + offset)) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 });
       }
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });

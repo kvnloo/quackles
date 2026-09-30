@@ -7,6 +7,9 @@ import fs from "node:fs";
 import * as render from "../lib/sequence/render.ts";
 import * as surfaceModule from "../lib/sequence/tile-surface.ts";
 import { FrameCache } from "../lib/sequence/cache.ts";
+import * as profileModule from "../lib/sequence/perf-profile.ts";
+import * as policyModule from "../lib/sequence/preview-policy.ts";
+import { PREVIEWS } from "../lib/preview.ts";
 
 const { inspectionCrop, tileAssets } = render;
 const raw = JSON.parse(fs.readFileSync(new URL("../public/preview-scene/sequence/manifest.json", import.meta.url)));
@@ -225,4 +228,47 @@ test("(3) landing prefetch: while the camera moves, tiles are planned at where i
   assert.deepEqual(render.prefetchCrop({ ...coast, targetZoom: 3, zoom: 5 }), inspectionCrop(3, 0.8, 0.35), "zooming out: the landing zoom");
 });
 
+// ---- (4) budget per tier ----------------------------------------------------------------------------------------------
+const withNavigator = (nav, coarse, fn) => {
+  const saved = Object.getOwnPropertyDescriptor(globalThis, "navigator"), savedMM = globalThis.matchMedia;
+  Object.defineProperty(globalThis, "navigator", { value: nav, configurable: true, writable: true });
+  globalThis.matchMedia = () => ({ matches: coarse });
+  try { return fn(); } finally { if (saved) Object.defineProperty(globalThis, "navigator", saved); globalThis.matchMedia = savedMM; }
+};
+test("(4) decoded budget: 128 MiB where the device reports >= 8 GB (S25 Ultra), 64 MiB on other phones, profile ids unchanged", () => {
+  const phone8 = withNavigator({ deviceMemory: 8, hardwareConcurrency: 8 }, true, profileModule.sequencePerfProfile);
+  const phone4 = withNavigator({ deviceMemory: 4, hardwareConcurrency: 8 }, true, profileModule.sequencePerfProfile);
+  const phoneX = withNavigator({ hardwareConcurrency: 8 }, true, profileModule.sequencePerfProfile);
+  assert.equal(phone8.id, "balanced"); assert.equal(phone8.decodedBudgetBytes, 128 * MIB); assert.equal(phone8.maxActiveJobs, 2);
+  assert.equal(phone4.id, "balanced"); assert.equal(phone4.decodedBudgetBytes, 64 * MIB);
+  assert.equal(phoneX.decodedBudgetBytes, 64 * MIB, "no hint: no raise");
+  const desk8 = withNavigator({ deviceMemory: 8, hardwareConcurrency: 16 }, false, profileModule.sequencePerfProfile);
+  assert.equal(desk8.id, "full"); assert.equal(desk8.decodedBudgetBytes, 128 * MIB);
+});
+const budget128 = 128 * MIB - 1024 * 1536 * 4 - 16 * MIB; // decoded budget - plate - underlay share
+test("(4) the required tier's visible crop always fits (no fallback to a softer tier at tier boundaries)", () => {
+  for (const z of [2.3, 4.6, 4.8, 5.3, 9.1, 9.6, 10]) for (const [fx, fy] of FOCI) {
+    const crop = inspectionCrop(z, fx, fy), plan = render.sharpPlan(white, need(z), crop, budget128, W, H, DPR, 0, budget128 / 3);
+    assert.equal(plan.variant.width, planTier(z).width, `z${z} (${fx},${fy}): fell back to ${plan.variant.width}`);
+  }
+});
+test("(4) margins shrink at the top tiers to fit a third of the detail budget; a boundary crossing keeps both tiers resident", () => {
+  for (const z of ZOOMS) for (const [fx, fy] of FOCI) {
+    const crop = inspectionCrop(z, fx, fy), plan = render.sharpPlan(white, need(z), crop, budget128, W, H, DPR, 0, budget128 / 3);
+    const tight = tileAssets(plan.variant, crop, 0);
+    if (plan.tasks.length > tight.length) assert.ok(bytes(plan.tasks) <= budget128 / 3 + 1, `z${z}: margin plan ${(bytes(plan.tasks) / MIB).toFixed(0)} MiB`);
+  }
+  for (const [a, b] of [[4.4, 4.6], [8.9, 9.1], [2.2, 2.35], [7.4, 9.2], [12, 17.9]]) for (const [fx, fy] of FOCI) {
+    const pa = render.sharpPlan(white, need(a), inspectionCrop(a, fx, fy), budget128, W, H, DPR, 0, budget128 / 3);
+    const pb = render.sharpPlan(white, need(b), inspectionCrop(b, fx, fy), budget128, W, H, DPR, 0, budget128 / 3);
+    assert.ok(bytes(pa.tasks) + bytes(pb.tasks) <= budget128, `z${a}->${b}: ${((bytes(pa.tasks) + bytes(pb.tasks)) / MIB).toFixed(0)} MiB > ${(budget128 / MIB).toFixed(0)}`);
+  }
+});
+test("(4) a preview never prefetches plates it cannot show (gigapixel-single: no story frames, no other themes)", () => {
+  assert.equal(typeof policyModule.previewPrefetch, "function", "preview-policy previewPrefetch missing");
+  const single = policyModule.previewPrefetch(PREVIEWS["gigapixel-single"]);
+  assert.equal(single.adjacentFrames, false); assert.deepEqual(single.themes, [1]);
+  const prod = policyModule.previewPrefetch(PREVIEWS.production);
+  assert.equal(prod.adjacentFrames, true); assert.deepEqual(prod.themes, [0, 1, 2, 3, 4]);
+});
 console.log(`${n} passed`);

@@ -26,6 +26,7 @@ type NavigatorWithHints = Navigator & {
 };
 
 const MIB = 1024 * 1024;
+const RICH_DECODED_BUDGET = 128 * MIB;
 
 const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
   constrained: {
@@ -93,5 +94,9 @@ export function sequencePerfProfile(): SequencePerfProfile {
     (memory !== undefined && memory <= 4) ||
     cores <= 4;
 
-  return balanced ? PROFILES.balanced : PROFILES.full;
+  const profile = balanced ? PROFILES.balanced : PROFILES.full;
+  // A device reporting >= 8 GB (the owner's S25 Ultra reports 8) holds two tier plans side by side: 128 MiB of decoded
+  // tiles = plate 6 + underlay 16 + the required tier's visible crop at a tier boundary (<= 70) + the previous tier's
+  // tiles (LRU), so crossing a boundary and back does not evict and re-decode (render.ts sharpPlan marginBudget).
+  return memory !== undefined && memory >= 8 ? { ...profile, decodedBudgetBytes: Math.max(profile.decodedBudgetBytes, RICH_DECODED_BUDGET) } : profile;
 }

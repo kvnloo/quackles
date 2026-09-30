@@ -59,3 +59,9 @@ export function previewNote(preview: Preview, manifest: SequenceManifest): strin
   if (!pending) return null;
   return `250MP: ${served.length ? `${served.map(label).join(", ")} only` : "none yet"}; ${pending} render${pending === 1 ? "" : "s"} pending`;
 }
+
+/** Plates worth prefetching around the current one: story frames only when the preview has a story, themes only the
+ * ones it can show. A single still (gigapixel-single) prefetches none, so no 6 MiB plate competes with tiles. */
+export function previewPrefetch(preview: Preview): { adjacentFrames: boolean; themes: number[] } {
+  return { adjacentFrames: preview.story, themes: previewThemeIndices(preview) };
+}

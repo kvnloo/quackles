@@ -90,6 +90,7 @@ export class FrameCache {
   private networkRequests = 0;
   private completedDecodes = 0;
   private closedBitmaps = 0;
+  private evictions = 0;
   private failures = 0;
   private decodedBudgetBytes: number;
   private maxActiveJobs: number;
@@ -173,7 +174,7 @@ export class FrameCache {
     const evictable = [...this.decoded.values()].filter((image) => !this.pinned.has(image.key)).sort((a, b) => a.touched - b.touched);
     while (this.used + this.reserved + bytes > this.decodedBudgetBytes && evictable.length) {
       const image = evictable.shift()!;
-      this.decoded.delete(image.key); this.used -= image.bytes; this.close(image.bitmap);
+      this.decoded.delete(image.key); this.used -= image.bytes; this.close(image.bitmap); this.evictions++;
     }
     return this.used + this.reserved + bytes <= this.decodedBudgetBytes;
   }
@@ -259,7 +260,7 @@ export class FrameCache {
   }
   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
   stats() {
-    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.fetching + this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.fetching - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, fetching: this.fetching, maxFetching: this.maxFetching, startedFetches: this.startedFetches, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
+    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.fetching + this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.fetching - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, evictions: this.evictions, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, fetching: this.fetching, maxFetching: this.maxFetching, startedFetches: this.startedFetches, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
   }
   dispose() {
     this.disposed = true;

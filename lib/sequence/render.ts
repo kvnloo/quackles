@@ -172,13 +172,16 @@ export function sharpPlan(
   // Extra tile ring beyond the buffered coverage. The 40% coverage margin already is the pan buffer,
   // so the default requests exactly the tiles covering it; profiles may opt in to a ring.
   overscan: 0 | 1 = 0,
+  // Bytes the pan margin may take. The visible crop may use the whole budget; the margin only this share, so the
+  // previous tier's tiles stay resident across a tier boundary (at the top tiers the margin shrinks 40% -> 25/15/0%).
+  marginBudget = budget,
 ) {
   const tight = detailPlan(variants, desiredWidth, crop, budget, 0);
   if (!tight) return null;
   const floor = tight.variant.width;
-  for (const margin of [0.4, 0.2, 0]) {
+  for (const margin of [0.4, 0.25, 0.15, 0]) {
     const coverage = margin === 0 ? crop : fittedBuffer(cssWidth, cssHeight, crop, dpr, DETAIL_CANVAS_CAP, margin);
-    const plan = detailPlan(variants, floor, coverage, budget, margin > 0 ? overscan : 0, Number.POSITIVE_INFINITY, floor);
+    const plan = detailPlan(variants, floor, coverage, margin === 0 ? budget : Math.min(budget, marginBudget), margin > 0 ? overscan : 0, Number.POSITIVE_INFINITY, floor);
     if (plan) return { ...plan, coverage };
   }
   return { ...tight, coverage: crop };
