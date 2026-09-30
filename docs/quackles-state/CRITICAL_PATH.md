@@ -27,6 +27,7 @@ frozen: DECISIONS.md D1-D2. canonical: Blue=legacy-201mp. Day=candidate-1gp, Whi
 - z2/z4 D6-vs-pre parity diffs explained by ground truth (D6 closer)
 
 ## active hypothesis / next three
-1. independent verifier #2 (slices 4-6, head 75d1d00) in flight; then verifier #3 for D6 (fad6e66) — fix any valid findings
-2. post receipt on #43 (draft: scratchpad/receipt43c.md) once verifiers report
-3. H: Day via evidence-first (shell mask -> compare recovered hist/* candidates f85df1a/3dc142a/0f42a30 -> only then a Cycles render); G leftovers: warm fetch not abortable (low), asset defects (bust-poster banding, arch noise)
+1. minor pre-existing: no downgrade repaint after zoom-out (oversized tier stays painted) -> small TDD fix; held-touch pan untested (needs device)
+2. Day (H): new evidence-first Cycles ablation only (diffuse/glossy + direct/indirect isolation, held-out phases); measured gap in issue-41-evidence/day-stone-shipped-plate/FINDINGS.md; no Day thresholds defined (proposal in FINDINGS)
+3. #41 items 3-5 after Blue is stable: reversible state machine acceptance, simulator handoff, docs cleanup; real-device OBSERVE
+posted: receipts on #43 (slices 1-2 and 3-6, head e84d009); #41 progress comment (older)
