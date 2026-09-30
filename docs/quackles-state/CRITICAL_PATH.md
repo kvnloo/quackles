@@ -1,7 +1,7 @@
 # CRITICAL_PATH (durable state — update every slice)
 head: 64c1789 on fix/41-day-material-fidelity (pushed) · base nightly c2d84b6
 worktrees: wt-day (work) · wt-base (clean baseline c2d84b6, out/ built) · wt-exp (scratch build; removable)
-evidence: /mnt/zer0models/project-artifacts/quackles/issue-43-evidence/  · z0: /home/kvn/zer0/z0-quackles (orient/verify; claims.json)
+evidence: /mnt/zer0models/project-artifacts/quackles/issue-43-evidence/ 
 frozen: DECISIONS.md D1-D2. canonical: Blue=legacy-201mp. Day=candidate-1gp, White/Dark/Night=disabled (D5).
 
 ## completed
