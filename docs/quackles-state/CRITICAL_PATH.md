@@ -59,3 +59,14 @@ Findings so far:
 - GP render cost: 1536^2 crop at 1GP scale = ~7 s @16spp GPU-only -> full 1GP ~1 h/theme (old hybrid CPU+GPU 5x5 chunks took ~2 h). Denoise/spp/seam experiment: overnight/gp-exp.
 Lanes running (archaeology): branches/lift-list, scene/reference-match, camera/scroll/story, simulator+haptics, requirements ledger (local-only).
 Integration order: (1) per-theme reference-matched scene recipes -> 16 poses x 5 themes at 1024 denoised (consistency test per theme) -> ship; (2) GP masters from the SAME recipes (correct donor, denoised, seam-safe) -> pyramids -> source policy production-1gp per theme only after the frozen contract (dE<=5 vs accepted plate) passes; (3) camera/story/sim lifts from the lift lists, each behind the standing regression set; (4) ledger sweep: every requirement -> status + evidence.
+
+## STATUS 2026-09-30 late (nightly 64c200f)
+Shipped since the overnight plan:
+- Scenes: all 5 themes x 36 plates from per-theme reference-matched recipes (D16); one follow-cam path (D15 resolved); Day pitted stone (3 blind critic rounds, 4/10 -> 5.5-6/10); dense plates in the fast camera spans (worst pair diff Blue 73 -> 52).
+- Scroll/zoom (scripts/scroll-feel-browser.mjs): hero gesture latch (carry-over zoom 14.6x -> 1.0), two-stage smoothing (roughness 0.114 -> 0.014), resize keeps progress, true zoom reversal.
+- Theme store never indexes out of range (fixed intermittent 'reading filter' page error).
+- Haptics: forward-only once-per-crossing, touch-only, opt-out; dormant audio deleted.
+- Poster: Hermes structure, links, /process; legible hints on every plate.
+- Simulator: native MuJoCo/ONNX behind ?sim=1 (lazy, flag-off +1.2 KB gzip, 0 sim requests). Blocked from default-on by visual parity (robot dE 32-44) -> lane sim-parity running.
+Open owner decisions: D8, D11, D14, D17 (Night brief), D18 (print colour). Not possible here: physical-device acceptance (#41 item).
+Next: sim parity; explode-span 0.01 plates; stone vein web + Dark/White pored plinths; GP masters from the final recipes (RFC-001 / #44).
