@@ -158,6 +158,10 @@ a:focus-visible {
 .poster-frame[data-inspecting="true"] .sequence-camera {
   will-change: transform;
 }
+/* Inspecting: the browser must not claim vertical movement (pan-y would steal it and fire pointercancel). */
+.poster-frame[data-inspecting="true"] {
+  touch-action: none;
+}
 .sequence-base, .sequence-detail { visibility: hidden; }
 .sequence-detail { position: absolute; pointer-events: none; }
 /* Preview builds only (lib/preview.ts): small honest source note; never zooms with the camera. */

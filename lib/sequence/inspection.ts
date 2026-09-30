@@ -14,6 +14,8 @@ export type InspectionState = {
   maxZoom: number;
   /** True only while the camera is moving. Still zoom leaves this false. */
   cameraMoving: boolean;
+  /** True while a finger directly drives the camera (touch pan/pinch); the spring is idle. */
+  dragging: boolean;
 };
 
 const MIN_ZOOM = 1;
@@ -31,6 +33,7 @@ const INITIAL: InspectionState = {
   focusVelocityY: 0,
   maxZoom: 1,
   cameraMoving: false,
+  dragging: false,
 };
 
 let state: InspectionState = { ...INITIAL };
