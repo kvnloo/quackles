@@ -242,7 +242,8 @@ export function placeDetail(canvas: HTMLCanvasElement, cssWidth: number, cssHeig
   canvas.dataset.crop = `${crop.x},${crop.y},${crop.width},${crop.height}`;
 }
 
-export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, layers: DetailLayer[]) {
+/** moving: the camera is in motion, so resample cheaply ("low"); the caller repaints at "high" once it rests. */
+export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, layers: DetailLayer[], moving = false) {
   const rect = container.getBoundingClientRect();
   const backing = detailBackingSize(rect.width, rect.height, crop, devicePixelRatio);
   if (canvas.width !== backing.width || canvas.height !== backing.height) {
@@ -253,7 +254,8 @@ export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, c
   const context = canvas.getContext("2d", { alpha: false });
   if (!context) throw new Error("Canvas2D is unavailable");
   context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
+  context.imageSmoothingQuality = moving ? "low" : "high";
+  canvas.dataset.smoothing = context.imageSmoothingQuality;
   for (const layer of layers) {
     context.globalAlpha = layer.alpha;
     if ("url" in layer.variant) {

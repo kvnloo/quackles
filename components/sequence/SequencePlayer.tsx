@@ -50,13 +50,13 @@ export function SequencePlayer() {
     let inspectionSettleTimer = 0, inspectionSettled = true;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
-    let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "";
+    let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "", paintedInMotion = false;
     let heldTheme = 2;
     let themeRelease: ThemeRelease | null = null;
     const releaseDetail = () => {
       detailCanvas.style.visibility = "hidden";
       if (detailCanvas.width !== 1 || detailCanvas.height !== 1) { detailCanvas.width = 1; detailCanvas.height = 1; }
-      detailKeys = []; detailKey = ""; detailThemeKey = ""; paintedCoverage = null; paintedMix = -1;
+      detailKeys = []; detailKey = ""; detailThemeKey = ""; paintedCoverage = null; paintedMix = -1; paintedInMotion = false;
       state.detailWidth = 0; state.detailTiles = 0;
     };
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
@@ -129,6 +129,8 @@ export function SequencePlayer() {
       const nativeCrop = viewportCrop(container!);
       const inspect = inspectionSnapshot();
       const moving = inspect.cameraMoving;
+      // No new decode starts while the camera moves (decode + GPU upload inside the motion was the zoom/pan lag).
+      cache.setPaused(moving);
       const crop =
         inspect.active || inspect.targetZoom > 1.0005
           ? inspectionCrop(
@@ -276,9 +278,13 @@ export function SequencePlayer() {
         const primaryReady = ready(decoded[0]);
         const mixChanged = Math.abs(showMix - paintedMix) > 0.001;
         const upgrade = layers[0].plan.variant.width > state.detailWidth;
-        const escaping = !paintedCoverage || !cropInside(crop, paintedCoverage, crop.width * 0.12);
+        // While a finger drives the camera, a repaint (a full tile upload) inside the gesture was the pan hitch: the
+        // painted layer rides with the camera (plate underlay beyond it) and repaints once the finger rests or lifts.
+        const escaping = !paintedCoverage || (!(moving && inspect.dragging) && !cropInside(crop, paintedCoverage, crop.width * 0.12));
         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
-        if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
+        // A layer painted mid-motion used the cheap resample: repaint it at full quality once the camera rests.
+        const refine = paintedInMotion && !moving;
+        if (paintLayers && (allReady ? mixChanged || upgrade || escaping || refine || !detailKey : upgrade || escaping || refine || !detailKey)) {
           // First appearance of the sharp layer (it was hidden/released): dissolve it in. Repaints of a visible layer do not re-fade.
           const freshLock = !detailKey; const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
           if (freshLock) armLockFade(detailCanvas!, reduced);
@@ -286,7 +292,8 @@ export function SequencePlayer() {
             variant: layer.plan.variant,
             alpha: layer.alpha,
             images: layer.images.map(({ image, x, y, sourceX, sourceY }) => ({ image: image!, x, y, sourceX, sourceY })),
-          })));
+          })), moving);
+          paintedInMotion = moving;
           if (freshLock) startLockFade(detailCanvas!, reduced);
           window.dispatchEvent(new Event("quackles:detail-painted"));
           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
