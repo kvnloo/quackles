@@ -51,3 +51,11 @@ Two of my own fixes regressed and were caught only by independent/adversarial me
 Status update: camera final = two-stage arrival, exact-converge, resize-safe, dissolve-on-lock. Verifier #7 (adversarial on 077d8a9/36dfbc4) in flight.
 
 UPDATE: CI `verify` (test:inspection:static on GitHub-hosted runners) green on nightly since 00628f4; only `pages` deploy is blocked (PAGES_RUNNER=self-hosted, 0 runners).
+
+## OVERNIGHT PLAN (owner directive 2026-09-30 night: "match the REFERENCE images precisely; fix Blender scenes; GP experiments; lift existing pieces from branches/history; surgical polish; parallel experiments; fix every issue ever described")
+Findings so far:
+- Scene audit (overnight/scene-audit): Day theme is TWO scenes: hero p0000000 = 2026-09-25 gloss-split recipe (light grey wall), poses p0080000..p1000000 = 2026-09-16 recipe (dark-brown wall, cream sandstone). Reference Day = dark charcoal wall + grey stone + BLUE contour print on the robot shell. All shipped robots print the shell contour black (every reference shows blue). Night hero near-black vs reference dim-readable scene.
+- 1GP masters (quackles-1gp/render_1gp.py) used the canonical-set theme code (clean 6b7eeb1 / dirty day-fix) which renders white/blue/dark/night as the SAME grey studio -> the "wrong scene" 1GP. Donor blends quality-final-{white,cobalt,dark}.blend per theme restore themed looks (and the blue shell print) but are not yet reference-matched.
+- GP render cost: 1536^2 crop at 1GP scale = ~7 s @16spp GPU-only -> full 1GP ~1 h/theme (old hybrid CPU+GPU 5x5 chunks took ~2 h). Denoise/spp/seam experiment: overnight/gp-exp.
+Lanes running (archaeology): branches/lift-list, scene/reference-match, camera/scroll/story, simulator+haptics, requirements ledger (local-only).
+Integration order: (1) per-theme reference-matched scene recipes -> 16 poses x 5 themes at 1024 denoised (consistency test per theme) -> ship; (2) GP masters from the SAME recipes (correct donor, denoised, seam-safe) -> pyramids -> source policy production-1gp per theme only after the frozen contract (dE<=5 vs accepted plate) passes; (3) camera/story/sim lifts from the lift lists, each behind the standing regression set; (4) ledger sweep: every requirement -> status + evidence.
