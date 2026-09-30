@@ -182,6 +182,12 @@ export function HeroInspection() {
       requestTick();
     };
 
+    // Gesture latch at the hero boundary: reverse-scroll momentum that brings the
+    // story home must not flow into inspection zoom; inspection only takes a
+    // wheel-up after a short input gap (a new gesture). Trackpad inertia may need
+    // 240-400 ms; tune on real hardware.
+    let storyMovedAt = -Infinity;
+    const LATCH_MS = 240;
     const onWheel = (event: WheelEvent) => {
       if (
         !finePointer.matches ||
@@ -195,6 +201,12 @@ export function HeroInspection() {
       const deltaY = normalizedWheelDelta(event);
       const entering = deltaY < 0 && atHero();
 
+      if (entering && !current.active) {
+        const now = performance.now();
+        // Same continuous gesture that just brought the story home: let the
+        // scroll kernel consume it (it clamps at 0) instead of zooming.
+        if (now - storyMovedAt < LATCH_MS) { storyMovedAt = now; return; }
+      }
       if (!current.active && !entering) return;
 
       event.preventDefault();
@@ -206,14 +218,22 @@ export function HeroInspection() {
       }
 
       const focus = targetFocus(event.clientX, event.clientY);
+      // A wheel that opposes where the zoom is heading (target still ahead of
+      // the spring, or spring momentum) reverses from the zoom the user SEES:
+      // rebase on the current zoom and drop the momentum. Otherwise a zoom-out
+      // during a zoom-in catch-up only trims a stale target and keeps zooming in
+      // (donor idea: fix/scroll-zoom-reversal-attach a0e0825).
+      const heading = Math.sign(current.targetZoom - current.zoom) || Math.sign(current.zoomVelocity);
+      const contradicts = heading !== 0 && deltaY !== 0 && heading !== -Math.sign(deltaY);
       const targetZoom = wheelZoomTarget(
-        current.targetZoom,
+        contradicts ? current.zoom : current.targetZoom,
         deltaY,
         current.maxZoom,
       );
       const returningHome = targetZoom <= 1.003;
 
       setInspectionState({
+        ...(contradicts ? { zoomVelocity: 0 } : {}),
         active: true,
         targetZoom: returningHome ? 1 : targetZoom,
         targetFocusX: returningHome ? 0.5 : focus.x,
@@ -464,7 +484,9 @@ export function HeroInspection() {
       if (event.key === "Escape") resetTarget();
     };
     const unsubscribeSequence = subscribeSequence(() => {
-      if (sequenceSnapshot().progress > 0.006) resetImmediately();
+      const progress = sequenceSnapshot().progress;
+      if (progress > 0.0005) storyMovedAt = performance.now();
+      if (progress > 0.006) resetImmediately();
     });
 
     const resizeObserver = new ResizeObserver(() => {
