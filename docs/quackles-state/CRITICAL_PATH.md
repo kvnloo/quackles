@@ -31,3 +31,17 @@ frozen: DECISIONS.md D1-D2. canonical: Blue=legacy-201mp. Day=candidate-1gp, Whi
 2. Day (H): cause of plinth fine-scale excess ESTABLISHED = render noise (denoising OFF) (D10). BLOCKED on recovering the exact invocation of the shipped Day look (4 recipes tried, none match); leads in FINDINGS.md. Then: same scene + --denoise/higher spp, validate with day-stone/1.0.0 on held-out phases. No Day thresholds frozen (proposal in FINDINGS)
 3. #41 items 3-5 after Blue is stable: reversible state machine acceptance, simulator handoff, docs cleanup; real-device OBSERVE
 posted: receipts on #43 (slices 1-2 and 3-6, head e84d009); #41 progress comment (older)
+
+## S+ PROGRAMME (owner directive 2026-09-30: keep working autonomously, push to nightly per milestone, owner steers occasionally)
+Operating loop per milestone: orient -> reproduce+measure baseline -> RED test (user-visible contract, independent of implementation) -> smallest fix -> focused + full regression -> real-browser E2E -> visual/network/memory evidence -> BLIND verifier (raw inputs + question only, no claims/evidence) and/or adversarial verifier -> fix findings -> commit -> push nightly (fast-forward only; never main/dev; never force) -> verify LIVE -> receipt -> next.
+Milestones (status):
+- M1 DONE+LIVE: Blue source integrity, no blank/stale frames, settle-time promotion (D6), request budget, underlay, warm-up.
+- M2 IN FLIGHT: Day hero p0000000 = 64spp undenoised noise (only hero of 16 Day frames); RED test scripts/day-fidelity/test_day_plate_noise.py written; candidate = same scene --denoise 64spp (low-pass dE 0.91, speckle 0.042->0.005); GATE = blind verifier af4a26a (running).
+- M3 NEXT: camera coherence ("warping"): painted-canvas origin is path/timing dependent (verifier: ladder vs direct-to-z8 meanAbs 3.8) -> contract: settled pixels independent of path within floor at all zooms.
+- M4: input feel: touch/pinch/pan/wheel/fling/reversal contracts (CDP touch emulation, held pan), zoom finickiness.
+- M5: reversible INSPECT->JUMP->EXPLODE->REASSEMBLE->SIM scroll state machine: characterize with frame probes, then contracts (#41 item 3).
+- M6: UI panels/overlays/layout stability audit (layout shift, transform jitter, resize, five themes, reduced motion).
+- M7: mobile/constrained profiles + lifecycle (visibility, memory pressure, context loss) synthetic; real device stays OBSERVE.
+- M8: performance budgets on the BUILT app (bytes, decode, long tasks, memory) via devtools/lighthouse; a11y + reduced motion.
+- M9: simulator handoff (#41 item 4) only with a written contract; M10: docs/evidence cleanup (#41 item 5).
+Standing limits: no physical device (all device claims OBSERVE); desktop headless Chromium only; no 1GP scenes added; no wholesale image regeneration; simulator architecture unchanged until M9 contract.
