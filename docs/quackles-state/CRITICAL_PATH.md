@@ -33,15 +33,15 @@ frozen: DECISIONS.md D1-D2. canonical: Blue=legacy-201mp. Day=candidate-1gp, Whi
 posted: receipts on #43 (slices 1-2 and 3-6, head e84d009); #41 progress comment (older)
 
 ## S+ PROGRAMME (owner directive 2026-09-30: keep working autonomously, push to nightly per milestone, owner steers occasionally)
-Operating loop per milestone: orient -> reproduce+measure baseline -> RED test (user-visible contract, independent of implementation) -> smallest fix -> focused + full regression -> real-browser E2E -> visual/network/memory evidence -> BLIND verifier (raw inputs + question only, no claims/evidence) and/or adversarial verifier -> fix findings -> commit -> push nightly (fast-forward only; never main/dev; never force) -> verify LIVE -> receipt -> next.
-Milestones (status):
-- M1 DONE+LIVE: Blue source integrity, no blank/stale frames, settle-time promotion (D6), request budget, underlay, warm-up.
-- M2 IN FLIGHT: Day hero p0000000 = 64spp undenoised noise (only hero of 16 Day frames); RED test scripts/day-fidelity/test_day_plate_noise.py written; candidate = same scene --denoise 64spp (low-pass dE 0.91, speckle 0.042->0.005); GATE = blind verifier af4a26a (running).
-- M3 NEXT: camera coherence ("warping"): painted-canvas origin is path/timing dependent (verifier: ladder vs direct-to-z8 meanAbs 3.8) -> contract: settled pixels independent of path within floor at all zooms.
-- M4: input feel: touch/pinch/pan/wheel/fling/reversal contracts (CDP touch emulation, held pan), zoom finickiness.
-- M5: reversible INSPECT->JUMP->EXPLODE->REASSEMBLE->SIM scroll state machine: characterize with frame probes, then contracts (#41 item 3).
-- M6: UI panels/overlays/layout stability audit (layout shift, transform jitter, resize, five themes, reduced motion).
-- M7: mobile/constrained profiles + lifecycle (visibility, memory pressure, context loss) synthetic; real device stays OBSERVE.
-- M8: performance budgets on the BUILT app (bytes, decode, long tasks, memory) via devtools/lighthouse; a11y + reduced motion.
-- M9: simulator handoff (#41 item 4) only with a written contract; M10: docs/evidence cleanup (#41 item 5).
-Standing limits: no physical device (all device claims OBSERVE); desktop headless Chromium only; no 1GP scenes added; no wholesale image regeneration; simulator architecture unchanged until M9 contract.
+Operating loop per milestone: orient -> reproduce+measure -> RED test -> smallest fix -> focused+full regression -> real-browser E2E -> visual/network/memory evidence -> BLIND + adversarial verifier -> fix findings -> commit -> push nightly (fast-forward only; never main/dev; never force) -> verify LIVE -> receipt -> next.
+Status (nightly = f046dcd+; live deploy BLOCKED: repo var PAGES_RUNNER=self-hosted, no runner online; deploy for c2d84b6 worked earlier):
+- M1 DONE: Blue source integrity, no blank/stale, settle-time promotion, request budget, underlay, warm-up.
+- M2 DONE: Day hero denoise (noise-only fix, blind-verified); noise contract now covers all 5 themes (80 plates; only Day hero was noisy).
+- M3 DONE (verifiers #5/#6 in flight): camera placement no longer pixel-snapped (path spread 4.92->0.63 px); lock dissolve 160ms. Open: plate<->master registration (asset-level), camera settles ~0.0008 focus short of target.
+- M4 DONE (characterization): CDP multi-touch pinch/pan/held/gesture-conflict all pass. Open D11 (fractional resting theme after swipe).
+- M5 characterized: scroll story solid (0 blank, monotonic, reversible). SIM not mounted (#41 item 4).
+- M6 DONE: UI chrome 0 px deviation, CLS 0; viewfinder deliberate 1.5% scale.
+- M7 DONE (forced hints, not device): profiles/budgets/authored composition identical/lifecycle.
+- M8 DONE: Lighthouse 100x4 (desktop+mobile), LCP 131ms/CLS 0 under mobile emu.
+- M10 partial: README refreshed + docs/INSPECTION.md; simulator docs untouched.
+Next candidates (need owner steer or big cost): M9 simulator handoff contract; deep-zoom sources for Day/White/Dark/Night (would need new 201MP-class renders + hosting = large/irreversible, owner OK first); D8/D11 decisions; PAGES_RUNNER; real-device evidence.
