@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "pins": {
+    "space": "023172c8a7d629b5258d90364c13bafe013abbfa",
+    "licensed_mjcf_repo": "pollen-robotics/microduck_rl",
+    "licensed_mjcf_commit": "1a9063fbd3d9371a64f8a0abff128f0bd8027053",
+    "policy_repo": "pollen-robotics/microduck-policies",
+    "policy_commit": "1b56c396825c052a4e26e95cf2b8d8298af9e9b4",
+    "mujoco": "3.11.0",
+    "onnxruntime-web": "1.27.0"
+  },
+  "files": [
+    {
+      "source": "rl/licensed/robot_allcollisions.xml",
+      "path": "robot_allcollisions.xml",
+      "bytes": 32898,
+      "sha256": "7a6fdf437f5a80c7348ad801f43f906b997a834389cb70cca5e1e8517ba38044",
+      "url": "https://raw.githubusercontent.com/pollen-robotics/microduck_rl/1a9063fbd3d9371a64f8a0abff128f0bd8027053/src/mjlab_microduck/robot/microduck/robot_allcollisions.xml"
+    },
+    {
+      "source": "policies/alpha_walking.onnx",
+      "path": "alpha_walking.onnx",
+      "bytes": 793705,
+      "sha256": "e36332d383997d51401897734cd3e79cf5038406feddb18b4d57ecfb141daa6c",
+      "url": "https://huggingface.co/pollen-robotics/microduck-policies/resolve/1b56c396825c052a4e26e95cf2b8d8298af9e9b4/alpha_walking.onnx"
+    },
+    {
+      "source": "bindings/mujoco/mujoco.js",
+      "path": "runtime/mujoco.mjs",
+      "bytes": 292469,
+      "sha256": "cce67e14001aa5556438ef7cf1b9c858837a40fd0eca6ddf96f28a9065796205",
+      "url": "https://cdn.jsdelivr.net/npm/@mujoco/mujoco@3.11.0/mujoco.js"
+    },
+    {
+      "source": "bindings/mujoco/mujoco.wasm",
+      "path": "runtime/mujoco.wasm",
+      "bytes": 10117577,
+      "sha256": "1e3ba4ae1f4dfb4f918314dc472b253d5a00ed61abd59a5a91f6994c882ad560",
+      "url": "https://cdn.jsdelivr.net/npm/@mujoco/mujoco@3.11.0/mujoco.wasm"
+    },
+    {
+      "source": "bindings/ort/ort.wasm.bundle.min.mjs",
+      "path": "runtime/ort.wasm.bundle.min.mjs",
+      "bytes": 72799,
+      "sha256": "1db5e1c5cd2b860eed85e6eeff23e2aaa7cffcc407f67093bcc888f631b94ba9",
+      "url": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort.wasm.bundle.min.mjs"
+    },
+    {
+      "source": "bindings/ort/ort-wasm-simd-threaded.wasm",
+      "path": "runtime/ort-wasm-simd-threaded.wasm",
+      "bytes": 13479978,
+      "sha256": "d1ab1b94b16a65b29d710d0b587b29e7bed336827577623913479b8afe8113e6",
+      "url": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort-wasm-simd-threaded.wasm"
+    },
+    {
+      "source": "rl/licensed/LICENSE",
+      "path": "licenses/LICENSE.microduck",
+      "bytes": 11351,
+      "sha256": "2d3fd9ffffa70a4307498ec630b14a6b4731e010f8ddda92686eaf65733c2dfe",
+      "vendored": "LICENSE.microduck"
+    },
+    {
+      "source": "policies/README.md",
+      "path": "licenses/POLICY_CARD.md",
+      "bytes": 28,
+      "sha256": "98b45ea81164d1e1a1dd82255207053b15cd6c69d922a1c5cf3387ce604d4b74",
+      "vendored": "POLICY_CARD.md"
+    },
+    {
+      "source": "bindings/mujoco/LICENSE",
+      "path": "licenses/LICENSE.mujoco",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "vendored": "LICENSE.mujoco"
+    },
+    {
+      "source": "bindings/ort/LICENSE",
+      "path": "licenses/LICENSE.onnxruntime",
+      "bytes": 1073,
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+      "vendored": "LICENSE.onnxruntime"
+    },
+    {
+      "source": "bindings/ort/ThirdPartyNotices.txt",
+      "path": "licenses/ThirdPartyNotices.onnxruntime.txt",
+      "bytes": 325054,
+      "sha256": "0e07b95f3a8d6230037707c5c4a2b554d12c4cb67369669ac255635528ffcee2",
+      "vendored": "ThirdPartyNotices.onnxruntime.txt"
+    }
+  ],
+  "canonical_glb": {
+    "path": "public/robot/mjlab/microduck.glb",
+    "sha256": "ad0b8d1c886a857fd09d337be11e731f4ac72bf099b0af63081031f97ed6eadb"
+  },
+  "collision_meshes": [
+    {
+      "file": "sole_left.stl",
+      "bytes": 197384,
+      "sha256": "43366ec97c6e35d59e614de9aea2ecbfefcb6d9223513d9aa32f7d4a4e86e70b"
+    },
+    {
+      "file": "sole_right.stl",
+      "bytes": 198684,
+      "sha256": "72bcaed7303484377731a20349b43341bea9947a8ea84440a72717bdb17b3dd5"
+    },
+    {
+      "file": "leg.stl",
+      "bytes": 184784,
+      "sha256": "48dff3bdb5f0b4151156da169b4550c406e5e17eebff54855fd83c82cc59df0b"
+    },
+    {
+      "file": "top_head_shell.stl",
+      "bytes": 201584,
+      "sha256": "3ffed7689fbe79a447322dd22c26b2ccb9c9777dff1cd48c4bf126150a9e855f"
+    },
+    {
+      "file": "bottom_head_shell.stl",
+      "bytes": 262084,
+      "sha256": "3c07468e1a7fc908f997b59fb9599a39ca4060882cce51eb8bfda385e243314e"
+    },
+    {
+      "file": "np_f970.stl",
+      "bytes": 260134,
+      "sha256": "87821aaa4285f019380c3225a76a0d7064dd6f87c1a97d1df245d006823e9e61"
+    },
+    {
+      "file": "hip_l.stl",
+      "bytes": 261784,
+      "sha256": "addd036cb22fdd1d2a7e7356245cf51244cb1fe606f34a0fa5145cc0de2f2461"
+    },
+    {
+      "file": "power_support.stl",
+      "bytes": 160484,
+      "sha256": "0ea651bac228b3f55b3e564ba3b912b91e6342c720892c47620cf41f719a6f92"
+    },
+    {
+      "file": "jaw.stl",
+      "bytes": 123984,
+      "sha256": "a218864e65b8e145e13c40d96b3684855f379a5f7aa3bdd6976b5802344080a6"
+    }
+  ],
+  "prepared_model": {
+    "path": "collision.xml",
+    "bytes": 17957,
+    "sha256": "33d16a246635e5fcf1ea2246a04f1dec03627643a8c5ba58fb7e77f48027a8f4"
+  }
+}

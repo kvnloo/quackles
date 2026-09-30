@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/prepare-native-sim.mjs --download",
     "dev": "next dev --port 43217 --hostname 0.0.0.0",
     "build": "NEXT_PUBLIC_BUILD_SHA=${NEXT_PUBLIC_BUILD_SHA:-local-preview} NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)} next build --webpack",
     "start": "next start --port 43217 --hostname 0.0.0.0",
@@ -35,6 +36,10 @@
     "test:feel": "node scripts/feel-contracts.mjs",
     "test:sequence": "node --import ./scripts/register-ts-resolve.mjs scripts/sequence-contracts.mjs",
     "test:theme-store": "node --import ./scripts/register-ts-resolve.mjs scripts/theme-store-contracts.mjs",
+    "test:native-sim": "node --import ./scripts/register-ts-resolve.mjs --test scripts/native-sim-contracts.mjs scripts/native-sim-host-contracts.mjs scripts/sim-handoff-contracts.mjs",
+    "test:sim-handoff": "node scripts/sim-handoff-browser.mjs",
+    "test:sim-budget": "node scripts/sim-budget-browser.mjs",
+    "report:sim-parity": "node scripts/sim-parity-browser.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",

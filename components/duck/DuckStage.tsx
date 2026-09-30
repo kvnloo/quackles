@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { detectWebGL } from "@/lib/webgl";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 
@@ -11,7 +11,7 @@ const LiveCanvas = dynamic(
   { ssr: false },
 );
 
-export function DuckStage() {
+export function DuckStage({ children }: { children?: ReactNode }) {
   const { setWebgl } = useExperience();
   const [supported] = useState(() => detectWebGL());
   const [fault, setFault] = useState(false);
@@ -29,5 +29,5 @@ export function DuckStage() {
 
   if (fault) throw new Error("Quackles controlled canvas error");
   if (!supported) return null;
-  return <LiveCanvas />;
+  return <LiveCanvas>{children}</LiveCanvas>;
 }

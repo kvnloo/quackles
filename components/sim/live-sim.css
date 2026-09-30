@@ -1,0 +1,10 @@
+/* Loaded only with the lazy ?sim=1 chunk. While the simulator owns the
+ * frame, story copy and hints step aside. */
+.poster-frame[data-sim-phase] .story-overlays,
+.poster-frame[data-sim-phase] .hero-copy,
+.poster-frame[data-sim-phase] .interaction-hints,
+.poster-frame[data-sim-phase] .inspection-viewfinder {
+  opacity: 0 !important;
+  transition: opacity 200ms ease;
+  pointer-events: none !important;
+}

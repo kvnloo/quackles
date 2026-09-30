@@ -23,7 +23,11 @@ export const CINEMATIC = {
 
 const hero = poseAt(0);
 const crouch = poseAt(0.26);
-const exploded = poseAt(0.84);
+/** Story progress of the exploded pose the reassembly starts from. It must be
+ * the pose the live rig shows under the last authored plate (p1000000), or the
+ * SWAP -> REASSEMBLE boundary jumps; see scripts/sim-parity-browser.mjs. */
+export const EXPLODED_STORY_PROGRESS = 1;
+const exploded = poseAt(EXPLODED_STORY_PROGRESS);
 const assembled = poseAt(0);
 assembled.simulatorBlend = 1;
 
@@ -106,10 +110,14 @@ export function cinematicPoseInto(
 
   if (phase === "explode") {
     const authored = t < 0.86 ? t / 0.86 : 1;
-    return poseAtInto(out, lerp(0.56, 0.84, smoothstep(authored)));
+    return poseAtInto(out, lerp(0.56, EXPLODED_STORY_PROGRESS, smoothstep(authored)));
   }
 
   return blendPoseInto(out, exploded, assembled, t);
+}
+
+export function explodedPoseInto(out: Pose) {
+  return copyPoseInto(out, exploded);
 }
 
 export function assembledPoseInto(out: Pose) {
@@ -123,7 +131,7 @@ export function cinematicProbeProgress(
   const t = clamp01(progress);
   if (phase === "idle") return 0;
   if (phase === "jump") return lerp(0.26, 0.56, t);
-  if (phase === "explode") return lerp(0.56, 0.84, t);
-  if (phase === "reassemble") return lerp(0.84, 1, t);
+  if (phase === "explode") return lerp(0.56, EXPLODED_STORY_PROGRESS, t);
+  if (phase === "reassemble") return lerp(EXPLODED_STORY_PROGRESS, 1, t);
   return 1;
 }
