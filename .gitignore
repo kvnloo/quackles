@@ -67,3 +67,4 @@ __pycache__/
 /blender/assets/adam_full.jpg
 /blender/assets/studio_small*
 
+.env*

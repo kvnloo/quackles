@@ -208,6 +208,18 @@ export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: D
     context.globalAlpha = progressMix; context.drawImage(scratch, 0, 0, width, height); context.globalAlpha = 1;
   }
  }
+export function paintPyramid(canvas: HTMLCanvasElement, variant: TileAsset, tiles: { image: Decoded; sourceX: number; sourceY: number }[], cssWidth: number) {
+  const width = Math.max(1, Math.ceil(cssWidth * devicePixelRatio));
+  const height = Math.max(1, Math.round(width * variant.height / variant.width));
+  if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+  const context = canvas.getContext("2d", { alpha: false });
+  if (!context) throw new Error("Canvas2D is unavailable");
+  const scaleX = width / variant.width, scaleY = height / variant.height;
+  for (const tile of tiles) {
+    const dest = tileDest(tile.sourceX, tile.sourceY, tile.image.asset.width, tile.image.asset.height, 0, 0, scaleX, scaleY);
+    context.drawImage(tile.image.bitmap, dest.x, dest.y, dest.w, dest.h);
+  }
+}
  export function eggWeight(theme: number) {
    const distance = Math.abs(theme - 3.6);
    if (distance >= 0.28) return 0;

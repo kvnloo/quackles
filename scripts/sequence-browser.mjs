@@ -128,7 +128,7 @@ async function detailComparison(page) {
       const manifestUrl = performance.getEntriesByType('resource').find(row => /\/sequence\/manifest\.json/.test(row.name)).name;
       const manifest = await (await fetch(manifestUrl)).json();
       const variant = manifest.frames.find(frame => frame.id === s.rendered.frameId).assets[s.rendered.themes[0]].find(row => row.width === s.detailWidth);
-      const crop = { x: parseFloat(canvas.style.left) / 100, y: parseFloat(canvas.style.top) / 100, width: parseFloat(canvas.style.width) / 100, height: parseFloat(canvas.style.height) / 100 };
+      const crop = canvas.dataset.cropWidth ? { x: Number(canvas.dataset.cropX), y: Number(canvas.dataset.cropY), width: Number(canvas.dataset.cropWidth), height: Number(canvas.dataset.cropHeight) } : { x: parseFloat(canvas.style.left) / 100, y: parseFloat(canvas.style.top) / 100, width: parseFloat(canvas.style.width) / 100, height: parseFloat(canvas.style.height) / 100 };
       const reference = new OffscreenCanvas(canvas.width, canvas.height), ctx = reference.getContext('2d', { alpha: false });
       if ('url' in variant) {
         const image = await createImageBitmap(await (await fetch(new URL(variant.url, manifestUrl))).blob());

@@ -23,6 +23,7 @@ declare global {
       getState: () => InspectionState;
       reset: () => void;
       setTarget: (zoom: number, x?: number, y?: number) => void;
+      apply?: (next: Partial<InspectionState>) => void;
     };
   }
 }
@@ -102,30 +103,30 @@ export function HeroInspection() {
         current.zoomVelocity,
         current.targetZoom,
         elapsed,
-        6.2,
+        18,
       );
       const focusX = advanceSpring(
         current.focusX,
         current.focusVelocityX,
         current.targetFocusX,
         elapsed,
-        3.6,
+        8,
       );
       const focusY = advanceSpring(
         current.focusY,
         current.focusVelocityY,
         current.targetFocusY,
         elapsed,
-        3.6,
+        8,
       );
 
       const settled =
-        Math.abs(zoom.value - current.targetZoom) < 0.0006 &&
-        Math.abs(zoom.velocity) < 0.0025 &&
-        Math.abs(focusX.value - current.targetFocusX) < 0.0008 &&
-        Math.abs(focusY.value - current.targetFocusY) < 0.0008 &&
-        Math.abs(focusX.velocity) < 0.0025 &&
-        Math.abs(focusY.velocity) < 0.0025;
+        Math.abs(zoom.value - current.targetZoom) < 0.015 &&
+        Math.abs(zoom.velocity) < 0.03 &&
+        Math.abs(focusX.value - current.targetFocusX) < 0.004 &&
+        Math.abs(focusY.value - current.targetFocusY) < 0.004 &&
+        Math.abs(focusX.velocity) < 0.01 &&
+        Math.abs(focusY.velocity) < 0.01;
       const active = current.targetZoom > 1.002 || zoom.value > 1.002;
 
       const next: InspectionState = {
@@ -314,16 +315,30 @@ export function HeroInspection() {
       if (pointers.size < 2) {
         const current = inspectionSnapshot();
         if (current.targetZoom > 1.02) {
+          const focusX = current.focusX;
+          const focusY = current.focusY;
           pan = {
             x: event.clientX,
             y: event.clientY,
-            focusX: current.targetFocusX,
-            focusY: current.targetFocusY,
-            zoom: current.targetZoom,
-            pendingX: current.targetFocusX,
-            pendingY: current.targetFocusY,
+            focusX,
+            focusY,
+            zoom: current.zoom,
+            pendingX: focusX,
+            pendingY: focusY,
             samples: [{ t: performance.now(), x: event.clientX, y: event.clientY }],
           };
+          setInspectionState({
+            zoom: current.zoom,
+            targetZoom: current.zoom,
+            zoomVelocity: 0,
+            focusX,
+            focusY,
+            targetFocusX: focusX,
+            targetFocusY: focusY,
+            focusVelocityX: 0,
+            focusVelocityY: 0,
+            cameraMoving: false,
+          });
           try { frame.setPointerCapture(event.pointerId); } catch { /* already released */ }
           cancelAnimationFrame(animation);
           animation = 0;
@@ -373,17 +388,22 @@ export function HeroInspection() {
         pan.samples.push({ t: performance.now(), x: event.clientX, y: event.clientY });
         if (pan.samples.length > 8) pan.samples.shift();
         const moved = Math.hypot(event.clientX - pan.x, event.clientY - pan.y) > 2;
-        syncFrameState({
+        const placed = {
           ...inspectionSnapshot(),
           active: true,
           zoom,
           targetZoom: zoom,
+          zoomVelocity: 0,
           focusX,
           focusY,
           targetFocusX: focusX,
           targetFocusY: focusY,
+          focusVelocityX: 0,
+          focusVelocityY: 0,
           cameraMoving: moved,
-        });
+        };
+        setInspectionState(placed);
+        syncFrameState(placed);
         return;
       }
       pan = null;
@@ -453,9 +473,9 @@ export function HeroInspection() {
           cameraMoving: coast,
         };
         setInspectionState(placed);
-        syncFrameState(placed);
         pan = null;
         if (coast) requestTick();
+        else syncFrameState(placed);
       }
     };
 
@@ -485,6 +505,21 @@ export function HeroInspection() {
           targetFocusY: Math.max(0, Math.min(1, y)),
         });
         requestTick();
+      },
+      apply(next) {
+        cancelAnimationFrame(animation);
+        animation = 0;
+        lastTick = 0;
+        const placed = {
+          ...inspectionSnapshot(),
+          ...next,
+          zoomVelocity: 0,
+          focusVelocityX: 0,
+          focusVelocityY: 0,
+          cameraMoving: false,
+        };
+        setInspectionState(placed);
+        syncFrameState(placed);
       },
     };
 

@@ -7,18 +7,18 @@ import { PosterNav } from "@/components/poster/PosterNav";
 import { TextSelect } from "@/components/poster/TextSelect";
 import { ThemeControl } from "@/components/poster/ThemeControl";
 import { HeroInspection } from "@/components/sequence/HeroInspection";
+import { FrameInspector } from "@/components/sequence/FrameInspector";
 import { InspectionViewfinder } from "@/components/sequence/InspectionViewfinder";
 import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
-
 export function Landing() {
   return (
     <main id="top" className="experience-shell" data-testid="experience">
       <TextSelect />
       <SequenceScroll />
       <HeroInspection />
-      <FeelEngine />
+      <FrameInspector />
 
       <div className="poster-stage">
         <SequenceFrame>
