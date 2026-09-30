@@ -26,6 +26,7 @@
     "test:touch": "node scripts/touch-input-browser.mjs",
     "test:scroll-state": "node scripts/scroll-state-browser.mjs",
     "test:ui-stability": "node scripts/ui-stability-browser.mjs",
+    "test:profiles": "node scripts/profile-browser.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
