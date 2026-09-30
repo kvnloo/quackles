@@ -19,11 +19,18 @@ export function shouldKeepTicking(i: { active: boolean; settled: boolean; conver
 export type CameraValues = { zoom: number; focusX: number; focusY: number; zoomV: number; fxV: number; fyV: number };
 export type CameraTarget = { zoom: number; fx: number; fy: number };
 
-export function settleCamera(c: CameraValues, t: CameraTarget): CameraValues & { settled: boolean; converged: boolean } {
+/** PROPOSAL (owner sign-off needed; changes sharp-lock timing and what D6 calls "moving"): the camera counts as settled once
+ * it moves slower than SCREEN_SETTLE_PX_S on screen, not only at the loose spring tolerance. */
+export const SCREEN_SETTLE_PX_S = Number(process.env.NEXT_PUBLIC_SETTLE_PX_S || 120);
+export function screenSpeed(c: CameraValues, frame: { width: number; height: number }): number {
+  const z = Math.max(1, c.zoom), span = Math.max(0, z - 1);
+  return Math.hypot(c.fxV * frame.width * span, c.fyV * frame.height * span) + Math.abs(c.zoomV) * Math.max(frame.width, frame.height) / 2;
+}
+export function settleCamera(c: CameraValues, t: CameraTarget, frame?: { width: number; height: number }): CameraValues & { settled: boolean; converged: boolean } {
   const within = (tol: { zoom: number; focus: number; velocity: number }) =>
     Math.abs(c.zoom - t.zoom) < tol.zoom && Math.abs(c.focusX - t.fx) < tol.focus && Math.abs(c.focusY - t.fy) < tol.focus &&
     Math.abs(c.zoomV) < tol.velocity && Math.abs(c.fxV) < tol.velocity && Math.abs(c.fyV) < tol.velocity;
-  const settled = within(SETTLE_TOL), converged = within({ ...CONVERGE_TOL, focus: convergeFocusTol(t.zoom) });
+  const settled = within(SETTLE_TOL) || (!!frame && screenSpeed(c, frame) < SCREEN_SETTLE_PX_S), converged = within({ ...CONVERGE_TOL, focus: convergeFocusTol(t.zoom) });
   if (converged) return { zoom: t.zoom, focusX: t.fx, focusY: t.fy, zoomV: 0, fxV: 0, fyV: 0, settled: true, converged: true };
   return { ...c, settled, converged: false };
 }

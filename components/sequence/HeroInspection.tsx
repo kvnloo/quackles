@@ -120,6 +120,7 @@ export function HeroInspection() {
       const arrived = settleCamera(
         { zoom: zoom.value, focusX: focusX.value, focusY: focusY.value, zoomV: zoom.velocity, fxV: focusX.velocity, fyV: focusY.velocity },
         { zoom: current.targetZoom, fx: current.targetFocusX, fy: current.targetFocusY },
+        frameRect,
       );
       const settled = arrived.settled;
       const active = current.targetZoom > 1.002 || zoom.value > 1.002;
