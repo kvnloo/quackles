@@ -27,7 +27,7 @@ test("registry holds production + the four preview branches with the owner's con
   assert.deepEqual(PREVIEWS["scenes-lowres"], { id: "scenes-lowres", scenes: THEME_IDS, story: true, zoom: "none" });
   assert.deepEqual(PREVIEWS["scenes-250mp"], { id: "scenes-250mp", scenes: THEME_IDS, story: true, zoom: "201mp" });
   assert.deepEqual(PREVIEWS["scenes-gigapixel"], { id: "scenes-gigapixel", scenes: THEME_IDS, story: true, zoom: "1gp" });
-  assert.deepEqual(PREVIEWS["gigapixel-single"], { id: "gigapixel-single", scenes: "mushroom", story: false, zoom: "1gp" });
+  assert.deepEqual(PREVIEWS["gigapixel-single"], { id: "gigapixel-single", scenes: ["white"], story: false, zoom: "1gp" }); // owner 2026-09-30: brighter image
   assert.deepEqual(PREVIEWS.production, { id: "production", scenes: THEME_IDS, story: true, zoom: "policy" });
 });
 test(`checked-in PREVIEW is ${process.env.PREVIEW_EXPECT || "production"}`, () => {
@@ -72,8 +72,8 @@ test("scenes-gigapixel: every theme serves the 1GP family (policy overridden), m
   assert.equal(previewNote(PREVIEWS["scenes-gigapixel"], out), "1GP source: not scene-matched");
   assert.equal(INSPECTION_POLICY.white.status, "disabled", "production policy object not mutated");
 });
-test("gigapixel-single: one mushroom scene = moss plate + its 1GP pyramid, single theme index, no story", () => {
-  const cfg = PREVIEWS["gigapixel-single"];
+test("mushroom mode (engine path kept): one moss scene = moss plate + its 1GP pyramid, single theme index, no story", () => {
+  const cfg = { id: "mushroom-single", scenes: "mushroom", story: false, zoom: "1gp" };
   const pyramid = applyHiddenPolicy(hidden, previewPolicy(cfg).hidden);
   assert.equal(pyramid.length, 5);
   const plate = { url: "/preview-scene/sequence/hidden/night-moss.png", width: 768, height: 1152 };
@@ -93,6 +93,24 @@ test("gigapixel-single: one mushroom scene = moss plate + its 1GP pyramid, singl
   }
   assert.equal(cfg.story, false);
   assert.equal(previewNote(cfg, scene), null, "mushroom 1GP is scene-matched (audit dE 0.9-1.6)");
+});
+test("gigapixel-single (owner 2026-09-30): White alone, 1GP family only, no story, honest note", () => {
+  const cfg = PREVIEWS["gigapixel-single"];
+  assert.deepEqual(previewThemeIndices(cfg), [THEME_IDS.indexOf("white")]);
+  const out = previewManifest(manifest, cfg);
+  assert.deepEqual(heroFamilies(out, "white"), ["gp-1gp"]);
+  assert.equal(cfg.story, false);
+  assert.equal(previewNote(cfg, out), "1GP source: not scene-matched");
+});
+test("themes outside a preview's scenes serve NO tile variants (no probes/requests for scenes the page can't show)", () => {
+  const cfg = PREVIEWS["gigapixel-single"];
+  const out = previewManifest(manifest, cfg);
+  for (const t of THEME_IDS.filter((id) => !cfg.scenes.includes(id))) {
+    for (const f of out.frames) assert.deepEqual(tiles(f.assets[t]), [], `${t} ${f.id} still lists tiles`);
+    assert.equal(images(out).length > 0, true);
+  }
+  const all = previewManifest(manifest, PREVIEWS["scenes-gigapixel"]);
+  assert.ok(THEME_IDS.every((t) => heroFamilies(all, t).includes("gp-1gp")), "full-scene previews keep every theme's tiles");
 });
 test("store: theme range limits drag/select and default; full range restores production", () => {
   const parsedLike = { ...manifest, defaultTheme: "blue" };

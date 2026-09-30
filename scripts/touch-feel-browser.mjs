@@ -147,7 +147,13 @@ for (let i = 1; i <= 12; i++) { await touch("touchMove", [[cx, cy + 200 - i * 20
 await touch("touchEnd", []); await phase("idle"); await wait(600);
 const s2 = await page.evaluate(() => ({ y: scrollY, p: window.__QUACKLES_SEQUENCE__.getState().current.progress ?? null, c: window.__feel.cancels }));
 res.scroll1x = { scrollYDelta: s2.y - s1.y, pointercancel: s2.c - s1.c, touchAction: await page.evaluate(() => getComputedStyle(document.querySelector(".poster-frame")).touchAction) };
-if (!(res.scroll1x.scrollYDelta > 20)) bad.push(`1x vertical swipe no longer scrolls the page (scrollY +${res.scroll1x.scrollYDelta})`);
+// Owner spec (lib/preview.ts): story previews must scroll at 1x; a no-story preview (single still) must NOT scroll.
+const previewSrc = fs.readFileSync(new URL("../lib/preview.ts", import.meta.url), "utf8");
+const previewKey = previewSrc.match(/export const PREVIEW: Preview = PREVIEWS\[["']?([\w-]+)["']?\]/)?.[1] ?? "production";
+const hasStory = !new RegExp(`["']?${previewKey}["']?\\s*:\\s*\\{[^}]*story:\\s*false`).test(previewSrc);
+res.scroll1x.expectStory = hasStory;
+if (hasStory && !(res.scroll1x.scrollYDelta > 20)) bad.push(`1x vertical swipe no longer scrolls the page (scrollY +${res.scroll1x.scrollYDelta})`);
+if (!hasStory && Math.abs(res.scroll1x.scrollYDelta) > 2) bad.push(`no-story preview scrolled on a 1x vertical swipe (scrollY +${res.scroll1x.scrollYDelta})`);
 await page.evaluate(() => scrollTo(0, 0)); await wait(800);
 
 // F5 frame time during a one-finger pan at 4x CPU throttle (report p95).
