@@ -128,7 +128,7 @@ async function detailComparison(page) {
       const manifestUrl = performance.getEntriesByType('resource').find(row => /\/sequence\/manifest\.json/.test(row.name)).name;
       const manifest = await (await fetch(manifestUrl)).json();
       const variant = manifest.frames.find(frame => frame.id === s.rendered.frameId).assets[s.rendered.themes[0]].find(row => row.width === s.detailWidth);
-      const crop = { x: parseFloat(canvas.style.left) / 100, y: parseFloat(canvas.style.top) / 100, width: parseFloat(canvas.style.width) / 100, height: parseFloat(canvas.style.height) / 100 };
+      const [cx, cy, cw, ch] = canvas.dataset.crop.split(',').map(Number); const crop = { x: cx, y: cy, width: cw, height: ch };
       const reference = new OffscreenCanvas(canvas.width, canvas.height), ctx = reference.getContext('2d', { alpha: false });
       if ('url' in variant) {
         const image = await createImageBitmap(await (await fetch(new URL(variant.url, manifestUrl))).blob());

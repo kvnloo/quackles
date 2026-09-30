@@ -1,6 +1,7 @@
 import type { Decoded } from "./cache";
 import { isImage, type ImageAsset, type TileAsset, type Variant } from "./manifest";
 import { resolveAssetUrl } from "../paths";
+import { detailPlacement } from "./detail-placement";
 
 export type Crop = { x: number; y: number; width: number; height: number; scale: number };
 export function viewportCrop(element: HTMLElement): Crop {
@@ -234,10 +235,15 @@ export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, c
     canvas.width = backing.width;
     canvas.height = backing.height;
   }
-  canvas.style.left = `${crop.x * 100}%`;
-  canvas.style.top = `${crop.y * 100}%`;
-  canvas.style.width = `${crop.width * 100}%`;
-  canvas.style.height = `${crop.height * 100}%`;
+  // Integer layout box + transform (see detail-placement.ts): keeps the exact coverage rect independent of layout pixel-snapping.
+  const place = detailPlacement(rect.width, rect.height, crop);
+  canvas.style.left = "0";
+  canvas.style.top = "0";
+  canvas.style.width = `${place.boxW}px`;
+  canvas.style.height = `${place.boxH}px`;
+  canvas.style.transformOrigin = "0 0";
+  canvas.style.transform = `translate(${place.tx}px, ${place.ty}px) scale(${place.sx}, ${place.sy})`;
+  canvas.dataset.crop = `${crop.x},${crop.y},${crop.width},${crop.height}`;
   const context = canvas.getContext("2d", { alpha: false });
   if (!context) throw new Error("Canvas2D is unavailable");
   context.imageSmoothingEnabled = true;

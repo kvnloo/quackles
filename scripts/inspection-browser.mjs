@@ -367,8 +367,12 @@ try {
     if (!manifestUrl) throw new Error("sequence manifest was not requested");
     const manifest = await (await fetch(manifestUrl)).json();
     const frame = manifest.frames.find((row) => row.id === frameId);
-    const widths = frame?.assets?.[theme]?.map((variant) => variant.width) ?? [];
-    if (!widths.length) throw new Error(`no variants for ${theme} ${frameId}`);
+    // The runtime serves ONE source family per theme (inspection-source policy); "native" is the top tier of that source,
+    // not the largest width anywhere in the raw manifest (which also lists the non-selected 1GP family).
+    const selected = sequence?.inspectionSources?.[theme]?.selected ?? null;
+    const familyOf = (variant) => (!variant.tiles ? null : String(variant.tiles.urlTemplate).includes("/gp/") ? "gp-1gp" : "legacy-201mp");
+    const widths = frame?.assets?.[theme]?.filter((variant) => familyOf(variant) === selected).map((variant) => variant.width) ?? [];
+    if (!widths.length) throw new Error(`no variants for ${theme} ${frameId} in selected source ${selected}`);
     return Math.max(...widths);
   });
   if (
