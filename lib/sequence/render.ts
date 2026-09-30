@@ -228,15 +228,11 @@ export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: D
 export type DetailStamp = { image: Decoded; x: number; y: number; sourceX: number; sourceY: number };
 export type DetailLayer = { variant: ImageAsset | TileAsset; images: DetailStamp[]; alpha: number };
 
-export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, layers: DetailLayer[]) {
-  const rect = container.getBoundingClientRect();
-  const backing = detailBackingSize(rect.width, rect.height, crop, devicePixelRatio);
-  if (canvas.width !== backing.width || canvas.height !== backing.height) {
-    canvas.width = backing.width;
-    canvas.height = backing.height;
-  }
-  // Integer layout box + transform (see detail-placement.ts): keeps the exact coverage rect independent of layout pixel-snapping.
-  const place = detailPlacement(rect.width, rect.height, crop);
+/** Position/size the detail canvas for a coverage crop inside a container of the given css size (see detail-placement.ts).
+ * Also called on container resize: the transform is in css px, so it must be recomputed when the container changes. */
+export function placeDetail(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number, crop: { x: number; y: number; width: number; height: number }) {
+  // Integer layout box + transform: keeps the exact coverage rect independent of layout pixel-snapping.
+  const place = detailPlacement(cssWidth, cssHeight, crop);
   canvas.style.left = "0";
   canvas.style.top = "0";
   canvas.style.width = `${place.boxW}px`;
@@ -244,6 +240,16 @@ export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, c
   canvas.style.transformOrigin = "0 0";
   canvas.style.transform = `translate(${place.tx}px, ${place.ty}px) scale(${place.sx}, ${place.sy})`;
   canvas.dataset.crop = `${crop.x},${crop.y},${crop.width},${crop.height}`;
+}
+
+export function paintDetail(canvas: HTMLCanvasElement, container: HTMLElement, crop: Crop, layers: DetailLayer[]) {
+  const rect = container.getBoundingClientRect();
+  const backing = detailBackingSize(rect.width, rect.height, crop, devicePixelRatio);
+  if (canvas.width !== backing.width || canvas.height !== backing.height) {
+    canvas.width = backing.width;
+    canvas.height = backing.height;
+  }
+  placeDetail(canvas, rect.width, rect.height, crop);
   const context = canvas.getContext("2d", { alpha: false });
   if (!context) throw new Error("Canvas2D is unavailable");
   context.imageSmoothingEnabled = true;

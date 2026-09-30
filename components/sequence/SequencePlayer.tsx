@@ -7,7 +7,7 @@ import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
-import { cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
@@ -338,7 +338,18 @@ export function SequencePlayer() {
     };
     inspectionChanged();
     const unsubscribeInspection = subscribeInspection(inspectionChanged);
-    const observer = new ResizeObserver(changed); observer.observe(container);
+    // The detail canvas is placed in css px (transform), so a container resize (window resize, mobile URL bar) must re-place it.
+    // Re-place immediately (registration is exact at once) and force a repaint for the new resolution without hiding the layer.
+    const resized = () => {
+      if (detailKey && detailCanvas.dataset.crop) {
+        const [x, y, w, h] = detailCanvas.dataset.crop.split(",").map(Number);
+        const r = container.getBoundingClientRect();
+        placeDetail(detailCanvas, r.width, r.height, { x, y, width: w, height: h });
+        paintedCoverage = null;
+      }
+      changed();
+    };
+    const observer = new ResizeObserver(resized); observer.observe(container);
     visualViewport?.addEventListener("resize", changed);
     visualViewport?.addEventListener("scroll", changed);
     window.__QUACKLES_SEQUENCE__ = {

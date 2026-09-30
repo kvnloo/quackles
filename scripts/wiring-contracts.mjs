@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 const read = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
-const player = read("components/sequence/SequencePlayer.tsx"), profile = read("lib/sequence/perf-profile.ts");
+const render = read("lib/sequence/render.ts"), hero = read("components/sequence/HeroInspection.tsx"), player = read("components/sequence/SequencePlayer.tsx"), profile = read("lib/sequence/perf-profile.ts");
 let n = 0; const test = (name, fn) => { fn(); n++; console.log("PASS", name); };
 test("every device profile requests no extra tile ring (ring was redundant with the 40% buffer)", () => {
   const overscans = [...profile.matchAll(/tileOverscan:\s*(\d)/g)].map((m) => m[1]);
@@ -35,6 +35,15 @@ test("detail released when settled and the plate satisfies the requested tier", 
   assert.ok(/detailKey && !layers\.length && !moving && desiredWidth <= plateWidth\) releaseDetail\(\)/.test(player));
 });
 test("sharp lock dissolves in on FIRST paint only (armLockFade/startLockFade around a fresh paint)", () => {
-  assert.ok(player.includes("armLockFade(") && player.includes("startLockFade(") && /const freshLock = !detailKey/.test(player));
+  assert.ok(player.includes("armLockFade(") && player.includes("startLockFade(") && /const freshLock = !detailKey;/.test(player));
+});
+test("camera snaps exactly to its target on arrival (settleCamera), old tolerance-stop gone", () => {
+  assert.ok(hero.includes("settleCamera(")); assert.ok(!/Math\.abs\(focusX\.value - current\.targetFocusX\) < 0\.0008/.test(hero));
+});
+test("paintDetail places via placeDetail (no percentage left/top/width/height placement)", () => {
+  assert.ok(render.includes("placeDetail(canvas, rect.width, rect.height, crop)")); assert.ok(!/canvas\.style\.left = `\$\{crop\.x \* 100\}%`/.test(render));
+});
+test("container resize re-places the detail canvas (placeDetail in the ResizeObserver handler)", () => {
+  assert.ok(/const resized = \(\) => \{[\s\S]*placeDetail\(detailCanvas[\s\S]*new ResizeObserver\(resized\)/.test(player));
 });
 console.log(`${n} passed`);
