@@ -32,6 +32,8 @@ def speckle(path_or_img, T=40):
     l = luma(im); return float((np.abs(l - median3(l)) > T).mean())
 
 THEMES = ("day", "white", "blue", "dark", "night")
+MANIFEST_FRAMES = len(__import__("json").loads((DAY.parent.parent / "manifest.json").read_text())["frames"])
+
 def frames(theme="day"):
     return sorted(Path(p) for p in glob.glob(str(DAY.parent / theme / "p*-1024.*")))
 
@@ -44,7 +46,7 @@ class DayNoise(unittest.TestCase):
     def test_no_frame_is_noisier_than_twice_its_siblings(self):
         # every theme, every frame: measured 2026-09-30 all 80 plates within 1.9x of their sibling median after the Day hero fix
         for theme in THEMES:
-            fs = frames(theme); self.assertEqual(len(fs), 16, theme)
+            fs = frames(theme); self.assertEqual(len(fs), MANIFEST_FRAMES, theme)  # every manifest frame has a plate, no strays
             vals = {f.name: speckle(f) for f in fs}
             for f in fs:
                 sib = sorted(v for k, v in vals.items() if k != f.name)
