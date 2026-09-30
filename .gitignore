@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+# Generated, hash-verified native runtime/collision assets (never commit WASM).
+/public/sim/native/
+
 # testing
 /coverage
 

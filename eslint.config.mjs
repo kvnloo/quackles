@@ -18,6 +18,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "vendor/**",
+    "public/sim/native/**", // Hash-verified generated third-party runtime sidecars.
     "scripts/**",
   ]),
 ]);
