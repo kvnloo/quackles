@@ -2,9 +2,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
-import ts from 'typescript';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.resolve(process.env.ARTIFACTS || path.join(root, '../../outputs/mobile-validation/sequence-contracts'));
@@ -13,8 +12,8 @@ const hashes = {};
 async function sourceModule(name) {
   const source = await fs.readFile(path.join(root, `lib/sequence/${name}.ts`), 'utf8');
   hashes[name] = createHash('sha256').update(source).digest('hex');
-  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
-  return import(`data:text/javascript;base64,${Buffer.from(compiled.outputText).toString('base64')}`);
+  // Direct import (run with --import ./scripts/register-ts-resolve.mjs) so relative imports like "../paths" resolve.
+  return import(pathToFileURL(path.join(root, `lib/sequence/${name}.ts`)).href);
 }
 const { FrameCache, DECODED_BUDGET } = await sourceModule('cache');
 const { parseManifest, frameAt } = await sourceModule('manifest');

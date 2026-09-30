@@ -32,6 +32,7 @@
     "test:fuzz": "SEED=1 STEPS=45 node scripts/fuzz-browser.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
     "test:feel": "node scripts/feel-contracts.mjs",
+    "test:sequence": "node --import ./scripts/register-ts-resolve.mjs scripts/sequence-contracts.mjs",
     "test:theme-store": "node --import ./scripts/register-ts-resolve.mjs scripts/theme-store-contracts.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
