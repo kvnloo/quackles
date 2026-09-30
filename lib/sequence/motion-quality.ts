@@ -35,6 +35,18 @@ export function flickFocusTarget(args: {
   return { focus, velocity };
 }
 
+/**
+ * Camera state when the last finger lifts off a pan: coast towards the flick target, or, when the flick is too slow to
+ * coast, stop exactly where the finger left the camera. (A slow flick used to keep the flick target and velocity with
+ * no spring running: the camera stayed short of a target the tile plan already used, so the sharp layer sat offset.)
+ */
+export function panRelease(p: { focusX: number; focusY: number; flickX: { focus: number; velocity: number }; flickY: { focus: number; velocity: number }; minVelocity?: number }) {
+  const coast = Math.hypot(p.flickX.velocity, p.flickY.velocity) > (p.minVelocity ?? 0.05);
+  return coast
+    ? { coast, targetFocusX: p.flickX.focus, targetFocusY: p.flickY.focus, focusVelocityX: p.flickX.velocity, focusVelocityY: p.flickY.velocity }
+    : { coast, targetFocusX: p.focusX, targetFocusY: p.focusY, focusVelocityX: 0, focusVelocityY: 0 };
+}
+
 /** Raise the moving tier when frames are inside budget. Drop it when they are not. */
 export function nextMotionScale(
   scale: number,

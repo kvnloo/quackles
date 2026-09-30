@@ -12,7 +12,7 @@ import {
   type InspectionState,
 } from "@/lib/sequence/inspection";
 import { inspectionCrop } from "@/lib/sequence/render";
-import { flickFocusTarget, flickPixelsPerSecond } from "@/lib/sequence/motion-quality";
+import { flickFocusTarget, flickPixelsPerSecond, panRelease } from "@/lib/sequence/motion-quality";
 import {
   snapshot as sequenceSnapshot,
   subscribe as subscribeSequence,
@@ -536,7 +536,8 @@ export function HeroInspection() {
           framePx: frameRect.height,
           pixelsPerSecond: flickPixelsPerSecond(pan.samples.map((sample) => ({ t: sample.t, p: sample.y })), now),
         });
-        const coast = Math.hypot(flickX.velocity, flickY.velocity) > 0.05;
+        const release = panRelease({ focusX: pan.pendingX, focusY: pan.pendingY, flickX, flickY });
+        const coast = release.coast;
         const placed = {
           ...inspectionSnapshot(),
           active: pan.zoom > 1.02,
@@ -545,10 +546,10 @@ export function HeroInspection() {
           zoomVelocity: 0,
           focusX: pan.pendingX,
           focusY: pan.pendingY,
-          targetFocusX: flickX.focus,
-          targetFocusY: flickY.focus,
-          focusVelocityX: flickX.velocity,
-          focusVelocityY: flickY.velocity,
+          targetFocusX: release.targetFocusX,
+          targetFocusY: release.targetFocusY,
+          focusVelocityX: release.focusVelocityX,
+          focusVelocityY: release.focusVelocityY,
           cameraMoving: coast,
           dragging: false,
         };

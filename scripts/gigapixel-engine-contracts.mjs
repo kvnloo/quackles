@@ -7,6 +7,7 @@ import fs from "node:fs";
 import * as render from "../lib/sequence/render.ts";
 import * as surfaceModule from "../lib/sequence/tile-surface.ts";
 import { FrameCache } from "../lib/sequence/cache.ts";
+import * as motion from "../lib/sequence/motion-quality.ts";
 import * as profileModule from "../lib/sequence/perf-profile.ts";
 import * as policyModule from "../lib/sequence/preview-policy.ts";
 import { PREVIEWS } from "../lib/preview.ts";
@@ -270,5 +271,15 @@ test("(4) a preview never prefetches plates it cannot show (gigapixel-single: no
   assert.equal(single.adjacentFrames, false); assert.deepEqual(single.themes, [1]);
   const prod = policyModule.previewPrefetch(PREVIEWS.production);
   assert.equal(prod.adjacentFrames, true); assert.deepEqual(prod.themes, [0, 1, 2, 3, 4]);
+});
+
+// ---- touch release ------------------------------------------------------------------------------------------------
+test("release: a flick too slow to coast stops the camera exactly where the finger left it (target = camera, no velocity)", () => {
+  assert.equal(typeof motion.panRelease, "function", "motion-quality panRelease missing");
+  const slow = motion.panRelease({ focusX: 0.4221, focusY: 0.2789, flickX: { focus: 0.4053, velocity: -0.0399 }, flickY: { focus: 0.2667, velocity: -0.0288 } });
+  assert.equal(slow.coast, false);
+  assert.deepEqual([slow.targetFocusX, slow.targetFocusY, slow.focusVelocityX, slow.focusVelocityY], [0.4221, 0.2789, 0, 0]);
+  const fast = motion.panRelease({ focusX: 0.4, focusY: 0.3, flickX: { focus: 0.7, velocity: 0.9 }, flickY: { focus: 0.3, velocity: 0 } });
+  assert.equal(fast.coast, true); assert.deepEqual([fast.targetFocusX, fast.targetFocusY, fast.focusVelocityX], [0.7, 0.3, 0.9]);
 });
 console.log(`${n} passed`);
