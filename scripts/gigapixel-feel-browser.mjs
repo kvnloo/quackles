@@ -23,6 +23,8 @@
  *   thrash      per gesture: closedBitmaps, cache evictions (when the build counts them), redecodes (a tile URL decoded again:
  *               createImageBitmap wrapped + blob provenance), network refetches.
  *   frameMs     rAF delta p50/p95 while a finger is down.
+ *  PASSES may add "retry": every tile's first request fails, the camera zooms to 6x once and stays; the view must still
+ *  reach the required resolution within 10 s (failed tiles retried without a crop move).
  *  GATE=1 exits 1 when a plain-pass target misses: hq p90 <= 500 ms, under-resolved < 10%, plate-edge 0, blank 0, blue 0,
  *  redecodes <= 5% of decodes; blank/blue also gated in the throttled pass.
  *  Raster: the host GPU (GPU=0: SwiftShader). Frame times are desktop-GPU raster with the phone's CPU emulated at 1x / 4x.
@@ -153,6 +155,39 @@ function readback() {
 }
 
 const pct = (xs, q) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); return +s[Math.min(s.length - 1, Math.floor(q * s.length))].toFixed(1); };
+
+/** Retry scenario (root cause #6): every tile's FIRST request fails (503); the camera zooms to 6x once and then never
+ * moves. Measures time from the zoom command to the full visible crop at the required resolution (10 s window: every
+ * tile costs two round trips here). */
+const RETRY_WINDOW_MS = 10000;
+async function runRetry(browser) {
+  const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 3.5, isMobile: true, hasTouch: true });
+  await ctx.addInitScript(INIT);
+  const page = await ctx.newPage(), attempts = new Map();
+  await page.route("**/quackles-assets/**", async (route) => {
+    const url = new URL(route.request().url()), file = path.join(ASSETS, url.pathname.replace(/^\/quackles-assets\//, ""));
+    const n = (attempts.get(url.pathname) || 0) + 1; attempts.set(url.pathname, n);
+    if (latHi > 0) await new Promise((r) => setTimeout(r, latLo + Math.random() * (latHi - latLo)));
+    if (n === 1 && /\/\d+_\d+\.webp$/.test(url.pathname)) return route.fulfill({ status: 503, body: "" }).catch(() => {});
+    if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: "" }).catch(() => {});
+    await route.fulfill({ body: fs.readFileSync(file), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } }).catch(() => {});
+  });
+  await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`);
+  await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0, null, { timeout: 30000 });
+  await page.waitForTimeout(3000);
+  await page.evaluate(sampler, { tiers: TIERS, plate: PLATE });
+  const t0 = await page.evaluate(() => { window.__QUACKLES_INSPECTION__.setTarget(6, 0.42, 0.37); return performance.now(); });
+  await page.waitForTimeout(RETRY_WINDOW_MS);
+  const data = await page.evaluate(() => { window.__gpx.stop = true; const s = window.__QUACKLES_SEQUENCE__.getState(); return { rows: window.__gpx.rows, failures: s.cache.failures, errors: s.errors.length, failedTiles: s.failedTiles ?? null }; });
+  await ctx.close();
+  const rows = data.rows.map(([t, n, z, below]) => ({ t, z, below }));
+  let hqMs = null;
+  for (let k = 0; k < rows.length; k++) {
+    if (rows[k].t < t0 || rows[k].below !== 0 || rows[k].z < 5.9) continue;
+    if (rows.slice(k).filter((r) => r.t - rows[k].t < 200).every((r) => r.below === 0)) { hqMs = +(rows[k].t - t0).toFixed(0); break; }
+  }
+  return { pass: "retry", hqMs, finalUnder: +(rows.at(-1)?.below ?? 1).toFixed(3), failures: data.failures, errors: data.errors, failedTilesAtEnd: data.failedTiles, firstAttemptsFailed: [...attempts.values()].length };
+}
 
 async function runPass(browser, name) {
   const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 3.5, isMobile: true, hasTouch: true });
@@ -292,13 +327,14 @@ await new Promise((r) => setTimeout(r, 1500));
 const GPU_ARGS = process.env.GPU === "0" ? [] : ["--enable-gpu", "--use-angle=vulkan", "--enable-features=Vulkan", "--ignore-gpu-blocklist"];
 const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox", ...GPU_ARGS] });
 const results = [];
-try { for (const name of PASSES) results.push(await runPass(browser, name)); }
+try { for (const name of PASSES) results.push(name === "retry" ? await runRetry(browser) : await runPass(browser, name)); }
 finally { await browser.close(); server.kill(); }
-const brief = results.map(({ hq, windows, longFrames, readbacks, ...r }) => ({ ...r, readbacks: process.env.VERBOSE ? readbacks : undefined, windows: process.env.VERBOSE ? windows : undefined, longFrames: process.env.VERBOSE ? longFrames : undefined, hq: { ...hq, perLift: hq.perLift.map((l) => `g${l.g}@${l.zoom}:${Math.round(l.ms)}${l.censored ? "+" : ""}`).join(" ") } }));
+const brief = results.map(({ hq, windows, longFrames, readbacks, ...r }) => hq ? ({ ...r, readbacks: process.env.VERBOSE ? readbacks : undefined, windows: process.env.VERBOSE ? windows : undefined, longFrames: process.env.VERBOSE ? longFrames : undefined, hq: { ...hq, perLift: hq.perLift.map((l) => `g${l.g}@${l.zoom}:${Math.round(l.ms)}${l.censored ? "+" : ""}`).join(" ") } }) : r);
 console.log(JSON.stringify({ build: process.env.LABEL || dir, latency: latHi > 0 ? `${latLo}-${latHi}` : "0", deviceMemory: DEVICE_MEMORY, gpu: GPU_ARGS.length > 0, results: brief }, null, 1));
 if (process.env.OUT_JSON) fs.writeFileSync(process.env.OUT_JSON, JSON.stringify({ latency: [latLo, latHi], deviceMemory: DEVICE_MEMORY, results }, null, 1));
 const bad = [];
 for (const r of results) {
+  if (r.pass === "retry") { if (r.hqMs == null) bad.push(`retry: a tile whose first request failed was not retried while the camera stayed still (under-resolved ${(r.finalUnder * 100).toFixed(0)}% after ${RETRY_WINDOW_MS / 1000} s)`); continue; }
   if (r.blankFrames) bad.push(`${r.pass}: ${r.blankFrames} blank frames`);
   if (r.blueFrames) bad.push(`${r.pass}: ${r.blueFrames} blue (fallback) frames`);
   if (r.pageErrors || r.errors || r.failures) bad.push(`${r.pass}: errors ${r.pageErrors}/${r.errors}, failures ${r.failures}`);
