@@ -24,4 +24,4 @@ export const PREVIEWS = {
   "gigapixel-single": { id: "gigapixel-single", scenes: "mushroom", story: false, zoom: "1gp" },
 } satisfies Record<string, Preview>;
 
-export const PREVIEW: Preview = PREVIEWS.production;
+export const PREVIEW: Preview = PREVIEWS["gigapixel-single"];
