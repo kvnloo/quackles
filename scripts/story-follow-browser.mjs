@@ -30,7 +30,9 @@ await page.evaluate(() => {
   const ch = new MessageChannel();
   ch.port1.onmessage = () => {
     const s = window.__QUACKLES_SEQUENCE__.getState(), max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-    S.rows.push({ t: performance.now(), phase: S.phase, y: scrollY, story: (s.rendered?.progress ?? 0) * max, pub: s.current.progress * max });
+    // Story position in page px: the page offset that shows the painted progress (pacing inverse when the build has one).
+    const page = window.__QUACKLES_SEQUENCE__.scrollAt ?? ((p) => p);
+    S.rows.push({ t: performance.now(), phase: S.phase, y: scrollY, story: page(s.rendered?.progress ?? 0) * max, pub: page(s.current.progress) * max });
   };
   const loop = () => { if (S.stop) return; ch.port2.postMessage(0); window.__rawRaf(loop); };
   window.__rawRaf(loop);

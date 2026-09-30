@@ -1,6 +1,7 @@
 "use client";
 
 import Lenis from "lenis";
+import { storyAt } from "./pacing";
 
 type ScrollProgressListener = (progress: number) => void;
 
@@ -31,7 +32,8 @@ export type ScrollDriver = {
  *
  * The animation-frame loop runs only while a wheel glide or the follower is in
  * flight, so the page requests no frames at rest. Resize keeps story progress,
- * not the pixel offset.
+ * not the pixel offset. Page scroll maps to authored story progress through
+ * the pacing knots (even on-screen motion per scrolled px).
  */
 const FOLLOW_MS = 85;
 
@@ -45,7 +47,8 @@ export function createScrollDriver({
   let target = clamp(scrollY / maxScroll());
   let shown = target;
   let last = 0;
-  const publish = (value: number) => { shown = value; onProgress(value); };
+  // shown/target are page scroll fractions; the story receives authored progress (pacing.ts).
+  const publish = (value: number) => { shown = value; onProgress(storyAt(value)); };
 
   const lenis = new Lenis({
     autoRaf: false,

@@ -16,12 +16,15 @@ import { armLockFade, startLockFade } from "@/lib/sequence/lock-fade";
 import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe, themeIndices } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
+import { scrollAt } from "@/lib/sequence/pacing";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
 type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number; inspectionSources: InspectionSourcesReceipt };
 type SequenceDebug = {
   setProgress: (value: number) => void;
   setTheme: (id: ThemeId) => void;
+  /** Page scroll fraction that shows an authored story progress (pacing inverse). */
+  scrollAt: (progress: number) => number;
   getState: () => PlayerState & {
     current: ReturnType<typeof snapshot>;
     cache: ReturnType<FrameCache["stats"]> | null;
@@ -359,7 +362,8 @@ export function SequencePlayer() {
     visualViewport?.addEventListener("resize", changed);
     visualViewport?.addEventListener("scroll", changed);
     window.__QUACKLES_SEQUENCE__ = {
-      setProgress(value) { scrollTo({ top: Math.max(0, Math.min(1, value)) * Math.max(1, document.documentElement.scrollHeight - innerHeight), behavior: "instant" }); setProgress(value); },
+      setProgress(value) { scrollTo({ top: scrollAt(value) * Math.max(1, document.documentElement.scrollHeight - innerHeight), behavior: "instant" }); setProgress(Math.max(0, Math.min(1, value))); },
+      scrollAt,
       setTheme: selectTheme,
       getState: () => ({ ...state, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot(), profile }),
     };
