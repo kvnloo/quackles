@@ -39,6 +39,8 @@ test("sharp lock dissolves in on FIRST paint only (armLockFade/startLockFade aro
 });
 test("camera snaps exactly to its target on arrival (settleCamera), old tolerance-stop gone", () => {
   assert.ok(hero.includes("settleCamera(")); assert.ok(!/Math\.abs\(focusX\.value - current\.targetFocusX\) < 0\.0008/.test(hero));
+  assert.ok(/if \(!arrived\.converged \|\| active !== current\.active\)/.test(hero), "loop must run until CONVERGED, not merely settled");
+  assert.ok(/cameraMoving: active && !settled/.test(hero), "cameraMoving must keep the loose settle criterion (sharp-lock timing)");
 });
 test("paintDetail places via placeDetail (no percentage left/top/width/height placement)", () => {
   assert.ok(render.includes("placeDetail(canvas, rect.width, rect.height, crop)")); assert.ok(!/canvas\.style\.left = `\$\{crop\.x \* 100\}%`/.test(render));

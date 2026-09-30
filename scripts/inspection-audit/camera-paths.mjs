@@ -23,9 +23,11 @@ async function session(steps, target) {
   await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0);
   await page.waitForTimeout(2200);
   const settle = async () => { let lastD = -1, since = Date.now(), calm = 0;
-    for (let i = 0; i < 220; i++) { const st = await page.evaluate(() => { const q = window.__QUACKLES_SEQUENCE__.getState(), c = q.inspection; return { d: q.drawCount, moving: c.cameraMoving, dz: Math.abs(c.zoom - c.targetZoom) }; });
-      if (st.d !== lastD) { lastD = st.d; since = Date.now(); } calm = !st.moving && st.dz < 1e-3 && Date.now() - since > 900 ? calm + 1 : 0; if (calm >= 6) return; await page.waitForTimeout(80); } };
+    for (let i = 0; i < 220; i++) { const st = await page.evaluate(() => { const q = window.__QUACKLES_SEQUENCE__.getState(), c = q.inspection; return { d: q.drawCount, moving: c.cameraMoving, dz: Math.abs(c.zoom - c.targetZoom), df: Math.max(Math.abs(c.focusX - c.targetFocusX), Math.abs(c.focusY - c.targetFocusY)) }; });
+      if (st.d !== lastD) { lastD = st.d; since = Date.now(); } // converged = the camera has snapped exactly onto its target (invisible creep after cameraMoving=false takes ~650 ms)
+      calm = !st.moving && st.dz < 1e-9 && st.df < 1e-9 && Date.now() - since > 900 ? calm + 1 : 0; if (calm >= 6) return; await page.waitForTimeout(80); } };
   for (const [z, x, y] of [...steps, target]) { await page.evaluate(([a, b, c]) => window.__QUACKLES_INSPECTION__.setTarget(a, b, c), [z, x, y]); await settle(); }
+  if (process.env.EXTRA_WAIT_MS) await page.waitForTimeout(+process.env.EXTRA_WAIT_MS);
   const png = await page.screenshot();
   // base-only view: hide the detail canvas to measure plate<->detail alignment (the visible warp at sharp lock)
   await page.evaluate(() => { document.querySelector('.sequence-detail').style.visibility = 'hidden'; }); const baseOnly = await page.screenshot(); const info = await page.evaluate(() => { const d = document.querySelector(".sequence-detail"); return { w: window.__QUACKLES_SEQUENCE__.getState().detailWidth, left: d.style.left, top: d.style.top, width: d.style.width, height: d.style.height }; });

@@ -120,7 +120,7 @@ export function HeroInspection() {
         3.6,
       );
 
-      // On arrival the camera snaps EXACTLY to its target (route-independent); tolerances unchanged (camera-settle.ts).
+      // settled (loose, unchanged) drives cameraMoving/sharp-lock; the spring keeps converging invisibly and snaps exactly when converged (camera-settle.ts).
       const arrived = settleCamera(
         { zoom: zoom.value, focusX: focusX.value, focusY: focusY.value, zoomV: zoom.velocity, fxV: focusX.velocity, fyV: focusY.velocity },
         { zoom: current.targetZoom, fx: current.targetFocusX, fy: current.targetFocusY },
@@ -145,7 +145,7 @@ export function HeroInspection() {
       setInspectionState(next);
       syncFrameState(next);
 
-      if (!settled || active !== current.active) {
+      if (!arrived.converged || active !== current.active) {
         animation = requestAnimationFrame(tick);
       } else {
         lastTick = 0;
