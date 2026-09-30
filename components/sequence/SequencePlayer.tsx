@@ -257,6 +257,8 @@ export function SequencePlayer() {
       // A detail layer painted for one scene must never survive a change of the visible theme(s).
       const visibleThemeKey = showThemes.join("+");
       if (detailKey && detailThemeKey !== visibleThemeKey) releaseDetail();
+      // Settled and the plate already satisfies the requested tier (zoomed back out): drop the now-unneeded detail canvas.
+      if (detailKey && !layers.length && !moving && desiredWidth <= plateWidth) releaseDetail();
       if (layers.length && (baseKey === nextBase || inspecting)) {
         const coverage = layers[0].plan.coverage;
         const decoded = layers.map((layer) => ({

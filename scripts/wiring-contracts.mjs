@@ -31,4 +31,7 @@ test("base canvas stays visible while inspecting (persistent underlay)", () => {
   const i = player.indexOf("if (inspecting) {"); const block = player.slice(i, i + 700);
   assert.ok(/baseCanvas!\.style\.visibility = "visible"/.test(block), "base must not be hidden while inspecting");
 });
+test("detail released when settled and the plate satisfies the requested tier", () => {
+  assert.ok(/detailKey && !layers\.length && !moving && desiredWidth <= plateWidth\) releaseDetail\(\)/.test(player));
+});
 console.log(`${n} passed`);
