@@ -187,6 +187,7 @@ export function HeroInspection() {
     // wheel-up after a short input gap (a new gesture). Trackpad inertia may need
     // 240-400 ms; tune on real hardware.
     let storyMovedAt = -Infinity;
+    let lastProgress = sequenceSnapshot().progress;
     const LATCH_MS = 240;
     const onWheel = (event: WheelEvent) => {
       if (
@@ -485,7 +486,9 @@ export function HeroInspection() {
     };
     const unsubscribeSequence = subscribeSequence(() => {
       const progress = sequenceSnapshot().progress;
-      if (progress > 0.0005) storyMovedAt = performance.now();
+      // Only real story motion arms the latch (theme animations also publish).
+      if (progress !== lastProgress && Math.max(progress, lastProgress) > 0.0005) storyMovedAt = performance.now();
+      lastProgress = progress;
       if (progress > 0.006) resetImmediately();
     });
 
