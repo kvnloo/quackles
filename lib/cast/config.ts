@@ -41,7 +41,7 @@ export function castAppId(search: string): string | null {
 export function castCapableBrowser(userAgent: string, hasChromeObject: boolean): boolean {
   if (!hasChromeObject) return false;
   if (/iPhone|iPad|iPod|CriOS|EdgiOS|FxiOS/.test(userAgent)) return false;
-  if (/Edg\/|OPR\/|SamsungBrowser|YaBrowser|HeadlessChrome/.test(userAgent)) return false;
+  if (/Edg\/|EdgA\/|OPR\/|SamsungBrowser|YaBrowser|HeadlessChrome/.test(userAgent)) return false;
   return /\bChrome\/\d+/.test(userAgent);
 }
 

@@ -23,7 +23,11 @@ export const SEND_HZ = 30;
 /** Receiver playout delay: a sample is shown this long after it would ideally arrive, which absorbs network jitter. */
 export const RECEIVER_DELAY_MS = 80;
 /** Longest span the receiver interpolates across; a longer gap means the sender was idle, not moving slowly. */
-const MAX_INTERP_MS = 1.5 * (1000 / SEND_HZ);
+const MAX_INTERP_MS = 3 * (1000 / SEND_HZ);
+/** Offset estimate: min latency over this receive-time window, slewed at most OFFSET_SLEW_MS per message after warm-up. */
+const OFFSET_WINDOW_MS = 10_000;
+const OFFSET_SLEW_MS = 1;
+const OFFSET_WARMUP = 15;
 
 export type CastView = {
   progress: number;
@@ -33,6 +37,8 @@ export type CastView = {
   focusX: number;
   focusY: number;
   inspecting: boolean;
+  /** The phone's prefers-reduced-motion: the engine maps progress to different frames with it on. */
+  reducedMotion?: boolean;
 };
 export type StateMessage = {
   kind: "state";
@@ -64,6 +70,7 @@ export function clampView(view: CastView): CastView {
     focusX: clamp(view.focusX, 0, 1),
     focusY: clamp(view.focusY, 0, 1),
     inspecting: view.inspecting,
+    reducedMotion: view.reducedMotion === true,
   };
 }
 
@@ -75,7 +82,7 @@ function quantised(view: CastView) {
     round(v.zoom, QUANTA.zoom),
     round(v.focusX, QUANTA.focus),
     round(v.focusY, QUANTA.focus),
-    v.inspecting ? 1 : 0,
+    (v.inspecting ? 1 : 0) | (v.reducedMotion ? 2 : 0),
   ];
 }
 
@@ -126,7 +133,7 @@ export function decode(raw: unknown): CastMessage | null {
     seq: m.n as number,
     t: m.t,
     snapshot: m.f === 1,
-    view: clampView({ progress, theme, zoom, focusX, focusY, inspecting: (flags & 1) === 1 }),
+    view: clampView({ progress, theme, zoom, focusX, focusY, inspecting: (flags & 1) === 1, reducedMotion: (flags & 2) === 2 }),
   };
   if (m.pv !== undefined) message.preview = m.pv as string;
   if (m.b !== undefined) message.build = m.b as string;
@@ -184,7 +191,9 @@ type Sample = { t: number; view: CastView };
  */
 export class JitterBuffer {
   private samples: Sample[] = [];
-  private offsets: number[] = [];
+  private offsets: { at: number; value: number }[] = [];
+  private estimate = 0;
+  private pushes = 0;
   private readonly delayMs: number;
   private readonly window: number;
   constructor(options: { delayMs?: number; window?: number } = {}) {
@@ -193,11 +202,17 @@ export class JitterBuffer {
   }
   get size() { return this.samples.length; }
   /** Best estimate of (receiver clock - sender clock + minimum latency), ms. */
-  get offset() { return this.offsets.length ? Math.min(...this.offsets) : 0; }
-  reset() { this.samples = []; this.offsets = []; }
+  get offset() { return this.estimate; }
+  reset() { this.samples = []; this.offsets = []; this.pushes = 0; this.estimate = 0; }
   push(t: number, receivedAt: number, view: CastView) {
-    this.offsets.push(receivedAt - t);
-    if (this.offsets.length > this.window) this.offsets.shift();
+    // Min over a receive-time window, then slew-limited: a fast packet leaving the window (or a new one arriving)
+    // must not jump the playhead, which would show as a hitch or skip on the TV.
+    this.offsets.push({ at: receivedAt, value: receivedAt - t });
+    while (this.offsets.length > 1 && (receivedAt - this.offsets[0].at > OFFSET_WINDOW_MS || this.offsets.length > 600)) this.offsets.shift();
+    let raw = Infinity;
+    for (const entry of this.offsets) raw = Math.min(raw, entry.value);
+    this.pushes++;
+    this.estimate = this.pushes <= OFFSET_WARMUP ? raw : this.estimate + Math.max(-OFFSET_SLEW_MS, Math.min(OFFSET_SLEW_MS, raw - this.estimate));
     let i = this.samples.length;
     while (i > 0 && this.samples[i - 1].t > t) i--;
     this.samples.splice(i, 0, { t, view });
@@ -233,5 +248,6 @@ export function interpolate(a: CastView, b: CastView, u: number): CastView {
     focusX: lerp(a.focusX, b.focusX),
     focusY: lerp(a.focusY, b.focusY),
     inspecting: k >= 1 ? b.inspecting : a.inspecting,
+    reducedMotion: k >= 1 ? b.reducedMotion : a.reducedMotion,
   };
 }

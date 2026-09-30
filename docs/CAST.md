@@ -53,7 +53,8 @@ in on the phone, the TV fetches its own sharp tiles for the same crop.
    - Click *Add new application* → *Custom Receiver*.
    - Name: `Quackles`.
    - Receiver application URL:
-     - production (once this is merged to `main`): `https://kvnloo.github.io/quackles/cast-receiver/`
+     - production: `https://kvnloo.github.io/quackles/cast-receiver/`. This only exists once `main` is built with
+       casting on (`CAST_DEFAULT = "1"` or `NEXT_PUBLIC_CAST=1`). `main` keeps it off until you decide to ship it.
      - to test the preview now: `https://kvnloo.github.io/quackles/preview/chromecast/cast-receiver/`. You can edit
        the URL later in the console; changes take about 15 minutes to reach devices.
    - Leave *Guest mode* off. Save, then copy the 8-character **Application ID** (for example `A1B2C3D4`).
@@ -87,11 +88,15 @@ in on the phone, the TV fetches its own sharp tiles for the same crop.
 6. Tap the icon again to stop. The TV app closes right away. If the phone just drops off instead, the TV closes after
    60 s.
 
-To debug the TV:
-- In the Cast console, turn on *Remote debugging* for the device.
-- Open `chrome://inspect` on a desktop on the same network.
+To debug the TV (registered devices only):
+- Open `chrome://inspect` in desktop Chrome on the same network.
+- Under *Discover network targets* → *Configure*, add `<chromecast-ip>:9222`, then click *inspect* under the
+  receiver.
 - In the receiver page's console, `window.__QUACKLES_CAST__.getState()` reports messages received, messages dropped,
   the clock offset and the frames applied.
+
+Local development: `NEXT_PUBLIC_CAST=1 npx next dev --webpack`. The module swaps are webpack plugins, so plain
+`next dev` (Turbopack) shows no Cast button.
 
 ## Tests (headless, no device)
 
@@ -106,7 +111,7 @@ BroadcastChannel stand-in for the Cast SDK (`?castTransport=bc`), which has the 
 transport, plus a simulated 15–40 ms network. It checks:
 - the Cast button causes no layout shift;
 - the TV mirrors progress, theme and camera within a p95 bound;
-- the TV reaches the same frame and the same theme;
+- the TV reaches the same frame and the same theme, including with the phone in reduced-motion mode;
 - the TV's zoom never steps backwards during a pinch;
 - the TV sharpens with its own tiles, covering the mirrored crop;
 - no message is larger than 220 B, and no more than 30 are sent a second;

@@ -3,7 +3,7 @@
  * stores the phone's input handlers write (story progress, theme, inspection camera); the engine then fetches its
  * own plates and tiles from the network with the receiver perf profile (lib/cast/engine/perf-profile.ts).
  */
-import { dragTheme, setProgress, snapshot } from "../sequence/store";
+import { dragTheme, setProgress, setReducedMotion, snapshot } from "../sequence/store";
 import { inspectionSnapshot, setInspectionState } from "../sequence/inspection";
 import { inspectionCrop } from "../sequence/render";
 import { decode, encode, JitterBuffer, RECEIVER_DELAY_MS, SeqGate, type CastView } from "./protocol";
@@ -52,6 +52,7 @@ export async function startCastReceiver(options: {
   };
 
   const apply = (view: CastView, at: number) => {
+    if (snapshot().reducedMotion !== (view.reducedMotion === true)) setReducedMotion(view.reducedMotion === true);
     const story = snapshot();
     if (Math.abs(story.progress - view.progress) > 1e-6) setProgress(view.progress);
     if (Math.abs(story.theme - view.theme) > 1e-5 || Math.abs(story.target - view.theme) > 1e-5) dragTheme(view.theme);
@@ -72,13 +73,18 @@ export async function startCastReceiver(options: {
     log.push({ at, view }); if (log.length > 4000) log.shift();
   };
 
+  const diverged = (view: CastView) => {
+    const story = snapshot();
+    return Math.abs(story.theme - view.theme) > 1e-5 || Math.abs(story.target - view.theme) > 1e-5 || Math.abs(story.progress - view.progress) > 1e-6;
+  };
   const tick = () => {
     raf = 0;
     if (stopped) return;
     const at = now();
     const view = buffer.sample(at);
-    // Holding still (same sample object) costs nothing beyond letting the "moving" flag expire.
-    if (view && (view !== applied || inspectionSnapshot().cameraMoving)) apply(view, at);
+    // Holding still (same sample object) costs nothing beyond letting the "moving" flag expire, or re-asserting the
+    // phone's state if something local overwrote it (configure() resets the theme when the manifest lands).
+    if (view && (view !== applied || inspectionSnapshot().cameraMoving || diverged(view))) apply(view, at);
     raf = requestAnimationFrame(tick);
   };
 
@@ -98,6 +104,7 @@ export async function startCastReceiver(options: {
     }
   });
   transport.onSender((senderId) => transport.send(encode({ kind: "hello", build: CAST_BUILD }), senderId));
+  transport.onSendersGone(() => options.onStatus({ connected: false, buildMatch, previewMatch }));
   window.__QUACKLES_CAST__ = {
     getState: () => ({ received, stale, resets, offsetMs: buffer.offset, delayMs: RECEIVER_DELAY_MS, senderBuild, buildMatch, applied, log: log.slice() }),
   };

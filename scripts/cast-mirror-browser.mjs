@@ -37,7 +37,7 @@ const serveAssets = async (route) => {
   await route.fulfill({ body: fs.readFileSync(f), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } });
 };
 const [tvCtx, phoneCtx, soloCtx] = await Promise.all(browsers.map((b) => b.newContext()));
-for (const c of [tvCtx, phoneCtx, soloCtx]) await c.route("**/quackles-assets/**", serveAssets);
+for (const c of [tvCtx, phoneCtx, soloCtx]) { await c.route("**/quackles-assets/**", serveAssets); await c.route("https://www.gstatic.com/**", (r) => r.abort()); }
 const peers = {};
 /** The in-page shim is a BroadcastChannel; a relay channel object in each page forwards packets to the other device. */
 async function relay(role, page, to) {
@@ -196,6 +196,17 @@ for (const id of ["night", "blue"]) {
   res[`theme_${id}`] = { phone: +painted(ps.rendered).toFixed(4), tv: +painted(ts.rendered).toFixed(4), sameThemeAfterMs: ms };
   if (ms === null) bad.push(`theme ${id}: phone ${res[`theme_${id}`].phone} tv ${res[`theme_${id}`].tv}`);
 }
+
+// M2d reduced motion on the phone maps progress to other frames: the TV must follow the phone's setting.
+await phone.cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+{
+  const ms = await converge((ps, ts) => ps.current.reducedMotion && ts.current.reducedMotion && !!ps.rendered && ps.rendered.frameId === ts.rendered?.frameId);
+  const [ps, ts] = [await phoneState(), await tvState()];
+  res.reducedMotion = { phoneFrame: ps.rendered?.frameId, tvFrame: ts.rendered?.frameId, tvReduced: ts.current.reducedMotion, sameFrameAfterMs: ms };
+  if (ms === null) bad.push(`reduced motion not mirrored: ${JSON.stringify(res.reducedMotion)}`);
+}
+await phone.cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] });
+await converge((ps, ts) => !ps.current.reducedMotion && !ts.current.reducedMotion);
 
 // Back to the hero (inspection lives there).
 await phone.page.evaluate(() => new Promise((done) => { const from = scrollY, start = performance.now();

@@ -25,6 +25,7 @@ export function currentView(): CastView {
     focusX: camera.focusX,
     focusY: camera.focusY,
     inspecting: camera.active,
+    reducedMotion: story.reducedMotion,
   };
 }
 

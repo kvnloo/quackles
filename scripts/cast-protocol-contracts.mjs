@@ -50,6 +50,12 @@ test("decode clamps out-of-range values instead of passing them to the engine", 
   const low = P.decode(raw);
   assert.deepEqual([low.view.progress, low.view.theme, low.view.zoom, low.view.inspecting], [0, 0, 1, false]);
 });
+test("reducedMotion rides in the flags (the engine picks different frames with it on)", () => {
+  const back = P.decode(P.encode(state({ view: view({ reducedMotion: true, inspecting: false }) })));
+  assert.equal(back.view.reducedMotion, true); assert.equal(back.view.inspecting, false);
+  assert.equal(P.decode(P.encode(state())).view.reducedMotion, false);
+  assert.equal(P.sameView(view({ reducedMotion: true }), view()), false);
+});
 test("decode rejects malformed input (never throws)", () => {
   const good = JSON.parse(P.encode(state()));
   const bad = [
@@ -163,7 +169,7 @@ test("jitter buffer: after an idle gap a change is not pre-played across the gap
   buffer.push(0, 10, view({ zoom: 2 }));
   buffer.push(10000, 10010, view({ zoom: 4 }));
   // Playhead 9950 (sender time): the change happened near 10000; the idle interval must not be interpolated.
-  assert.equal(buffer.sample(10040).zoom, 2);
+  assert.equal(buffer.sample(9980).zoom, 2);
   const mid = buffer.sample(10010 + 80 - 10).zoom;
   assert.ok(mid > 2 && mid < 4, `mid ${mid}`);
   assert.equal(buffer.sample(10010 + 80).zoom, 4);
@@ -174,6 +180,18 @@ test("jitter buffer: zoom interpolates geometrically, booleans step, reset clear
   const out = buffer.sample(10);
   near(out.zoom, 4, 1e-9, "geometric midpoint"); assert.equal(out.inspecting, false);
   buffer.reset(); assert.equal(buffer.sample(10), null);
+});
+test("jitter buffer: the clock-offset estimate never jumps when the fastest packet leaves the window", () => {
+  const buffer = new P.JitterBuffer({ delayMs: 80 });
+  let prev = null, worst = 0;
+  for (let t = 0; t < 30000; t += 33) {
+    const latency = t < 1000 ? 5 : 40; // one fast burst early, then a uniformly slower link
+    buffer.push(t, t + 1000 + latency, view());
+    if (t > 1000 && prev !== null) worst = Math.max(worst, Math.abs(buffer.offset - prev));
+    prev = buffer.offset;
+  }
+  assert.ok(worst <= 1.0001, `offset stepped ${worst} ms in one message`);
+  near(buffer.offset, 1040, 0.001, "converges to the new minimum");
 });
 test("jitter buffer: bounded memory", () => {
   const buffer = new P.JitterBuffer({ delayMs: 80 });

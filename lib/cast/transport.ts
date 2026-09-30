@@ -19,6 +19,8 @@ export interface ReceiverTransport {
   onMessage(listener: (raw: unknown, senderId: string | undefined) => void): void;
   /** A sender joined (or rejoined): the receiver asks it for a snapshot. */
   onSender(listener: (senderId: string | undefined) => void): void;
+  /** The last sender left (the TV keeps showing the last state until it closes). */
+  onSendersGone(listener: () => void): void;
   send(raw: string, senderId?: string): void;
   start(): void;
 }
@@ -76,6 +78,7 @@ export function shimReceiver(): ReceiverTransport {
   return {
     onMessage(listener) { messageListener = listener; },
     onSender(listener) { senderListener = listener; },
+    onSendersGone() {},
     send(raw) { channel.postMessage({ to: "sender", raw } satisfies ShimPacket); },
     start() {
       channel.onmessage = (event: MessageEvent<ShimPacket>) => {
@@ -167,16 +170,20 @@ type ReceiverGlobals = {
 
 /** Receiver side of CAF: a custom namespace, no media players, and our own idle policy. */
 export async function cafReceiver(): Promise<ReceiverTransport> {
-  await loadScript(RECEIVER_SDK);
+  // The page preloads the SDK in <head> (app/cast-receiver/page.cast.tsx); this executes it from cache.
+  if (!(window as unknown as Partial<ReceiverGlobals>).cast?.framework?.CastReceiverContext) await loadScript(RECEIVER_SDK);
   const { framework } = (window as unknown as ReceiverGlobals).cast;
   const context = framework.CastReceiverContext.getInstance();
   const system = framework.system;
   let messageListener: (raw: unknown, senderId: string | undefined) => void = () => {};
   let senderListener: (senderId: string | undefined) => void = () => {};
+  let gone: () => void = () => {};
   let lonely = 0;
+  const closeWhenLonely = () => { lonely = window.setTimeout(() => { if (!context.getSenders().length) context.stop(); }, 60_000); };
   return {
     onMessage(listener) { messageListener = listener; },
     onSender(listener) { senderListener = listener; },
+    onSendersGone(listener) { gone = listener; },
     send(raw, senderId) { context.sendCustomMessage(CAST_NAMESPACE, senderId, JSON.parse(raw)); },
     start() {
       context.addCustomMessageListener(CAST_NAMESPACE, (event) => messageListener(event.data, event.senderId));
@@ -186,9 +193,10 @@ export async function cafReceiver(): Promise<ReceiverTransport> {
       });
       context.addEventListener(system.EventType.SENDER_DISCONNECTED, (event) => {
         if (context.getSenders().length) return;
+        gone();
         // "Stop casting" on the phone ends the app now; a dropped/reloading phone gets a minute to rejoin.
         if (event.reason === system.DisconnectReason.REQUESTED_BY_SENDER) context.stop();
-        else lonely = window.setTimeout(() => { if (!context.getSenders().length) context.stop(); }, 60_000);
+        else closeWhenLonely();
       });
       const options = new framework.CastReceiverOptions();
       options.customNamespaces = { [CAST_NAMESPACE]: system.MessageType.JSON };
@@ -196,6 +204,7 @@ export async function cafReceiver(): Promise<ReceiverTransport> {
       options.disableIdleTimeout = true; // CAF would otherwise close a media-less app after 5 minutes
       options.statusText = "Quackles";
       context.start(options);
+      closeWhenLonely(); // also covers a launch whose sender never connects (idle timeout is disabled)
     },
   };
 }
