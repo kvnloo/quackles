@@ -27,9 +27,11 @@ async function open(reducedMotion) {
 const opacity = (page, sel) => page.evaluate((s) => +getComputedStyle(document.querySelector(s)).opacity, sel);
 // Seek, then record the copy's opacity every frame for `ms` without touching the scroll again.
 const seekAndTrace = (page, p, sel, ms) => page.evaluate(([p, sel, ms]) => new Promise((done) => {
-  const el = document.querySelector(sel), rows = []; let t0 = 0;
+  const el = document.querySelector(sel), rows = []; let t0 = 0, anims = null;
   window.__QUACKLES_SEQUENCE__.setProgress(p);
-  const f = (t) => { t0 ||= t; rows.push([t - t0, +getComputedStyle(el).opacity]); if (t - t0 < ms) requestAnimationFrame(f); else done({ rows, anims: el.getAnimations().map((a) => ({ type: a.constructor.name, prop: a.transitionProperty ?? a.animationName })) }); };
+  const f = (t) => { t0 ||= t; rows.push([t - t0, +getComputedStyle(el).opacity]);
+    if (!anims && t - t0 >= 100) anims = el.getAnimations().map((a) => ({ type: a.constructor.name, prop: a.transitionProperty ?? a.animationName })); // mid-reveal
+    if (t - t0 < ms) requestAnimationFrame(f); else done({ rows, anims: anims ?? [] }); };
   requestAnimationFrame(f);
 }), [p, sel, ms]);
 

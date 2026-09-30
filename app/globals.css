@@ -385,6 +385,24 @@ a:focus-visible {
 }
 .process-page .process-kicker,
 .process-page .process-nav,
+/* Story copy: timed reveal on entry (factory.ai model), composited (opacity + translate only). */
+.hero-copy,
+.motion-copy,
+.specs-copy {
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    translate 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hero-copy[data-shown="false"],
+.motion-copy:not([data-shown="true"]),
+.specs-copy:not([data-shown="true"]) {
+  opacity: 0;
+  translate: 0 20px;
+}
+.motion-copy[data-shown="true"],
+.specs-copy[data-shown="true"] {
+  opacity: 1;
+}
 .process-page .process-foot {
   font-size: 0.75rem;
   letter-spacing: 0.1em;

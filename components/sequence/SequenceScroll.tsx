@@ -3,20 +3,25 @@ import { useEffect } from "react";
 import { createScrollDriver, type ScrollDriver } from "@/lib/sequence/scroll-driver";
 import { setProgress, setReducedMotion, snapshot, subscribe } from "@/lib/sequence/store";
 
-function interval(value: number, start: number, end: number) {
-  const p = Math.max(0, Math.min(1, (value - start) / (end - start)));
-  return p * p * (3 - 2 * p);
-}
+/**
+ * Story copy beats (authored progress). Each block is shown or hidden by story
+ * position; the change itself is a timed CSS reveal (globals.css, factory.ai
+ * model), so text is never scrubbed and never parks at a partial opacity.
+ * Thresholds are the midpoints of the former scrub ramps.
+ */
+const BEATS: [selector: string, shown: (p: number) => boolean][] = [
+  [".hero-copy", (p) => p < 0.08],
+  [".jump-copy", (p) => p >= 0.215 && p < 0.545],
+  [".explode-copy", (p) => p >= 0.585 && p < 0.73],
+  [".specs-copy", (p) => p >= 0.935],
+];
 
 export function applyStoryProgress(p: number) {
-  const opacity = (selector: string, value: number) => {
+  for (const [selector, shown] of BEATS) {
     const node = document.querySelector<HTMLElement>(selector);
-    if (node) node.style.opacity = String(value);
-  };
-  opacity(".hero-copy", 1 - interval(p, .03, .13));
-  opacity(".jump-copy", interval(p, .19, .24) * (1 - interval(p, .53, .56)));
-  opacity(".explode-copy", interval(p, .56, .61) * (1 - interval(p, .7, .76)));
-  opacity(".specs-copy", interval(p, .9, .97));
+    const value = String(shown(p));
+    if (node && node.dataset.shown !== value) node.dataset.shown = value;
+  }
 }
 
 export function SequenceScroll() {
