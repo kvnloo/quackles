@@ -332,11 +332,6 @@ a:focus-visible {
   margin-top: 1.4cqw !important;
   white-space: nowrap;
 }
-/* Day's palette ink is light (for its dark chrome) but the day plate behind
- * the hero copy is a sunlit wall: set the copy in the palette's dark paper. */
-html[data-tone="day"] .hero-copy {
-  color: var(--paper);
-}
 .crop-cross {
   position: absolute;
   right: 25.9%;
@@ -750,9 +745,16 @@ html[data-tone="day"] .hero-copy {
 .interaction-hint-inspect,
 .interaction-hint-specs {
   right: 3.8%;
-  width: 24%;
-  max-width: 180px;
+  width: auto;
+  max-width: min(24%, 180px);
   text-align: right;
+  /* Legible over any plate region (White: cobalt ink on the cobalt bust panel). */
+  padding: 0.25em 0.55em;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 62%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  text-shadow: none;
 }
 .interaction-hint-inspect {
   top: 47%;
@@ -809,7 +811,7 @@ html[data-tone="day"] .hero-copy {
   .interaction-hint-inspect,
   .interaction-hint-specs {
     right: 3.5%;
-    width: 31%;
+    max-width: 31%;
     font-size: 7px;
   }
 }
