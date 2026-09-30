@@ -22,7 +22,8 @@
  *   blankFrames / blueFrames  no visible layer / the fallback <img> (not this scene) shown after the first paint.
  *   thrash      per gesture: closedBitmaps, cache evictions (when the build counts them), redecodes (a tile URL decoded again:
  *               createImageBitmap wrapped + blob provenance), network refetches.
- *   frameMs     rAF delta p50/p95 while a finger is down.
+ *   frameMs     rAF delta p50/p95 while a finger is down; frames > 25 ms after lifts/paints.
+ *   touchdown   gestures whose first finger caught a moving camera, and how many of those started decodes within 140 ms.
  *  PASSES may add "retry": every tile's first request fails, the camera zooms to 6x once and stays; the view must still
  *  reach the required resolution within 10 s (failed tiles retried without a crop move).
  *  GATE=1 exits 1 when a plain-pass target misses: hq p90 <= 500 ms, under-resolved < 10%, plate-edge 0, blank 0, blue 0,
@@ -87,7 +88,17 @@ function sampler({ tiers, plate }) {
   const S = window.__gpx = { rows: [], stop: false, fingers: 0, gestures: [], legacyWidth: 0, paints: [] };
   const pts = new Set();
   const touch = (e) => e.pointerType === "touch";
-  addEventListener("pointerdown", (e) => { if (!touch(e)) return; if (!pts.size) S.gestures.push({ start: performance.now(), end: null, stats: window.__QUACKLES_SEQUENCE__.getState().cache, decodes: [...window.__gpxDecodes.values()].reduce((a, b) => a + b, 0) }); pts.add(e.pointerId); S.fingers = pts.size; }, { capture: true });
+  // Touchdown: was the camera still moving (a coast the finger catches)? Did decodes start in the next 140 ms (inside the
+  // new gesture; a touchdown is not rest)?
+  addEventListener("pointerdown", (e) => {
+    if (!touch(e)) return;
+    if (!pts.size) {
+      const stats = window.__QUACKLES_SEQUENCE__.getState().cache, g = { start: performance.now(), end: null, stats, caught: window.__QUACKLES_INSPECTION__.getState().cameraMoving, decodesAfterTouch: null };
+      S.gestures.push(g);
+      setTimeout(() => { g.decodesAfterTouch = (window.__QUACKLES_SEQUENCE__.getState().cache.startedDecodes ?? 0) - (stats.startedDecodes ?? 0); }, 140);
+    }
+    pts.add(e.pointerId); S.fingers = pts.size;
+  }, { capture: true });
   const up = (e) => { if (!touch(e) || !pts.delete(e.pointerId)) return; S.fingers = pts.size; if (!pts.size) S.gestures[S.gestures.length - 1].end = performance.now(); };
   addEventListener("pointerup", up, { capture: true }); addEventListener("pointercancel", up, { capture: true });
   // All-or-nothing builds: the painted width, read after the player updates state (it dispatches first).
@@ -313,6 +324,7 @@ function analyse(name, data, fetched, checks, pageErrors) {
     },
     frameMs: { fingerDownP50: pct(dts, 0.5), fingerDownP95: pct(dts, 0.95), allP95: pct(allDts, 0.95), afterLiftMax: pct(liftDts, 1), afterLiftOver25: liftDts.filter((d) => d > 25).length, afterPaintMax: pct(paintDts, 1), afterPaintOver25: paintDts.filter((d) => d > 25).length },
     settleLagMs: { n: settleLag.length, p50: pct(settleLag, 0.5), p90: pct(settleLag, 0.9) },
+    touchdown: { caughtMoving: data.gestures.filter((g) => g.caught).length, decodedWithin140ms: data.gestures.filter((g) => g.caught && g.decodesAfterTouch > 0).length },
     failures: data.end.failures, errors: data.errors.length, pageErrors: pageErrors.length,
     reportMismatch: checks.length ? checks.reduce((a, c) => a + c.mismatch, 0) : null, reportFringe: checks.length ? checks.reduce((a, c) => a + c.fringe, 0) : null,
     windows, longFrames, readbacks: checks.filter((c) => c.mismatch),
