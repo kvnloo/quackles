@@ -20,7 +20,8 @@ export function DuckCanvas({ children }: { children?: ReactNode }) {
         stencil: false,
         depth: true,
         powerPreference: "high-performance",
-        toneMapping: THREE.ACESFilmicToneMapping,
+        // The plates' view transform is Khronos PBR Neutral (exposure 0, sRGB display) in every theme.
+        toneMapping: THREE.NeutralToneMapping,
       }}
       onCreated={({ gl }) => {
         gl.outputColorSpace = THREE.SRGBColorSpace;
