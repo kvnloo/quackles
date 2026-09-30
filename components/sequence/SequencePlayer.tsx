@@ -12,6 +12,7 @@ import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { requestedDetailWidth } from "@/lib/sequence/motion-quality";
+import { armLockFade, startLockFade } from "@/lib/sequence/lock-fade";
 import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
@@ -274,11 +275,15 @@ export function SequencePlayer() {
         const escaping = !paintedCoverage || !cropInside(crop, paintedCoverage, crop.width * 0.12);
         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
         if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
+          // First appearance of the sharp layer (it was hidden/released): dissolve it in. Repaints of a visible layer do not re-fade.
+          const freshLock = !detailKey; const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          if (freshLock) armLockFade(detailCanvas!, reduced);
           paintDetail(detailCanvas!, container!, coverage, paintLayers.map((layer) => ({
             variant: layer.plan.variant,
             alpha: layer.alpha,
             images: layer.images.map(({ image, x, y, sourceX, sourceY }) => ({ image: image!, x, y, sourceX, sourceY })),
           })));
+          if (freshLock) startLockFade(detailCanvas!, reduced);
           window.dispatchEvent(new Event("quackles:detail-painted"));
           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));

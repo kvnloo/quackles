@@ -34,4 +34,7 @@ test("base canvas stays visible while inspecting (persistent underlay)", () => {
 test("detail released when settled and the plate satisfies the requested tier", () => {
   assert.ok(/detailKey && !layers\.length && !moving && desiredWidth <= plateWidth\) releaseDetail\(\)/.test(player));
 });
+test("sharp lock dissolves in on FIRST paint only (armLockFade/startLockFade around a fresh paint)", () => {
+  assert.ok(player.includes("armLockFade(") && player.includes("startLockFade(") && /const freshLock = !detailKey/.test(player));
+});
 console.log(`${n} passed`);
