@@ -19,6 +19,7 @@
     "test:request-budget": "node --import ./scripts/register-ts-resolve.mjs scripts/request-budget-contracts.mjs",
     "test:synced-theme": "node scripts/synced-theme-contracts.mjs",
     "test:motion-quality": "node scripts/motion-quality-contracts.mjs",
+    "test:wheel": "node scripts/wheel-zoom-browser.mjs",
     "test:fling": "node scripts/fling-stress-browser.mjs",
     "test:blank-frames": "node scripts/blank-frame-browser.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
