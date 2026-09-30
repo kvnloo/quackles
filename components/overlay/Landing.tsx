@@ -11,6 +11,7 @@ import { InspectionViewfinder } from "@/components/sequence/InspectionViewfinder
 import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
+import { SimFlagGate } from "@/components/sim/SimFlagGate";
 
 export function Landing() {
   return (
@@ -23,6 +24,7 @@ export function Landing() {
       <div className="poster-stage">
         <SequenceFrame>
           <SequencePlayer />
+          <SimFlagGate />
           <InspectionViewfinder />
           <PosterNav />
           <PosterHeroCopy />

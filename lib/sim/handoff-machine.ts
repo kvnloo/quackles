@@ -5,9 +5,11 @@
 // No DOM, clocks or globals: the controller feeds events and derives effects
 // from phase changes, which keeps activation/teardown deterministic.
 
+import { SIM_LIVE_PROGRESS } from "./flag";
+
 export const HANDOFF = {
   /** Story progress at which the live layer (three.js + rig) may load. */
-  liveProgress: 0.78,
+  liveProgress: SIM_LIVE_PROGRESS,
   /** Story progress at which the pinned sim runtime is prefetched. */
   runtimeProgress: 0.92,
   /** Story progress at which down-intent may enter the simulator. */
@@ -169,25 +171,27 @@ export type HandoffWeights = {
   assembled: number;
   /** 1 = physics snapshot owns the rig, 0 = the seeded (assembled) pose. */
   simPose: number;
+  /** Linear exploded->assembled fraction (blendPoseInto applies the easing). */
+  assemblyT: number;
 };
 
 export function handoffWeights(state: HandoffState): HandoffWeights {
   switch (state.phase) {
     case "story":
-      return { liveOpacity: 0, assembled: 0, simPose: 0 };
+      return { liveOpacity: 0, assembled: 0, simPose: 0, assemblyT: 0 };
     case "swap-in":
-      return { liveOpacity: state.t, assembled: 0, simPose: 0 };
+      return { liveOpacity: state.t, assembled: 0, simPose: 0, assemblyT: 0 };
     case "reassemble":
-      return { liveOpacity: 1, assembled: smooth(state.t), simPose: 0 };
+      return { liveOpacity: 1, assembled: smooth(state.t), simPose: 0, assemblyT: state.t };
     case "await":
-      return { liveOpacity: 1, assembled: 1, simPose: 0 };
+      return { liveOpacity: 1, assembled: 1, simPose: 0, assemblyT: 1 };
     case "sim":
-      return { liveOpacity: 1, assembled: 1, simPose: 1 };
+      return { liveOpacity: 1, assembled: 1, simPose: 1, assemblyT: 1 };
     case "return":
-      return { liveOpacity: 1, assembled: 1, simPose: 1 - smooth(state.t) };
+      return { liveOpacity: 1, assembled: 1, simPose: 1 - smooth(state.t), assemblyT: 1 };
     case "disassemble":
-      return { liveOpacity: 1, assembled: smooth(1 - state.t), simPose: 0 };
+      return { liveOpacity: 1, assembled: smooth(1 - state.t), simPose: 0, assemblyT: 1 - state.t };
     case "swap-out":
-      return { liveOpacity: 1 - state.t, assembled: 0, simPose: 0 };
+      return { liveOpacity: 1 - state.t, assembled: 0, simPose: 0, assemblyT: 0 };
   }
 }
