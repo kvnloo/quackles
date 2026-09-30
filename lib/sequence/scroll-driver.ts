@@ -20,9 +20,18 @@ export type ScrollDriver = {
  *
  * Product state consumes normalized 0..1 progress only. Lenis stays isolated
  * from sequence state, camera choreography, themes, and simulator ownership.
- * Two-stage smoothing (lifted from the theme-slider line: Lenis lerp .085 then
- * a ~84 ms camera ease): Lenis sets a target, a frame-rate-independent follower
- * publishes progress. Resize keeps story progress, not the pixel offset.
+ *
+ * Touch, keyboard and scrollbar are the browser's native scroll and momentum
+ * (Lenis does not sync touch). Their scroll event publishes the page position
+ * directly, so the story moves 1:1 with the finger and stops when the page
+ * stops (v0's feel; factory.ai's model; ISSUES.md I4: one stage at most).
+ *
+ * Wheel input alone keeps the desktop two-stage glide (Lenis lerp .085, then a
+ * frame-rate-independent 85 ms follower), unchanged from 0f32b13.
+ *
+ * The animation-frame loop runs only while a wheel glide or the follower is in
+ * flight, so the page requests no frames at rest. Resize keeps story progress,
+ * not the pixel offset.
  */
 const FOLLOW_MS = 85;
 
@@ -42,28 +51,45 @@ export function createScrollDriver({
     autoRaf: false,
     lerp: reducedMotion ? 1 : 0.085,
     smoothWheel: !reducedMotion,
-  });
-
-  lenis.on("scroll", ({ progress }: { progress: number }) => {
-    target = clamp(progress);
-    if (reducedMotion) publish(target);
+    syncTouch: false,
   });
 
   let raf = 0;
   let restartRaf = 0;
-  const tick = (time: number) => {
+  // The last input decides the path: a wheel keeps the glide (and its follower
+  // tail) smooth; touch or keys hand the story straight back to the page.
+  let wheeling = false;
+  const gliding = () => lenis.isScrolling === "smooth";
+  const wake = () => { if (!raf) { last = 0; raf = requestAnimationFrame(tick); } };
+  const onWheel = () => { wheeling = true; wake(); };
+  const onDirect = () => { wheeling = false; };
+
+  lenis.on("scroll", ({ progress }: { progress: number }) => {
+    target = clamp(progress);
+    if (reducedMotion || !(wheeling || gliding())) publish(target);
+    else wake();
+  });
+
+  function tick(time: number) {
+    // raf stays set while this frame runs, so a scroll emitted from inside
+    // lenis.raf() cannot schedule a second loop. After an idle gap, Lenis would
+    // see the whole gap as one frame and jump the glide: give it one frame.
+    if (!last) lenis.time = time - 1000 / 60;
     lenis.raf(time);
-    if (!reducedMotion) {
+    if (!reducedMotion && shown !== target) {
       const dt = last ? Math.min(100, time - last) : 16.7;
-      const next = Math.abs(target - shown) < 2e-5 ? target : target + (shown - target) * Math.exp(-dt / FOLLOW_MS);
-      if (next !== shown) publish(next);
+      publish(Math.abs(target - shown) < 2e-5 ? target : target + (shown - target) * Math.exp(-dt / FOLLOW_MS));
     }
     last = time;
-    raf = requestAnimationFrame(tick);
-  };
+    raf = gliding() || shown !== target ? requestAnimationFrame(tick) : 0;
+  }
+
+  // Lenis only advances a wheel glide from raf(): wake the loop on wheel input.
+  addEventListener("wheel", onWheel, { passive: true });
+  addEventListener("touchstart", onDirect, { passive: true });
+  addEventListener("keydown", onDirect, { passive: true });
 
   publish(target);
-  raf = requestAnimationFrame(tick);
 
   return {
     resize() {
@@ -91,6 +117,9 @@ export function createScrollDriver({
     destroy() {
       cancelAnimationFrame(raf);
       cancelAnimationFrame(restartRaf);
+      removeEventListener("wheel", onWheel);
+      removeEventListener("touchstart", onDirect);
+      removeEventListener("keydown", onDirect);
       lenis.destroy();
     },
   };
