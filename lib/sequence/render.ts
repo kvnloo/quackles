@@ -179,6 +179,38 @@ export function sharpPlan(
   return { ...tight, coverage: crop };
 }
 
+/** The underlay spans this many viewports (per axis) around the visible crop. */
+export const UNDERLAY_SPAN = 2;
+export const UNDERLAY_MAX_TILES = 20;
+export const UNDERLAY_MAX_BYTES = 16 * 1024 * 1024;
+
+/** `span` x the crop per axis, centred on it and clamped inside the image. */
+export function underlayCoverage(crop: Crop, span = UNDERLAY_SPAN): Crop {
+  const width = Math.min(1, crop.width * span), height = Math.min(1, crop.height * span);
+  const x = Math.max(0, Math.min(1 - width, crop.x - (width - crop.width) / 2));
+  const y = Math.max(0, Math.min(1 - height, crop.y - (height - crop.height) / 2));
+  return { x, y, width, height, scale: crop.scale };
+}
+
+/**
+ * Persistent low-tier underlay: a pyramid tier about two below the detail tier, over ~2x the viewport, small enough
+ * (<= 16 tiles / maxBytes) to stay pinned. Painted under the detail layer so pans, flicks and zoom-outs past the
+ * painted detail show this tier instead of the 1024 plate. Null when no tiled tier lies between the plate and the plan.
+ */
+export function underlayPlan(variants: Variant[], planWidth: number, crop: Crop, plateWidth: number, maxBytes = UNDERLAY_MAX_BYTES) {
+  const tiled = variants
+    .filter((variant): variant is TileAsset => !isImage(variant) && variant.width > plateWidth && variant.width < planWidth)
+    .sort((a, b) => a.width - b.width);
+  if (!tiled.length) return null;
+  const coverage = underlayCoverage(crop);
+  for (let i = Math.max(0, tiled.length - 2); i >= 0; i--) {
+    const tasks = tileAssets(tiled[i], coverage, 0);
+    const bytes = tasks.reduce((sum, { asset }) => sum + asset.width * asset.height * 4, 0);
+    if (tasks.length <= UNDERLAY_MAX_TILES && bytes <= maxBytes) return { variant: tiled[i], tasks, coverage };
+  }
+  return null;
+}
+
 /** Abut adjacent tiles. Pyramid tiles have no overlap, so float dest rects leave a dark seam. */
 export function tileDest(sourceX: number, sourceY: number, sourceW: number, sourceH: number, originX: number, originY: number, scaleX: number, scaleY: number) {
   const x = Math.floor((sourceX - originX) * scaleX);

@@ -6,6 +6,8 @@ export type SequencePerfProfileId =
 export type SequencePerfProfile = {
   id: SequencePerfProfileId;
   decodedBudgetBytes: number;
+  /** Decoded bytes the pinned low-tier underlay may take (render.ts underlayPlan). */
+  underlayBudgetBytes: number;
   compressedBudgetBytes: number;
   maxActiveJobs: number;
   maxZoomCap: number;
@@ -29,6 +31,7 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
   constrained: {
     id: "constrained",
     decodedBudgetBytes: 40 * MIB,
+    underlayBudgetBytes: 6 * MIB,
     compressedBudgetBytes: 64 * MIB,
     maxActiveJobs: 2,
     maxZoomCap: 2.5,
@@ -38,6 +41,7 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
   balanced: {
     id: "balanced",
     decodedBudgetBytes: 64 * MIB,
+    underlayBudgetBytes: 16 * MIB,
     compressedBudgetBytes: 96 * MIB,
     maxActiveJobs: 2, // phones: two concurrent decodes; more flooded the GPU with uploads during zoom
     maxZoomCap: 24,
@@ -47,6 +51,7 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
   full: {
     id: "full",
     decodedBudgetBytes: 96 * MIB,
+    underlayBudgetBytes: 16 * MIB,
     compressedBudgetBytes: 128 * MIB,
     maxActiveJobs: 3,
     maxZoomCap: 24,

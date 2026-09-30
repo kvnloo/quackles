@@ -9,7 +9,8 @@ import { applyHiddenPolicy, describeInspectionSources, type InspectionSourcesRec
 import { PREVIEW } from "@/lib/preview";
 import { mushroomScene, previewManifest, previewNote, previewPolicy, previewThemeIndices } from "@/lib/sequence/preview-policy";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
-import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, underlayPlan, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { TileSurface, type PaintedRect } from "@/lib/sequence/tile-surface";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
@@ -33,13 +34,29 @@ type SequenceDebug = {
     profile: SequencePerfProfile;
   };
 };
-declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug } }
+/** What is painted where (source space, last rect on top), for the gigapixel-feel harness. */
+type PaintReport = { detail: { rects: PaintedRect[] }; underlay: { rects: PaintedRect[] }; floor: { rects: PaintedRect[] } };
+declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug; __QUACKLES_PAINT__?: PaintReport } }
 
 export function SequencePlayer() {
-  const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null), note = useRef<HTMLParagraphElement>(null);
+  const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), floor = useRef<HTMLCanvasElement>(null), under = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null), note = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    const container = host.current, baseCanvas = base.current, detailCanvas = detail.current;
-    if (!container || !baseCanvas || !detailCanvas) return;
+    const container = host.current, baseCanvas = base.current, floorCanvas = floor.current, underCanvas = under.current, detailCanvas = detail.current;
+    if (!container || !baseCanvas || !floorCanvas || !underCanvas || !detailCanvas) return;
+    // Floor: the whole image at the lowest pyramid tier, painted once while idle (hidden at 1x), kept for the session.
+    // Its tiles are pinned only until drawn; the canvas keeps the pixels. Nothing zoomed ever falls back to the bare plate.
+    const floorSurface = new TileSurface(floorCanvas);
+    let floorPlan: { key: string; variant: TileAsset; tasks: ReturnType<typeof tileAssets> } | null = null;
+    // Persistent low-tier underlay (render.ts underlayPlan): painted tile by tile under the detail layer, pinned in the cache,
+    // so a pan, flick or zoom-out past the painted detail shows a pyramid tier, not the 1024 plate.
+    const underlay = new TileSurface(underCanvas);
+    let underlayCurrent: NonNullable<ReturnType<typeof underlayPlan>> | null = null;
+    const paint: PaintReport = { detail: { rects: [] }, underlay: { rects: [] }, floor: { rects: [] } };
+    window.__QUACKLES_PAINT__ = paint;
+    const UNDERLAY_BACKING = 2048;
+    const releaseUnderlay = () => {
+      underCanvas.style.visibility = "hidden"; underlay.clear(); underlayCurrent = null; paint.underlay.rects = [];
+    };
     const profile = sequencePerfProfile();
     // Preview config (lib/preview.ts): theme range, tile families, mushroom-only scene. Production = "policy", all five themes.
     const sources = previewPolicy(PREVIEW);
@@ -57,7 +74,8 @@ export function SequencePlayer() {
       detailCanvas.style.visibility = "hidden";
       if (detailCanvas.width !== 1 || detailCanvas.height !== 1) { detailCanvas.width = 1; detailCanvas.height = 1; }
       detailKeys = []; detailKey = ""; detailThemeKey = ""; paintedCoverage = null; paintedMix = -1; paintedInMotion = false;
-      state.detailWidth = 0; state.detailTiles = 0;
+      state.detailWidth = 0; state.detailTiles = 0; paint.detail.rects = [];
+      releaseUnderlay();
     };
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
     const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0, inspectionSources: describeInspectionSources(sources.themes, sources.hidden), preview: PREVIEW.id, note: null };
@@ -190,7 +208,8 @@ export function SequencePlayer() {
       type Planned = NonNullable<ReturnType<typeof sharpPlan>>;
       const layers: { plan: Planned; alpha: number }[] = [];
       if (detailEligible && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > plateWidth) {
-        const budget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4;
+        // The pinned underlay takes its own share first, so the pinned detail plan always fits beside it.
+        const budget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4 - profile.underlayBudgetBytes;
         if (eggShown && mushroomPyramid.length) {
           const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan);
           if (planned && planned.variant.width > plateWidth) layers.push({ plan: planned, alpha: 1 });
@@ -221,12 +240,35 @@ export function SequencePlayer() {
           }
         }
         for (const layer of layers) tasks.push(...layer.plan.tasks.map(({ asset }) => ({ asset, priority: showThemes.length > 1 ? 100 : 90 })));
+
         const coverageId = layers[0] ? `${layers[0].plan.coverage.x.toFixed(3)}/${layers[0].plan.coverage.y.toFixed(3)}` : "";
         if (coverageId && coverageId !== failCrop) {
           for (const url of [...failed]) if (url.includes("/gp/")) failed.delete(url);
           failCrop = coverageId;
         }
       }
+      // Underlay plan: from the settled (uncapped) tier, so it never waits for a promotion.
+      const underlaySource = span.mix > 0 ? null : eggShown ? (mushroomPyramid.length ? known(mushroomPyramid) : null) : showThemes.length === 1 ? known(frame.assets[showThemes[0]]) : null;
+      const underlayTiers = (underlaySource ?? []).filter((variant): variant is TileAsset => !isImage(variant)).sort((a, b) => a.width - b.width);
+      if (!underlayTiers.length) underlayCurrent = null;
+      else if (detailEligible && crop.width > 0) {
+        const settledTier = underlayTiers.find((variant) => variant.width >= settledWidth) ?? underlayTiers[underlayTiers.length - 1];
+        const next = underlayPlan(underlaySource!, settledTier.width, crop, plateWidth, profile.underlayBudgetBytes);
+        // Keep the current underlay while the crop stays well inside it at the same tier; re-plan near an edge or on a tier move.
+        const keep = underlayCurrent && next && underlayCurrent.variant.width === next.variant.width && cropInside(crop, underlayCurrent.coverage, Math.min(crop.width, crop.height) * 0.2);
+        underlayCurrent = keep ? underlayCurrent : next;
+      }
+      if (underlayCurrent) for (const { asset } of underlayCurrent.tasks) tasks.push({ asset, priority: 88 });
+      // Floor: planned once the hero has settled (mayWarm) or as soon as inspection starts; re-planned only for a new scene.
+      const lowest = underlayTiers.find((variant) => variant.width > plateWidth);
+      const floorKey = lowest ? `${frame.id}/${showThemes.join("+")}/${eggShown ? "egg" : ""}/${lowest.width}` : "";
+      if (floorPlan && floorPlan.key !== floorKey) { floorSurface.clear(); floorPlan = null; paint.floor.rects = []; floorCanvas!.style.visibility = "hidden"; }
+      if (!floorPlan && lowest && (inspecting || mayWarm({ painted: firstPaintAt > 0, inspecting, moving, sinceFirstPaintMs: firstPaintAt ? performance.now() - firstPaintAt : 0 }))) {
+        const full = tileAssets(lowest, { x: 0, y: 0, width: 1, height: 1, scale: 1 }, 0);
+        if (full.reduce((sum, { asset }) => sum + asset.width * asset.height * 4, 0) <= profile.underlayBudgetBytes) floorPlan = { key: floorKey, variant: lowest, tasks: full };
+      }
+      const floorTodo = floorPlan ? floorPlan.tasks.filter((task) => !floorSurface.has(task.asset.url)) : [];
+      for (const { asset } of floorTodo) tasks.push({ asset, priority: 60 });
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
       for (const offset of [1, -1, 2, 3]) {
         const adjacent = manifest.frames[center + offset];
@@ -238,7 +280,7 @@ export function SequencePlayer() {
       }
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
-      cache.pin([...assets.map((asset) => asset.url), ...layers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url))]);
+      cache.pin([...assets.map((asset) => asset.url), ...layers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url)), ...(underlayCurrent?.tasks.map(({ asset }) => asset.url) ?? []), ...floorTodo.map(({ asset }) => asset.url)]);
       cache.retain(tasks.map(({ asset }) => asset.url));
       for (const task of tasks) request(task.asset, task.priority);
       const selectedTheme = THEME_IDS[selected];
@@ -266,6 +308,21 @@ export function SequencePlayer() {
       if (detailKey && detailThemeKey !== visibleThemeKey) releaseDetail();
       // Settled and the plate already satisfies the requested tier (zoomed back out): drop the now-unneeded detail canvas.
       if (detailKey && !layers.length && !moving && desiredWidth <= plateWidth) releaseDetail();
+      if (floorPlan && floorTodo.length && !moving && baseKey === nextBase) {
+        const f = floorPlan, long = Math.min(UNDERLAY_BACKING, f.variant.height);
+        floorSurface.place(rect.width, rect.height, { x: 0, y: 0, width: 1, height: 1, scale: 1 }, { width: Math.round(long * f.variant.width / f.variant.height), height: long });
+        floorSurface.setQueue(floorTodo.filter((task) => cache!.peek(task.asset.url)).map((task) => ({ key: task.asset.url, bitmap: () => cache!.peek(task.asset.url)?.bitmap, variantWidth: f.variant.width, variantHeight: f.variant.height, sourceX: task.sourceX, sourceY: task.sourceY, width: task.asset.width, height: task.asset.height })));
+        if (floorSurface.drain(performance.now() + 3)) paint.floor.rects = floorSurface.rects();
+        if (floorSurface.pending) schedule();
+      }
+      if (underlayCurrent && !moving && baseKey === nextBase) {
+        // Fixed backing (the coverage is always 2:3 in image pixels): a re-place is a pixel copy, never a reallocation.
+        const u = underlayCurrent, long = Math.min(UNDERLAY_BACKING, Math.ceil(u.coverage.height * u.variant.height));
+        underlay.place(rect.width, rect.height, u.coverage, { width: Math.round(long * (u.coverage.width * u.variant.width) / (u.coverage.height * u.variant.height)), height: long });
+        underlay.setQueue(u.tasks.filter((task) => cache!.peek(task.asset.url)).map((task) => ({ key: task.asset.url, bitmap: () => cache!.peek(task.asset.url)?.bitmap, variantWidth: u.variant.width, variantHeight: u.variant.height, sourceX: task.sourceX, sourceY: task.sourceY, width: task.asset.width, height: task.asset.height })));
+        if (underlay.drain(performance.now() + 4)) paint.underlay.rects = underlay.rects();
+        if (underlay.pending) schedule();
+      }
       if (layers.length && (baseKey === nextBase || inspecting)) {
         const coverage = layers[0].plan.coverage;
         const decoded = layers.map((layer) => ({
@@ -299,6 +356,7 @@ export function SequencePlayer() {
           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
           paintedCoverage = coverage;
+          paint.detail.rects = [[coverage.x, coverage.y, coverage.x + coverage.width, coverage.y + coverage.height, Math.min(paintLayers[0].plan.variant.width, detailCanvas!.width / coverage.width)]];
           detailThemeKey = visibleThemeKey;
           paintedMix = allReady ? showMix : 0;
           state.detailWidth = paintLayers[0].plan.variant.width;
@@ -307,6 +365,9 @@ export function SequencePlayer() {
           if (state.rendered) state.rendered = { ...state.rendered, tierWidth: state.detailWidth, urls: [...paintedKeys, ...detailKeys], generation };
         }
       }
+      // The pyramid underlay shows only while inspecting (at 1x it is decoded and painted, but hidden: the hero stays the plate).
+      underCanvas!.style.visibility = inspecting && underlay.coverage && paint.underlay.rects.length ? "visible" : "hidden";
+      floorCanvas!.style.visibility = inspecting && paint.floor.rects.length ? "visible" : "hidden";
       if (inspecting) {
         // The base is a persistent underlay: keep it visible so any part of the viewport the detail canvas does not
         // cover (camera jump beyond the painted buffer) shows the plate, never the page background.
@@ -352,6 +413,8 @@ export function SequencePlayer() {
     // The detail canvas is placed in css px (transform), so a container resize (window resize, mobile URL bar) must re-place it.
     // Re-place immediately (registration is exact at once) and force a repaint for the new resolution without hiding the layer.
     const resized = () => {
+      if (underlay.coverage) { const r = container.getBoundingClientRect(); placeDetail(underCanvas, r.width, r.height, underlay.coverage); }
+      if (floorSurface.coverage) { const r = container.getBoundingClientRect(); placeDetail(floorCanvas, r.width, r.height, floorSurface.coverage); }
       if (detailKey && detailCanvas.dataset.crop) {
         const [x, y, w, h] = detailCanvas.dataset.crop.split(",").map(Number);
         const r = container.getBoundingClientRect();
@@ -403,7 +466,7 @@ export function SequencePlayer() {
       cancelled = true; controller.abort(); unsubscribe(); unsubscribeInspection(); observer.disconnect();
       cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(inspectionSettleTimer); clearTimeout(warmTimer);
       visualViewport?.removeEventListener("resize", changed); visualViewport?.removeEventListener("scroll", changed);
-      delete window.__QUACKLES_SEQUENCE__; cache?.dispose();
+      delete window.__QUACKLES_SEQUENCE__; delete window.__QUACKLES_PAINT__; cache?.dispose();
     };
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">
@@ -412,6 +475,8 @@ export function SequencePlayer() {
         ? <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/hidden/night-moss.png")} width={768} height={1152} alt="Microduck on the night moss" fetchPriority="high" />
         : <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />}
       <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
+      <canvas ref={floor} className="sequence-floor" aria-hidden />
+      <canvas ref={under} className="sequence-underlay" aria-hidden />
       <canvas ref={detail} className="sequence-detail" aria-hidden />
     </div>
     <p ref={note} className="preview-note" data-testid="preview-note" hidden />
