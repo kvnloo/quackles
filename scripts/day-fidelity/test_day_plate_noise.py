@@ -48,8 +48,10 @@ class DayNoise(unittest.TestCase):
             fs = frames(theme); self.assertEqual(len(fs), 16, theme)
             vals = {f.name: speckle(f) for f in fs}
             for f in fs:
-                sib = sorted(v for k, v in vals.items() if k != f.name); bound = 2 * sib[len(sib) // 2]
-                self.assertLessEqual(vals[f.name], bound, f"{theme}/{f.name} speckle {vals[f.name]:.5f} > 2x sibling median {bound:.5f}")
+                sib = sorted(v for k, v in vals.items() if k != f.name)
+                # bound = max(2x sibling median, 0.01): natural texture across all 80 plates is <= 0.0075, the noisy Day hero was 0.042 (>5x the floor)
+                bound = max(2 * sib[len(sib) // 2], 0.01)
+                self.assertLessEqual(vals[f.name], bound, f"{theme}/{f.name} speckle {vals[f.name]:.5f} > bound {bound:.5f} (max of 2x sibling median, 0.01)")
 
     def test_hero_only_changes_noise_not_the_authored_look(self):
         prev_bytes = subprocess.run(["git", "show", PREV_HERO_GIT], cwd=ROOT, capture_output=True, check=True).stdout
