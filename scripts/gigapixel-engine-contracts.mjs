@@ -8,6 +8,7 @@ import * as render from "../lib/sequence/render.ts";
 import * as surfaceModule from "../lib/sequence/tile-surface.ts";
 import { FrameCache } from "../lib/sequence/cache.ts";
 import * as motion from "../lib/sequence/motion-quality.ts";
+import * as probe from "../lib/sequence/tier-probe.ts";
 import * as profileModule from "../lib/sequence/perf-profile.ts";
 import * as policyModule from "../lib/sequence/preview-policy.ts";
 import { PREVIEWS } from "../lib/preview.ts";
@@ -281,5 +282,24 @@ test("release: a flick too slow to coast stops the camera exactly where the fing
   assert.deepEqual([slow.targetFocusX, slow.targetFocusY, slow.focusVelocityX, slow.focusVelocityY], [0.4221, 0.2789, 0, 0]);
   const fast = motion.panRelease({ focusX: 0.4, focusY: 0.3, flickX: { focus: 0.7, velocity: 0.9 }, flickY: { focus: 0.3, velocity: 0 } });
   assert.equal(fast.coast, true); assert.deepEqual([fast.targetFocusX, fast.targetFocusY, fast.focusVelocityX], [0.7, 0.3, 0.9]);
+});
+
+// ---- (6) retries ------------------------------------------------------------------------------------------------------
+await atest("(6) a tier probe that fails transiently (5xx / network) is retried after ~1 s; only 404 marks the tier missing", async () => {
+  const variant = (w) => ({ width: w, height: w * 1.5, tiles: { tileSize: 512, overlap: 0, columns: 2, rows: 3, urlTemplate: `https://probe.test/${w}/{x}_{y}.webp` } });
+  const answers = new Map([["https://probe.test/100/0_0.webp", [503, 200]], ["https://probe.test/200/0_0.webp", ["net", 200]], ["https://probe.test/300/0_0.webp", [404, 200]]]);
+  const calls = new Map();
+  globalThis.fetch = async (url) => { const k = calls.get(url) || 0; calls.set(url, k + 1); const a = answers.get(url)[Math.min(k, 1)]; if (a === "net") throw new TypeError("network"); return { ok: a === 200, status: a }; };
+  let clock = 1000; const realNow = performance.now; performance.now = () => clock;
+  try {
+    for (const w of [100, 200, 300]) await probe.probeTier(variant(w));
+    assert.equal(probe.tierKnown(variant(100)), undefined, "503: unknown, not missing");
+    assert.equal(probe.tierKnown(variant(200)), undefined, "network error: unknown, not missing");
+    assert.equal(probe.tierKnown(variant(300)), false, "404: missing");
+    await probe.probeTier(variant(100)); assert.equal(calls.get("https://probe.test/100/0_0.webp"), 1, "no retry storm before the backoff");
+    clock += 1100;
+    assert.equal(await probe.probeTier(variant(100)), true); assert.equal(await probe.probeTier(variant(200)), true);
+    assert.equal(probe.tierKnown(variant(100)), true);
+  } finally { performance.now = realNow; }
 });
 console.log(`${n} passed`);

@@ -28,6 +28,8 @@ type SequenceDebug = {
   getState: () => PlayerState & {
     current: ReturnType<typeof snapshot>;
     cache: ReturnType<FrameCache["stats"]> | null;
+    /** Tiles whose last load failed and wait for their retry (cache.failures counts every failure). */
+    failedTiles: number;
     surfaceBytes: number;
     zoom: number;
     inspection: ReturnType<typeof inspectionSnapshot>;
@@ -81,7 +83,12 @@ export function SequencePlayer() {
       state.detailWidth = 0; state.detailTiles = 0; paint.detail.rects = []; detailSurface.clear();
       releaseUnderlay();
     };
-  const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
+  // failed: url -> when it failed. Retried after TILE_RETRY_MS even if the crop never moves (a still camera after a
+    // transient 5xx/network error used to keep the plate/underlay there until the next gesture).
+    const waiting = new Set<string>(), failed = new Map<string, number>(), warmed = new Set<string>();
+    const TILE_RETRY_MS = 1000;
+    let retryTimer = 0;
+    const retryLater = () => { if (!retryTimer && !cancelled) retryTimer = window.setTimeout(() => { retryTimer = 0; schedule(); }, TILE_RETRY_MS); };
     const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0, inspectionSources: describeInspectionSources(sources.themes, sources.hidden), preview: PREVIEW.id, note: null };
     const schedule = () => { if (!pendingFrame && !cancelled) pendingFrame = requestAnimationFrame(render); };
     const request = (asset: ImageAsset, priority: number) => {
@@ -90,7 +97,7 @@ export function SequencePlayer() {
       waiting.add(asset.url);
       void cache.load(asset, priority).catch((error: unknown) => {
         if (!(error instanceof DOMException && error.name === "AbortError")) {
-          failed.add(asset.url); state.errors.push(error instanceof Error ? error.message : String(error));
+          failed.set(asset.url, performance.now()); state.errors.push(error instanceof Error ? error.message : String(error));
           if (state.errors.length > 32) state.errors.shift();
         }
       }).finally(() => { waiting.delete(asset.url); schedule(); });
@@ -112,7 +119,7 @@ export function SequencePlayer() {
       if (!mayWarm({ painted: firstPaintAt > 0, inspecting, moving, sinceFirstPaintMs: firstPaintAt ? now - firstPaintAt : 0 })) return;
       const present = tiled.filter((variant) => !variant.tiles.urlTemplate.includes("/gp/") || tierKnown(variant) === true);
       for (const variant of tiled) {
-        if (variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
+        if (variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then((ok) => (ok === undefined ? retryLater() : schedule()));
       }
       if (!present.length) return;
       warmed.add(theme);
@@ -127,6 +134,8 @@ export function SequencePlayer() {
 
       const nextLoadIntent = `${frame.id}/${current.target}`;
       if (nextLoadIntent !== loadIntentKey) { loadIntentKey = nextLoadIntent; failed.clear(); }
+      for (const [url, at] of failed) if (frameStart - at >= TILE_RETRY_MS) failed.delete(url);
+      if (failed.size) retryLater();
       const { indices, mix } = themeIndices(current.theme);
       const themes = indices.map((i) => THEME_IDS[i]);
       const beforeAssets = themes.map((theme) => imageAt(span.before, theme, 1024));
@@ -177,12 +186,12 @@ export function SequencePlayer() {
       const eggShown = eggWeight(current.theme) > 0.5 && frame.id === "p0000000";
       const probeSource = eggShown ? mushroomPyramid : frame.assets[themes[0]];
       for (const variant of probeSource) {
-        if (!isImage(variant) && variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
+        if (!isImage(variant) && variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then((ok) => (ok === undefined ? retryLater() : schedule()));
       }
       if (inspecting && frame.id === "p0000000") {
         for (const theme of themes.length > 1 ? themes : THEME_IDS) {
           for (const variant of frame.assets[theme]) {
-            if (!isImage(variant) && variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
+            if (!isImage(variant) && variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then((ok) => (ok === undefined ? retryLater() : schedule()));
           }
         }
       }
@@ -253,7 +262,7 @@ export function SequencePlayer() {
 
         const coverageId = layers[0] ? `${layers[0].plan.coverage.x.toFixed(3)}/${layers[0].plan.coverage.y.toFixed(3)}` : "";
         if (coverageId && coverageId !== failCrop) {
-          for (const url of [...failed]) if (url.includes("/gp/")) failed.delete(url);
+          for (const url of [...failed.keys()]) if (url.includes("/gp/")) failed.delete(url);
           failCrop = coverageId;
         }
       }
@@ -488,7 +497,7 @@ export function SequencePlayer() {
     window.__QUACKLES_SEQUENCE__ = {
       setProgress(value) { scrollTo({ top: Math.max(0, Math.min(1, value)) * Math.max(1, document.documentElement.scrollHeight - innerHeight), behavior: "instant" }); setProgress(value); },
       setTheme: selectTheme,
-      getState: () => ({ ...state, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot(), profile }),
+      getState: () => ({ ...state, failedTiles: failed.size, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot(), profile }),
     };
     const controller = new AbortController();
     void (async () => {
@@ -523,7 +532,7 @@ export function SequencePlayer() {
     })();
     return () => {
       cancelled = true; controller.abort(); unsubscribe(); unsubscribeInspection(); observer.disconnect();
-      cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(inspectionSettleTimer); clearTimeout(warmTimer);
+      cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(retryTimer); clearTimeout(inspectionSettleTimer); clearTimeout(warmTimer);
       visualViewport?.removeEventListener("resize", changed); visualViewport?.removeEventListener("scroll", changed);
       delete window.__QUACKLES_SEQUENCE__; delete window.__QUACKLES_PAINT__; cache?.dispose();
     };
