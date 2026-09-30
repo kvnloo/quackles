@@ -208,7 +208,7 @@ try {
       `native-tier desktop fixture did not select full profile: ${before.sequence.profile.id}`,
     );
   if (initialDziRequests.length)
-    throw new Error("initial 1x hero fetched DZI tiles before inspection");
+    throw new Error("initial 1x hero fetched DZI tiles before inspection: " + initialDziRequests.slice(0, 6).join(" "));
   if (before.viewfinder.active)
     throw new Error("viewfinder should be hidden at 1x");
   if (before.willChange !== "auto")
