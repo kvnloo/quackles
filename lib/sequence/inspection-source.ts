@@ -53,6 +53,6 @@ export function applyInspectionPolicy(manifest: SequenceManifest, policy: Record
   return { ...manifest, frames };
 }
 
-export function describeInspectionSources(policy: Record<ThemeId, InspectionSource> = INSPECTION_POLICY): InspectionSourcesReceipt {
-  return structuredClone({ ...policy, hidden: HIDDEN_POLICY });
+export function describeInspectionSources(policy: Record<ThemeId, InspectionSource> = INSPECTION_POLICY, mushroom: InspectionSource = HIDDEN_POLICY.mushroom): InspectionSourcesReceipt {
+  return structuredClone({ ...policy, hidden: { mushroom } });
 }

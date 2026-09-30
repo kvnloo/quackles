@@ -12,12 +12,17 @@ import { SequenceFrame } from "@/components/sequence/SequenceFrame";
 import { SequencePlayer } from "@/components/sequence/SequencePlayer";
 import { SequenceScroll } from "@/components/sequence/SequenceScroll";
 import { SimFlagGate } from "@/components/sim/SimFlagGate";
+import { PREVIEW } from "@/lib/preview";
+
+/** lib/preview.ts: `story: false` drops the scroll story (driver, copy, beats, scroll space); `scenes` gates theme hints. */
+const STORY = PREVIEW.story;
+const THEMES = PREVIEW.scenes !== "mushroom" && PREVIEW.scenes.length > 1;
 
 export function Landing() {
   return (
-    <main id="top" className="experience-shell" data-testid="experience">
+    <main id="top" className="experience-shell" data-testid="experience" data-preview={PREVIEW.id}>
       <TextSelect />
-      <SequenceScroll />
+      {STORY && <SequenceScroll />}
       <HeroInspection />
       <FeelEngine />
 
@@ -27,30 +32,30 @@ export function Landing() {
           <SimFlagGate />
           <InspectionViewfinder />
           <PosterNav />
-          <PosterHeroCopy />
-          <PosterBeats />
+          {STORY && <PosterHeroCopy />}
+          {STORY && <PosterBeats />}
 
           <div className="scene-hud" aria-label="Scene controls and interaction hints">
             <ThemeControl />
             <div className="interaction-hints" aria-hidden>
-              <span className="interaction-hint interaction-hint-theme">
+              {THEMES && <span className="interaction-hint interaction-hint-theme">
                 DRAG ← → TO CHANGE SCENE COLOR
-              </span>
-              <span className="interaction-hint interaction-hint-inspect">
+              </span>}
+              {PREVIEW.zoom !== "none" && <span className="interaction-hint interaction-hint-inspect">
                 SCROLL ↑ OR CLICK TO INSPECT
-              </span>
-              <span className="interaction-hint interaction-hint-specs">
+              </span>}
+              {STORY && <span className="interaction-hint interaction-hint-specs">
                 SCROLL ↓ TO SEE SPECS
-              </span>
+              </span>}
             </div>
-            <div className="scroll-progress" aria-hidden>
+            {STORY && <div className="scroll-progress" aria-hidden>
               <div className="scroll-progress-fill" />
-            </div>
+            </div>}
           </div>
         </SequenceFrame>
       </div>
 
-      <div className="scroll-space" aria-hidden />
+      {STORY && <div className="scroll-space" aria-hidden />}
     </main>
   );
 }

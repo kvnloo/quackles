@@ -37,12 +37,19 @@ export function applyPalette(theme: number) {
 export function configure(manifestValue: SequenceManifest) {
   manifest = manifestValue;
   displayedTheme = -1;
-  const theme = Math.max(0, THEME_IDS.indexOf(manifestValue.defaultTheme));
+  const preferred = Math.max(0, THEME_IDS.indexOf(manifestValue.defaultTheme));
+  const theme = allowed.includes(preferred) ? preferred : allowed[0];
   publish({ ...state, theme, target: theme, presented: theme });
 }
 export function setProgress(progress: number) { publish({ ...state, progress: Math.max(0, Math.min(1, progress)) }); }
 const MAX_THEME = THEME_IDS.length - 1;
-const clampTheme = (value: number, fallback: number) => (Number.isNaN(value) ? fallback : Math.max(0, Math.min(MAX_THEME, value)));
+/** Theme indices this build may show (preview config); drag/select/default stay inside [first, last]. */
+let allowed: number[] = THEME_IDS.map((_, index) => index);
+export function setThemeRange(indices: number[]) {
+  const next = [...new Set(indices)].filter((index) => Number.isInteger(index) && index >= 0 && index <= MAX_THEME).sort((a, b) => a - b);
+  if (next.length) allowed = next;
+}
+const clampTheme = (value: number, fallback: number) => (Number.isNaN(value) ? fallback : Math.max(allowed[0], Math.min(allowed[allowed.length - 1], value)));
 /** Valid THEME_IDS indices (1 or 2) and blend for a possibly-fractional theme. */
 export function themeIndices(theme: number): { indices: number[]; mix: number } {
   const t = clampTheme(theme, 0);
@@ -66,12 +73,13 @@ export function dragTheme(theme: number) {
 export function selectTheme(id: ThemeId) {
   cancelAnimationFrame(animation);
   const target = THEME_IDS.indexOf(id), from = state.theme;
-  if (target < 0) return;
+  if (!allowed.includes(target)) return;
   publish({ ...state, target });
   if (state.reducedMotion) { publish({ ...state, theme: target }); return; }
   const started = performance.now();
   const tick = (now: number) => {
-    const p = Math.min(1, (now - started) / 180), eased = 1 - (1 - p) ** 3;
+    // rAF timestamps are frame-start times and can predate `started`: clamp p to [0,1] or the ease undershoots out of range.
+    const p = Math.max(0, Math.min(1, (now - started) / 180)), eased = 1 - (1 - p) ** 3;
     publish({ ...state, theme: from + (target - from) * eased });
     if (p < 1) animation = requestAnimationFrame(tick);
   };

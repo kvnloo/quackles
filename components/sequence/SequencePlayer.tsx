@@ -5,7 +5,9 @@ import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
-import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
+import { applyHiddenPolicy, describeInspectionSources, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
+import { PREVIEW } from "@/lib/preview";
+import { mushroomScene, previewManifest, previewNote, previewPolicy, previewThemeIndices } from "@/lib/sequence/preview-policy";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
 import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
@@ -13,12 +15,12 @@ import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { requestedDetailWidth } from "@/lib/sequence/motion-quality";
 import { armLockFade, startLockFade } from "@/lib/sequence/lock-fade";
-import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe, themeIndices } from "@/lib/sequence/store";
+import { applyPalette, configure, presentTheme, selectTheme, setProgress, setThemeRange, snapshot, subscribe, themeIndices } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
-type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number; inspectionSources: InspectionSourcesReceipt };
+type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number; inspectionSources: InspectionSourcesReceipt; preview: string; note: string | null };
 type SequenceDebug = {
   setProgress: (value: number) => void;
   setTheme: (id: ThemeId) => void;
@@ -34,11 +36,14 @@ type SequenceDebug = {
 declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug } }
 
 export function SequencePlayer() {
-  const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null);
+  const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null), note = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     const container = host.current, baseCanvas = base.current, detailCanvas = detail.current;
     if (!container || !baseCanvas || !detailCanvas) return;
     const profile = sequencePerfProfile();
+    // Preview config (lib/preview.ts): theme range, tile families, mushroom-only scene. Production = "policy", all five themes.
+    const sources = previewPolicy(PREVIEW);
+    setThemeRange(previewThemeIndices(PREVIEW));
     const eggAsset: ImageAsset = { url: assetPath("/preview-scene/sequence/hidden/night-moss.png"), width: 768, height: 1152 };
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null, mushroomPyramid: Variant[] = [];
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
@@ -55,7 +60,7 @@ export function SequencePlayer() {
       state.detailWidth = 0; state.detailTiles = 0;
     };
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
-    const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0, inspectionSources: describeInspectionSources() };
+    const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0, inspectionSources: describeInspectionSources(sources.themes, sources.hidden), preview: PREVIEW.id, note: null };
     const schedule = () => { if (!pendingFrame && !cancelled) pendingFrame = requestAnimationFrame(render); };
     const request = (asset: ImageAsset, priority: number) => {
       if (!cache || cache.peek(asset.url) || waiting.has(asset.url) || failed.has(asset.url)) return;
@@ -361,13 +366,19 @@ export function SequencePlayer() {
       try {
         const response = await fetch(assetPath(`/preview-scene/sequence/manifest.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (!response.ok) throw new Error(`Sequence manifest failed: ${response.status}`);
-        const parsed = applyInspectionPolicy(parseManifest(await response.json(), response.url), undefined, { allowCandidates: new URLSearchParams(location.search).get("inspectionCandidates") === "1" });
+        // The A/B candidate flag only applies to the production policy; a preview's families are fixed by its config.
+        const allowCandidates = PREVIEW.zoom === "policy" && new URLSearchParams(location.search).get("inspectionCandidates") === "1";
+        const policed = previewManifest(parseManifest(await response.json(), response.url), PREVIEW, { allowCandidates });
         const hidden = await fetch(assetPath(`/preview-scene/sequence/hidden-pyramids.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (hidden.ok) {
           const body = await hidden.json() as { mushroom?: { variants?: Variant[] } };
-          mushroomPyramid = applyHiddenPolicy(body.mushroom?.variants ?? [], HIDDEN_POLICY.mushroom, { allowCandidates: new URLSearchParams(location.search).get("inspectionCandidates") === "1" }).slice().sort((a, b) => a.width - b.width);
+          mushroomPyramid = applyHiddenPolicy(body.mushroom?.variants ?? [], sources.hidden, { allowCandidates }).slice().sort((a, b) => a.width - b.width);
         }
         if (cancelled) return;
+        // gigapixel-single: the hidden moss egg (plate + pyramid) is the sole scene.
+        const parsed = PREVIEW.scenes === "mushroom" ? mushroomScene(policed, eggAsset, mushroomPyramid) : policed;
+        state.note = previewNote(PREVIEW, parsed);
+        if (note.current) { note.current.textContent = state.note ?? ""; note.current.hidden = !state.note; }
         manifest = parsed;
         cache = new FrameCache(parsed.id, {
           decodedBudgetBytes: profile.decodedBudgetBytes,
@@ -390,9 +401,12 @@ export function SequencePlayer() {
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">
     <div className="sequence-camera">
-      <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />
+      {PREVIEW.scenes === "mushroom"
+        ? <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/hidden/night-moss.png")} width={768} height={1152} alt="Microduck on the night moss" fetchPriority="high" />
+        : <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />}
       <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
       <canvas ref={detail} className="sequence-detail" aria-hidden />
     </div>
+    <p ref={note} className="preview-note" data-testid="preview-note" hidden />
   </div>;
 }
