@@ -49,3 +49,5 @@ Next candidates (need owner steer or big cost): M9 simulator handoff contract; d
 ## LESSONS / STANDING REGRESSION SET (added 2026-09-30)
 Two of my own fixes regressed and were caught only by independent/adversarial measurement: (1) transform placement broke on container resize (fixed 077d8a9), (2) snapping camera arrival at the loose tolerance popped 5 px in the last frame (fixed 36dfbc4). Standing set to run before EVERY push: blank-frame, fling, wheel, touch, scroll-state, theme-zoom, theme-switch-stale, inspection-source, warm-idle, lock-fade, resize-placement, camera-arrival, profiles + all Node contracts + `camera-paths`/`camera-coherence.py` (gate <=1.0 px) when camera/placement code changes. Prefer adversarial verification BEFORE pushing camera/placement/render changes (deploy is currently blocked so nothing reached users).
 Status update: camera final = two-stage arrival, exact-converge, resize-safe, dissolve-on-lock. Verifier #7 (adversarial on 077d8a9/36dfbc4) in flight.
+
+UPDATE: CI `verify` (test:inspection:static on GitHub-hosted runners) green on nightly since 00628f4; only `pages` deploy is blocked (PAGES_RUNNER=self-hosted, 0 runners).

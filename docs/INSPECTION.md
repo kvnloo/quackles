@@ -27,5 +27,5 @@ Real browser (desktop Chromium, not device evidence): `scripts/blank-frame-brows
 - No physical-device evidence exists (no ADB device); frame-time targets (worst <= 25 ms, 0 frames > 50 ms) are unmeasured (headless is vsync-locked).
 - A 1x horizontal swipe leaves the theme at a fractional blend (decision D11 open in `docs/quackles-state/DECISIONS.md`).
 - Plate <-> 201 MP master registration (~0.35 plate px) and the 201 MP bust-poster banding are asset-level.
-- `test:inspection:static` has a pre-existing later failure ("viewfinder copied the base canvas") on the clean baseline.
+- `test:inspection:static` (the CI `verify` E2E) passes end to end on the current head; its earlier failures were a stale expectation (raw-manifest max width instead of the selected source's top tier) and per-tier paint counts that are now lower (settle-time promotion).
 - Simulator handoff (issue #41 item 4) is not implemented in the landing path.
