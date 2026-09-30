@@ -112,6 +112,8 @@ export class FrameCache {
     return image;
   }
   pin(keys: Iterable<string>) { this.pinned = new Set(keys); this.pump(); }
+  /** Re-rank a queued job (the latest plan decides the order: centre-first as the crop moves). */
+  prioritize(key: string, priority: number) { const job = this.jobs.get(key); if (job) job.priority = priority; }
   setPaused(paused: boolean) { if (this.paused === paused) return; this.paused = paused; if (!paused) this.pump(); }
   retain(keys: Iterable<string>) {
     this.wanted = new Set(keys);

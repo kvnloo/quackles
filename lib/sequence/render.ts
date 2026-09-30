@@ -179,6 +179,27 @@ export function sharpPlan(
   return { ...tight, coverage: crop };
 }
 
+type PlanTask = ReturnType<typeof tileAssets>[number];
+/**
+ * Paint and request order for a detail plan: tiles overlapping the visible crop first, nearest the crop centre first,
+ * then the margin tiles the same way. The sharp layer locks where the eye is before the pan buffer.
+ */
+export function centreFirst<T extends PlanTask>(tasks: T[], variant: ImageAsset | TileAsset, crop: Crop) {
+  const cx = (crop.x + crop.width / 2) * variant.width, cy = (crop.y + crop.height / 2) * variant.height;
+  const x0 = crop.x * variant.width, x1 = (crop.x + crop.width) * variant.width, y0 = crop.y * variant.height, y1 = (crop.y + crop.height) * variant.height;
+  return tasks
+    .map((task) => ({
+      task,
+      visible: task.sourceX < x1 && task.sourceX + task.asset.width > x0 && task.sourceY < y1 && task.sourceY + task.asset.height > y0,
+      distance: Math.hypot(task.sourceX + task.asset.width / 2 - cx, task.sourceY + task.asset.height / 2 - cy),
+    }))
+    .sort((a, b) => (a.visible === b.visible ? a.distance - b.distance : a.visible ? -1 : 1));
+}
+/** Request priority for the i-th entry of centreFirst: visible 95.., margin 85.. (the underlay is 88, the floor 60). */
+export function tilePriority(entry: { visible: boolean }, index: number) {
+  return (entry.visible ? 95 : 85) - Math.min(index, 999) * 0.004;
+}
+
 /** The underlay spans this many viewports (per axis) around the visible crop. */
 export const UNDERLAY_SPAN = 2;
 export const UNDERLAY_MAX_TILES = 20;

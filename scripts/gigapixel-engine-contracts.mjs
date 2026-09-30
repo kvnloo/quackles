@@ -124,4 +124,34 @@ test("surface: a different backing size reallocates and forgets what was painted
   const b = inspectionCrop(7.4, 0.5, 0.5); s.place(W, H, b, render.detailBackingSize(W, H, b, DPR));
   assert.equal(s.rects().length, 0);
 });
+
+// ---- (2) centre-first order and request priorities ---------------------------------------------------------------
+test("(2) centre-first: every visible tile before any margin tile, visible tiles by distance from the crop centre", () => {
+  assert.equal(typeof render.centreFirst, "function", "render.centreFirst missing");
+  for (const z of [5.4, 7.4, 12, 17.9]) for (const [fx, fy] of FOCI) {
+    const crop = inspectionCrop(z, fx, fy), plan = render.sharpPlan(white, need(z), crop, 200 * MIB, W, H, DPR, 0);
+    const order = render.centreFirst(plan.tasks, plan.variant, crop);
+    assert.equal(order.length, plan.tasks.length);
+    const firstMargin = order.findIndex((e) => !e.visible), lastVisible = order.map((e) => e.visible).lastIndexOf(true);
+    assert.ok(firstMargin < 0 || firstMargin > lastVisible, `z${z}: a margin tile precedes a visible one`);
+    const visible = order.filter((e) => e.visible);
+    const cx = (crop.x + crop.width / 2) * plan.variant.width, cy = (crop.y + crop.height / 2) * plan.variant.height;
+    const dist = (t) => Math.hypot(t.sourceX + t.asset.width / 2 - cx, t.sourceY + t.asset.height / 2 - cy);
+    for (let i = 1; i < visible.length; i++) assert.ok(dist(visible[i].task) >= dist(visible[i - 1].task) - 1e-6, `z${z}: not centre-first`);
+    const t0 = visible[0].task;
+    assert.ok(t0.sourceX <= cx && cx <= t0.sourceX + t0.asset.width && t0.sourceY <= cy && cy <= t0.sourceY + t0.asset.height, `z${z}: first tile misses the centre`);
+    for (const e of order) {
+      const t = e.task, overlaps = t.sourceX < (crop.x + crop.width) * plan.variant.width && t.sourceX + t.asset.width > crop.x * plan.variant.width && t.sourceY < (crop.y + crop.height) * plan.variant.height && t.sourceY + t.asset.height > crop.y * plan.variant.height;
+      assert.equal(e.visible, overlaps, "visible = overlaps the crop");
+    }
+  }
+});
+test("(2) request priorities follow the paint order: visible detail > underlay (88) > margin detail > floor (60)", () => {
+  assert.equal(typeof render.tilePriority, "function", "render.tilePriority missing");
+  const crop = inspectionCrop(7.4, 0.4, 0.6), plan = render.sharpPlan(white, need(7.4), crop, 200 * MIB, W, H, DPR, 0);
+  const order = render.centreFirst(plan.tasks, plan.variant, crop), p = order.map((e, i) => render.tilePriority(e, i));
+  for (let i = 1; i < p.length; i++) assert.ok(p[i] < p[i - 1], "strictly decreasing");
+  order.forEach((e, i) => assert.ok(e.visible ? p[i] > 88 && p[i] < 100 : p[i] < 88 && p[i] > 60, `${e.visible} ${p[i]}`));
+});
+
 console.log(`${n} passed`);
