@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import * as render from "../lib/sequence/render.ts";
 import * as surfaceModule from "../lib/sequence/tile-surface.ts";
+import { FrameCache } from "../lib/sequence/cache.ts";
 
 const { inspectionCrop, tileAssets } = render;
 const raw = JSON.parse(fs.readFileSync(new URL("../public/preview-scene/sequence/manifest.json", import.meta.url)));
@@ -154,4 +155,57 @@ test("(2) request priorities follow the paint order: visible detail > underlay (
   order.forEach((e, i) => assert.ok(e.visible ? p[i] > 88 && p[i] < 100 : p[i] < 88 && p[i] > 60, `${e.visible} ${p[i]}`));
 });
 
+// ---- (3) fetch / decode split -------------------------------------------------------------------------------------
+// Node stand-ins: no Cache API (window without caches), fetch and createImageBitmap recorded.
+const net = { fetches: [], decodes: [], hold: false, pending: [] };
+globalThis.window = globalThis;
+globalThis.fetch = (url, init = {}) => new Promise((resolve, reject) => {
+  net.fetches.push(url);
+  const done = () => resolve({ ok: true, status: 200, blob: async () => ({ url, size: 10 }) });
+  init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+  if (net.hold) net.pending.push(done); else setTimeout(done, 1);
+});
+globalThis.createImageBitmap = async (blob) => { net.decodes.push(blob.url); return { width: 512, height: 512, close() {} }; };
+const tick = (ms = 5) => new Promise((r) => setTimeout(r, ms));
+const asset = (i) => ({ url: `https://t/${i}.webp`, width: 512, height: 512 });
+const atest = async (name, fn) => { await fn(); n++; console.log("PASS", name); };
+const reset = () => { net.fetches = []; net.decodes = []; net.hold = false; net.pending = []; };
+await atest("(3) paused (camera moving): tiles still fetch, none decodes; resume decodes them without refetching", async () => {
+  reset(); const cache = new FrameCache("t", { decodedBudgetBytes: 64 * MIB, maxActiveJobs: 2 });
+  cache.setPaused(true);
+  const loads = [0, 1, 2].map((i) => cache.load(asset(i), 90 - i));
+  await tick(20);
+  assert.equal(net.fetches.length, 3, "fetch while paused");
+  assert.equal(net.decodes.length, 0, "no createImageBitmap while paused");
+  assert.equal(cache.stats().startedDecodes, 0, "no decode START while paused");
+  cache.setPaused(false);
+  await Promise.all(loads);
+  assert.equal(net.decodes.length, 3); assert.equal(net.fetches.length, 3, "decoded from the fetched blob");
+  assert.deepEqual(net.decodes, [0, 1, 2].map((i) => asset(i).url), "decode order = priority order");
+});
+await atest("(3) fetches are bounded while paused (maxActiveJobs in flight: the legacy caps) and follow priority", async () => {
+  reset(); net.hold = true; const cache = new FrameCache("t", { decodedBudgetBytes: 64 * MIB, maxActiveJobs: 3 });
+  cache.setPaused(true);
+  for (let i = 0; i < 10; i++) cache.load(asset(i), i).catch(() => {});
+  await tick(10);
+  assert.equal(net.fetches.length, 3); assert.deepEqual(net.fetches, [9, 8, 7].map((i) => asset(i).url));
+  cache.dispose();
+});
+await atest("(3) a tile no plan wants any more is dropped whether fetching or fetched", async () => {
+  reset(); const cache = new FrameCache("t", { decodedBudgetBytes: 64 * MIB, maxActiveJobs: 2 });
+  cache.setPaused(true);
+  const a = cache.load(asset(0), 90), b = cache.load(asset(1), 90);
+  await tick(20);
+  cache.retain([asset(1).url]);
+  await assert.rejects(a, (e) => e.name === "AbortError");
+  cache.setPaused(false); await b;
+  assert.deepEqual(net.decodes, [asset(1).url]);
+});
+test("(3) landing prefetch: while the camera moves, tiles are planned at where it will land (coast target), not where it is", () => {
+  assert.equal(typeof render.prefetchCrop, "function", "render.prefetchCrop missing");
+  const coast = { cameraMoving: true, zoom: 7.4, focusX: 0.2, focusY: 0.3, targetZoom: 7.4, targetFocusX: 0.8, targetFocusY: 0.35 };
+  assert.deepEqual(render.prefetchCrop(coast), inspectionCrop(7.4, 0.8, 0.35));
+  assert.equal(render.prefetchCrop({ ...coast, cameraMoving: false }), null, "at rest the normal plan is the landing");
+  assert.deepEqual(render.prefetchCrop({ ...coast, targetZoom: 3, zoom: 5 }), inspectionCrop(3, 0.8, 0.35), "zooming out: the landing zoom");
+});
 console.log(`${n} passed`);

@@ -9,7 +9,7 @@ import { applyHiddenPolicy, describeInspectionSources, type InspectionSourcesRec
 import { PREVIEW } from "@/lib/preview";
 import { mushroomScene, previewManifest, previewNote, previewPolicy, previewThemeIndices } from "@/lib/sequence/preview-policy";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
-import { placeDetail, centreFirst, cropInside, detailBackingSize, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, tilePriority, underlayPlan, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { placeDetail, centreFirst, cropInside, detailBackingSize, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, prefetchCrop, sharpPlan, tileAssets, tilePriority, underlayPlan, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { TileSurface, type PaintedRect, type SurfaceStamp } from "@/lib/sequence/tile-surface";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
@@ -266,6 +266,19 @@ export function SequencePlayer() {
         underlayCurrent = keep ? underlayCurrent : next;
       }
       if (underlayCurrent) for (const { asset } of underlayCurrent.tasks) tasks.push({ asset, priority: 88 });
+      // Fetch ahead while the camera moves: the settled-tier plan (and its underlay) where the camera will land. Decodes wait
+      // for rest; the round trips do not. Not pinned: at rest this becomes the normal (pinned) plan.
+      const landing = inspecting && underlaySource && underlayTiers.length ? prefetchCrop(inspect) : null;
+      if (landing) {
+        const landingWidth = Math.ceil(rect.width * devicePixelRatio * landing.scale);
+        const landingBudget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4 - profile.underlayBudgetBytes;
+        const ahead = sharpPlan(underlaySource!, landingWidth, landing, landingBudget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan);
+        if (ahead && ahead.variant.width > plateWidth) {
+          centreFirst(ahead.tasks, ahead.variant, landing).forEach((entry, i) => tasks.push({ asset: entry.task.asset, priority: tilePriority(entry, i) + 3 }));
+          const aheadUnder = underlayPlan(underlaySource!, ahead.variant.width, landing, plateWidth, profile.underlayBudgetBytes);
+          for (const { asset } of aheadUnder?.tasks ?? []) tasks.push({ asset, priority: 91 });
+        }
+      }
       // Floor: planned once the hero has settled (mayWarm) or as soon as inspection starts; re-planned only for a new scene.
       const lowest = underlayTiers.find((variant) => variant.width > plateWidth);
       const floorKey = lowest ? `${frame.id}/${showThemes.join("+")}/${eggShown ? "egg" : ""}/${lowest.width}` : "";

@@ -9,7 +9,9 @@ export type FrameCacheOptions = {
   maxActiveJobs?: number;
 };
 export type Decoded = { key: string; asset: ImageAsset; bitmap: ImageBitmap; bytes: number; touched: number };
-type Job = { asset: ImageAsset; priority: number; bytes: number; reserved: boolean; controller: AbortController; resolve: (image: Decoded) => void; reject: (error: Error) => void; promise: Promise<Decoded>; active: boolean };
+/** queued -> fetching (network or the compressed cache) -> fetched (blob held) -> decoding (createImageBitmap). */
+type Stage = "queued" | "fetching" | "fetched" | "decoding";
+type Job = { asset: ImageAsset; priority: number; bytes: number; reserved: boolean; controller: AbortController; resolve: (image: Decoded) => void; reject: (error: Error) => void; promise: Promise<Decoded>; active: boolean; stage: Stage; blob?: Blob };
 
 class CompressedCache {
   private cache: Promise<Cache | null>;
@@ -92,9 +94,12 @@ export class FrameCache {
   private decodedBudgetBytes: number;
   private maxActiveJobs: number;
   // While the camera moves, no new decode starts: decodes (and their GPU uploads) inside the motion were the
-  // zoom/pan hitch. Jobs stay queued (and still retain/abort normally) and start once the camera rests.
+  // zoom/pan hitch. Fetches keep running (network only), so a tile is a decode away when the camera rests.
   private paused = false;
   private startedDecodes = 0;
+  private fetching = 0;
+  private maxFetching = 0;
+  private startedFetches = 0;
   private warming = new Set<string>();
   private warmQueue: ImageAsset[] = [];
   private warmActive = 0;
@@ -134,8 +139,8 @@ export class FrameCache {
     if (bytes > this.decodedBudgetBytes) return Promise.reject(new Error("Full image exceeds the decoded budget; use tiles"));
     let resolve!: Job["resolve"], reject!: Job["reject"];
     const promise = new Promise<Decoded>((success, failure) => { resolve = success; reject = failure; });
-    this.jobs.set(asset.url, { asset, priority, bytes, reserved: false, controller: new AbortController(), resolve, reject, promise, active: false });
-    this.pump();
+    this.jobs.set(asset.url, { asset, priority, bytes, reserved: false, controller: new AbortController(), resolve, reject, promise, active: false, stage: "queued" });
+    this.schedulePump();
     return promise;
   }
   warm(asset: ImageAsset) {
@@ -145,7 +150,7 @@ export class FrameCache {
     this.pumpWarm();
   }
   private pumpWarm() {
-    if (this.disposed || this.active > 0) return;
+    if (this.disposed || this.active > 0 || this.fetching > 0) return;
     while (this.warmActive < 4 && this.warmQueue.length) {
       const asset = this.warmQueue.shift()!;
       this.warmActive++;
@@ -172,38 +177,70 @@ export class FrameCache {
     }
     return this.used + this.reserved + bytes <= this.decodedBudgetBytes;
   }
+  // A render requests many tiles in a row: start work once they are all queued, so priority (not call order) decides.
+  private pumpQueued = false;
+  private schedulePump() {
+    if (this.pumpQueued) return;
+    this.pumpQueued = true;
+    queueMicrotask(() => { this.pumpQueued = false; this.pump(); });
+  }
   private pump() {
-    if (this.disposed || this.paused) return;
-    const pending = [...this.jobs.values()].filter((job) => !job.active).sort((a, b) => b.priority - a.priority);
-    for (const job of pending) {
-      if (this.active >= this.maxActiveJobs) break;
+    if (this.disposed) return;
+    const byPriority = (a: Job, b: Job) => b.priority - a.priority;
+    // Jobs in flight in any stage (network + decode) stay <= maxActiveJobs: the legacy contracts count both
+    // (sequence-contracts: network capped at three by default; profile-browser: in-flight <= maxActiveJobs).
+    const cap = this.maxActiveJobs, inFlight = () => this.fetching + this.active;
+    // At rest a fetched tile is a decode away from the screen: decodes take the free slots first.
+    if (!this.paused) for (const job of [...this.jobs.values()].filter((job) => job.stage === "fetched").sort(byPriority)) {
+      if (inFlight() >= cap) break;
       const high = job.bytes >= HIGH_TIER;
       if ((high && this.highActive) || !this.room(job.bytes)) continue;
-      job.active = true; this.active++; if (high) this.highActive++; this.startedDecodes++;
-      this.maxInflight = Math.max(this.maxInflight, this.active); this.maxHighTierInflight = Math.max(this.maxHighTierInflight, this.highActive);
+      job.stage = "decoding"; job.active = true; this.active++; if (high) this.highActive++; this.startedDecodes++;
+      this.maxInflight = Math.max(this.maxInflight, this.fetching + this.active); this.maxHighTierInflight = Math.max(this.maxHighTierInflight, this.highActive);
       job.reserved = true; this.reserved += job.bytes; this.maxBytes = Math.max(this.maxBytes, this.used + this.reserved);
-      void this.run(job).finally(() => {
+      void this.decode(job).finally(() => {
         this.active--; if (high) this.highActive--;
         if (job.reserved) this.reserved -= job.bytes;
         this.jobs.delete(job.asset.url); this.pump(); this.pumpWarm();
       });
     }
+    // The network runs paused or not (the camera moving pauses decodes only).
+    for (const job of [...this.jobs.values()].filter((job) => job.stage === "queued").sort(byPriority)) {
+      if (inFlight() >= cap) break;
+      this.fetch(job);
+    }
   }
-  private async run(job: Job) {
-    try {
-      let blob = await this.disk.read(job.asset.url);
-      if (!blob) {
-        this.networkRequests++;
-        const response = await fetch(job.asset.url, { signal: job.controller.signal });
-        if (!response.ok) throw new Error(`Frame request failed: ${response.status}`);
-        blob = await response.blob();
-        this.disk.write(job.asset.url, blob);
+  private fetch(job: Job) {
+    job.stage = "fetching"; this.fetching++; this.startedFetches++; this.maxFetching = Math.max(this.maxFetching, this.fetching);
+    this.maxInflight = Math.max(this.maxInflight, this.fetching + this.active);
+    void (async () => {
+      try {
+        let blob = await this.disk.read(job.asset.url);
+        if (!blob) {
+          this.networkRequests++;
+          const response = await fetch(job.asset.url, { signal: job.controller.signal });
+          if (!response.ok) throw new Error(`Frame request failed: ${response.status}`);
+          blob = await response.blob();
+          this.disk.write(job.asset.url, blob);
+        }
+        job.controller.signal.throwIfAborted();
+        job.blob = blob; job.stage = "fetched";
+      } catch (error) {
+        if (this.jobs.get(job.asset.url) === job) this.jobs.delete(job.asset.url);
+        if (!(error instanceof DOMException && error.name === "AbortError")) this.failures++;
+        job.reject(error instanceof Error ? error : new Error(String(error)));
+      } finally {
+        this.fetching--; this.pump(); this.pumpWarm();
       }
+    })();
+  }
+  private async decode(job: Job) {
+    try {
       job.controller.signal.throwIfAborted();
       this.decoding++; this.maxDecoding = Math.max(this.maxDecoding, this.decoding);
       let bitmap: ImageBitmap;
-      try { bitmap = await createImageBitmap(blob); this.completedDecodes++; }
-      finally { this.decoding--; }
+      try { bitmap = await createImageBitmap(job.blob!); this.completedDecodes++; }
+      finally { this.decoding--; job.blob = undefined; }
       if (this.disposed || job.controller.signal.aborted) {
         this.close(bitmap); this.staleDiscard++;
         throw new DOMException("Decoded frame superseded", "AbortError");
@@ -222,7 +259,7 @@ export class FrameCache {
   }
   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
   stats() {
-    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
+    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.fetching + this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.fetching - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, fetching: this.fetching, maxFetching: this.maxFetching, startedFetches: this.startedFetches, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
   }
   dispose() {
     this.disposed = true;

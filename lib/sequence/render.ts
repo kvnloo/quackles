@@ -57,6 +57,11 @@ export function inspectionCrop(
   const y = Math.max(0, Math.min(1 - height, focusY * (1 - height)));
   return { x, y, width, height, scale };
 }
+/** Where a moving camera will come to rest (coast/spring target; during a pinch the target is the camera itself), or null at
+ * rest. Its tiles are fetched during the motion and decoded once the camera rests (the cache pauses decodes, not fetches). */
+export function prefetchCrop(s: { cameraMoving: boolean; targetZoom: number; targetFocusX: number; targetFocusY: number }): Crop | null {
+  return s.cameraMoving ? inspectionCrop(s.targetZoom, s.targetFocusX, s.targetFocusY) : null;
+}
 export function tileAssets(variant: TileAsset, crop: Crop, overscan = 1) {
   const { tileSize, overlap, columns, rows, urlTemplate } = variant.tiles;
   const firstX = Math.max(0, Math.floor(crop.x * variant.width / tileSize) - overscan);
