@@ -6,6 +6,7 @@ import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyInspectionPolicy, describeInspectionSources, type InspectionSource } from "@/lib/sequence/inspection-source";
+import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
 import { cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
@@ -66,25 +67,28 @@ export function SequencePlayer() {
         }
       }).finally(() => { waiting.delete(asset.url); schedule(); });
     };
-    function warmTheme(theme: ThemeId) {
+    let firstPaintAt = 0, warmTimer = 0;
+    const notePaint = () => {
+      if (firstPaintAt) return;
+      firstPaintAt = performance.now();
+      warmTimer = window.setTimeout(schedule, WARM_SETTLE_MS + 50);
+    };
+    function warmTheme(theme: ThemeId, inspecting: boolean, moving: boolean) {
       if (!manifest || !cache || warmed.has(theme)) return;
       const hero = manifest.frames.find((item) => item.id === "p0000000") ?? manifest.frames[0];
       if (!hero) return;
       const tiled = hero.assets[theme].filter((variant): variant is TileAsset => !isImage(variant));
       if (!tiled.length) { warmed.add(theme); return; }
+      // No HQ/DZI traffic until the base hero is painted and the app has settled.
+      const now = performance.now();
+      if (!mayWarm({ painted: firstPaintAt > 0, inspecting, moving, sinceFirstPaintMs: firstPaintAt ? now - firstPaintAt : 0 })) return;
       const present = tiled.filter((variant) => !variant.tiles.urlTemplate.includes("/gp/") || tierKnown(variant) === true);
       for (const variant of tiled) {
         if (variant.tiles.urlTemplate.includes("/gp/") && tierKnown(variant) === undefined) void probeTier(variant).then(() => schedule());
       }
       if (!present.length) return;
       warmed.add(theme);
-      const mid = present.find((variant) => variant.width >= 2896) ?? present[0];
-      const top = present[present.length - 1];
-      if (isImage(mid) || isImage(top)) return;
-      for (const tile of [
-        ...tileAssets(mid, { x: 0, y: 0, width: 1, height: 1, scale: 1 }, 0),
-        ...tileAssets(top, { x: 0.22, y: 0.18, width: 0.56, height: 0.5, scale: 4 }, 0),
-      ]) cache.warm(tile.asset);
+      for (const tile of warmPlan(present, tileAssets)) cache.warm(tile.asset);
     }
     function render() {
       pendingFrame = 0;
@@ -234,8 +238,8 @@ export function SequencePlayer() {
       cache.retain(tasks.map(({ asset }) => asset.url));
       for (const task of tasks) request(task.asset, task.priority);
       const selectedTheme = THEME_IDS[selected];
-      if (selectedTheme) warmTheme(selectedTheme);
-      warmTheme("blue");
+      if (selectedTheme) warmTheme(selectedTheme, inspecting, moving);
+      warmTheme("blue", inspecting, moving);
       const beforeImages = beforeAssets.map((asset) => cache!.peek(asset.url));
       const afterImages = afterAssets.map((asset) => cache!.peek(asset.url));
       const eggImage = cache!.peek(eggAsset.url);
@@ -246,7 +250,7 @@ export function SequencePlayer() {
         applyPalette(current.theme);
         baseKey = nextBase; paintedKeys = assets.map((asset) => asset.url);
         if (!inspecting || span.mix > 0) releaseDetail();
-        state.ready = true; state.drawCount++;
+        state.ready = true; state.drawCount++; notePaint();
         state.rendered = { ...state.requested, tierWidth: state.detailWidth || plateWidth, urls: [...paintedKeys, ...detailKeys] };
         if (fallback.current) fallback.current.style.visibility = "hidden";
         baseCanvas!.style.visibility = "visible";
@@ -352,14 +356,14 @@ export function SequencePlayer() {
         });
         state.manifestId = parsed.id; state.frameCount = parsed.frames.length;
         state.frames = parsed.frames.map(({ id, progress, phase }) => ({ id, progress, phase }));
-        configure(parsed); schedule(); warmTheme("blue");
+        configure(parsed); schedule();
       } catch (error) {
         if (!cancelled) state.errors.push(error instanceof Error ? error.message : String(error));
       }
     })();
     return () => {
       cancelled = true; controller.abort(); unsubscribe(); unsubscribeInspection(); observer.disconnect();
-      cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(inspectionSettleTimer);
+      cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(inspectionSettleTimer); clearTimeout(warmTimer);
       visualViewport?.removeEventListener("resize", changed); visualViewport?.removeEventListener("scroll", changed);
       delete window.__QUACKLES_SEQUENCE__; cache?.dispose();
     };
