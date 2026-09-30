@@ -12,7 +12,7 @@ const browser = await chromium.launch({ executablePath: "/usr/bin/google-chrome-
 const SPEEDS = { slow: [40, 90], normal: [110, 40], fling: [420, 12] };
 const out = {};
 for (const [name, [px, ms]] of Object.entries(SPEEDS)) {
-  const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+  const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: process.env.REDUCED === "1" ? "reduce" : "no-preference" })).newPage();
   await page.route("**/quackles-assets/**", async (route) => { const f = path.join(ASSETS, new URL(route.request().url()).pathname.replace(/^\/quackles-assets\//, "")); if (!fs.existsSync(f)) return route.fulfill({ status: 404, body: "" }); await route.fulfill({ body: fs.readFileSync(f), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } }); });
   await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0); await page.waitForTimeout(2500);
   await page.mouse.move(1000, 450);

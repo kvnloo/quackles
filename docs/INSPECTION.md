@@ -19,7 +19,11 @@ Current verdicts (frozen contracts: dE <= 5, |dL| <= 3 against the accepted sour
 Unit/contract (Node): `camera-settle-contracts.mjs`, `test:inspection-source`, `test:warm-plan`, `test:request-budget`, `test:synced-theme`, `test:motion-quality`, `test:wiring` (static guards), plus `node scripts/detail-placement-contracts.mjs`, `lock-fade-contracts.mjs`.
 Real browser (desktop Chromium, not device evidence): `scripts/blank-frame-browser.mjs` (per-frame blank/stale), `fling-stress-browser.mjs`, `wheel-zoom-browser.mjs`, `touch-input-browser.mjs` (CDP multi-touch), `scroll-state-browser.mjs`, `ui-stability-browser.mjs`, `profile-browser.mjs`, `lock-fade-browser.mjs`, `resize-placement-browser.mjs`, `camera-arrival-browser.mjs`, `theme-zoom/theme-switch-stale/inspection-source/warm-idle-browser.mjs`, and `scripts/inspection-audit/` (audit matrix, camera-coherence, lock-shift, perf-trace, visual-parity). Day plate noise/authored-look: `python3 -m unittest scripts/day-fidelity/*.py`.
 
+## Verified behaviours worth keeping
+- Reduced motion (`REDUCED=1 node scripts/scroll-state-browser.mjs`): scroll story shows exactly two static views (assembled p0000000, exploded p1000000), 0 blank frames, reversible at slow/normal/fling.
+
 ## Known limits / open questions
+- **Keyboard**: only `Escape` (reset) is handled; there is no keyboard way to enter or drive the zoom. Proposal (not built, needs an owner call on the focus-ring design): make the hero focusable with `+`/`-` zoom, arrows pan, `Escape` reset, only while focused.
 - No physical-device evidence exists (no ADB device); frame-time targets (worst <= 25 ms, 0 frames > 50 ms) are unmeasured (headless is vsync-locked).
 - A 1x horizontal swipe leaves the theme at a fractional blend (decision D11 open in `docs/quackles-state/DECISIONS.md`).
 - Plate <-> 201 MP master registration (~0.35 plate px) and the 201 MP bust-poster banding are asset-level.
