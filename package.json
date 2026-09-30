@@ -29,6 +29,7 @@
     "test:profiles": "node scripts/profile-browser.mjs",
     "test:resize": "node scripts/resize-placement-browser.mjs",
     "test:camera-arrival": "node scripts/camera-arrival-browser.mjs",
+    "test:fuzz": "SEED=1 STEPS=45 node scripts/fuzz-browser.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
