@@ -17,7 +17,7 @@ from PIL import Image
 
 REF_SHA = "1481b570e247a9420c39a634d9019142d3b03160d07d00cb9051dffcfca27891"
 REF_GIT = "origin/fix/day-visual:blender/assets/reference_day.png"
-PLATE = "public/preview-scene/sequence/cinematic-proof-v2/day/p0000000-1024.png"
+PLATE = "public/preview-scene/sequence/cinematic-proof-v2/day/p0000000-1024.webp"
 # x0, y0, x1, y1 on the 1024x1536 frame (pinned from a side-by-side review)
 REGIONS = {"full": (0, 0, 1024, 1536), "robot": (350, 400, 890, 1210),
            "plinth": (200, 1160, 1024, 1536), "poster": (700, 0, 1024, 740)}
