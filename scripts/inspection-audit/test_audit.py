@@ -42,5 +42,12 @@ class Prims(unittest.TestCase):
         self.assertEqual(a.pick_level(fam, zoom=2, out_w=400), 1)
         self.assertEqual(a.pick_level(fam, zoom=8, out_w=400), 0)  # max useful = largest
 
+class Verdict(unittest.TestCase):
+    def test_frozen_contract_boundaries(self):
+        self.assertEqual(a.verdict(5.0, 3.0), "pass")
+        self.assertEqual(a.verdict(5.01, 0), "marginal")
+        self.assertEqual(a.verdict(4, 3.01), "marginal")
+        self.assertEqual(a.verdict(10.5, 0), "diverges")
+
 if __name__ == "__main__":
     unittest.main()

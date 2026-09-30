@@ -45,13 +45,13 @@ export function SequencePlayer() {
     let motionScale = MOTION_SCALE_START, lastMotionFrame = 0;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
-    let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "";
+    let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "";
     let heldTheme = 2;
     let themeRelease: ThemeRelease | null = null;
     const releaseDetail = () => {
       detailCanvas.style.visibility = "hidden";
       if (detailCanvas.width !== 1 || detailCanvas.height !== 1) { detailCanvas.width = 1; detailCanvas.height = 1; }
-      detailKeys = []; detailKey = ""; paintedCoverage = null; paintedMix = -1;
+      detailKeys = []; detailKey = ""; detailThemeKey = ""; paintedCoverage = null; paintedMix = -1;
       state.detailWidth = 0; state.detailTiles = 0;
     };
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
@@ -257,6 +257,9 @@ export function SequencePlayer() {
         window.dispatchEvent(new Event("quackles:base-painted"));
       }
       if (baseKey === nextBase) applyStoryProgress(current.progress);
+      // A detail layer painted for one scene must never survive a change of the visible theme(s).
+      const visibleThemeKey = showThemes.join("+");
+      if (detailKey && detailThemeKey !== visibleThemeKey) releaseDetail();
       if (layers.length && (baseKey === nextBase || inspecting)) {
         const coverage = layers[0].plan.coverage;
         const decoded = layers.map((layer) => ({
@@ -281,6 +284,7 @@ export function SequencePlayer() {
           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
           paintedCoverage = coverage;
+          detailThemeKey = visibleThemeKey;
           paintedMix = allReady ? showMix : 0;
           state.detailWidth = paintLayers[0].plan.variant.width;
           state.detailTiles = paintLayers.reduce((sum, layer) => sum + (isImage(layer.plan.variant) ? 0 : layer.plan.tasks.length), 0);
@@ -289,7 +293,8 @@ export function SequencePlayer() {
         }
       }
       if (inspecting) {
-        baseCanvas!.style.visibility = "hidden";
+        // Hide the base only once a detail layer is actually painted; never blank the current image.
+        baseCanvas!.style.visibility = detailKey ? "hidden" : "visible";
         if (fallback.current) fallback.current.style.visibility = "hidden";
       } else if (baseKey) {
         baseCanvas!.style.visibility = "visible";
@@ -341,7 +346,7 @@ export function SequencePlayer() {
       try {
         const response = await fetch(assetPath(`/preview-scene/sequence/manifest.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (!response.ok) throw new Error(`Sequence manifest failed: ${response.status}`);
-        const parsed = applyInspectionPolicy(parseManifest(await response.json(), response.url));
+        const parsed = applyInspectionPolicy(parseManifest(await response.json(), response.url), undefined, { allowCandidates: new URLSearchParams(location.search).get("inspectionCandidates") === "1" });
         const hidden = await fetch(assetPath(`/preview-scene/sequence/hidden-pyramids.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (hidden.ok) {
           const body = await hidden.json() as { mushroom?: { variants?: Variant[] } };

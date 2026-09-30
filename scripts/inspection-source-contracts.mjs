@@ -37,19 +37,27 @@ test("selection is explicit per theme and revisioned", () => {
   assert.equal(INSPECTION_POLICY.blue.selected, "legacy-201mp");
   assert.equal(INSPECTION_POLICY.blue.status, "production-201-250mp");
 });
-test("disabled / candidate status removes tiles; 1GP retained in manifest input", () => {
+test("candidate + disabled serve no tiles by default; candidates opt in explicitly", () => {
   const off = { ...INSPECTION_POLICY, blue: { ...INSPECTION_POLICY.blue, selected: null, status: "disabled" } };
   assert.equal(tiles(hero(applyInspectionPolicy(manifest, off), "blue")).length, 0);
   const cand = { ...INSPECTION_POLICY, blue: { ...INSPECTION_POLICY.blue, selected: "gp-1gp", status: "candidate-1gp" } };
-  const t = tiles(hero(applyInspectionPolicy(manifest, cand), "blue"));
+  assert.equal(tiles(hero(applyInspectionPolicy(manifest, cand), "blue")).length, 0, "candidate must be off in production");
+  const t = tiles(hero(applyInspectionPolicy(manifest, cand, { allowCandidates: true }), "blue"));
   assert.ok(t.length && t.every((v) => familyOf(v) === "gp-1gp"));
   assert.ok(tiles(hero(manifest, "blue")).some((v) => familyOf(v) === "gp-1gp"), "input not mutated");
 });
+test("all-five audit verdicts are encoded: only Blue serves tiles in production", () => {
+  const out = applyInspectionPolicy(manifest);
+  for (const theme of THEME_IDS) assert.equal(tiles(hero(out, theme)).length > 0, theme === "blue", theme);
+  assert.equal(INSPECTION_POLICY.day.status, "candidate-1gp");
+  for (const t of ["white", "dark", "night"]) assert.equal(INSPECTION_POLICY[t].status, "disabled");
+});
 test("switching sources leaves base animation frames byte-identical", () => {
   const cand = { ...INSPECTION_POLICY, blue: { ...INSPECTION_POLICY.blue, selected: "gp-1gp", status: "candidate-1gp" } };
+  const opts = { allowCandidates: true };
   const images = (m) => JSON.stringify(m.frames.map((f) => THEME_IDS.map((t) => f.assets[t].filter(isImage))));
   assert.equal(images(applyInspectionPolicy(manifest)), images(manifest));
-  assert.equal(images(applyInspectionPolicy(manifest, cand)), images(manifest));
+  assert.equal(images(applyInspectionPolicy(manifest, cand, opts)), images(manifest));
 });
 test("debug receipt exposes selected source id + revision per theme", () => {
   const d = describeInspectionSources();

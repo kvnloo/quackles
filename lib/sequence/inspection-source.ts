@@ -11,27 +11,31 @@ export type InspectionSource = { selected: SourceFamily | null; status: SourceSt
 
 /** The switch. Edit `selected`/`status`, bump `revision`. Full-frame plates are unaffected. */
 export const INSPECTION_POLICY: Record<ThemeId, InspectionSource> = {
-  // Blue: accepted ~201 MP family is the control; 1GP stays out until it passes registration vs the cobalt first frame.
-  blue: { selected: "legacy-201mp", status: "production-201-250mp", revision: "2026-09-30.1" },
-  // Only the 1GP family exists for these themes today; behaviour unchanged, pending the #43 per-theme visual audit.
-  day: { selected: "gp-1gp", status: "production-1gp", revision: "2026-09-30.1" },
-  white: { selected: "gp-1gp", status: "production-1gp", revision: "2026-09-30.1" },
-  dark: { selected: "gp-1gp", status: "production-1gp", revision: "2026-09-30.1" },
-  night: { selected: "gp-1gp", status: "production-1gp", revision: "2026-09-30.1" },
+  // Blue: accepted ~201 MP family is canonical (DECISIONS D1). 1GP Blue is a different scene (dE 35-83).
+  blue: { selected: "legacy-201mp", status: "production-201-250mp", revision: "2026-09-30.2" },
+  // All-five audit (issue-43-evidence/all-five): 1GP vs authored plate under the frozen contract (dE<=5, |dL|<=3).
+  // Day is closest (plinth diverges, dE 16); White/Dark/Night are visibly different scenes. Only production-* serves tiles.
+  day: { selected: "gp-1gp", status: "candidate-1gp", revision: "2026-09-30.2" },
+  white: { selected: null, status: "disabled", revision: "2026-09-30.2" },
+  dark: { selected: null, status: "disabled", revision: "2026-09-30.2" },
+  night: { selected: null, status: "disabled", revision: "2026-09-30.2" },
 };
 
 export function familyOf(variant: Variant): SourceFamily | null {
   return "tiles" in variant ? (variant.tiles.urlTemplate.includes("/gp/") ? "gp-1gp" : "legacy-201mp") : null;
 }
 
-export function applyInspectionPolicy(manifest: SequenceManifest, policy: Record<ThemeId, InspectionSource> = INSPECTION_POLICY): SequenceManifest {
+/** `allowCandidates` (A/B only, e.g. `?inspectionCandidates=1`) lets candidate-1gp themes serve tiles; production never does. */
+export function applyInspectionPolicy(manifest: SequenceManifest, policy: Record<ThemeId, InspectionSource> = INSPECTION_POLICY, options: { allowCandidates?: boolean } = {}): SequenceManifest {
   const frames = manifest.frames.map((frame) => {
     const assets = { ...frame.assets };
     for (const theme of Object.keys(assets) as ThemeId[]) {
       const { selected, status } = policy[theme];
       assets[theme] = frame.assets[theme].filter((variant) => {
         const family = familyOf(variant);
-        return family === null || (status !== "disabled" && family === selected);
+        if (family === null) return true;
+        const live = status.startsWith("production") || (status === "candidate-1gp" && options.allowCandidates === true);
+        return live && family === selected;
       });
     }
     return { ...frame, assets };

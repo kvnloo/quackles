@@ -124,6 +124,47 @@ def thresholds(rows):
     return {"control_dE_max_z<=2": max(c["dE"] for c in ctl), "control_shift_max_z<=2": max(max(abs(v) for v in c["shift_px"]) for c in ctl),
             "control_abs_dL_max_z<=2": max(abs(c["dL"]) for c in ctl)}
 
+# ---- All-five: 1GP candidate vs each theme's authored base plate -----------
+ASSETS = "/mnt/zer0models/quackles-1gp/assets-repo"
+THEMES = ["day", "white", "blue", "dark", "night"]
+PLATE_EXT = {"day": "png", "white": "webp", "blue": "webp", "dark": "webp", "night": "webp"}
+
+def gp_family(theme):
+    return Family(f"{theme}-1gp", f"{ASSETS}/{theme}/p0000000/gp", GP.levels)
+
+def verdict(dE, dL):
+    """Frozen Blue contract (dE<=5, |dL|<=3) applied per crop; >10 dE = different scene."""
+    if dE <= 5 and abs(dL) <= 3: return "pass"
+    return "diverges" if dE > 10 else "marginal"
+
+def all_five(root: Path, outdir: Path):
+    outdir.mkdir(parents=True, exist_ok=True)
+    crops = [("full", (0, 0, 1, 1), 1), ("robot", window(0.36, 0.34, 2), 2), ("poster", window(0.85, 0.20, 2), 2), ("plinth", window(0.30, 0.84, 2), 2)]
+    w, h = OUT; pad = 6
+    sheet = Image.new("RGB", (len(THEMES) * 2 * (w // 2) + 12 * pad, len(crops) * (h // 2 + pad) + pad), (255, 0, 255))
+    report = {}
+    for ti, theme in enumerate(THEMES):
+        plate = Image.open(root / f"public/preview-scene/sequence/cinematic-proof-v2/{theme}/p0000000-1024.{PLATE_EXT[theme]}").convert("RGB")
+        fam = gp_family(theme); cells = []
+        for ci, (name, box, z) in enumerate(crops):
+            lvl = pick_level(fam, z, OUT[0]); im, nb, nt = crop(fam, lvl, box, OUT)
+            px = plate.crop((int(box[0] * 1024), int(box[1] * 1536), math.ceil((box[0] + box[2]) * 1024), math.ceil((box[1] + box[3]) * 1536))).resize(OUT, Image.LANCZOS)
+            m = pair(im, px); m.update(crop=name, zoom=z, level=lvl, bytes=nb, verdict=verdict(m["dE"], m["dL"])); cells.append(m)
+            for j, img in enumerate((px, im)):
+                sheet.paste(img.resize((w // 2, h // 2)), (pad + (ti * 2 + j) * (w // 2 + pad // 2), pad + ci * (h // 2 + pad)))
+        worst = max(c["dE"] for c in cells); passes = sum(c["verdict"] == "pass" for c in cells)
+        status = "production-candidate" if passes == len(cells) else ("disabled" if worst > 10 else "candidate-1gp")
+        report[theme] = {"status": status, "worst_dE": worst, "cells": cells}
+    sheet.save(outdir / "all-five-contact-sheet.png")
+    return report
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[2] == "all-five":
+    root = Path(__file__).resolve().parents[2]; out = Path(sys.argv[1])
+    rep = all_five(root, out); (out / "all-five.json").write_text(json.dumps(rep, indent=1))
+    for t, r in rep.items():
+        print(t, r["status"], "worst dE", r["worst_dE"], [(c["crop"], c["dE"], c["dL"], c["verdict"]) for c in r["cells"]])
+    sys.exit(0)
+
 if __name__ == "__main__":
     root = Path(__file__).resolve().parents[2]
     out = Path(sys.argv[1])
