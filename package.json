@@ -31,6 +31,7 @@
     "test:camera-arrival": "node scripts/camera-arrival-browser.mjs",
     "test:fuzz": "SEED=1 STEPS=45 node scripts/fuzz-browser.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
+    "test:feel": "node scripts/feel-contracts.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",

@@ -1,66 +1,47 @@
-// Audio is intentionally dormant. The recovered synthetic Web Audio layer was
-// judged annoying/non-useful; keep PWM haptics independently evaluable until
-// credible event-driven robot audio has its own reviewed donor.
+// Audio is intentionally absent (the synthetic Web Audio layer was judged
+// annoying). Haptics: one short pattern per forward phase crossing, touch
+// devices only, opt-out via localStorage "quackles.haptics" = "off".
 import { click, pwm, roboticLand, roboticTakeoff, servoTrain, vibrate } from "./haptics";
+import { hapticsAllowed, initialFeel, stepFeel, type FeelEvent, type FeelState } from "./phase-events";
 
-const CHOREO = { crouch: 0.26, takeoff: 0.34, impact: 0.56, compression: 0.64, exploded: 0.84 };
-
-function envelope(p: number, start: number, end: number) {
-  const t = Math.max(0, Math.min(1, (p - start) / (end - start)));
-  return t * t * (3 - 2 * t);
-}
-
-export function motion(p: number) {
-  const jump = p > CHOREO.takeoff && p < CHOREO.impact ? Math.sin(Math.PI * ((p - CHOREO.takeoff) / (CHOREO.impact - CHOREO.takeoff))) ** 2 : 0;
-  const squat = p > CHOREO.crouch && p < CHOREO.takeoff ? Math.sin(Math.PI * ((p - CHOREO.crouch) / (CHOREO.takeoff - CHOREO.crouch))) ** 2 : 0;
-  const land = p > CHOREO.impact && p < CHOREO.compression ? Math.sin(Math.PI * ((p - CHOREO.impact) / (CHOREO.compression - CHOREO.impact))) ** 2 : 0;
-  const explode = envelope(p, CHOREO.impact, CHOREO.exploded);
-  return { jump, squat, land, explode };
-}
-
-type Phase = "idle" | "crouch" | "flight" | "land" | "explode" | "inspect";
-
-function phaseAt(p: number): Phase {
-  if (p < CHOREO.crouch) return "idle";
-  if (p < CHOREO.takeoff) return "crouch";
-  if (p < CHOREO.impact) return "flight";
-  if (p < CHOREO.compression) return "land";
-  if (p < CHOREO.exploded) return "explode";
-  return "inspect";
-}
+const OPT_OUT_KEY = "quackles.haptics";
+const PATTERN: Record<FeelEvent, () => number[]> = {
+  crouch: () => pwm(40, 0.28),
+  flight: roboticTakeoff,
+  land: roboticLand,
+  explode: () => servoTrain(90, 0.7),
+  inspect: () => click(10),
+};
 
 let armed = false;
-let lastPhase: Phase = "idle";
-let lastServo = 0;
+let feel: FeelState = initialFeel();
+
+function optedOut() {
+  try { return localStorage.getItem(OPT_OUT_KEY) === "off"; } catch { return false; }
+}
+
+function coarse() {
+  return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+}
+
+export function setHapticsEnabled(on: boolean) {
+  try { if (on) localStorage.removeItem(OPT_OUT_KEY); else localStorage.setItem(OPT_OUT_KEY, "off"); } catch { /* storage blocked */ }
+}
+
+function allowed(reduced: boolean) {
+  return armed && hapticsAllowed({ coarse: coarse(), optOut: optedOut(), reduced });
+}
 
 export function armFeel() {
   armed = true;
-  vibrate(click(8));
 }
 
 export function driveFeel(progress: number, reduced: boolean) {
-  if (!armed || reduced) return;
-  const phase = phaseAt(progress);
-  const body = motion(progress);
-  if (phase !== lastPhase) {
-    if (phase === "flight") { vibrate(roboticTakeoff()); }
-    else if (phase === "land") { vibrate(roboticLand()); }
-    else if (phase === "explode") { vibrate(servoTrain(90, 0.7)); }
-    else if (phase === "crouch") { vibrate(pwm(40, 0.28)); }
-    lastPhase = phase;
-  }
-  const now = performance.now();
-  if (phase === "flight" && now - lastServo > 70) {
-    lastServo = now;
-    vibrate(servoTrain(48, 0.25 + body.jump * 0.5));
-  }
-  if (phase === "explode" && now - lastServo > 90) {
-    lastServo = now;
-    vibrate(servoTrain(36, 0.35 + body.explode * 0.4));
-  }
+  const { state, event } = stepFeel(feel, progress);
+  feel = state;
+  if (event && allowed(reduced)) vibrate(PATTERN[event]());
 }
 
 export function feelThemeStop() {
-  if (!armed) return;
-  vibrate(click(10));
+  if (allowed(false)) vibrate(click(10));
 }
