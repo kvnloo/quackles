@@ -45,7 +45,10 @@
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",
-    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs"
+    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs",
+    "test:cast-protocol": "node --import ./scripts/register-ts-resolve.mjs scripts/cast-protocol-contracts.mjs",
+    "test:cast-mirror": "node scripts/cast-mirror-browser.mjs",
+    "test:cast-flag-off": "node scripts/cast-flag-off-check.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
