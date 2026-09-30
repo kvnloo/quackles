@@ -28,6 +28,6 @@ frozen: DECISIONS.md D1-D2. canonical: Blue=legacy-201mp. Day=candidate-1gp, Whi
 
 ## active hypothesis / next three
 1. minor pre-existing: no downgrade repaint after zoom-out (oversized tier stays painted) -> small TDD fix; held-touch pan untested (needs device)
-2. Day (H): new evidence-first Cycles ablation only (diffuse/glossy + direct/indirect isolation, held-out phases); measured gap in issue-41-evidence/day-stone-shipped-plate/FINDINGS.md; no Day thresholds defined (proposal in FINDINGS)
+2. Day (H): cause of plinth fine-scale excess ESTABLISHED = render noise (denoising OFF) (D10). BLOCKED on recovering the exact invocation of the shipped Day look (4 recipes tried, none match); leads in FINDINGS.md. Then: same scene + --denoise/higher spp, validate with day-stone/1.0.0 on held-out phases. No Day thresholds frozen (proposal in FINDINGS)
 3. #41 items 3-5 after Blue is stable: reversible state machine acceptance, simulator handoff, docs cleanup; real-device OBSERVE
 posted: receipts on #43 (slices 1-2 and 3-6, head e84d009); #41 progress comment (older)
