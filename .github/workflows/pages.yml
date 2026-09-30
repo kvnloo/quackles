@@ -1,11 +1,17 @@
 name: pages
 
+# ONE publisher for kvnloo.github.io/quackles (no other workflow may deploy Pages):
+#   /                     <- main          (approved production)
+#   /nightly/             <- nightly       (latest integrated build)
+#   /preview/<name>/      <- preview/<name> (one major feature each)
+# nightly, dev and preview/* carry a small kick-pages.yml that dispatches this
+# workflow on push; a daily schedule is the safety net.
+
 on:
   push:
-    # quackles Pages tracks nightly; quackles-nightly only has main.
-    branches: [main, nightly]
+    branches: [main]
   schedule:
-    - cron: "0 5 * * *"
+    - cron: "17 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -14,87 +20,102 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-
   deploy:
-    needs: [lint, typecheck]
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'schedule' ||
-      github.ref == 'refs/heads/nightly' ||
-      github.repository == 'kvnloo/quackles-nightly'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - name: Resolve Pages base path
+
+      - name: Resolve Pages base path and build time
         id: base
+        shell: bash
         run: |
           NAME="${GITHUB_REPOSITORY#*/}"
           OWNER="${GITHUB_REPOSITORY_OWNER}"
-          if [ "$NAME" = "${OWNER}.github.io" ]; then
-            echo "path=" >> "$GITHUB_OUTPUT"
-          else
-            echo "path=/${NAME}" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Stamp build identity
-        id: stamp
-        run: echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-      - run: npm ci
-      - run: npm run build
+          if [ "$NAME" = "${OWNER}.github.io" ]; then echo "path=" >> "$GITHUB_OUTPUT"; else echo "path=/${NAME}" >> "$GITHUB_OUTPUT"; fi
+          echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Build every channel
+        shell: bash
         env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
-          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
-          NEXT_PUBLIC_BUILD_TIME: ${{ steps.stamp.outputs.time }}
-          NEXT_PUBLIC_ASSET_ORIGIN: https://kvnloo.github.io/quackles-assets
-      - name: Stage pinned Gigapixel asset pyramid
-        env:
-          QUACKLES_ASSET_SHA: 5ff80074ffc251fff8bc120c812e2fd8d89fb54b
+          BASE_PATH: ${{ steps.base.outputs.path }}
+          BUILD_TIME: ${{ steps.base.outputs.time }}
+          ASSET_ORIGIN: https://kvnloo.github.io/quackles-assets
         run: |
-          set -euo pipefail
-          rm -rf /tmp/quackles-assets
-          git clone --filter=blob:none --no-checkout https://github.com/kvnloo/quackles-assets.git /tmp/quackles-assets
-          git -C /tmp/quackles-assets fetch --depth=1 origin "$QUACKLES_ASSET_SHA"
-          git -C /tmp/quackles-assets checkout --detach "$QUACKLES_ASSET_SHA"
-          test "$(git -C /tmp/quackles-assets rev-parse HEAD)" = "$QUACKLES_ASSET_SHA"
-          mkdir -p out/quackles-assets
-          cp -a /tmp/quackles-assets/blue out/quackles-assets/
-          test -f out/quackles-assets/blue/p0000000/0/0_0.webp
-          test -f out/quackles-assets/blue/p0000000/3/0_0.webp
-          test "$(find out/quackles-assets/blue/p0000000 -name '*.webp' | wc -l | tr -d ' ')" = "1055"
+          set -uo pipefail
+          mkdir -p site
+          : > site/channels.tsv
+          git fetch --no-tags origin '+refs/heads/nightly:refs/remotes/origin/nightly' '+refs/heads/preview/*:refs/remotes/origin/preview/*' || true
+
+          build_channel() {  # <ref> <subpath: "" for root>
+            ref="$1"; sub="$2"
+            sha="$(git rev-parse "origin/$ref")"
+            dir="src-$(echo "${sub:-root}" | tr '/' '-')"
+            target="site${sub:+/$sub}"
+            rm -rf "$dir"; mkdir -p "$dir" "$target"
+            git archive "origin/$ref" | tar -x -C "$dir"
+            lock="$(sha256sum "$dir/package-lock.json" | cut -c1-16)"
+            status=ok
+            (
+              set -e
+              cd "$dir"
+              # identical lockfiles share one install via a hardlinked copy (a real dir, not a symlink)
+              if [ -d "../node_modules-$lock" ]; then cp -al "../node_modules-$lock" node_modules; else npm ci --no-audit --no-fund && cp -al node_modules "../node_modules-$lock"; fi
+              NEXT_PUBLIC_BASE_PATH="$BASE_PATH${sub:+/$sub}" NEXT_PUBLIC_BUILD_SHA="$sha" NEXT_PUBLIC_BUILD_TIME="$BUILD_TIME" NEXT_PUBLIC_ASSET_ORIGIN="$ASSET_ORIGIN" npm run build
+            ) || status=failed
+            if [ "$status" = ok ]; then
+              cp -a "$dir/out/." "$target/"
+            else
+              printf '<!doctype html><meta charset="utf-8"><title>%s build failed</title><p>Build of <code>%s</code> @ <code>%s</code> failed; see the pages workflow log.</p>' "$ref" "$ref" "${sha:0:12}" > "$target/index.html"
+            fi
+            printf '%s\t%s\t%s\t%s\t%s\n' "$ref" "${sub:-/}" "$sha" "$status" "$(git log -1 --format=%s "origin/$ref" | tr '\t\n\r' '   ')" >> site/channels.tsv
+            rm -rf "$dir"
+          }
+
+          git update-ref refs/remotes/origin/main "$GITHUB_SHA"
+          build_channel main ""
+          [ "$(tail -1 site/channels.tsv | cut -f4)" = ok ] || { echo "::error::production (main) failed to build"; exit 1; }
+          git rev-parse -q --verify origin/nightly >/dev/null && build_channel nightly nightly
+          for ref in $(git for-each-ref --format='%(refname:strip=3)' 'refs/remotes/origin/preview/'); do
+            build_channel "$ref" "$ref"
+          done
+          cat site/channels.tsv
+
+      - name: Channel index at /preview/
+        shell: bash
+        env:
+          BASE_PATH: ${{ steps.base.outputs.path }}
+        run: |
+          mkdir -p site/preview
+          python3 - <<'PY'
+          import html, os
+          base = os.environ["BASE_PATH"]
+          rows = [l.split("\t") for l in open("site/channels.tsv").read().splitlines() if l]
+          cards = "".join(
+              f'<li><a href="{html.escape(base + ("/" + sub.strip("/") + "/" if sub != "/" else "/"))}">{html.escape(ref)}</a> '
+              f'<code>{sha[:12]}</code> {"" if st == "ok" else "<b>BUILD FAILED</b>"}<br><small>{html.escape(title)}</small></li>'
+              for ref, sub, sha, st, title in rows)
+          open("site/preview/index.html", "w").write(
+              '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+              '<title>Quackles channels</title><style>body{font:15px system-ui;margin:24px;max-width:720px}li{margin:14px 0}</style>'
+              f"<h1>Quackles channels</h1><ul>{cards}</ul>")
+          PY
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          path: site
       - id: deploy
         uses: actions/deploy-pages@v4

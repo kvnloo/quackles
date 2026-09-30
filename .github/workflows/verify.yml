@@ -4,7 +4,7 @@ name: verify
 on:
   pull_request:
   push:
-    branches: [main, preview, nightly, dev]
+    branches: [main, dev, nightly, "preview/**"]
   workflow_dispatch:
 
 concurrency:
