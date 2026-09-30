@@ -21,6 +21,22 @@ export const INSPECTION_POLICY: Record<ThemeId, InspectionSource> = {
   night: { selected: null, status: "disabled", revision: "2026-09-30.2" },
 };
 
+/** Hidden scenes with their own pyramids (not a theme). Mushroom audit: 1GP vs its authored plate dE 0.9-1.6, |dL|<=0.15 -> passes the frozen contract. */
+export const HIDDEN_POLICY: Record<"mushroom", InspectionSource> = {
+  mushroom: { selected: "gp-1gp", status: "production-1gp", revision: "2026-09-30.2" },
+};
+export type InspectionSourcesReceipt = Record<ThemeId, InspectionSource> & { hidden: Record<"mushroom", InspectionSource> };
+
+function serves(source: InspectionSource, family: SourceFamily | null, options: { allowCandidates?: boolean }) {
+  if (family === null) return true;
+  const live = source.status.startsWith("production") || (source.status === "candidate-1gp" && options.allowCandidates === true);
+  return live && family === source.selected;
+}
+
+export function applyHiddenPolicy(variants: Variant[], source: InspectionSource, options: { allowCandidates?: boolean } = {}): Variant[] {
+  return variants.filter((variant) => serves(source, familyOf(variant), options));
+}
+
 export function familyOf(variant: Variant): SourceFamily | null {
   return "tiles" in variant ? (variant.tiles.urlTemplate.includes("/gp/") ? "gp-1gp" : "legacy-201mp") : null;
 }
@@ -30,19 +46,13 @@ export function applyInspectionPolicy(manifest: SequenceManifest, policy: Record
   const frames = manifest.frames.map((frame) => {
     const assets = { ...frame.assets };
     for (const theme of Object.keys(assets) as ThemeId[]) {
-      const { selected, status } = policy[theme];
-      assets[theme] = frame.assets[theme].filter((variant) => {
-        const family = familyOf(variant);
-        if (family === null) return true;
-        const live = status.startsWith("production") || (status === "candidate-1gp" && options.allowCandidates === true);
-        return live && family === selected;
-      });
+      assets[theme] = frame.assets[theme].filter((variant) => serves(policy[theme], familyOf(variant), options));
     }
     return { ...frame, assets };
   });
   return { ...manifest, frames };
 }
 
-export function describeInspectionSources(policy: Record<ThemeId, InspectionSource> = INSPECTION_POLICY): Record<ThemeId, InspectionSource> {
-  return structuredClone(policy);
+export function describeInspectionSources(policy: Record<ThemeId, InspectionSource> = INSPECTION_POLICY): InspectionSourcesReceipt {
+  return structuredClone({ ...policy, hidden: HIDDEN_POLICY });
 }

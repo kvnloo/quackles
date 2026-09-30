@@ -2,7 +2,7 @@
 /** Issue #43 contracts: one inspection session, one source family. Imports production code. */
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { applyInspectionPolicy, familyOf, INSPECTION_POLICY, describeInspectionSources } from "../lib/sequence/inspection-source.ts";
+import { applyInspectionPolicy, applyHiddenPolicy, familyOf, INSPECTION_POLICY, HIDDEN_POLICY, describeInspectionSources } from "../lib/sequence/inspection-source.ts";
 const THEME_IDS = ["day", "white", "blue", "dark", "night"];
 const isImage = (v) => "url" in v;
 
@@ -63,5 +63,23 @@ test("debug receipt exposes selected source id + revision per theme", () => {
   const d = describeInspectionSources();
   assert.equal(d.blue.selected, "legacy-201mp");
   assert.ok(d.blue.revision && d.blue.status);
+});
+const hidden = JSON.parse(fs.readFileSync(new URL("../public/preview-scene/sequence/hidden-pyramids.json", import.meta.url))).mushroom.variants;
+test("hidden mushroom pyramid is governed by an explicit, revisioned policy (audit: dE 0.9-1.6 vs authored plate)", () => {
+  assert.equal(HIDDEN_POLICY.mushroom.status, "production-1gp");
+  assert.ok(HIDDEN_POLICY.mushroom.revision);
+  const live = applyHiddenPolicy(hidden, HIDDEN_POLICY.mushroom);
+  assert.equal(live.length, hidden.length);
+  assert.ok(live.every((v) => familyOf(v) === "gp-1gp"));
+});
+test("disabled/candidate hidden pyramid serves nothing; candidates opt in", () => {
+  const off = { ...HIDDEN_POLICY.mushroom, selected: null, status: "disabled" };
+  assert.equal(applyHiddenPolicy(hidden, off).length, 0);
+  const cand = { ...HIDDEN_POLICY.mushroom, status: "candidate-1gp" };
+  assert.equal(applyHiddenPolicy(hidden, cand).length, 0);
+  assert.equal(applyHiddenPolicy(hidden, cand, { allowCandidates: true }).length, hidden.length);
+});
+test("debug receipt exposes hidden sources too", () => {
+  assert.equal(describeInspectionSources().hidden.mushroom.selected, "gp-1gp");
 });
 console.log(`${n} passed`);

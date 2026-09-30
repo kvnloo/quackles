@@ -19,7 +19,7 @@ await page.route("**/quackles-assets/**", async (route) => {
   const u = new URL(route.request().url());
   await route.fulfill({ response: await route.fetch({ url: "https://kvnloo.github.io/quackles-assets" + u.pathname.replace(/^\/quackles-assets/, "") }) });
 });
-await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "load" });
+await page.goto(process.env.TARGET_URL || `http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`, { waitUntil: "load" });
 await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0, null, { timeout: 30000 });
 const paintedAt = Date.now();
 const shot = async () => crypto.createHash("sha256").update(await page.locator(".sequence-base").screenshot()).digest("hex");

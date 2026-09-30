@@ -5,7 +5,7 @@ import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
-import { applyInspectionPolicy, describeInspectionSources, type InspectionSource } from "@/lib/sequence/inspection-source";
+import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
 import { cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
@@ -17,7 +17,7 @@ import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence
 import { applyStoryProgress } from "./SequenceScroll";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
-type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number; inspectionSources: Record<ThemeId, InspectionSource> };
+type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number; inspectionSources: InspectionSourcesReceipt };
 type SequenceDebug = {
   setProgress: (value: number) => void;
   setTheme: (id: ThemeId) => void;
@@ -354,7 +354,7 @@ export function SequencePlayer() {
         const hidden = await fetch(assetPath(`/preview-scene/sequence/hidden-pyramids.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (hidden.ok) {
           const body = await hidden.json() as { mushroom?: { variants?: Variant[] } };
-          mushroomPyramid = (body.mushroom?.variants ?? []).slice().sort((a, b) => a.width - b.width);
+          mushroomPyramid = applyHiddenPolicy(body.mushroom?.variants ?? [], HIDDEN_POLICY.mushroom, { allowCandidates: new URLSearchParams(location.search).get("inspectionCandidates") === "1" }).slice().sort((a, b) => a.width - b.width);
         }
         if (cancelled) return;
         manifest = parsed;

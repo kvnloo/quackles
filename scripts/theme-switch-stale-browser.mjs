@@ -9,7 +9,7 @@ const browser = await chromium.launch({ executablePath: "/usr/bin/google-chrome-
 async function session(fn) {
   const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
   await page.route("**/quackles-assets/**", async (route) => { const u = new URL(route.request().url()); await route.fulfill({ response: await route.fetch({ url: "https://kvnloo.github.io/quackles-assets" + u.pathname.replace(/^\/quackles-assets/, "") }) }); });
-  await page.goto(`http://127.0.0.1:${port}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0);
+  await page.goto(process.env.TARGET_URL || `http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0);
   const r = await fn(page); await page.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {}); await page.close(); return r;
 }
 const shot = async (p) => { const b = await p.screenshot(); return { h: crypto.createHash("sha256").update(b).digest("hex").slice(0, 12), b }; };
