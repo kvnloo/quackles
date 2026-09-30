@@ -12,7 +12,7 @@ import {
   type InspectionState,
 } from "@/lib/sequence/inspection";
 import { inspectionCrop } from "@/lib/sequence/render";
-import { flickFocusTarget, flickPixelsPerSecond, panRelease } from "@/lib/sequence/motion-quality";
+import { flickFocusTarget, flickPixelsPerSecond, panRelease, tickElapsed } from "@/lib/sequence/motion-quality";
 import {
   snapshot as sequenceSnapshot,
   subscribe as subscribeSequence,
@@ -52,10 +52,6 @@ export function HeroInspection() {
 
     const syncFrameState = (state: InspectionState) => {
       frame.dataset.inspecting = state.active ? "true" : "false";
-      frame.style.setProperty(
-        "--inspection-amount",
-        String(Math.max(0, state.zoom - 1)),
-      );
 
       if (state.zoom <= 1.0005) {
         camera.style.transform = "none";
@@ -76,7 +72,7 @@ export function HeroInspection() {
       animation = 0;
       if (pan || pinch) return;
       const current = inspectionSnapshot();
-      const elapsed = lastTick ? now - lastTick : 1000 / 60;
+      const elapsed = tickElapsed(now, lastTick);
       lastTick = now;
 
       if (sequenceSnapshot().reducedMotion) {
@@ -558,7 +554,7 @@ export function HeroInspection() {
         setInspectionState(placed);
         syncFrameState(placed);
         pan = null;
-        if (coast) requestTick();
+        if (coast) { lastTick = event.timeStamp; requestTick(); }
       }
     };
 
@@ -622,7 +618,6 @@ export function HeroInspection() {
       delete window.__QUACKLES_INSPECTION__;
       resetInspection();
       delete frame.dataset.inspecting;
-      frame.style.removeProperty("--inspection-amount");
       camera.style.transform = "none";
       camera.style.transformOrigin = "0 0";
     };

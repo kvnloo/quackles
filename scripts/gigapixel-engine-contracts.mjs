@@ -283,6 +283,25 @@ test("release: a flick too slow to coast stops the camera exactly where the fing
   const fast = motion.panRelease({ focusX: 0.4, focusY: 0.3, flickX: { focus: 0.7, velocity: 0.9 }, flickY: { focus: 0.3, velocity: 0 } });
   assert.equal(fast.coast, true); assert.deepEqual([fast.targetFocusX, fast.targetFocusY, fast.focusVelocityX], [0.7, 0.3, 0.9]);
 });
+test("touch polish (b): the coast cap is a screen speed - a low-zoom flick is not braked; high zoom keeps ~2.8 focus/s at 7.4x", () => {
+  const low = motion.flickFocusTarget({ focus: 0.5, zoom: 1.86, framePx: 412, pixelsPerSecond: -2000 });
+  assert.ok(Math.abs(low.velocity - 2000 / (412 * 0.86)) < 1e-9, `1.86x: ${low.velocity.toFixed(2)} focus/s (${(low.velocity * 412 * 0.86).toFixed(0)} px/s of 2000)`);
+  const high = motion.flickFocusTarget({ focus: 0.5, zoom: 7.4, framePx: 412, pixelsPerSecond: -20000 });
+  const px = high.velocity * 412 * 6.4; assert.ok(px > 7000 && px <= 7400, `7.4x cap ${px.toFixed(0)} px/s`);
+});
+test("touch polish (a): the first coast tick advances by the time since the lift, not an assumed 16.7 ms frame", () => {
+  assert.equal(typeof motion.tickElapsed, "function", "motion-quality tickElapsed missing");
+  assert.ok(Math.abs(motion.tickElapsed(1008.3, 1000) - 8.3) < 1e-9, "120 Hz frame after the lift: 8.3 ms, not 16.7");
+  assert.equal(motion.tickElapsed(995, 1000), 0, "a frame that began before the lift does not move backwards");
+  assert.ok(Math.abs(motion.tickElapsed(1000, 0) - 1000 / 60) < 1e-9, "no seed (wheel/keyboard): one nominal frame");
+});
+test("touch polish (c): --inspection-amount (written every move, read nowhere) is gone", () => {
+  const hero = fs.readFileSync(new URL("../components/sequence/HeroInspection.tsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.ok(!css.includes("--inspection-amount"), "css reads it (keep it then)");
+  assert.ok(!hero.includes('"--inspection-amount"'), "HeroInspection still writes --inspection-amount");
+  assert.ok(/lastTick = event\.timeStamp/.test(hero), "coast start seeds lastTick with the lift time");
+});
 
 // ---- (6) retries ------------------------------------------------------------------------------------------------------
 await atest("(6) a tier probe that fails transiently (5xx / network) is retried after ~1 s; only 404 marks the tier missing", async () => {

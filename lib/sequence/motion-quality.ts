@@ -17,6 +17,10 @@ export function flickPixelsPerSecond(
   return (last.p - first.p) / dt;
 }
 
+/** Coast speed cap on screen: ~2.8 focus/s at 7.4x on a 412 px frame (the tuned value there), and no longer a brake on
+ * low-zoom flicks (a focus/s cap allowed only ~990 px/s at 1.86x). */
+export const MAX_COAST_PX_PER_SECOND = 7400;
+
 /** Project a zoomed pan flick. Focus velocity is in focus-units per second. */
 export function flickFocusTarget(args: {
   focus: number;
@@ -28,7 +32,7 @@ export function flickFocusTarget(args: {
 }): { focus: number; velocity: number } {
   const zoom = Math.max(1.02, args.zoom);
   const coast = args.coastSeconds ?? 0.42;
-  const maxSpeed = args.maxFocusPerSecond ?? 2.8;
+  const maxSpeed = args.maxFocusPerSecond ?? MAX_COAST_PX_PER_SECOND / (Math.max(1, args.framePx) * (zoom - 1));
   const raw = -args.pixelsPerSecond / (Math.max(1, args.framePx) * (zoom - 1));
   const velocity = Math.max(-maxSpeed, Math.min(maxSpeed, raw));
   const focus = Math.max(0, Math.min(1, args.focus + velocity * coast));
@@ -45,6 +49,12 @@ export function panRelease(p: { focusX: number; focusY: number; flickX: { focus:
   return coast
     ? { coast, targetFocusX: p.flickX.focus, targetFocusY: p.flickY.focus, focusVelocityX: p.flickX.velocity, focusVelocityY: p.flickY.velocity }
     : { coast, targetFocusX: p.focusX, targetFocusY: p.focusY, focusVelocityX: 0, focusVelocityY: 0 };
+}
+
+/** Spring step for a frame at `now` (rAF time). Seeded with the lift time, the first coast frame advances by the time
+ * since the lift (it assumed a full 16.7 ms frame: at 120 Hz the first coast tick moved ~2x the flick speed). */
+export function tickElapsed(now: number, lastTick: number): number {
+  return lastTick ? Math.max(0, now - lastTick) : 1000 / 60;
 }
 
 /** Raise the moving tier when frames are inside budget. Drop it when they are not. */
