@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T00:22:40Z",
+  "generatedAt": "2026-09-30T12:28:15Z",
   "publisher": "main/.github/workflows/pages.yml",
   "stableRootRef": "nightly",
   "channels": [
@@ -62,9 +62,9 @@
     {
       "ref": "nightly",
       "slug": "nightly",
-      "sha": "c2d84b6f40c8ca2572039ecb7e4085c1442f944d",
+      "sha": "d4ce5620164002a33bed4410820987724cdda80c",
       "status": "ok",
-      "title": "fix: run the color change only once the visible tiles are decoded ",
+      "title": "feat(dark): porous stone plinth on all 52 Dark plates (#41) ",
       "url": "/quackles/compare/nightly/"
     },
     {
