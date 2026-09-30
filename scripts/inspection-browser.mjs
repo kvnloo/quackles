@@ -487,6 +487,8 @@ try {
   if (reinspected.scrollY !== 0)
     throw new Error("renewed inspection leaked back into story scroll");
 
+  // Tiles may still be streaming when a phase ends: drop in-flight proxy routes instead of crashing on a disposed context.
+  await desktopContext.unrouteAll({ behavior: "ignoreErrors" });
   await desktopContext.close();
 
   const mobileContext = await browser.newContext({
@@ -556,6 +558,8 @@ try {
   if (mobileHome.viewfinder.active)
     throw new Error("mobile viewfinder remained visible after pinch reset");
   await cdp.detach();
+  // Tiles may still be streaming when a phase ends: drop in-flight proxy routes instead of crashing on a disposed context.
+  await mobileContext.unrouteAll({ behavior: "ignoreErrors" });
   await mobileContext.close();
 
   if (errors.length) throw new Error(`page errors: ${errors.join(" | ")}`);
