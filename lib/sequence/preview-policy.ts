@@ -22,7 +22,10 @@ export function previewPolicy(preview: Preview): { themes: Record<ThemeId, Inspe
 
 /** The manifest with the preview's source policy applied. `allowCandidates` (A/B query flag) only matters for "policy". */
 export function previewManifest(manifest: SequenceManifest, preview: Preview, options: { allowCandidates?: boolean } = {}): SequenceManifest {
-  return applyInspectionPolicy(manifest, previewPolicy(preview).themes, preview.zoom === "policy" ? options : {});
+  const themes = { ...previewPolicy(preview).themes };
+  // A theme the page can't show serves no tiles: otherwise tier probes/warm-up fetch pyramids nobody sees.
+  if (preview.scenes !== "mushroom") for (const id of THEME_IDS) if (!preview.scenes.includes(id)) themes[id] = off;
+  return applyInspectionPolicy(manifest, themes, preview.zoom === "policy" ? options : {});
 }
 
 /** THEME_IDS indices the page may show. The mushroom scene lives under Night (its moss palette). */

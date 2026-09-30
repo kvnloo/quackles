@@ -21,7 +21,7 @@ export const PREVIEWS = {
   "scenes-lowres": { id: "scenes-lowres", scenes: ALL, story: true, zoom: "none" },
   "scenes-250mp": { id: "scenes-250mp", scenes: ALL, story: true, zoom: "201mp" },
   "scenes-gigapixel": { id: "scenes-gigapixel", scenes: ALL, story: true, zoom: "1gp" },
-  "gigapixel-single": { id: "gigapixel-single", scenes: "mushroom", story: false, zoom: "1gp" },
+  "gigapixel-single": { id: "gigapixel-single", scenes: ["white"], story: false, zoom: "1gp" }, // owner 2026-09-30: brighter 1GP image (was the dark moss scene)
 } satisfies Record<string, Preview>;
 
 export const PREVIEW: Preview = PREVIEWS["scenes-250mp"];

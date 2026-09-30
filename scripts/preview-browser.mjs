@@ -17,7 +17,7 @@ const EXPECT = {
   "scenes-lowres": { frames: 52, buttons: 5, story: true, zoomThemes: [], plateOnly: ["day", "white", "blue", "dark", "night"], family: null, note: null },
   "scenes-250mp": { frames: 52, buttons: 5, story: true, zoomThemes: ["blue"], plateOnly: ["day", "white", "dark", "night"], family: /\/blue\/p0000000\/\d\//, note: "250MP: Blue only; 4 renders pending" },
   "scenes-gigapixel": { frames: 52, buttons: 5, story: true, zoomThemes: ["day", "white", "blue", "dark", "night"], plateOnly: [], family: /\/(day|white|blue|dark|night|mushroom)\/p0000000\/gp\/\d\//, note: "1GP source: not scene-matched" },
-  "gigapixel-single": { frames: 1, buttons: 0, story: false, zoomThemes: ["night"], plateOnly: [], family: /\/mushroom\/p0000000\/gp\/\d\//, note: null },
+  "gigapixel-single": { frames: 52, buttons: 0, story: false, zoomThemes: ["white"], plateOnly: [], family: /\/white\/p0000000\/gp\/\d\//, note: "1GP source: not scene-matched" },
 }[PREVIEW];
 if (!EXPECT) throw new Error(`unknown PREVIEW ${PREVIEW}`);
 
