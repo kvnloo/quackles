@@ -15,7 +15,8 @@
  *   hqLatency    lift -> every sample at >= the required resolution (frame device px x zoom, capped at the top tier), held >= 200 ms
  *                or until the next touch. p50/p90 over lifts that end zoomed; a lift the next touch interrupts first counts
  *                as censored at that gap.
- *   underResolvedShare  zoomed frames (zoom > 1.05) with > 5% of samples below the required resolution (split fingerDown / handsOff).
+ *   underResolvedShare  zoomed frames (zoom > 1.05) with > 5% of samples below the required resolution (split fingerDown /
+ *                       handsOff; motionShare = zoomed frames with a finger down or the camera moving; underResolvedAtRest).
  *   plateEdgeFrames     zoomed frames where a sample on the outer ring shows the plate alone.
  *   edgeDeepSoftFrames  zoomed frames where an outer-ring sample is more than 4.5x below the required resolution (reported:
  *                       a whole-image low tier can hide the plate yet still be this soft).
@@ -311,6 +312,9 @@ function analyse(name, data, fetched, checks, pageErrors) {
     underResolvedShare: +(zoomed.filter(under).length / Math.max(1, zoomed.length)).toFixed(3),
     underResolvedFingerDown: +(zoomed.filter((r) => r.n > 0 && under(r)).length / Math.max(1, zoomed.filter((r) => r.n > 0).length)).toFixed(3),
     underResolvedHandsOff: +(zoomed.filter((r) => r.n === 0 && under(r)).length / Math.max(1, zoomed.filter((r) => r.n === 0).length)).toFixed(3),
+    // In motion = a finger down or the camera moving (decodes wait for rest there by rule); at rest = neither.
+    motionShare: +(zoomed.filter((r) => r.n > 0 || r.moving).length / Math.max(1, zoomed.length)).toFixed(3),
+    underResolvedAtRest: +(zoomed.filter((r) => r.n === 0 && !r.moving && under(r)).length / Math.max(1, zoomed.filter((r) => r.n === 0 && !r.moving).length)).toFixed(3),
     plateEdgeFrames: zoomed.filter((r) => r.plateEdge > 0).length,
     plateOnlyFrames: zoomed.filter((r) => r.plateAny === 1).length,
     edgeDeepSoftFrames: zoomed.filter((r) => r.deepEdge > 0).length,
