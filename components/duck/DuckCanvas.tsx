@@ -1,10 +1,10 @@
 "use client";
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import * as THREE from "three";
 import { useExperience } from "@/components/providers/ExperienceProvider";
 import { DuckScene } from "./DuckScene";
-export function DuckCanvas() {
+export function DuckCanvas({ children }: { children?: ReactNode }) {
   const { setWebgl, poseRef, progressRef, reducedMotion } = useExperience();
   return (
     <Canvas
@@ -33,6 +33,7 @@ export function DuckCanvas() {
           progressRef={progressRef}
           reducedMotion={reducedMotion}
         />
+        {children}
       </Suspense>
     </Canvas>
   );

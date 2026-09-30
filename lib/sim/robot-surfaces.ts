@@ -40,22 +40,40 @@ function maxSurfaceDistance(points: Vector3[], surface: BufferGeometry, MeshBVH:
   return maximum;
 }
 
+type RobotSurfaceSource = { buffer: ArrayBuffer; manifest: unknown } | null;
+let surfaceSource: Promise<RobotSurfaceSource> | null = null;
+
+/** Memoized: one network fetch of robot-surface.glb(.gz) + its receipt per page,
+ * shared by the idle prefetch and the rig load. An aborted/failed load is
+ * forgotten so the next caller retries. `null` = no surfaces deployed (404). */
+export function loadRobotSurfaceSource(signal?: AbortSignal): Promise<RobotSurfaceSource> {
+  surfaceSource ??= (async () => {
+    const url = (suffix: string) => assetPath(`/preview-scene/robot-surface.glb${suffix}?v=${encodeURIComponent(BUILD_SHA)}`);
+    const init: RequestInit & { priority?: "low" | "high" | "auto" } = { signal, priority: "low" };
+    const compressed = typeof DecompressionStream === "function";
+    let response = await fetch(url(compressed ? ".gz" : ""), init);
+    if (compressed && response.status === 404) response = await fetch(url(""), init);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`Robot surfaces failed: ${response.status}`);
+    let buffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+      buffer = await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+    }
+    const receipt = await fetch(assetPath(`/preview-scene/robot-surface-manifest.json?v=${encodeURIComponent(BUILD_SHA)}`), init);
+    if (!receipt.ok) throw new Error(`Robot surface receipt failed: ${receipt.status}`);
+    return { buffer, manifest: await receipt.json() as unknown };
+  })();
+  const pending = surfaceSource;
+  pending.catch(() => { if (surfaceSource === pending) surfaceSource = null; });
+  return pending;
+}
+
 export async function applyRobotSurfaces(rig: Rig) {
-  const url = (suffix: string) => assetPath(`/preview-scene/robot-surface.glb${suffix}?v=${encodeURIComponent(BUILD_SHA)}`);
-  const compressed = typeof DecompressionStream === "function";
-  let response = await fetch(url(compressed ? ".gz" : ""));
-  if (compressed && response.status === 404) response = await fetch(url(""));
-  if (response.status === 404) return { getAudit: () => ({ complete: false, meshes: [] }), prepareAudit: async () => { }, dispose: () => { } };
-  if (!response.ok) throw new Error(`Robot surfaces failed: ${response.status}`);
-  let buffer = await response.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
-    buffer = await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
-  }
-  const gltf = await new GLTFLoader().parseAsync(buffer, "");
-  const receipt = await fetch(assetPath(`/preview-scene/robot-surface-manifest.json?v=${encodeURIComponent(BUILD_SHA)}`));
-  if (!receipt.ok) throw new Error(`Robot surface receipt failed: ${receipt.status}`);
-  const manifest: unknown = await receipt.json();
+  const source = await loadRobotSurfaceSource();
+  if (!source) return { getAudit: () => ({ complete: false, meshes: [] }), prepareAudit: async () => { }, dispose: () => { } };
+  const gltf = await new GLTFLoader().parseAsync(source.buffer.slice(0), "");
+  const manifest = source.manifest;
   const theme = { value: getThemeSnapshot() };
   // The Blender recovery surface is useful geometry, but its production color
   // came from PHOTO-pigment-* camera projections. Keep that look opt-in for
