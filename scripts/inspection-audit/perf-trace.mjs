@@ -25,7 +25,7 @@ for (let run = 0; run < runs; run++) {
     if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: "" });
     await route.fulfill({ body: fs.readFileSync(file), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } });
   });
-  await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "load" });
+  await page.goto(process.env.TARGET_URL || `http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`, { waitUntil: "load" });
   await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0, null, { timeout: 30000 });
   await page.waitForTimeout(2500); // settle + idle warm-up window
   const idleReqs = reqs.length;
@@ -40,20 +40,23 @@ for (let run = 0; run < runs; run++) {
     requestAnimationFrame(tick);
   });
   const t0 = Date.now(), reqsBefore = reqs.length;
-  const stateOf = () => page.evaluate(() => { const s = window.__QUACKLES_SEQUENCE__.getState(); return { w: s.detailWidth, tiles: s.detailTiles, cache: s.cache, stale: s.stalePaints, errors: s.errors.length }; });
+  const stateOf = () => page.evaluate(() => { const s = window.__QUACKLES_SEQUENCE__.getState(), c = s.inspection; return { w: s.detailWidth, d: s.drawCount, moving: c.cameraMoving, dz: Math.abs(c.zoom - c.targetZoom), tiles: s.detailTiles, cache: s.cache, stale: s.stalePaints, errors: s.errors.length }; });
   const steps = [];
   for (const z of [2, 4, 6]) {
+    // Promotion is a settle-time event (D6): report command->camera-settled and command->sharp-lock separately.
     const ts = Date.now(), stepReqStart = reqs.length;
     await page.evaluate((zoom) => window.__QUACKLES_INSPECTION__.setTarget(zoom, 0.44, 0.28), z);
-    let last = -1, since = Date.now(), sharpAt = null, s;
-    while (Date.now() - ts < 6000) {
+    let settledAt = null, sharpAt = null, lastD = -1, sinceD = Date.now(), sawMotion = false, s;
+    while (Date.now() - ts < 8000) {
       s = await stateOf();
-      if (s.w !== last) { last = s.w; since = Date.now(); }
-      if (Date.now() - since > 700) { sharpAt = since - ts; break; }
-      await page.waitForTimeout(50);
+      if (s.moving || s.dz > 1e-3) sawMotion = true;
+      if (settledAt === null && (sawMotion || Date.now() - ts > 300) && !s.moving && s.dz < 1e-3) { settledAt = Date.now() - ts; sinceD = Date.now(); }
+      if (s.d !== lastD) { lastD = s.d; sinceD = Date.now(); }
+      if (settledAt !== null && s.w > 1024 && Date.now() - sinceD > 400) { sharpAt = sinceD - ts; break; }
+      await page.waitForTimeout(30);
     }
     const stepReqs = reqs.slice(stepReqStart).map((r) => r.rel);
-    steps.push({ zoom: z, timeToSharpMs: sharpAt, detailWidth: s.w, detailTiles: s.tiles, requests: stepReqs.length, uniqueRequests: new Set(stepReqs).size, levels: [...new Set(stepReqs.map((u) => u.replace(/^.*\/p0000000\//, '').replace(/\/\d+_\d+\.webp$/, '')))].sort() });
+    steps.push({ zoom: z, cameraSettledMs: settledAt, timeToSharpMs: sharpAt, sharpAfterSettleMs: sharpAt !== null && settledAt !== null ? sharpAt - settledAt : null, detailWidth: s.w, detailTiles: s.tiles, requests: stepReqs.length, uniqueRequests: new Set(stepReqs).size });
   }
   const end = await stateOf();
   const perf = await page.evaluate(() => { window.__perf.stop = true; return window.__perf; });

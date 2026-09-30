@@ -52,3 +52,12 @@ export function motionDesiredWidth(settledWidth: number, scale: number): number 
   const floor = Math.min(settledWidth, 1448);
   return Math.max(floor, Math.min(settledWidth, Math.round(settledWidth * scale)));
 }
+
+/**
+ * Detail tier to request. Promotion is a settle-time event (D6): while the camera moves the tier never rises above
+ * what is already painted (or the plate when nothing is), so no sharpening pop or high-res decode competes with motion.
+ */
+export function requestedDetailWidth(input: { moving: boolean; settledWidth: number; paintedWidth: number; plateWidth: number }): number {
+  if (!input.moving) return input.settledWidth;
+  return Math.min(input.settledWidth, Math.max(input.paintedWidth, input.plateWidth));
+}

@@ -11,7 +11,7 @@ import { cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDeta
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
-import { MOTION_SCALE_START, motionDesiredWidth, nextMotionScale } from "@/lib/sequence/motion-quality";
+import { requestedDetailWidth } from "@/lib/sequence/motion-quality";
 import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
@@ -42,7 +42,6 @@ export function SequencePlayer() {
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null, mushroomPyramid: Variant[] = [];
     let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
     let inspectionSettleTimer = 0, inspectionSettled = true;
-    let motionScale = MOTION_SCALE_START, lastMotionFrame = 0;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
     let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "";
@@ -125,11 +124,6 @@ export function SequencePlayer() {
       const nativeCrop = viewportCrop(container!);
       const inspect = inspectionSnapshot();
       const moving = inspect.cameraMoving;
-      if (moving) {
-        const now = performance.now();
-        if (lastMotionFrame) motionScale = nextMotionScale(motionScale, now - lastMotionFrame);
-        lastMotionFrame = now;
-      }
       const crop =
         inspect.active || inspect.targetZoom > 1.0005
           ? inspectionCrop(
@@ -141,8 +135,7 @@ export function SequencePlayer() {
       const settledWidth = Math.ceil(rect.width * devicePixelRatio * crop.scale);
       const inspecting = inspect.active || inspect.targetZoom > 1.0005;
       const plateWidth = beforeAssets[0].width;
-      const sharpUp = state.detailWidth > plateWidth;
-      const desiredWidth = moving && !sharpUp ? motionDesiredWidth(settledWidth, motionScale) : settledWidth;
+      const desiredWidth = requestedDetailWidth({ moving, settledWidth, paintedWidth: state.detailWidth, plateWidth });
       const detailEligible = inspecting || nativeCrop.scale > 1.02;
       const nextIntent = `${span.before.id}/${span.after.id}/${span.mix}/${current.theme}/${desiredWidth}`;
       if (nextIntent !== intentKey) { intentKey = nextIntent; generation++; }

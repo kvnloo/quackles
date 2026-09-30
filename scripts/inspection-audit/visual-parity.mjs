@@ -22,7 +22,7 @@ async function capture(dir, port) {
     if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: "" });
     await route.fulfill({ body: fs.readFileSync(file), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } });
   });
-  await page.goto(`http://127.0.0.1:${port}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0);
+  await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0);
   await page.waitForTimeout(2500);
   const out = {};
   for (const [name, z, x, y] of STATES) {
