@@ -26,7 +26,10 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
       return state.zoom > 1.02 || state.targetZoom > 1.02;
     };
     const syncTouch = () => {
-      const zoomed = inspecting();
+      // Whenever the hero is inspectable (any zoom above 1x, or a camera still heading there) every touch belongs
+      // to the camera; at rest at 1x vertical swipes stay native page scroll. Set on the state change, so it is
+      // already in place when the next gesture's first finger lands (touch-action is fixed at touchstart).
+      const zoomed = inspecting() || inspectionSnapshot().active;
       node.style.touchAction = zoomed ? "none" : "pan-y";
       document.documentElement.style.overscrollBehavior = zoomed ? "none" : "";
     };

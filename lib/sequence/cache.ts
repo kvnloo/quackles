@@ -91,6 +91,10 @@ export class FrameCache {
   private failures = 0;
   private decodedBudgetBytes: number;
   private maxActiveJobs: number;
+  // While the camera moves, no new decode starts: decodes (and their GPU uploads) inside the motion were the
+  // zoom/pan hitch. Jobs stay queued (and still retain/abort normally) and start once the camera rests.
+  private paused = false;
+  private startedDecodes = 0;
   private warming = new Set<string>();
   private warmQueue: ImageAsset[] = [];
   private warmActive = 0;
@@ -108,6 +112,7 @@ export class FrameCache {
     return image;
   }
   pin(keys: Iterable<string>) { this.pinned = new Set(keys); this.pump(); }
+  setPaused(paused: boolean) { if (this.paused === paused) return; this.paused = paused; if (!paused) this.pump(); }
   retain(keys: Iterable<string>) {
     this.wanted = new Set(keys);
     for (const [key, job] of this.jobs) {
@@ -166,13 +171,13 @@ export class FrameCache {
     return this.used + this.reserved + bytes <= this.decodedBudgetBytes;
   }
   private pump() {
-    if (this.disposed) return;
+    if (this.disposed || this.paused) return;
     const pending = [...this.jobs.values()].filter((job) => !job.active).sort((a, b) => b.priority - a.priority);
     for (const job of pending) {
       if (this.active >= this.maxActiveJobs) break;
       const high = job.bytes >= HIGH_TIER;
       if ((high && this.highActive) || !this.room(job.bytes)) continue;
-      job.active = true; this.active++; if (high) this.highActive++;
+      job.active = true; this.active++; if (high) this.highActive++; this.startedDecodes++;
       this.maxInflight = Math.max(this.maxInflight, this.active); this.maxHighTierInflight = Math.max(this.maxHighTierInflight, this.highActive);
       job.reserved = true; this.reserved += job.bytes; this.maxBytes = Math.max(this.maxBytes, this.used + this.reserved);
       void this.run(job).finally(() => {
@@ -215,7 +220,7 @@ export class FrameCache {
   }
   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
   stats() {
-    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
+    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
   }
   dispose() {
     this.disposed = true;

@@ -74,7 +74,7 @@ export function HeroInspection() {
 
     const tick = (now: number) => {
       animation = 0;
-      if (pan) return;
+      if (pan || pinch) return;
       const current = inspectionSnapshot();
       const elapsed = lastTick ? now - lastTick : 1000 / 60;
       lastTick = now;
@@ -92,7 +92,7 @@ export function HeroInspection() {
           focusVelocityY: 0,
           cameraMoving: false,
         };
-        if (pan) return;
+        if (pan || pinch) return;
         setInspectionState(next);
         syncFrameState(next);
         return;
@@ -141,7 +141,7 @@ export function HeroInspection() {
         targetFocusY: active ? current.targetFocusY : 0.5,
         cameraMoving: active && !settled,
       };
-      if (pan) return;
+      if (pan || pinch) return;
       setInspectionState(next);
       syncFrameState(next);
 
@@ -315,6 +315,9 @@ export function HeroInspection() {
       resetInspection();
       syncFrameState(inspectionSnapshot());
     };
+    // Touch is direct manipulation: while a finger is down the camera IS the gesture (state + DOM written on
+    // every move, no spring targets to chase). The spring and flick inertia only run after the last finger lifts.
+    // Every hand-off (1->2, 2->1, a new touch during a coast) re-anchors on the camera the user currently sees.
     const pointers = new Map<number, { x: number; y: number }>();
     let pinch: {
       distance: number;
@@ -324,6 +327,75 @@ export function HeroInspection() {
     } | null = null;
     const tracked = () => [...pointers.values()];
     let pan: { x: number; y: number; focusX: number; focusY: number; zoom: number; pendingX: number; pendingY: number; samples: { t: number; x: number; y: number }[] } | null = null;
+    // A finger held still is not camera motion: let the sharp lock (and decoding) proceed while it rests.
+    const HOLD_STILL_MS = 150;
+    let holdTimer = 0;
+    const commitCamera = (next: Partial<InspectionState>, moving: boolean, dragging = true) => {
+      const placed: InspectionState = {
+        ...inspectionSnapshot(),
+        ...next,
+        zoomVelocity: 0,
+        focusVelocityX: 0,
+        focusVelocityY: 0,
+        cameraMoving: moving,
+        dragging,
+      };
+      setInspectionState(placed);
+      syncFrameState(placed);
+      clearTimeout(holdTimer);
+      if (moving) {
+        holdTimer = window.setTimeout(() => {
+          if ((pan || pinch) && inspectionSnapshot().cameraMoving) setInspectionState({ cameraMoving: false });
+        }, HOLD_STILL_MS);
+      }
+    };
+    // Stop the spring where the camera is NOW (targets = current, velocities 0): a new touch never inherits a stale target.
+    const freezeCamera = () => {
+      cancelAnimationFrame(animation);
+      animation = 0;
+      lastTick = 0;
+      const current = inspectionSnapshot();
+      commitCamera({
+        zoom: current.zoom,
+        targetZoom: current.zoom,
+        focusX: current.focusX,
+        focusY: current.focusY,
+        targetFocusX: current.focusX,
+        targetFocusY: current.focusY,
+      }, false);
+      return inspectionSnapshot();
+    };
+    const startPan = (x: number, y: number) => {
+      const current = freezeCamera();
+      pan = {
+        x,
+        y,
+        focusX: current.focusX,
+        focusY: current.focusY,
+        zoom: current.zoom,
+        pendingX: current.focusX,
+        pendingY: current.focusY,
+        samples: [{ t: performance.now(), x, y }],
+      };
+    };
+    const startPinch = () => {
+      updateRect();
+      const current = freezeCamera();
+      const [a, b] = tracked();
+      const zoom = Math.max(current.zoom, 1);
+      const fx = ((a.x + b.x) / 2 - frameRect.left) / Math.max(1, frameRect.width);
+      const fy = ((a.y + b.y) / 2 - frameRect.top) / Math.max(1, frameRect.height);
+      const crop = inspectionCrop(zoom, current.focusX, current.focusY);
+      pinch = {
+        distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+        zoom,
+        sourceX: crop.x + fx * crop.width,
+        sourceY: crop.y + fy * crop.height,
+      };
+    };
+    const capture = (pointerId: number) => {
+      try { frame.setPointerCapture(pointerId); } catch { /* already released */ }
+    };
     const onPinchDown = (event: PointerEvent) => {
       if (event.pointerType === "mouse" || !atHero()) return;
       if (
@@ -332,47 +404,19 @@ export function HeroInspection() {
       )
         return;
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (pointers.size < 2) {
+      if (pointers.size === 1) {
         const current = inspectionSnapshot();
-        if (current.targetZoom > 1.02) {
-          pan = {
-            x: event.clientX,
-            y: event.clientY,
-            focusX: current.targetFocusX,
-            focusY: current.targetFocusY,
-            zoom: current.targetZoom,
-            pendingX: current.targetFocusX,
-            pendingY: current.targetFocusY,
-            samples: [{ t: performance.now(), x: event.clientX, y: event.clientY }],
-          };
-          try { frame.setPointerCapture(event.pointerId); } catch { /* already released */ }
-          cancelAnimationFrame(animation);
-          animation = 0;
-          lastTick = 0;
+        if (Math.max(current.zoom, current.targetZoom) > 1.02) {
+          startPan(event.clientX, event.clientY);
+          capture(event.pointerId);
         }
         return;
       }
+      if (pointers.size > 2) return;
       pan = null;
-      updateRect();
-      const current = inspectionSnapshot();
-      const [a, b] = tracked();
-      const midX = (a.x + b.x) / 2;
-      const midY = (a.y + b.y) / 2;
-      const fx = (midX - frameRect.left) / Math.max(1, frameRect.width);
-      const fy = (midY - frameRect.top) / Math.max(1, frameRect.height);
-      const crop = inspectionCrop(
-        Math.max(current.zoom, 1),
-        current.focusX,
-        current.focusY,
-      );
-      pinch = {
-        distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
-        zoom: Math.max(current.targetZoom, 1),
-        sourceX: crop.x + fx * crop.width,
-        sourceY: crop.y + fy * crop.height,
-      };
+      startPinch();
       claimHeroBoundary();
-      try { frame.setPointerCapture(event.pointerId); } catch { /* already released */ }
+      for (const id of pointers.keys()) capture(id);
     };
     const onPinchMove = (event: PointerEvent) => {
       const point = pointers.get(event.pointerId);
@@ -385,17 +429,21 @@ export function HeroInspection() {
         updateRect();
         const zoom = pan.zoom;
         const span = 1 / zoom;
-        const cropX = Math.max(0, Math.min(1 - span, (pan.focusX * (zoom - 1)) / zoom - (event.clientX - pan.x) / Math.max(1, frameRect.width) * span));
-        const cropY = Math.max(0, Math.min(1 - span, (pan.focusY * (zoom - 1)) / zoom - (event.clientY - pan.y) / Math.max(1, frameRect.height) * span));
+        const rawX = (pan.focusX * (zoom - 1)) / zoom - (event.clientX - pan.x) / Math.max(1, frameRect.width) * span;
+        const rawY = (pan.focusY * (zoom - 1)) / zoom - (event.clientY - pan.y) / Math.max(1, frameRect.height) * span;
+        const cropX = Math.max(0, Math.min(1 - span, rawX));
+        const cropY = Math.max(0, Math.min(1 - span, rawY));
         const focusX = (cropX * zoom) / (zoom - 1);
         const focusY = (cropY * zoom) / (zoom - 1);
+        // At an edge the content stops with the finger; re-anchor so reversing moves it immediately.
+        if (cropX !== rawX) { pan.x = event.clientX; pan.focusX = focusX; }
+        if (cropY !== rawY) { pan.y = event.clientY; pan.focusY = focusY; }
+        const moved = Math.abs(focusX - pan.pendingX) > 1e-7 || Math.abs(focusY - pan.pendingY) > 1e-7;
         pan.pendingX = focusX;
         pan.pendingY = focusY;
         pan.samples.push({ t: performance.now(), x: event.clientX, y: event.clientY });
         if (pan.samples.length > 8) pan.samples.shift();
-        const moved = Math.hypot(event.clientX - pan.x, event.clientY - pan.y) > 2;
-        syncFrameState({
-          ...inspectionSnapshot(),
+        commitCamera({
           active: true,
           zoom,
           targetZoom: zoom,
@@ -403,49 +451,79 @@ export function HeroInspection() {
           focusY,
           targetFocusX: focusX,
           targetFocusY: focusY,
-          cameraMoving: moved,
-        });
+        }, moved);
         return;
       }
-      pan = null;
       if (!pinch) return;
       event.preventDefault();
       const [a, b] = tracked();
       const current = inspectionSnapshot();
-      const zoom = Math.max(
-        1,
-        Math.min(
-          current.maxZoom,
-          pinch.zoom *
-            (Math.hypot(a.x - b.x, a.y - b.y) / pinch.distance),
-        ),
-      );
+      const distance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+      const raw = pinch.zoom * (distance / pinch.distance);
+      const zoom = Math.max(1, Math.min(current.maxZoom, raw));
+      // Past a zoom limit, re-base the pinch so reversing the fingers responds at once.
+      if (zoom !== raw) { pinch.zoom = zoom; pinch.distance = distance; }
       updateRect();
-      const fx = Math.max(
-        0,
-        Math.min(1, ((a.x + b.x) / 2 - frameRect.left) / Math.max(1, frameRect.width)),
-      );
-      const fy = Math.max(
-        0,
-        Math.min(1, ((a.y + b.y) / 2 - frameRect.top) / Math.max(1, frameRect.height)),
-      );
+      const fx = ((a.x + b.x) / 2 - frameRect.left) / Math.max(1, frameRect.width);
+      const fy = ((a.y + b.y) / 2 - frameRect.top) / Math.max(1, frameRect.height);
       const span = 1 / zoom;
       const cropX = Math.max(0, Math.min(1 - span, pinch.sourceX - fx * span));
       const cropY = Math.max(0, Math.min(1 - span, pinch.sourceY - fy * span));
-      setInspectionState({
-        active: zoom > 1.002,
+      // Against an edge the image cannot follow; keep the point that IS under the fingers as the anchor.
+      pinch.sourceX = cropX + fx * span;
+      pinch.sourceY = cropY + fy * span;
+      const home = zoom <= 1.001;
+      const focusX = home ? 0.5 : (cropX * zoom) / (zoom - 1);
+      const focusY = home ? 0.5 : (cropY * zoom) / (zoom - 1);
+      const changed = Math.abs(zoom - current.zoom) > 1e-6 || Math.abs(focusX - current.focusX) > 1e-7 || Math.abs(focusY - current.focusY) > 1e-7;
+      commitCamera({
+        active: true,
+        zoom,
         targetZoom: zoom,
-        targetFocusX: zoom <= 1.001 ? 0.5 : (cropX * zoom) / (zoom - 1),
-        targetFocusY: zoom <= 1.001 ? 0.5 : (cropY * zoom) / (zoom - 1),
-      });
+        focusX,
+        focusY,
+        targetFocusX: focusX,
+        targetFocusY: focusY,
+      }, changed);
+    };
+    // After a pinch ends near 1x, spring home (the only animated part of a pinch).
+    const releaseHome = () => {
+      clearTimeout(holdTimer);
+      setInspectionState({ active: true, targetZoom: 1, targetFocusX: 0.5, targetFocusY: 0.5, cameraMoving: true, dragging: false });
       requestTick();
     };
     const onPinchEnd = (event: PointerEvent) => {
-      pointers.delete(event.pointerId);
-      if (pointers.size < 2) pinch = null;
-      if (!pointers.size && pan) {
+      if (!pointers.delete(event.pointerId)) return;
+      if (pointers.size >= 2) {
+        // A third finger left: keep pinching with the remaining two from where the camera is.
+        if (pinch) startPinch();
+        return;
+      }
+      if (pointers.size === 1) {
+        if (!pinch) return;
+        pinch = null;
+        // 2 -> 1: the remaining finger keeps panning the camera it is holding.
+        const current = inspectionSnapshot();
+        if (current.zoom > 1.02) {
+          const [rest] = tracked();
+          startPan(rest.x, rest.y);
+        } else {
+          releaseHome();
+        }
+        return;
+      }
+      clearTimeout(holdTimer);
+      if (pinch) {
+        pinch = null;
+        const current = inspectionSnapshot();
+        if (current.zoom <= 1.02) releaseHome();
+        else commitCamera({}, false, false);
+        return;
+      }
+      if (pan) {
         const now = performance.now();
         const reduced = sequenceSnapshot().reducedMotion;
+        // Coast from where the finger left the camera (pendingX/Y), never from an older target.
         const flickX = reduced ? { focus: pan.pendingX, velocity: 0 } : flickFocusTarget({
           focus: pan.pendingX,
           zoom: pan.zoom,
@@ -472,6 +550,7 @@ export function HeroInspection() {
           focusVelocityX: flickX.velocity,
           focusVelocityY: flickY.velocity,
           cameraMoving: coast,
+          dragging: false,
         };
         setInspectionState(placed);
         syncFrameState(placed);
@@ -479,7 +558,6 @@ export function HeroInspection() {
         if (coast) requestTick();
       }
     };
-
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") resetTarget();
@@ -526,6 +604,7 @@ export function HeroInspection() {
 
     return () => {
       cancelAnimationFrame(animation);
+      clearTimeout(holdTimer);
       resizeObserver.disconnect();
       unsubscribeSequence();
       frame.removeEventListener("wheel", onWheel, { capture: true });
