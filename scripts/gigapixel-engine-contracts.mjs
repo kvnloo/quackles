@@ -108,6 +108,22 @@ test("surface: moving a surface keeps its pixels (self-copy with composite copy)
   for (const [x0, , x1] of rects) assert.ok(x0 >= b.x - 1e-9 && x1 <= b.x + b.width + 1e-9, "rects clipped to the new coverage");
   s.setQueue(stampsFor(v12, b)); assert.ok(s.pending > 0 && s.pending < stampsFor(v12, b).length, "only the newly exposed tiles are queued");
 });
+test("surface: a tile only partly inside the old coverage is drawn again when a move exposes the rest of it", () => {
+  const { canvas } = fakeCanvas(), s = new surfaceModule.TileSurface(canvas);
+  const crop = inspectionCrop(7.4, 0.5, 0.5), a = render.fittedBuffer(W, H, crop, DPR, 4096, 0.15), backing = render.detailBackingSize(W, H, a, DPR);
+  s.place(W, H, a, backing); s.setQueue(stampsFor(v12, a)); s.drain(Infinity);
+  const b = { ...a, x: a.x + 0.3 * 512 / v12.width, y: a.y + 0.3 * 512 / v12.height }; // shift by 0.3 tile: edge tiles gain area
+  s.place(W, H, b, backing);
+  const want = stampsFor(v12, b), queuedKeys = (s.setQueue(want), s.pending);
+  const x1 = b.x + b.width, y1 = b.y + b.height;
+  const grown = want.filter((st) => { const r = [st.sourceX / v12.width, st.sourceY / v12.height, (st.sourceX + st.width) / v12.width, (st.sourceY + st.height) / v12.height];
+    const oldR = [Math.max(r[0], a.x), Math.max(r[1], a.y), Math.min(r[2], a.x + a.width), Math.min(r[3], a.y + a.height)];
+    const newR = [Math.max(r[0], b.x), Math.max(r[1], b.y), Math.min(r[2], x1), Math.min(r[3], y1)];
+    return newR[2] > newR[0] && (newR[2] - oldR[2] > 1e-9 || newR[3] - oldR[3] > 1e-9 || oldR[2] <= oldR[0] || oldR[3] <= oldR[1]); });
+  assert.ok(grown.length > 0);
+  assert.ok(queuedKeys >= grown.length, `${queuedKeys} queued, ${grown.length} tiles gained area`);
+  assert.ok(queuedKeys < want.length, "tiles fully inside both stay painted");
+});
 test("surface: zooming a surface in keeps the copied pixels but marks them at their old (lower) resolution", () => {
   const { canvas } = fakeCanvas(), s = new surfaceModule.TileSurface(canvas);
   const a = render.fittedBuffer(W, H, inspectionCrop(5.4, 0.5, 0.5), DPR, 4096, 0.15);
@@ -208,4 +224,5 @@ test("(3) landing prefetch: while the camera moves, tiles are planned at where i
   assert.equal(render.prefetchCrop({ ...coast, cameraMoving: false }), null, "at rest the normal plan is the landing");
   assert.deepEqual(render.prefetchCrop({ ...coast, targetZoom: 3, zoom: 5 }), inspectionCrop(3, 0.8, 0.35), "zooming out: the landing zoom");
 });
+
 console.log(`${n} passed`);

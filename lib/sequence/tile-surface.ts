@@ -63,10 +63,17 @@ export class TileSurface {
     placeDetail(this.canvas as HTMLCanvasElement, cssWidth, cssHeight, coverage);
   }
 
-  /** Replace the queue (already in paint order), leaving out tiles already painted at their full resolution here. */
+  /** Replace the queue (already in paint order), leaving out tiles already painted here, over their whole extent inside
+   * the current coverage, at their full resolution. A tile clipped by an earlier coverage is drawn again. */
   setQueue(stamps: SurfaceStamp[]) {
-    const density = this.density;
-    this.queue = stamps.filter((stamp) => (this.painted.get(stamp.key)?.[4] ?? 0) < Math.min(stamp.variantWidth, density) * 0.98);
+    const density = this.density, c = this.coverage, eps = 1e-7;
+    this.queue = stamps.filter((stamp) => {
+      const done = this.painted.get(stamp.key);
+      if (!done || !c || done[4] < Math.min(stamp.variantWidth, density) * 0.98) return true;
+      const x0 = Math.max(c.x, stamp.sourceX / stamp.variantWidth), y0 = Math.max(c.y, stamp.sourceY / stamp.variantHeight);
+      const x1 = Math.min(c.x + c.width, (stamp.sourceX + stamp.width) / stamp.variantWidth), y1 = Math.min(c.y + c.height, (stamp.sourceY + stamp.height) / stamp.variantHeight);
+      return done[0] > x0 + eps || done[1] > y0 + eps || done[2] < x1 - eps || done[3] < y1 - eps;
+    });
   }
 
   /** Draw queued tiles until `deadline` (at least one). Returns how many were drawn. */
