@@ -12,7 +12,7 @@ const assetOrigin =
 // (scripts/cast-flag-off-check.mjs). On: the /cast-receiver/ route (app/cast-receiver/page.cast.tsx) is compiled
 // and three module seams are swapped at build time: the page gains the Cast button, and the receiver gets its own
 // perf profile and tier cap.
-const CAST_DEFAULT = "0";
+const CAST_DEFAULT = "1";
 const cast = (process.env.NEXT_PUBLIC_CAST ?? CAST_DEFAULT) === "1";
 const castSeams: [RegExp, string][] = [
   [/^@\/components\/overlay\/Landing$/, "@/components/cast/CastLanding"],
