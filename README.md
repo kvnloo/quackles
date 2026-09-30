@@ -4,7 +4,7 @@ A mobile product study for [Pollen Robotics’ Microduck](https://github.com/pol
 
 Scroll changes the camera angle, cues a jump, then starts an exploded view at touchdown. The actual Blender set stays in world space and leaves the camera view through perspective and parallax. Scrolling backwards reconstructs the same pose. Reduced motion uses static assembled and exploded views.
 
-The website is a work in progress. The browser sequence uses authored Blender Cycles frames presented through Canvas2D; the current checked-in proof set has five poses per theme at 1024×1536. Dense motion frames and the larger zoom tiers are still pending. No physical Galaxy S25 / 120 Hz result has been established.
+The website is a work in progress. The browser sequence uses authored Blender Cycles frames presented through Canvas2D; the checked-in sequence has 16 authored poses per theme at 1024×1536. Deep-zoom inspection is served from a per-theme **inspection source** (see [`docs/INSPECTION.md`](docs/INSPECTION.md)): Blue uses the accepted ~201 MP master; other themes currently have no deep-zoom source. No physical Galaxy S25 / 120 Hz result has been established.
 
 ## Run
 
@@ -31,7 +31,7 @@ npm run test:mobile:timing
 python3 research-engine/ab_loop.py validate
 ```
 
-The mobile harness separates deterministic screenshots from timing, records browser/GPU identity, and checks frame selection, theme crossfades, cache bounds, retry races, native gestures and reduced motion. The current functional checks cover the five-theme proof manifest; they do not establish dense-motion continuity, high-resolution zoom quality or physical-phone refresh performance. Read the options in `scripts/mobile-validation.mjs` before selecting an output directory or GPU mode. Desktop Chromium with a phone viewport is not physical-phone evidence.
+The mobile harness separates deterministic screenshots from timing, records browser/GPU identity, and checks frame selection, theme crossfades, cache bounds, retry races, native gestures and reduced motion. The functional checks cover the five-theme manifest; the inspection contracts (source purity, request budget, blank/stale frames, settle-time promotion, camera placement) are listed in `docs/INSPECTION.md`. None of this establishes physical-phone refresh performance. Read the options in `scripts/mobile-validation.mjs` before selecting an output directory or GPU mode. Desktop Chromium with a phone viewport is not physical-phone evidence.
 
 The original STL positions and triangle connectivity of the painted robot parts are retained. Authored color, roughness and normal atlases are transferred from Blender; alternate themes share geometry. The browser’s previous simplified tessellation is not identical to these original surfaces.
 
