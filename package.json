@@ -22,6 +22,7 @@
     "test:wheel": "node scripts/wheel-zoom-browser.mjs",
     "test:fling": "node scripts/fling-stress-browser.mjs",
     "test:blank-frames": "node scripts/blank-frame-browser.mjs",
+    "test:wiring": "node scripts/wiring-contracts.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",

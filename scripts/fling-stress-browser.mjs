@@ -21,15 +21,20 @@ await page.route("**/quackles-assets/**", async (route) => {
 await page.goto(process.env.TARGET_URL || `http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0);
 await page.waitForTimeout(2500);
 await page.evaluate(() => {
-  const f = window.__fs = { frames: 0, blank: 0, detailPaints: 0, paintsWhileMoving: 0, promotionsWhileMoving: 0, promo: [], lastW: 0, maxInflight: 0, maxDecoded: 0 };
+  const f = window.__fs = { frames: 0, blank: 0, uncovered: 0, detailPaints: 0, paintsWhileMoving: 0, promotionsWhileMoving: 0, promo: [], lastW: 0, maxInflight: 0, maxDecoded: 0 };
   window.addEventListener("quackles:detail-painted", () => {
-    const s = window.__QUACKLES_SEQUENCE__.getState(); f.detailPaints++;
-    if (s.inspection.cameraMoving) { f.paintsWhileMoving++; if (s.detailWidth > f.lastW) { f.promotionsWhileMoving++; f.promo.push([f.lastW, s.detailWidth, +s.inspection.zoom.toFixed(2)]); } }
-    f.lastW = s.detailWidth;
+    // The player dispatches this BEFORE updating state.detailWidth: capture motion now, read the new width in a microtask.
+    const moving = window.__QUACKLES_SEQUENCE__.getState().inspection.cameraMoving, zoom = window.__QUACKLES_SEQUENCE__.getState().inspection.zoom; f.detailPaints++;
+    queueMicrotask(() => { const w = window.__QUACKLES_SEQUENCE__.getState().detailWidth;
+      if (moving) { f.paintsWhileMoving++; if (w > f.lastW && f.lastW > 0) { f.promotionsWhileMoving++; f.promo.push([f.lastW, w, +zoom.toFixed(2)]); } if (w > f.lastW && f.lastW === 0) f.firstPaintWhileMoving = (f.firstPaintWhileMoving || 0) + 1; }
+      f.lastW = w; });
   });
   const vis = (q) => getComputedStyle(document.querySelector(q)).visibility;
   const tick = () => { const s = window.__QUACKLES_SEQUENCE__.getState(); f.frames++;
     if (vis(".sequence-base") !== "visible" && vis(".sequence-detail") !== "visible") f.blank++;
+    // Uncovered = the base is hidden but the visible detail canvas does not cover the whole hero viewport (page background shows through).
+    if (vis(".sequence-base") !== "visible") { const c = document.querySelector(".sequence-camera").parentElement.getBoundingClientRect(), d = document.querySelector(".sequence-detail").getBoundingClientRect();
+      if (vis(".sequence-detail") !== "visible" || d.left > c.left + 1 || d.top > c.top + 1 || d.right < c.right - 1 || d.bottom < c.bottom - 1) f.uncovered++; }
     if (s.cache) { f.maxInflight = Math.max(f.maxInflight, s.cache.inflight); f.maxDecoded = Math.max(f.maxDecoded, s.cache.totalBytes); }
     if (!f.stop) requestAnimationFrame(tick); };
   requestAnimationFrame(tick);
@@ -46,9 +51,11 @@ for (let i = 0; i < 200; i++) {
   if (final.w !== last) { last = final.w; since = Date.now(); }
   calm = !final.moving && final.dz < 1e-3 && Date.now() - since > 800 ? calm + 1 : 0; if (calm >= 5) break; await page.waitForTimeout(80);
 }
+// Phase 2: a settled camera then jumps by more than the painted buffer (opposite corner), twice, with latency-free tiles.
+for (const [x, y] of [[0.9, 0.85], [0.1, 0.1], [0.9, 0.1]]) { await set(6, x, y); await page.waitForTimeout(3200); }
 const f = await page.evaluate(() => { window.__fs.stop = true; return window.__fs; });
-const res = { flingRequests: served - before, frames: f.frames, blankFrames: f.blank, detailPaints: f.detailPaints, paintsWhileMoving: f.paintsWhileMoving, promotionsWhileMoving: f.promotionsWhileMoving, promotions: f.promo, maxInflight: f.maxInflight, maxDecodedMiB: +(f.maxDecoded / 1048576).toFixed(1), budgetMiB: +(final.cache.budgetBytes / 1048576).toFixed(1), staleDiscard: final.cache.staleDiscard, failures: final.cache.failures, stalePaints: final.stale, errors: final.errors, settledDetailWidth: final.w, settledCalm: calm >= 5 };
+const res = { flingRequests: served - before, frames: f.frames, blankFrames: f.blank, uncoveredFrames: f.uncovered, detailPaints: f.detailPaints, paintsWhileMoving: f.paintsWhileMoving, promotionsWhileMoving: f.promotionsWhileMoving, promotions: f.promo, firstPaintsWhileMoving: f.firstPaintWhileMoving || 0, maxInflight: f.maxInflight, maxDecodedMiB: +(f.maxDecoded / 1048576).toFixed(1), budgetMiB: +(final.cache.budgetBytes / 1048576).toFixed(1), staleDiscard: final.cache.staleDiscard, failures: final.cache.failures, stalePaints: final.stale, errors: final.errors, settledDetailWidth: final.w, settledCalm: calm >= 5 };
 console.log(JSON.stringify(res));
 await page.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {}); await browser.close(); server.kill();
-const bad = []; if (res.blankFrames) bad.push("blank frames"); if (res.promotionsWhileMoving) bad.push("tier promoted while camera moving (D6)"); if (res.failures || res.errors) bad.push("failures/errors"); if (res.maxDecodedMiB > res.budgetMiB) bad.push("decoded over budget"); if (res.settledDetailWidth < 4096) bad.push("not sharp after settle"); if (res.stalePaints) bad.push("stale paints");
+const bad = []; if (res.blankFrames) bad.push("blank frames"); if (res.uncoveredFrames) bad.push("viewport not covered while base hidden"); if (res.promotionsWhileMoving || res.firstPaintsWhileMoving) bad.push("tier promoted while camera moving (D6)"); if (res.failures || res.errors) bad.push("failures/errors"); if (res.maxDecodedMiB > res.budgetMiB) bad.push("decoded over budget"); if (res.settledDetailWidth < 4096) bad.push("not sharp after settle"); if (res.stalePaints) bad.push("stale paints");
 if (bad.length) { console.error("FAIL", bad); process.exit(1); }

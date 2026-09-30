@@ -8,7 +8,11 @@ import { spawn } from "node:child_process";
 import { chromium } from "playwright-core";
 import sharp from "sharp";
 // Tolerance = measured noise floor of the SAME build vs itself (issue-43-evidence/visual-parity-floor): max meanAbs 0.3035, max fracOver8 0.0096 over 3 runs x 7 states.
-const TOL = { meanAbs: 0.35, fracOver8: 0.011 };
+// Per-state: z6/z8/pans are near-deterministic (floor ~0.001-0.0014); z2/z4 show a bimodal camera-arrival floor (max 0.3035 / 0.0096).
+// z8 canvas origin is path/timing dependent (independent verifier: ladder vs direct-to-z8 differs by meanAbs 3.8 in the same build),
+// so z8 is compared through the SAME ladder only and given the loose floor too.
+const TOL_DEFAULT = { meanAbs: 0.05, fracOver8: 0.001 }, TOL_LOOSE = { meanAbs: 0.35, fracOver8: 0.011 };
+const TOL_BY_STATE = { z2: TOL_LOOSE, z4: TOL_LOOSE, z8: TOL_LOOSE };
 const ASSETS = process.env.ASSETS || "/mnt/zer0models/quackles-1gp/assets-repo";
 const STATES = [["z1", 1, 0.5, 0.5], ["z2", 2, 0.44, 0.28], ["z4", 4, 0.44, 0.28], ["z6", 6, 0.44, 0.28], ["z6-pan-small", 6, 0.47, 0.30], ["z6-pan-large", 6, 0.62, 0.42], ["z8", 8, 0.44, 0.28]];
 const browser = await chromium.launch({ executablePath: "/usr/bin/google-chrome-stable", headless: true, args: ["--no-sandbox"] });
@@ -47,7 +51,7 @@ for (const [name] of STATES) {
   const [x, y] = await Promise.all([sharp(A.out[name].png).removeAlpha().raw().toBuffer(), sharp(B.out[name].png).removeAlpha().raw().toBuffer()]);
   let sum = 0, big = 0; for (let i = 0; i < x.length; i++) { const d = Math.abs(x[i] - y[i]); sum += d; if (d > 8) big++; }
   const r = { meanAbs: +(sum / x.length).toFixed(4), fracOver8: +(big / x.length).toFixed(6), detailA: A.out[name].detailWidth, detailB: B.out[name].detailWidth };
-  r.pass = r.meanAbs <= TOL.meanAbs && r.fracOver8 <= TOL.fracOver8 && r.detailA === r.detailB; if (!r.pass) fail = true; report.states[name] = r;
+  const TOL = TOL_BY_STATE[name] || TOL_DEFAULT; r.tol = TOL; r.pass = r.meanAbs <= TOL.meanAbs && r.fracOver8 <= TOL.fracOver8 && r.detailA === r.detailB; if (!r.pass) fail = true; report.states[name] = r;
   if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, { recursive: true }); fs.writeFileSync(`${process.env.SHOTS}/${name}-A.png`, A.out[name].png); fs.writeFileSync(`${process.env.SHOTS}/${name}-B.png`, B.out[name].png); }
 }
 console.log(JSON.stringify(report, null, 1)); await browser.close(); process.exit(fail ? 1 : 0);

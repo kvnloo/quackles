@@ -290,8 +290,9 @@ export function SequencePlayer() {
         }
       }
       if (inspecting) {
-        // Hide the base only once a detail layer is actually painted; never blank the current image.
-        baseCanvas!.style.visibility = detailKey ? "hidden" : "visible";
+        // The base is a persistent underlay: keep it visible so any part of the viewport the detail canvas does not
+        // cover (camera jump beyond the painted buffer) shows the plate, never the page background.
+        baseCanvas!.style.visibility = "visible";
         if (fallback.current) fallback.current.style.visibility = "hidden";
       } else if (baseKey) {
         baseCanvas!.style.visibility = "visible";
