@@ -16,6 +16,7 @@
     "test:mobile:timing": "MODE=timing node scripts/mobile-validation.mjs",
     "test:mobile:visual": "MODE=visual node scripts/mobile-validation.mjs",
     "test:inspection-source": "node scripts/inspection-source-contracts.mjs",
+    "test:request-budget": "node --import ./scripts/register-ts-resolve.mjs scripts/request-budget-contracts.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",

@@ -191,7 +191,7 @@ export function SequencePlayer() {
       if (detailEligible && span.mix === 0 && crop.width > 0 && crop.height > 0 && desiredWidth > plateWidth) {
         const budget = profile.decodedBudgetBytes - plateWidth * beforeAssets[0].height * 4;
         if (eggShown && mushroomPyramid.length) {
-          const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio);
+          const planned = sharpPlan(known(mushroomPyramid), desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan);
           if (planned && planned.variant.width > plateWidth) layers.push({ plan: planned, alpha: 1 });
         } else if (!eggShown) {
           const sources = showThemes.map((theme) => known(frame.assets[theme]));
@@ -201,7 +201,7 @@ export function SequencePlayer() {
             if (from && from.variant.width > plateWidth) layers.push({ plan: { ...from, coverage: crop }, alpha: 1 });
             if (from && to) layers.push({ plan: { ...to, coverage: crop }, alpha: showMix });
           } else {
-            const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio) : null;
+            const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan) : null;
             if (primary && primary.variant.width > plateWidth) {
               layers.push({ plan: primary, alpha: 1 });
               if (!moving) {

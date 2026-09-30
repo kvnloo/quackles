@@ -43,7 +43,7 @@ for (let run = 0; run < runs; run++) {
   const stateOf = () => page.evaluate(() => { const s = window.__QUACKLES_SEQUENCE__.getState(); return { w: s.detailWidth, tiles: s.detailTiles, cache: s.cache, stale: s.stalePaints, errors: s.errors.length }; });
   const steps = [];
   for (const z of [2, 4, 6]) {
-    const ts = Date.now();
+    const ts = Date.now(), stepReqStart = reqs.length;
     await page.evaluate((zoom) => window.__QUACKLES_INSPECTION__.setTarget(zoom, 0.44, 0.28), z);
     let last = -1, since = Date.now(), sharpAt = null, s;
     while (Date.now() - ts < 6000) {
@@ -52,12 +52,14 @@ for (let run = 0; run < runs; run++) {
       if (Date.now() - since > 700) { sharpAt = since - ts; break; }
       await page.waitForTimeout(50);
     }
-    steps.push({ zoom: z, timeToSharpMs: sharpAt, detailWidth: s.w, detailTiles: s.tiles });
+    const stepReqs = reqs.slice(stepReqStart).map((r) => r.rel);
+    steps.push({ zoom: z, timeToSharpMs: sharpAt, detailWidth: s.w, detailTiles: s.tiles, requests: stepReqs.length, uniqueRequests: new Set(stepReqs).size, levels: [...new Set(stepReqs.map((u) => u.replace(/^.*\/p0000000\//, '').replace(/\/\d+_\d+\.webp$/, '')))].sort() });
   }
   const end = await stateOf();
   const perf = await page.evaluate(() => { window.__perf.stop = true; return window.__perf; });
   const d = perf.d;
-  const trace = { run, idleWarmRequests: idleReqs, interactiveRequests: reqs.length - reqsBefore, interactiveBytes: reqs.slice(reqsBefore).reduce((s, r) => s + r.bytes, 0), levels: [...new Set(reqs.map((r) => r.rel.replace(/^blue\/p0000000\//, "").replace(/\/\d+_\d+\.webp$/, "")))].sort(),
+  const allRel = reqs.map((r) => r.rel); const dupes = allRel.length - new Set(allRel).size;
+  const trace = { run, duplicateRequests: dupes, idleWarmRequests: idleReqs, interactiveRequests: reqs.length - reqsBefore, interactiveBytes: reqs.slice(reqsBefore).reduce((s, r) => s + r.bytes, 0), levels: [...new Set(reqs.map((r) => r.rel.replace(/^blue\/p0000000\//, "").replace(/\/\d+_\d+\.webp$/, "")))].sort(),
     frames: d.length, p50: +pct(d, .5).toFixed(1), p95: +pct(d, .95).toFixed(1), p99: +pct(d, .99).toFixed(1), worst: +Math.max(...d).toFixed(1), over33: d.filter((x) => x > 33.4).length, over50: d.filter((x) => x > 50).length,
     blankSamples: perf.blank, stalePaints: end.stale, errors: end.errors, decodedBytes: end.cache?.decodedBytes, cacheEntries: end.cache?.entries, staleDiscard: end.cache?.staleDiscard, failures: end.cache?.failures, steps };
   results.push(trace);

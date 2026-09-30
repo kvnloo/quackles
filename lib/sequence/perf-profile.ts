@@ -50,7 +50,7 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
     compressedBudgetBytes: 128 * MIB,
     maxActiveJobs: 3,
     maxZoomCap: 24,
-    tileOverscan: 1,
+    tileOverscan: 0, // the 40% coverage margin is the pan buffer; a ring on top only added traffic (#43)
     viewfinderBackingWidth: 112,
   },
 };

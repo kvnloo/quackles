@@ -163,13 +163,16 @@ export function sharpPlan(
   cssWidth: number,
   cssHeight: number,
   dpr: number,
+  // Extra tile ring beyond the buffered coverage. The 40% coverage margin already is the pan buffer,
+  // so the default requests exactly the tiles covering it; profiles may opt in to a ring.
+  overscan: 0 | 1 = 0,
 ) {
   const tight = detailPlan(variants, desiredWidth, crop, budget, 0);
   if (!tight) return null;
   const floor = tight.variant.width;
   for (const margin of [0.4, 0.2, 0]) {
     const coverage = margin === 0 ? crop : fittedBuffer(cssWidth, cssHeight, crop, dpr, DETAIL_CANVAS_CAP, margin);
-    const plan = detailPlan(variants, floor, coverage, budget, margin > 0 ? 1 : 0, Number.POSITIVE_INFINITY, floor);
+    const plan = detailPlan(variants, floor, coverage, budget, margin > 0 ? overscan : 0, Number.POSITIVE_INFINITY, floor);
     if (plan) return { ...plan, coverage };
   }
   return { ...tight, coverage: crop };
