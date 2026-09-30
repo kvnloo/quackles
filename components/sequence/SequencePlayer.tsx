@@ -13,7 +13,7 @@ import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
 import { MOTION_SCALE_START, motionDesiredWidth, nextMotionScale } from "@/lib/sequence/motion-quality";
 import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe } from "@/lib/sequence/store";
-import { syncedTheme, type ThemeRelease } from "@/lib/sequence/synced-theme";
+import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
@@ -170,8 +170,9 @@ export function SequencePlayer() {
         for (const index of want) {
           const id = THEME_IDS[index];
           if (!id) continue;
-          const plan = detailPlan(known(frame.assets[id]), desiredWidth, crop, syncBudget, 0);
-          ready[index] = !!plan && plan.variant.width > plateWidth && plan.tasks.every((task) => cache!.peek(task.asset.url) !== undefined);
+          const variants = known(frame.assets[id]);
+          const plan = detailPlan(variants, desiredWidth, crop, syncBudget, 0);
+          ready[index] = themeDetailReady({ hasDetailSource: variants.some((variant) => !isImage(variant)), planReady: !!plan && plan.variant.width > plateWidth && plan.tasks.every((task) => cache!.peek(task.asset.url) !== undefined) });
           if (plan && !ready[index]) for (const task of plan.tasks) tasks.push({ asset: task.asset, priority: 100 });
         }
         const synced = syncedTheme({ requested: current.theme, held: heldTheme, ready, now: performance.now(), release: themeRelease });
@@ -195,12 +196,15 @@ export function SequencePlayer() {
           if (planned && planned.variant.width > plateWidth) layers.push({ plan: planned, alpha: 1 });
         } else if (!eggShown) {
           const sources = showThemes.map((theme) => known(frame.assets[theme]));
-          if (showThemes.length > 1 && sources[0]?.length && sources[1]?.length) {
+          const tiled = sources.map((list) => list.some((variant) => !isImage(variant))); // every list holds its plate image, so length alone proves nothing
+          if (showThemes.length > 1 && tiled[0] && tiled[1]) {
             const from = detailPlan(sources[0], desiredWidth, crop, budget, 0);
             const to = sources[1] ? detailPlan(sources[1], from?.variant.width ?? desiredWidth, crop, budget, 0, Number.POSITIVE_INFINITY, from?.variant.width ?? 0) : null;
             if (from && from.variant.width > plateWidth) layers.push({ plan: { ...from, coverage: crop }, alpha: 1 });
             if (from && to) layers.push({ plan: { ...to, coverage: crop }, alpha: showMix });
-          } else {
+          } else if (showThemes.length === 1) {
+            // Single visible theme only: during a crossfade where one side has no tiles, painting the other side's
+            // detail at full alpha would show one scene's art over the mix.
             const primary = sources[0]?.length ? sharpPlan(sources[0], desiredWidth, crop, budget, rect.width, rect.height, devicePixelRatio, profile.tileOverscan) : null;
             if (primary && primary.variant.width > plateWidth) {
               layers.push({ plan: primary, alpha: 1 });

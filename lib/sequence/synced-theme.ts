@@ -27,3 +27,8 @@ export function syncedTheme(input: {
   if (Math.abs(input.requested - Math.round(input.requested)) > 0.001) return { theme: input.requested, release: null };
   return { theme: input.held, release: { from: input.held, to: input.requested, start: input.now } };
 }
+
+/** A theme with no detail source has nothing to wait for; only a theme that has tiles waits for them to decode. */
+export function themeDetailReady(input: { hasDetailSource: boolean; planReady: boolean }): boolean {
+  return !input.hasDetailSource || input.planReady;
+}
