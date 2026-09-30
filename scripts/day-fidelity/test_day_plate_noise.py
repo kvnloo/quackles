@@ -32,8 +32,9 @@ def speckle(path_or_img, T=40):
     im = Image.open(path_or_img) if isinstance(path_or_img, (str, Path)) else path_or_img
     l = luma(im); return float((np.abs(l - median3(l)) > T).mean())
 
-def frames():
-    return sorted(Path(p) for p in glob.glob(str(DAY / "p*-1024.*")))
+THEMES = ("day", "white", "blue", "dark", "night")
+def frames(theme="day"):
+    return sorted(Path(p) for p in glob.glob(str(DAY.parent / theme / "p*-1024.*")))
 
 class DayNoise(unittest.TestCase):
     def test_primitive_speckle(self):
@@ -42,11 +43,13 @@ class DayNoise(unittest.TestCase):
         self.assertGreater(speckle(Image.fromarray(np.clip(n, 0, 255).astype(np.uint8))), 0.05)
 
     def test_no_frame_is_noisier_than_twice_its_siblings(self):
-        fs = frames(); self.assertEqual(len(fs), 16)
-        vals = {f.name: speckle(f) for f in fs}
-        for f in fs:
-            sib = sorted(v for k, v in vals.items() if k != f.name); bound = 2 * sib[len(sib) // 2]
-            self.assertLessEqual(vals[f.name], bound, f"{f.name} speckle {vals[f.name]:.5f} > 2x sibling median {bound:.5f}")
+        # every theme, every frame: measured 2026-09-30 all 80 plates within 1.9x of their sibling median after the Day hero fix
+        for theme in THEMES:
+            fs = frames(theme); self.assertEqual(len(fs), 16, theme)
+            vals = {f.name: speckle(f) for f in fs}
+            for f in fs:
+                sib = sorted(v for k, v in vals.items() if k != f.name); bound = 2 * sib[len(sib) // 2]
+                self.assertLessEqual(vals[f.name], bound, f"{theme}/{f.name} speckle {vals[f.name]:.5f} > 2x sibling median {bound:.5f}")
 
     def test_hero_only_changes_noise_not_the_authored_look(self):
         prev_bytes = subprocess.run(["git", "show", PREV_HERO_GIT], cwd=ROOT, capture_output=True, check=True).stdout
