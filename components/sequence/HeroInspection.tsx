@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { settleCamera } from "@/lib/sequence/camera-settle";
+import { settleCamera, shouldKeepTicking } from "@/lib/sequence/camera-settle";
 import {
   advanceSpring,
   inspectionSnapshot,
@@ -145,7 +145,7 @@ export function HeroInspection() {
       setInspectionState(next);
       syncFrameState(next);
 
-      if (!arrived.converged || active !== current.active) {
+      if (shouldKeepTicking({ active, settled, converged: arrived.converged, activeChanged: active !== current.active })) {
         animation = requestAnimationFrame(tick);
       } else {
         lastTick = 0;
