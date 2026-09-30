@@ -214,10 +214,25 @@ a:focus-visible {
 }
 .site-nav nav {
   display: flex;
-  gap: 2cqw;
+  gap: 4cqw;
   align-items: center;
   font-size: 1.8cqw;
   letter-spacing: 0.1em;
+}
+/* Boxed Hermes CTA, top right like the poster's INSTALL HERMES; filled with
+ * paper so the label keeps palette contrast over the bust panel. */
+.site-nav .nav-cta {
+  position: absolute;
+  right: 3.8%;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.9cqw 2.2cqw;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  white-space: nowrap;
+}
+.site-nav .nav-info span {
+  letter-spacing: 0;
 }
 .hero-copy {
   position: absolute;
@@ -241,17 +256,20 @@ a:focus-visible {
   height: 1px;
   background: currentColor;
 }
+/* Hermes poster stacks (frame-relative). The headline sits high enough that
+ * its last line clears the robot head (x > 33%, y > 26%); the right column
+ * lives in the x > 90% gutter, below the inspect hints and above the HUD. */
 .hero-copy > .hero-kicker {
   position: absolute;
-  top: 10.2%;
+  top: 8.3%;
   left: 5.5%;
 }
 .hero-copy h1 {
   position: absolute;
-  top: 13.2%;
+  top: 10.3%;
   left: 5.1%;
   font-family: var(--font-display), "Arial Narrow", sans-serif;
-  font-size: 9.1cqw;
+  font-size: 7cqw;
   line-height: 0.99;
   font-weight: 300;
   letter-spacing: -0.02em;
@@ -266,11 +284,58 @@ a:focus-visible {
   letter-spacing: 0.1em;
   margin: 0;
 }
+.hero-label,
+.hero-note > span + span {
+  padding-top: 2.4cqw;
+}
+.hero-label::before,
+.hero-note > span + span::before {
+  content: "";
+  position: absolute;
+  width: 3cqw;
+  height: 1px;
+  margin-top: -1.3cqw;
+  background: currentColor;
+}
+.hero-note > span {
+  display: block;
+  position: relative;
+}
 .hero-label {
-  top: 34.1%;
+  top: 29.5%;
 }
 .hero-note {
-  top: 46%;
+  top: 42%;
+}
+.hero-right {
+  position: absolute;
+  left: 90.2%;
+  right: 0.6%;
+  top: 55.8%;
+  font-size: 1.4cqw;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+}
+.hero-right p {
+  margin: 0;
+}
+.hero-globe {
+  width: 5.2cqw;
+  margin: 1.8cqw 0 1.2cqw;
+}
+.hero-globe svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.hero-year {
+  margin-top: 1.4cqw !important;
+  white-space: nowrap;
+}
+/* Day's palette ink is light (for its dark chrome) but the day plate behind
+ * the hero copy is a sunlit wall: set the copy in the palette's dark paper. */
+html[data-tone="day"] .hero-copy {
+  color: var(--paper);
 }
 .crop-cross {
   position: absolute;
@@ -278,6 +343,65 @@ a:focus-visible {
   top: 8%;
   font-size: 5cqw;
   font-weight: 100;
+}
+.process-page {
+  min-height: 100svh;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.process-page h1 {
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+  font-weight: 300;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 1.5rem 0 0.75rem;
+}
+.process-page h2 {
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+  font-weight: 300;
+  font-size: 1.35rem;
+  margin: 2.25rem 0 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.process-page p,
+.process-page li {
+  margin: 0.55rem 0;
+}
+.process-page ol {
+  padding-left: 1.2rem;
+}
+.process-page a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.process-page .process-kicker,
+.process-page .process-nav,
+.process-page .process-foot {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.process-page .process-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  padding-bottom: 0.85rem;
+}
+.process-page .process-foot {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 }
 .story-overlays {
   position: absolute;

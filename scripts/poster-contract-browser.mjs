@@ -94,7 +94,7 @@ for (const [vp, size, mobile] of [["desktop", { width: 1440, height: 900 }, fals
     if (s.navCount < 4) fail(`structure: nav has ${s.navCount} links (<4)`);
     if (!s.info || !/\/process\/?$/.test(s.info) || (base && !s.info.startsWith(base))) fail(`structure: info link to process page missing/unscoped: ${s.info}`);
     // /process: real static page (in export), links back home and to both official sites.
-    const procFile = path.join(dir, "process", "index.html");
+    const procFile = path.join(dir, base, "process", "index.html");
     if (!fs.existsSync(procFile)) fail(`static export lacks ${procFile}`);
     const pp = await ctx.newPage(); const resp = await pp.goto(`http://127.0.0.1:${port}${base}/process/`, { waitUntil: "load" });
     const proc = await pp.evaluate(() => ({ h1: document.querySelector("h1")?.textContent ?? null, links: [...document.querySelectorAll("a[href]")].map((a) => ({ href: a.getAttribute("href"), abs: a.href, target: a.target, rel: a.rel })) }));
