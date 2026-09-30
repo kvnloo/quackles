@@ -15,6 +15,7 @@
     "test:mobile": "node scripts/mobile-validation.mjs",
     "test:mobile:timing": "MODE=timing node scripts/mobile-validation.mjs",
     "test:mobile:visual": "MODE=visual node scripts/mobile-validation.mjs",
+    "test:inspection-source": "node scripts/inspection-source-contracts.mjs",
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",

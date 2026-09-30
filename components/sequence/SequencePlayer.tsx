@@ -5,6 +5,7 @@ import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
+import { applyInspectionPolicy, describeInspectionSources, type InspectionSource } from "@/lib/sequence/inspection-source";
 import { cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
@@ -15,7 +16,7 @@ import { syncedTheme, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
-type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number };
+type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number; inspectionSources: Record<ThemeId, InspectionSource> };
 type SequenceDebug = {
   setProgress: (value: number) => void;
   setTheme: (id: ThemeId) => void;
@@ -53,7 +54,7 @@ export function SequencePlayer() {
       state.detailWidth = 0; state.detailTiles = 0;
     };
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
-    const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0 };
+    const state: PlayerState = { ready: false, manifestId: null, frameCount: 0, frames: [], requested: null, rendered: null, detailWidth: 0, detailTiles: 0, drawCount: 0, errors: [], stalePaints: 0, inspectionSources: describeInspectionSources() };
     const schedule = () => { if (!pendingFrame && !cancelled) pendingFrame = requestAnimationFrame(render); };
     const request = (asset: ImageAsset, priority: number) => {
       if (!cache || cache.peek(asset.url) || waiting.has(asset.url) || failed.has(asset.url)) return;
@@ -336,7 +337,7 @@ export function SequencePlayer() {
       try {
         const response = await fetch(assetPath(`/preview-scene/sequence/manifest.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (!response.ok) throw new Error(`Sequence manifest failed: ${response.status}`);
-        const parsed = parseManifest(await response.json(), response.url);
+        const parsed = applyInspectionPolicy(parseManifest(await response.json(), response.url));
         const hidden = await fetch(assetPath(`/preview-scene/sequence/hidden-pyramids.json?v=${encodeURIComponent(BUILD_SHA)}`), { signal: controller.signal });
         if (hidden.ok) {
           const body = await hidden.json() as { mushroom?: { variants?: Variant[] } };
