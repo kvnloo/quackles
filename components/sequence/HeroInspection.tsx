@@ -350,6 +350,8 @@ export function HeroInspection() {
       }
     };
     // Stop the spring where the camera is NOW (targets = current, velocities 0): a new touch never inherits a stale target.
+    // A touchdown that catches a moving camera is not rest: it stays "moving" (no decode starts, no repaint) until the
+    // finger has held still for HOLD_STILL_MS or lifts, like any other moment of the gesture.
     const freezeCamera = () => {
       cancelAnimationFrame(animation);
       animation = 0;
@@ -362,7 +364,7 @@ export function HeroInspection() {
         focusY: current.focusY,
         targetFocusX: current.focusX,
         targetFocusY: current.focusY,
-      }, false);
+      }, current.cameraMoving);
       return inspectionSnapshot();
     };
     const startPan = (x: number, y: number) => {
