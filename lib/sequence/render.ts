@@ -197,8 +197,7 @@ function composite(context: CanvasRenderingContext2D, images: Decoded[], mix: nu
 let scratch: HTMLCanvasElement | undefined;
 export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: Decoded[] | undefined, progressMix: number, themeMix: number, cssWidth: number) {
   const images = after?.length ? [...before, ...after] : before;
-  // At most 2 device px per CSS px (3fa1942): a 3.5x phone otherwise paints and composites the full plate on every frame of a scroll.
-  const width = Math.min(Math.max(...images.map((image) => image.asset.width)), Math.ceil(cssWidth * Math.min(devicePixelRatio, 2)));
+  const width = Math.min(Math.max(...images.map((image) => image.asset.width)), Math.ceil(cssWidth * devicePixelRatio));
   const height = Math.round(width * images[0].asset.height / images[0].asset.width);
   if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
   const context = canvas.getContext("2d", { alpha: false });
