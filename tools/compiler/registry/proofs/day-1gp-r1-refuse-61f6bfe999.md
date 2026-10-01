@@ -44,4 +44,4 @@
 - plate-vs-master: cell [2, 3] dE 23.933 > 10.0 (localized divergence, review)
 
 Contract: {'plate_dE_max': 5.0, 'plate_abs_dL_max': 3.0, 'plate_shift_px_max': 1.0, 'plate_aspect_tol': 0.005, 'cell_dE_report': 10.0, 'level0_dE_max': 1.0, 'nest_dE_max': 2.5, 'nest_abs_dL_max': 1.0, 'nest_reduce': 4, 'nest_shift_px_max': 0.5, 'shift_min_luma_std': 4.0, 'compare_width': 384}
-Tool head: `2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2`, 2026-10-01T00:25:49+00:00
+Tool head: `74ea4ef8278f423814956c8213256b654ed80602`, 2026-10-01T00:39:00+00:00

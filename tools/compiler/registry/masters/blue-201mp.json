@@ -32,7 +32,7 @@
   "robot_mesh_hash": "a81d06107f23d84afb65f99403b8bea27f82df697ac94a8e47ac16258820b38a"
  },
  "notes": "Accepted Blue control (DECISIONS D1/D2). Rendered as 2x2 crops, stitched.",
- "registered_at": "2026-10-01T00:25:28+00:00",
+ "registered_at": "2026-10-01T00:37:33+00:00",
  "derivatives": [
   {
    "kind": "plate",
@@ -44,7 +44,7 @@
    "sha256": "05dbf7c61873d604016c867172912e9409976c0ed86634f32cfe739e309c3769",
    "master_id": "blue-201mp",
    "parent": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
-   "recorded_at": "2026-10-01T00:25:28+00:00"
+   "recorded_at": "2026-10-01T00:37:33+00:00"
   },
   {
    "kind": "pyramid",
@@ -74,7 +74,7 @@
    ],
    "master_id": "blue-201mp",
    "parent": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
-   "recorded_at": "2026-10-01T00:25:28+00:00"
+   "recorded_at": "2026-10-01T00:37:35+00:00"
   }
  ]
 }

@@ -48,22 +48,19 @@ Each derivative entry records `kind`, `status`, `sha256`, `parent` (the master s
 | provenance | an input is not a recorded derivative, or changed since it was recorded |
 | one-family | an input's recorded parent is a different master |
 | plate-vs-master | the frozen contract (D2) fails at 384 px wide: full-frame mean dE ≤ 5, \|dL\| ≤ 3, registration ≤ 1 px, aspect ≤ 0.5 %. Grid cells with dE > 10 are reported for review but do not fail the check |
-| pyramid-geometry | the level sizes are not the master size halved with ceil, or a level's tile grid is incomplete |
-| pyramid-level0 | sampled level-0 tiles are not the master's pixels (dE > 1) |
+| pyramid-geometry | `source.dzi` is missing; its levels differ from the level dirs; the level sizes are not the master size halved with ceil; a level's tile grid is incomplete; or the pyramid stops above the 1024 px plate floor |
+| pyramid-level0 | sampled level-0 tiles, edge tiles included, are not the master's pixels (dE > 1) |
 | pyramid-nesting | the textured sampled tiles of level n+1 are not a 2× box of level n: dE > 2.5 or \|dL\| > 1 after a further 4× box, or median registration > 0.5 px |
 
-`promote` checks four more things before it writes:
+`promote` never trusts a proof file. It **re-runs the gate** on the proof's inputs and writes only a fresh ACCEPT whose hashes match the proof. The theme must also have no other master in the ledger. Replacing a theme's master needs `--supersede <old>`, and the whole hierarchy is swapped in one step.
 
-- the proof's verdict is ACCEPT;
-- the master in the proof is still the registered one;
-- every input still hashes to the value in the proof;
-- the theme has no other master in the ledger.
+Hashes are always re-read from file content. A stat-keyed cache exists only as an opt-in (`QC_TRUST_HASH_CACHE=1`) for local iteration. Master reductions are recomputed every time and never read from disk.
 
-Replacing a theme's master needs `--supersede <old>`, and the whole hierarchy is swapped in one step.
+By default each check samples 6 tiles, preferring textured ones. `--samples 0` checks every tile of every level, which is slow on 1GP.
 
 ## Results on today's data
 
-These come from `tools/compiler/bootstrap.sh`, whose proofs are in `registry/proofs/`, and from `tests/test_realdata.py`. A cold run takes about 3.5 min on CPU; a warm one about 45 s.
+These come from `tools/compiler/bootstrap.sh`, whose proofs are in `registry/proofs/`, and from `tests/test_realdata.py`. A run takes about 5 min on CPU, and no full 1GP frame is ever held in RAM.
 
 | master | against | verdict | plate full dE / dL | note |
 |---|---|---|---|---|
@@ -86,13 +83,13 @@ Masters are hundreds of MB to GB and never enter git or CI. The invariant theref
 
 1. **Offline (render box):** `register`, `derive` and `verify`, then `promote`. This step needs the masters. Its output is small and committed: the master JSON, the proof JSON and MD, and `promoted.json`. The ledger pins the sha256 of each proof.
 2. **CI (no masters):** `npm run test:compiler`. It runs the unit suite, then `check-manifest` with the runtime policy and the hidden pyramids. The check fails if any of these hold:
-   - a served ladder mixes masters;
+   - a served ladder mixes masters, plate-only ladders included;
    - tiles come from an unpromoted or unregistered master;
-   - a tile width is not a level of the promoted pyramid;
+   - a tile's level index or width is not a level of the promoted pyramid;
    - a plate in `public/` no longer hashes to its promoted derivative;
    - a promotion proof was edited after promotion.
 
-   It is cheap: only the plates are hashed.
+   The policy parser strips comments and refuses duplicate rows. The check is cheap: only the plates are hashed.
 
 To switch it on, add a job that runs on PRs touching any of these paths:
 
@@ -110,6 +107,36 @@ Two follow-ups would make the invariant explicit:
 
 - **Explicit source ids in the manifest** (#44 step 1). Each tile variant would carry `source: {master, sha256}` emitted by the compiler. Both `check-manifest` and the runtime would then key on ids instead of the `/gp/` URL heuristic.
 - **Deploy-side check.** The ledger pins the pyramid tree hash, but the copy published in `quackles-assets` is not verified. A publish step should re-hash the deployed tree against the ledger.
+
+## Adversarial review
+
+A blind adversarial verifier, given only the raw inputs, fooled the first version of the gate in nine ways:
+
+- hand-editing a proof's verdict;
+- same-size, same-mtime edits that the stat hash cache did not see;
+- a planted reduction cache;
+- policy rows hidden inside comments;
+- unsampled partial edge tiles;
+- truncated pyramids, or a missing `source.dzi`;
+- plate-only ladders that mix masters;
+- tile URLs pointing at levels that do not exist.
+
+It also found false refusals:
+
+- tile URLs starting with `/` were refused;
+- a plate-only promotion dropped the pyramid promoted earlier.
+
+Each of these now has a regression test (`Adversarial*` in `tests/test_unit.py`) and is fixed. Some limits remain and are accepted for now:
+
+- **Tiles are not re-hashed in CI.** They live in `quackles-assets`, so a deploy-side hash check is still needed.
+- **Candidate ladders are outside the invariant.** These are the `candidate-1gp` ladders, served only with `?inspectionCandidates=1`. Including them today would fail, because Day's candidate 1GP cannot be promoted.
+- **The contract is full-frame.** It still permits:
+  - a local defect covering about 6 % of the frame (reported as a cell note, not a failure);
+  - mild blur;
+  - a tiny or slightly cropped plate.
+
+  The Blue hero passes with only 0.07 dE of margin, so a lossy re-encode of it would be refused. Tightening any of this changes the frozen contract (D2), which is the owner's call.
+- **Nesting tolerance is fitted to the real data.** It was set from the real q82 mips. On synthetic, very high-frequency content, the compiler's own pyramid can exceed it.
 
 ## Still missing for "one master → every derivative"
 

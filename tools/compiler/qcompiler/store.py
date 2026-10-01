@@ -60,14 +60,20 @@ def _cache_file() -> Path:
 
 
 class Hasher:
-    """sha256 of files, memoised on (size, mtime_ns, inode) like git's index."""
+    """sha256 of files. Content is re-read every time by default: a (size, mtime) stamp
+    can be forged (same-size edit + utime), so the persistent stat cache is opt-in
+    (QC_TRUST_HASH_CACHE=1) for local iteration only, never for verify/promote proofs."""
 
-    def __init__(self):
+    def __init__(self, trust_cache: bool | None = None):
+        self.trust = os.environ.get("QC_TRUST_HASH_CACHE") == "1" if trust_cache is None else trust_cache
         self.path = _cache_file()
-        try:
-            self.cache = json.loads(self.path.read_text())
-        except Exception:
-            self.cache = {}
+        self.cache = {}
+        if self.trust:
+            try:
+                self.cache = json.loads(self.path.read_text())
+            except Exception:
+                self.cache = {}
+        self.memo: dict = {}
         self.dirty = False
 
     def file(self, p: Path) -> str:
@@ -75,7 +81,9 @@ class Hasher:
         st = p.stat()
         key = str(p)
         stamp = [st.st_size, st.st_mtime_ns, st.st_ino]
-        hit = self.cache.get(key)
+        if key in self.memo and self.memo[key][0] == stamp:
+            return self.memo[key][1]
+        hit = self.cache.get(key) if self.trust else None
         if hit and hit[:3] == stamp:
             return hit[3]
         h = hashlib.sha256()
@@ -83,8 +91,10 @@ class Hasher:
             for block in iter(lambda: f.read(1 << 22), b""):
                 h.update(block)
         digest = h.hexdigest()
-        self.cache[key] = stamp + [digest]
-        self.dirty = True
+        self.memo[key] = (stamp, digest)
+        if self.trust:
+            self.cache[key] = stamp + [digest]
+            self.dirty = True
         return digest
 
     def tree(self, root: Path) -> tuple[str, int]:

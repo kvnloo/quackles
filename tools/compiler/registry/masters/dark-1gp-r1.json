@@ -278,7 +278,7 @@
   ]
  },
  "notes": "Historical 1GP render (quality-final-* studio scene, not the theme's cinematic plate scene).",
- "registered_at": "2026-10-01T00:26:05+00:00",
+ "registered_at": "2026-10-01T00:40:42+00:00",
  "derivatives": [
   {
    "kind": "plate",
@@ -290,7 +290,7 @@
    "sha256": "d7501ed015ae4ed3733a785d587dc1ac8cfa8942e98ff1f3d1bb0711c62dc146",
    "master_id": "dark-1gp-r1",
    "parent": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d",
-   "recorded_at": "2026-10-01T00:26:05+00:00"
+   "recorded_at": "2026-10-01T00:40:42+00:00"
   },
   {
    "kind": "pyramid",
@@ -324,7 +324,7 @@
    ],
    "master_id": "dark-1gp-r1",
    "parent": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d",
-   "recorded_at": "2026-10-01T00:26:06+00:00"
+   "recorded_at": "2026-10-01T00:40:48+00:00"
   }
  ]
 }

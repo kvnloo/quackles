@@ -84,7 +84,7 @@ def derive_pyramid(reg, mid: str, out, *, tile: int = 512, min_width: int = 1024
         r.close()
     dzi = {"tileSize": tile, "format": "webp", "overlap": 0, "size": [m["width"], m["height"]],
            "levels": [{"level": i, "size": [w, h]} for i, (w, h) in enumerate(levels)],
-           "level0": "webp-lossless", "mips": f"webp-q{mip_quality}", "master_sha256": m["sha256"]}
+           "level0": "webp-lossless", "mips": f"webp-q{mip_quality}", "floorWidth": min_width, "master_sha256": m["sha256"]}
     (out / "source.dzi").write_text(json.dumps(dzi, indent=1) + "\n")
     hasher = Hasher()
     digest, n = hasher.tree(out)

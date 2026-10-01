@@ -141,7 +141,8 @@ class Reader:
     def _chunk(self, c: dict) -> Image.Image:
         key = c["name"]
         if key not in self._cache:
-            if len(self._cache) >= int(os.environ.get("QC_CHUNK_CACHE", "4")):
+            cols = 1 + max(ch["col"] for ch in self.m["chunks"])  # one chunk row: row-major tile walks never thrash
+            if len(self._cache) >= int(os.environ.get("QC_CHUNK_CACHE", cols)):
                 self._cache.pop(next(iter(self._cache)))
             self._cache[key] = Image.open(self.src / c["name"]).convert("RGB")
         return self._cache[key]

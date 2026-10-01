@@ -53,7 +53,7 @@ def main(argv=None) -> int:
     v.add_argument("--plate", type=Path)
     v.add_argument("--pyramid", type=Path)
     v.add_argument("--out", type=Path)
-    v.add_argument("--samples", type=int, default=6)
+    v.add_argument("--samples", type=int, default=6, help="tiles sampled per check; 0 = every tile (slow on 1GP)")
 
     p = sub.add_parser("promote")
     p.add_argument("proof", type=Path)

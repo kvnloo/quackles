@@ -278,7 +278,7 @@
   ]
  },
  "notes": "Hidden egg scene. Audited against its authored plate; DECISIONS D8 open.",
- "registered_at": "2026-10-01T00:25:35+00:00",
+ "registered_at": "2026-10-01T00:37:44+00:00",
  "derivatives": [
   {
    "kind": "plate",
@@ -290,7 +290,7 @@
    "sha256": "9c1f10a930379e3233b7b8e15647fead795593410ee181652c1d9569fddcad8f",
    "master_id": "mushroom-1gp-r1",
    "parent": "9be1cdcf76f58619001fd1284d95d4a107b7aa4d561d23531fb925f68fcb1db6",
-   "recorded_at": "2026-10-01T00:25:35+00:00"
+   "recorded_at": "2026-10-01T00:37:44+00:00"
   },
   {
    "kind": "pyramid",
@@ -324,7 +324,7 @@
    ],
    "master_id": "mushroom-1gp-r1",
    "parent": "9be1cdcf76f58619001fd1284d95d4a107b7aa4d561d23531fb925f68fcb1db6",
-   "recorded_at": "2026-10-01T00:25:36+00:00"
+   "recorded_at": "2026-10-01T00:37:48+00:00"
   }
  ]
 }

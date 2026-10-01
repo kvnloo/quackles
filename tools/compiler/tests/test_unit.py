@@ -161,6 +161,19 @@ class PyramidGate(Base):
         proof = api.verify(self.reg, "a", pyramid=pyr)
         self.assertIn("pyramid-nesting", failed(proof))
 
+    def test_exhaustive_mode_finds_a_single_bad_tile(self):
+        """Sampling is the fast default; samples=0 checks every tile of every level."""
+        self.master()
+        pyr = self.tmp / "pyr"
+        api.derive_pyramid(self.reg, "a", pyr, tile=64, min_width=128)
+        t = pyr / "1" / "3_5.webp"
+        scene(seed=11).crop((0, 0, 64, 64)).save(t, "WEBP", quality=90)
+        api.adopt(self.reg, "a", "pyramid", pyr)
+        proof = api.verify(self.reg, "a", pyramid=pyr, samples=0)
+        self.assertIn("pyramid-nesting", failed(proof))
+        pair = proof["checks_by_name"]["pyramid-nesting"]["metrics"]["pairs"][0]
+        self.assertEqual(len(pair["tiles"]), 5 * 7)  # every full tile of level 1 (320x480 / 64)
+
     def test_level0_from_another_master_is_refused(self):
         self.master("a", seed=0)
         self.master("b", seed=5)
@@ -261,7 +274,7 @@ class Manifest(Base):
 
     def test_edited_proof_breaks_the_invariant(self):
         self.setup_two()
-        proof = Path(json.loads((self.reg / "promoted.json").read_text())["blue"]["proof"])
+        proof = Path(json.loads((self.reg / "promoted.json").read_text())["blue"]["proofs"][-1]["path"])
         doc = json.loads(proof.read_text())
         doc["created_at"] = "edited"
         proof.write_text(json.dumps(doc))
@@ -323,3 +336,130 @@ class RepoInvariant(unittest.TestCase):
         self.assertEqual(pol["blue"], ("legacy-201mp", "production-201-250mp"))
         self.assertEqual(pol["white"], (None, "disabled"))
         self.assertEqual(pol["mushroom"], ("gp-1gp", "production-1gp"))
+
+
+class Adversarial(Base):
+    """Regressions for the blind adversarial review (attacks that fooled the first gate)."""
+
+    def refused_plate(self):
+        self.master()
+        scene(seed=4).resize((256, 384)).save(self.tmp / "p.png")
+        api.adopt(self.reg, "a", "plate", self.tmp / "p.png")
+        return api.verify(self.reg, "a", plate=self.tmp / "p.png", out_dir=self.reg / "proofs")
+
+    def test_edited_proof_verdict_cannot_be_promoted(self):
+        proof = self.refused_plate()
+        p = Path(proof["proof_path"])
+        doc = json.loads(p.read_text())
+        doc["verdict"], doc["reasons"] = "ACCEPT", []
+        accepted = p.with_name("forged.json")
+        accepted.write_text(json.dumps(doc))
+        with self.assertRaises(Refused):
+            api.promote(self.reg, accepted)
+
+    def test_same_size_same_mtime_edit_is_seen(self):
+        import os
+        self.master()
+        src = self.tmp / "a.png"
+        api.derive_plate(self.reg, "a", self.tmp / "plate.png", width=256)
+        st = src.stat()
+        data = bytearray(src.read_bytes())
+        data[-40] ^= 0xFF  # same size
+        src.write_bytes(bytes(data))
+        os.utime(src, ns=(st.st_atime_ns, st.st_mtime_ns))
+        proof = api.verify(self.reg, "a", plate=self.tmp / "plate.png")
+        self.assertIn("master-integrity", failed(proof))
+
+    def test_planted_reduction_cache_is_not_trusted(self):
+        import os
+        m = self.master()
+        scene(seed=4).resize((256, 384)).save(self.tmp / "p.png")
+        api.adopt(self.reg, "a", "plate", self.tmp / "p.png")
+        cache = Path(os.environ.get("QC_CACHE", Path.home() / ".cache/quackles-compiler")) / "reductions"
+        cache.mkdir(parents=True, exist_ok=True)
+        planted = cache / f"{m['sha256']}-256x384.png"
+        Image.open(self.tmp / "p.png").save(planted)
+        try:
+            proof = api.verify(self.reg, "a", plate=self.tmp / "p.png")
+        finally:
+            planted.unlink(missing_ok=True)
+        self.assertIn("plate-vs-master", failed(proof))
+
+    def test_commented_policy_rows_are_ignored(self):
+        ts = self.tmp / "p.ts"
+        ts.write_text('// const INSPECTION_POLICY = { blue: { selected: "gp-1gp", status: "production-1gp" } };\n'
+                      'export const INSPECTION_POLICY: X = {\n'
+                      '  blue: { selected: "legacy-201mp", status: "production-201-250mp", revision: "r" },\n'
+                      '  // blue: { selected: "gp-1gp", status: "production-1gp" },\n'
+                      '  /* white: { selected: "gp-1gp", status: "production-1gp" }, */\n'
+                      '  white: { selected: null, status: "disabled", revision: "r" },\n};\n')
+        pol = api.parse_policy(ts)
+        self.assertEqual(pol["blue"], ("legacy-201mp", "production-201-250mp"))
+        self.assertEqual(pol["white"], (None, "disabled"))
+
+    def pyr(self):
+        self.master()
+        pyr = self.tmp / "pyr"
+        api.derive_pyramid(self.reg, "a", pyr, tile=64, min_width=128)
+        return pyr
+
+    def test_missing_dzi_is_refused(self):
+        pyr = self.pyr()
+        (pyr / "source.dzi").unlink()
+        api.adopt(self.reg, "a", "pyramid", pyr)
+        self.assertIn("pyramid-geometry", failed(api.verify(self.reg, "a", pyramid=pyr)))
+
+    def test_truncated_pyramid_is_refused(self):
+        pyr = self.pyr()
+        shutil.rmtree(pyr / "2")
+        dzi = json.loads((pyr / "source.dzi").read_text())
+        dzi["levels"] = dzi["levels"][:2]
+        (pyr / "source.dzi").write_text(json.dumps(dzi))
+        api.adopt(self.reg, "a", "pyramid", pyr)
+        self.assertIn("pyramid-geometry", failed(api.verify(self.reg, "a", pyramid=pyr, floor_width=128)))
+
+    def test_bad_partial_edge_tile_in_level0_is_found(self):
+        self.tmp_master = scene(w=600, h=900)  # 600/64 leaves a partial right column
+        self.tmp_master.save(self.tmp / "e.png")
+        api.register(self.reg, "e", theme="blue", family="f", source=self.tmp / "e.png", recipe="r")
+        pyr = self.tmp / "pyr"
+        api.derive_pyramid(self.reg, "e", pyr, tile=64, min_width=128)
+        t = pyr / "0" / "9_3.webp"
+        Image.new("RGB", Image.open(t).size, (255, 0, 255)).save(t, "WEBP", lossless=True)
+        api.adopt(self.reg, "e", "pyramid", pyr)
+        self.assertIn("pyramid-level0", failed(api.verify(self.reg, "e", pyramid=pyr, samples=0)))
+
+    def test_plate_only_promotion_keeps_the_promoted_pyramid(self):
+        self.master()
+        api.derive_plate(self.reg, "a", self.tmp / "plate.png", width=256)
+        api.derive_pyramid(self.reg, "a", self.tmp / "pyr", tile=64, min_width=128)
+        api.promote(self.reg, api.verify(self.reg, "a", plate=self.tmp / "plate.png", pyramid=self.tmp / "pyr",
+                                         out_dir=self.reg / "proofs")["proof_path"])
+        api.derive_plate(self.reg, "a", self.tmp / "plate2.png", width=200)
+        api.promote(self.reg, api.verify(self.reg, "a", plate=self.tmp / "plate2.png", out_dir=self.reg / "proofs")["proof_path"])
+        kinds = sorted(d["kind"] for d in json.loads((self.reg / "promoted.json").read_text())["blue"]["derivatives"])
+        self.assertEqual(kinds, ["plate", "plate", "pyramid"])
+
+
+class AdversarialManifest(Manifest):
+    def test_plate_only_ladder_mixing_masters_is_refused(self):
+        self.setup_two()
+        api.derive_plate(self.reg, "b", self.tmp / "pb.png", width=256, url="seq/blue/p0-b.png")
+        m = {"version": 1, "id": "t", "themes": [{"id": "blue"}], "frames": [{"id": "p0", "assets": {"blue": [
+            {"url": "seq/blue/p0.png", "width": 256, "height": 384},
+            {"url": "seq/blue/p0-b.png", "width": 256, "height": 384}]}}]}
+        rep = api.check_manifest(self.reg, m)
+        self.assertTrue(any(p["rule"] == "one-family" for p in rep["problems"]), rep)
+
+    def test_leading_slash_tile_urls_are_normalised(self):
+        self.setup_two()
+        m = self.ladder("seq/blue/p0.png", sha(self.tmp / "plate.png"), "assets/blue/p0")
+        self.assertTrue(api.check_manifest(self.reg, m)["ok"])
+
+    def test_nonexistent_level_index_is_refused(self):
+        self.setup_two()
+        m = self.ladder("seq/blue/p0.png", sha(self.tmp / "plate.png"), "/assets/blue/p0")
+        t = m["frames"][0]["assets"]["blue"][1]["tiles"]
+        t["urlTemplate"] = t["urlTemplate"].replace("/0/", "/7/")
+        self.assertFalse(api.check_manifest(self.reg, m)["ok"])
+

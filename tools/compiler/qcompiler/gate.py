@@ -41,20 +41,10 @@ def _check(name, ok, metrics=None, thresholds=None, detail=None):
     return {"name": name, "pass": bool(ok), "metrics": metrics or {}, "thresholds": thresholds or {}, "detail": detail}
 
 
-def _cache_dir() -> Path:
-    d = Path(os.environ.get("QC_CACHE", Path.home() / ".cache" / "quackles-compiler")) / "reductions"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
 def master_reduction(r: Reader, size) -> Image.Image:
-    """downsample(master) at `size`, memoised by master identity (a derived audit image)."""
-    p = _cache_dir() / f"{r.m['sha256']}-{size[0]}x{size[1]}.png"
-    if p.exists():
-        return Image.open(p).convert("RGB")
-    img = r.downsample(size)
-    img.save(p)
-    return img
+    """downsample(master) at `size`, always recomputed from the verified master (an
+    on-disk memo could be planted)."""
+    return r.downsample(size)
 
 
 def check_master(m: dict, hasher: Hasher) -> dict:
@@ -129,7 +119,8 @@ def check_plate(r: Reader, plate: Path) -> dict:
 
 
 def _sample(cands: list, n: int, seed: str) -> list:
-    if len(cands) <= n:
+    """Deterministic sample (first, last, middle + seeded). n <= 0 means every tile."""
+    if n <= 0 or len(cands) <= n:
         return cands
     rnd = random.Random(seed)
     picks = [cands[0], cands[-1], cands[len(cands) // 2]]
@@ -144,7 +135,7 @@ def _luma_std(img: Image.Image) -> float:
 def _textured(level_dir: Path, tile: int, cands: list, n: int) -> list:
     """Of the sampled candidate tiles, keep the n with the most luma structure (dark
     scenes are mostly black; a black tile proves nothing about nesting)."""
-    if len(cands) <= n or cands == [None]:
+    if n <= 0 or len(cands) <= n or cands == [None]:
         return cands
     scored = []
     for tc in cands:
@@ -154,13 +145,18 @@ def _textured(level_dir: Path, tile: int, cands: list, n: int) -> list:
     return [tc for _, tc in scored[:n]]
 
 
-def check_pyramid(r: Reader, pyr: Path, samples: int, seed: str) -> list[dict]:
+def check_pyramid(r: Reader, pyr: Path, samples: int, seed: str, floor_width: int = 1024) -> list[dict]:
     W, H = r.size
     info = read_pyramid(pyr)
     tile, lvls = info["tile"], info["levels"]
     out = []
-    # geometry
+    # geometry: descriptor present and exactly matching the level dirs; levels contiguous
+    # from 0 and continued down until the next half would be <= floor_width (the plate)
     expect, geo_err = [], []
+    if not (pyr / "source.dzi").exists():
+        geo_err.append("source.dzi missing")
+    elif sorted(info["sizes"]) != lvls:
+        geo_err.append(f"source.dzi levels {sorted(info['sizes'])} != level dirs {lvls}")
     w, h = W, H
     for lv in lvls:
         expect.append((w, h))
@@ -173,6 +169,8 @@ def check_pyramid(r: Reader, pyr: Path, samples: int, seed: str) -> list[dict]:
         w, h = (w + 1) // 2, (h + 1) // 2
     if not lvls or lvls != list(range(len(lvls))):
         geo_err.append(f"levels must be 0..n contiguous, got {lvls}")
+    elif w > floor_width:
+        geo_err.append(f"pyramid stops at level {lvls[-1]}; next level {w}px is still wider than the {floor_width}px floor")
     out.append(_check("pyramid-geometry", not geo_err, {"levels": [list(e) for e in expect], "tile": tile}, None, geo_err or None))
     if geo_err:
         out.append(_check("pyramid-level0", False, detail="geometry mismatch: level 0 is not this master's raster"))
@@ -180,10 +178,10 @@ def check_pyramid(r: Reader, pyr: Path, samples: int, seed: str) -> list[dict]:
         return out
     # level 0 == master
     W0, H0 = expect[0]
-    full = [(tx, ty) for ty in range(H0 // tile) for tx in range(W0 // tile)]
+    every = [(tx, ty) for ty in range(math.ceil(H0 / tile)) for tx in range(math.ceil(W0 / tile))]
     rows0 = []
-    for tx, ty in _sample(full, samples, seed + "L0"):
-        box = (tx * tile, ty * tile, (tx + 1) * tile, (ty + 1) * tile)
+    for tx, ty in _sample(every, samples, seed + "L0"):  # includes partial right/bottom edge tiles
+        box = (tx * tile, ty * tile, min(W0, (tx + 1) * tile), min(H0, (ty + 1) * tile))
         with Image.open(pyr / "0" / f"{tx}_{ty}.webp") as t:
             c = colour.compare(t.convert("RGB"), r.crop(box), shift=False)
         rows0.append({"tile": [tx, ty], "dE": c["dE"], "dL": c["dL"], "maxAbs": c["maxAbs"]})
@@ -229,7 +227,7 @@ def check_pyramid(r: Reader, pyr: Path, samples: int, seed: str) -> list[dict]:
     return out
 
 
-def verify(reg, mid: str, *, plate=None, pyramid=None, out_dir=None, samples: int = 6) -> dict:
+def verify(reg, mid: str, *, plate=None, pyramid=None, out_dir=None, samples: int = 6, floor_width: int = 1024) -> dict:
     reg = Path(reg)
     m = load_master(reg, mid)
     hasher = Hasher()
@@ -243,7 +241,7 @@ def verify(reg, mid: str, *, plate=None, pyramid=None, out_dir=None, samples: in
             if plate is not None:
                 checks.append(check_plate(r, Path(plate)))
             if pyramid is not None:
-                checks += check_pyramid(r, Path(pyramid), samples, m["sha256"][:16])
+                checks += check_pyramid(r, Path(pyramid), samples, m["sha256"][:16], floor_width)
         else:
             checks.append(_check("derivative-checks", False, detail="skipped: master identity not established"))
     finally:
@@ -254,7 +252,7 @@ def verify(reg, mid: str, *, plate=None, pyramid=None, out_dir=None, samples: in
         "schema": SCHEMA, "verdict": "REFUSE" if failed or not inputs else "ACCEPT",
         "reasons": [f"{c['name']}: {c['detail'] or 'failed'}" for c in failed] + ([] if inputs else ["no derivative to verify"]),
         "master": {k: m[k] for k in ("id", "theme", "family", "kind", "source", "width", "height", "sha256", "recipe", "blend", "edits", "renderer")},
-        "inputs": recs, "contract": CONTRACT, "checks": checks,
+        "inputs": recs, "contract": CONTRACT, "checks": checks, "params": {"samples": samples, "floor_width": floor_width},
         "tool": {"git_head": git_head(), "name": "tools/compiler"}, "created_at": now(),
     }
     if out_dir is not None:

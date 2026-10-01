@@ -42,9 +42,13 @@
   "family": "legacy-201mp",
   "master_id": "blue-201mp",
   "master_sha256": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
-  "promoted_at": "2026-10-01T00:26:22+00:00",
-  "proof": "@repo/tools/compiler/registry/proofs/blue-201mp-accept-f17b72170a.json",
-  "proof_sha256": "997d537488acaf4f47b68bf8fea67e9e0fd734efc81222a5afc5b7a6558051ee"
+  "promoted_at": "2026-10-01T00:42:09+00:00",
+  "proofs": [
+   {
+    "path": "@repo/tools/compiler/registry/proofs/blue-201mp-accept-f17b72170a.json",
+    "sha256": "2cdbbb11f73efebdadc96faaf3f7ea2ada62644e2f8177bef861954bd4cbb975"
+   }
+  ]
  },
  "mushroom": {
   "derivatives": [
@@ -93,8 +97,12 @@
   "family": "gp-1gp",
   "master_id": "mushroom-1gp-r1",
   "master_sha256": "9be1cdcf76f58619001fd1284d95d4a107b7aa4d561d23531fb925f68fcb1db6",
-  "promoted_at": "2026-10-01T00:26:22+00:00",
-  "proof": "@repo/tools/compiler/registry/proofs/mushroom-1gp-r1-accept-59477c0042.json",
-  "proof_sha256": "bd4fc757060154b5249cc044e76acf5d17182b9aec95284957081ae4f0c99342"
+  "promoted_at": "2026-10-01T00:42:29+00:00",
+  "proofs": [
+   {
+    "path": "@repo/tools/compiler/registry/proofs/mushroom-1gp-r1-accept-59477c0042.json",
+    "sha256": "198d2241d8b39fe4c5103240c88d88031a7a4d9316b7d52cdd96f861fa79c185"
+   }
+  ]
  }
 }
