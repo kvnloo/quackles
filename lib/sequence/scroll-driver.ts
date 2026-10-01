@@ -27,8 +27,12 @@ export type ScrollDriver = {
  * directly, so the story moves 1:1 with the finger and stops when the page
  * stops (v0's feel; factory.ai's model; ISSUES.md I4: one stage at most).
  *
- * Wheel input alone keeps the desktop two-stage glide (Lenis lerp .085, then a
- * frame-rate-independent 85 ms follower), unchanged from 0f32b13.
+ * A/B preview/scroll-native-wheel: wheel input is native too (factory.ai on
+ * desktop: no smoothing library, the browser's own wheel animation if any).
+ * The story publishes from the scroll event exactly like touch, so it never
+ * trails the page. The 0f32b13 two-stage glide (Lenis lerp .085 + 85 ms
+ * follower) is gone on this branch; the slow-wheel roughness check fails by
+ * design and is the owner's call (desktop wheel native vs smoothing).
  *
  * The animation-frame loop runs only while a wheel glide or the follower is in
  * flight, so the page requests no frames at rest. Resize keeps story progress,
@@ -53,7 +57,7 @@ export function createScrollDriver({
   const lenis = new Lenis({
     autoRaf: false,
     lerp: reducedMotion ? 1 : 0.085,
-    smoothWheel: !reducedMotion,
+    smoothWheel: false,
     syncTouch: false,
   });
 
@@ -64,7 +68,7 @@ export function createScrollDriver({
   let wheeling = false;
   const gliding = () => lenis.isScrolling === "smooth";
   const wake = () => { if (!raf) { last = 0; raf = requestAnimationFrame(tick); } };
-  const onWheel = () => { wheeling = true; wake(); };
+  const onWheel = () => { wheeling = false; };
   const onDirect = () => { wheeling = false; };
 
   lenis.on("scroll", ({ progress }: { progress: number }) => {
