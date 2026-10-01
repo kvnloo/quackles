@@ -76,3 +76,41 @@
   letter-spacing: 0.02em;
   line-height: 1;
 }
+
+/* Basic-mode note and cast errors: under the button, never over the nav or the HUD. */
+.notice {
+  position: absolute;
+  top: calc(6.4% + 1.4% + max(40px, 9.5cqw) + 1%);
+  right: 3.6%;
+  z-index: 11;
+  max-width: min(72%, 300px);
+  margin: 0;
+  padding: 8px 26px 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  color: var(--ink);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  pointer-events: auto;
+}
+.notice[data-kind="error"] {
+  border-color: color-mix(in srgb, #d23 70%, var(--ink));
+}
+.notice a {
+  color: inherit;
+  text-decoration: underline;
+}
+.dismiss {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+}

@@ -4,13 +4,16 @@
  */
 import { CAST_NAMESPACE } from "./protocol";
 import { RECEIVER_SDK, SENDER_SDK } from "./config";
+import type { CastMedia } from "./media";
 
 export type SessionState = "unavailable" | "idle" | "connecting" | "connected";
 export interface SenderTransport {
   onState(listener: (state: SessionState) => void): void;
   onMessage(listener: (raw: unknown) => void): void;
-  /** Must be called from a user gesture (opens the Cast device picker). */
-  start(): void;
+  /** Must be called from a user gesture (opens the Cast device picker). Rejects with a chrome.cast.ErrorCode. */
+  start(): Promise<void>;
+  /** Basic mode: show a still on the Default Media Receiver. Rejects with a chrome.cast.ErrorCode. */
+  loadMedia(media: CastMedia): Promise<void>;
   stop(): void;
   send(raw: string): void;
   dispose(): void;
@@ -38,7 +41,7 @@ function loadScript(src: string): Promise<void> {
 
 // ---------------------------------------------------------------- BroadcastChannel shim (tests; same machine only)
 const BC_NAME = "quackles-cast-shim";
-type ShimPacket = { to: "receiver" | "sender"; raw: string; from?: string };
+type ShimPacket = { to: "receiver" | "sender"; raw: string; from?: string; join?: boolean };
 /** Optional simulated network: ?castNetDelay=ms&castNetJitter=ms (uniform) on the receiving page. */
 function shimDelay(search: string) {
   const params = new URLSearchParams(search);
@@ -63,8 +66,13 @@ export function shimSender(): SenderTransport {
   return {
     onState(listener) { stateListener = listener; listener(state); },
     onMessage(listener) { messageListener = listener; },
-    start() { set("connecting"); window.setTimeout(() => set("connected"), 30); },
+    start() {
+      set("connecting");
+      // Like CAF's SENDER_CONNECTED: the receiver learns a sender joined (and answers with hello).
+      return new Promise<void>((resolve) => window.setTimeout(() => { set("connected"); channel.postMessage({ to: "receiver", raw: "", from: id, join: true } satisfies ShimPacket); resolve(); }, 30));
+    },
     stop() { set("idle"); },
+    loadMedia() { return Promise.reject("invalid_parameter"); },
     send(raw) { if (state === "connected") channel.postMessage({ to: "receiver", raw, from: id } satisfies ShimPacket); },
     dispose() { channel.close(); },
   };
@@ -84,6 +92,7 @@ export function shimReceiver(): ReceiverTransport {
       channel.onmessage = (event: MessageEvent<ShimPacket>) => {
         if (event.data?.to !== "receiver") return;
         const { raw, from } = event.data;
+        if (event.data.join) { senderListener(from); return; }
         const wait = delay();
         if (wait <= 0) messageListener(raw, from);
         else window.setTimeout(() => messageListener(raw, from), wait);
@@ -98,6 +107,13 @@ type Listener<E> = (event: E) => void;
 type CafSession = {
   addMessageListener(namespace: string, listener: (namespace: string, message: string) => void): void;
   sendMessage(namespace: string, message: string): Promise<unknown>;
+  loadMedia(request: object): Promise<string | null | undefined>;
+};
+type CafMediaApi = {
+  MediaInfo: new (contentId: string, contentType: string) => { metadata: unknown };
+  LoadRequest: new (mediaInfo: object) => object;
+  PhotoMediaMetadata: new () => { title?: string; artist?: string; width?: number; height?: number; images?: unknown[] };
+  Image: new (url: string) => object;
 };
 type CafContext = {
   setOptions(options: { receiverApplicationId: string; autoJoinPolicy: string }): void;
@@ -109,7 +125,7 @@ type CafContext = {
 };
 type SenderGlobals = {
   cast: { framework: { CastContext: { getInstance(): CafContext }; CastContextEventType: Record<string, string> } };
-  chrome: { cast: { AutoJoinPolicy: Record<string, string> } };
+  chrome: { cast: { AutoJoinPolicy: Record<string, string>; media: CafMediaApi } };
   __onGCastApiAvailable?: (available: boolean) => void;
 };
 
@@ -144,8 +160,24 @@ export async function cafSender(appId: string): Promise<SenderTransport | null> 
   return {
     onState(listener) { stateListener = listener; sync(); },
     onMessage(listener) { messageListener = listener; },
-    start() { void context.requestSession().catch(() => sync()); },
+    start() {
+      let request: Promise<unknown>;
+      try { request = context.requestSession(); } catch { return Promise.reject("api_not_initialized"); }
+      return request.then(() => { sync(); }, (code: unknown) => { sync(); throw code; });
+    },
     stop() { context.endCurrentSession(true); },
+    loadMedia(media) {
+      if (!attached) return Promise.reject("session_error");
+      const api = w.chrome.cast.media;
+      const info = new api.MediaInfo(media.url, media.contentType);
+      const metadata = new api.PhotoMediaMetadata();
+      metadata.title = media.title; metadata.artist = media.subtitle;
+      metadata.width = media.width; metadata.height = media.height;
+      metadata.images = [new api.Image(media.url)];
+      info.metadata = metadata;
+      // Documented: resolves with null/undefined, or an ErrorCode; rejects with an ErrorCode.
+      return attached.loadMedia(new api.LoadRequest(info)).then((code) => { if (code) throw code; });
+    },
     send(raw) { void attached?.sendMessage(CAST_NAMESPACE, raw).catch(() => {}); },
     dispose() { disposed = true; },
   };

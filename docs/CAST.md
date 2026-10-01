@@ -1,5 +1,19 @@
 # Chromecast (Google Cast)
 
+In Chrome (desktop or Android), a Cast button appears whenever a Cast device is on the network. It works in one of
+two modes:
+
+| Mode | When | What the TV shows |
+|---|---|---|
+| **Basic** (no setup) | No App ID registered (today) | Google's public **Default Media Receiver** (`CC1AD845`) shows the current scene as a still: the current theme and story frame (1024×1536 WebP from the site; the receiver scales images to fit 720p). It reloads about 300 ms after the theme or frame stops changing. **Zoom is not mirrored**, and the phone says so in a short note after connecting. |
+| **Full** (one-time setup below) | `CAST_APP_ID` set, or `?castAppId=XXXXXXXX` | The Quackles receiver runs the engine on the TV and mirrors story, theme, pinch, zoom and pan live (details below). |
+
+Errors show as a small note under the button: no device found, the TV not responding, a failed start, a picture
+that wouldn't load, or (full mode) a receiver that never answers. If you close the device picker yourself, nothing
+is shown.
+
+## Full mode
+
 This works like Netflix or YouTube casting, not screen mirroring. The TV runs its own copy of the site at
 `/cast-receiver/`. It downloads plates and deep-zoom tiles from GitHub Pages (the site plus
 `kvnloo.github.io/quackles-assets`) by itself. The phone sends only small state messages over a Cast custom
@@ -15,7 +29,8 @@ in on the phone, the TV fetches its own sharp tiles for the same crop.
 | TV: receiver page, applies state to the same engine | `app/cast-receiver/page.cast.tsx`, `components/cast/CastReceiver.tsx`, `lib/cast/receiver.ts` |
 | Cast SDK / test-shim transports | `lib/cast/transport.ts` |
 | TV perf profile + tier cap | `lib/cast/engine/perf-profile.ts`, `lib/cast/engine/tier-probe.ts` |
-| App ID | `lib/cast/config.ts` (`CAST_APP_ID`) |
+| App ID, mode selection, error messages | `lib/cast/config.ts` (`CAST_APP_ID`, `castMode`, `castErrorMessage`) |
+| Basic mode stills + debounce | `lib/cast/media.ts` |
 
 - **Namespace:** `urn:x-cast:ai.quackles.state`.
   - The phone sends the full state (a snapshot) as soon as it connects, and again whenever the TV says hello (for
@@ -41,10 +56,18 @@ in on the phone, the TV fetches its own sharp tiles for the same crop.
     - the `page.cast.tsx` receiver route is built;
     - three imports are redirected at build time: `Landing` → `CastLanding`, `perf-profile` and `tier-probe` → the
       `lib/cast/engine/*` versions.
-  - Cost of turning it on: first-load JS for `/` grows by +5.4 KiB raw / +2.8 KiB gzip. The Cast SDK and the sender
+  - Cost of turning it on: first-load JS for `/` grows by a few KiB (`scripts/cast-flag-off-check.mjs` prints the exact figure). The Cast SDK and the sender
     code load only in Chrome, after the first paint, when the browser is idle.
 
-## What the owner must do (one time)
+## Try basic mode now (no setup)
+
+1. On an Android phone (Chrome) on the same Wi-Fi as the Chromecast, open
+   <https://kvnloo.github.io/quackles/preview/chromecast/>.
+2. After the page paints, a round Cast icon appears under the right end of the top nav.
+3. Tap it and pick the Chromecast. The TV shows the current scene. Change the theme or scroll the story, and the TV
+   follows about 0.3 s after you stop.
+
+## Full mode setup (one time)
 
 1. **Create a Google Cast SDK developer account.**
    - Go to <https://cast.google.com/publish> and sign in with the Google account that should own the app.
@@ -101,10 +124,24 @@ Local development: `NEXT_PUBLIC_CAST=1 npx next dev --webpack`. The module swaps
 ## Tests (headless, no device)
 
 ```bash
+node --import ./scripts/register-ts-resolve.mjs scripts/cast-basic-contracts.mjs       # mode, stills, debounce, errors
+NEXT_PUBLIC_CAST=1 NEXT_PUBLIC_BASE_PATH=/quackles/preview/chromecast npm run build && \
+  OUT_DIR=out BASE_PATH=/quackles/preview/chromecast node --import ./scripts/register-ts-resolve.mjs scripts/cast-sender-e2e-browser.mjs
+node --import ./scripts/register-ts-resolve.mjs scripts/cast-media-live-check.mjs      # stills exist on the deployed preview
 node --import ./scripts/register-ts-resolve.mjs scripts/cast-protocol-contracts.mjs    # protocol contracts
 NEXT_PUBLIC_CAST=1 npm run build && OUT_DIR=out node scripts/cast-mirror-browser.mjs     # phone <-> TV mirror
 node scripts/cast-flag-off-check.mjs <base-out> <flag-off-out> [<cast-on-out>]           # byte parity + JS delta
 ```
+
+`cast-sender-e2e-browser.mjs` drives the real sender code against `scripts/cast-fake-sender-sdk.js`. That file is a
+test double of Google's Web Sender SDK (`CastContext`, `CastSession`, `CastState`/`SessionState` events,
+`chrome.cast.media`), written from Google's API reference; the sources are cited in its header. The test covers:
+- button visibility per cast state, in Android and desktop Chrome;
+- `requestSession` on click;
+- basic-mode `loadMedia` URLs and debounce;
+- full mode using only the namespace (never `loadMedia`);
+- each error message;
+- the iOS and Firefox gates, and a failed SDK load.
 
 `cast-mirror-browser.mjs` runs the phone and the TV in two separate headless Chrome processes. They are bridged by a
 BroadcastChannel stand-in for the Cast SDK (`?castTransport=bc`), which has the same interface as the real SDK
@@ -121,6 +158,11 @@ transport, plus a simulated 15–40 ms network. It checks:
 
 ## Known limits
 
+- **Basic mode:**
+  - Stills only, at most 1024×1536 (the largest plate). Cast devices scale images to fit 720p.
+  - How long the Default Media Receiver keeps showing a still before it returns to its idle screen hasn't been
+    measured on a device.
+  - Basic mode only works from the deployed site: the TV fetches the plate URL itself, so `localhost` URLs fail.
 - **iOS:** the Google Cast Web Sender SDK does not work in any iOS browser (Safari or Chrome for iOS). The button
   never appears there. Casting from iPhone would need a native app or AirPlay, and neither is in scope. Android
   Chrome and desktop Chrome work.

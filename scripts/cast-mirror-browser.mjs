@@ -26,6 +26,7 @@ const NET = { delay: 15, jitter: 25 }; // simulated one-way Wi-Fi to the TV
 const LAG_BOUND_MS = 200; // p95 bound: 80 ms playout + <=33 ms pacing + network 15-40 ms + 2 display frames
 if (!fs.existsSync(path.join(dir, "cast-receiver/index.html"))) { console.error(`${dir} is not a cast build (NEXT_PUBLIC_CAST=1 npm run build)`); process.exit(2); }
 const server = spawn("node", ["scripts/static-server.mjs", "--port", port, "--directory", dir], { stdio: "ignore" });
+process.on("exit", () => server.kill()); // never leave a static server behind on a crash
 await new Promise((r) => setTimeout(r, 1500));
 // Two browser processes = two devices: no shared cache, no shared compositor (one headless browser starves the rAF of
 // the page that is not being driven). The harness relays the shim channel between them, like a network would.
