@@ -83,23 +83,26 @@ function bounded(cache) {
   const stats = cache.stats();
   assert.ok(stats.totalBytes <= 96 * MiB, `decoded + reserved = ${stats.totalBytes}`);
   assert.ok(stats.pinnedBytes <= stats.decodedBytes);
-  assert.ok(stats.inflight <= 3);
+  // PROPOSED RULE (preview/gp-net6, owner decision): network and decode are capped separately - up to six fetches in flight,
+  // decodes still at most maxActiveJobs (was: network + decode together <= three).
+  assert.ok(stats.fetching <= 6, `fetching ${stats.fetching}`);
+  assert.ok(stats.decodingJobs <= stats.maxActiveJobs, `decoding ${stats.decodingJobs}`);
   assert.ok(stats.highTierInflight <= 1);
   assert.ok(stats.compressedBytes <= 128 * MiB);
   return stats;
 }
 
-await check('deduplicate one URL and cap concurrent network requests at three', async () => {
+await check('PROPOSED RULE: deduplicate one URL and cap concurrent network requests at six (was three)', async () => {
   const gate = defer(), env = environment({ fetchGate: gate });
   const cache = new FrameCache('dedup'), assets = Array.from({ length: 8 }, (_, i) => asset(`dedup-${i}`));
   cache.retain(assets.map(row => row.url));
   const first = cache.load(assets[0]);
   assert.equal(cache.load(assets[0]), first);
   const jobs = [first, ...assets.slice(1).map(row => cache.load(row))];
-  await until(() => env.requests.length === 3, 'first three requests');
-  const pending = bounded(cache); assert.equal(pending.inflight, 3); assert.equal(pending.queued, 5);
+  await until(() => env.requests.length === 6, 'first six requests');
+  const pending = bounded(cache); assert.equal(pending.fetching, 6); assert.equal(pending.queued, 2);
   gate.resolve(); await Promise.all(jobs); await sleep(5);
-  const result = bounded(cache); assert.equal(env.requests.length, 8); assert.equal(env.maxFetch, 3);
+  const result = bounded(cache); assert.equal(env.requests.length, 8); assert.equal(env.maxFetch, 6);
   cache.dispose(); assert.ok(env.bitmaps.every(bitmap => bitmap.closed));
   return { pending, final: result, maxNetworkRequests: env.maxFetch, created: env.bitmaps.length };
 });
