@@ -260,6 +260,16 @@ await test("proxy (verifier round 2): a clear-only flip (no coverage) does not u
   r.receive({ t: "publish", layer: "detail", gen: 3, front: 0, flip: true, coverage: c1, rects: [["k", [0.4, 0.4, 0.5, 0.5, 9000]]] });
   assert.equal(els[0].style.visibility, "visible"); assert.equal(reveals.length, 1, "the dissolve plays on real content");
 });
+await test("proxy: a placement flip with no tiles yet keeps the layer blank; the first publish WITH tiles (no flip) reveals it", () => {
+  const sent = [], els = [fakeCanvas("d0"), fakeCanvas("d1")], reveals = [];
+  const r = new remoteModule.RemoteSurface("detail", els, ["sequence-detail", "sequence-detail-back"], (m) => sent.push(m), () => {}, () => {}, () => reveals.push(1));
+  const c1 = cov(7.4);
+  r.setVisible(true); r.place(W, H, c1, render.detailBackingSize(W, H, c1, DPR));
+  r.receive({ t: "publish", layer: "detail", gen: 1, front: 1, flip: true, coverage: c1, rects: [] });
+  assert.equal(els[1].style.visibility, "hidden", "placed but empty: hidden");
+  r.receive({ t: "publish", layer: "detail", gen: 1, front: 1, flip: false, coverage: c1, rects: [["k", [0.4, 0.4, 0.5, 0.5, 9000]]] });
+  assert.equal(els[1].style.visibility, "visible"); assert.equal(reveals.length, 1);
+});
 await test("proxy (verifier #3): a reset publish (context lost) drops claims, hides the layer and forces a re-place", () => {
   const { r, sent, els } = makeRemote(), c1 = cov(7.4), backing = render.detailBackingSize(W, H, c1, DPR);
   r.setVisible(true); r.place(W, H, c1, backing);

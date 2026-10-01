@@ -125,13 +125,13 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
       next.className = this.classes[0]; previous.className = this.classes[1];
       previous.style.visibility = "hidden";
       this.shown = message.front;
-      // Only real content un-blanks (a clear lands as a flip with no coverage: the layer stays hidden, no reveal wasted).
-      if (this.blank && message.coverage && message.rects.length) { this.blank = false; this.revealPending = true; }
       this.applyVisibility();
       this.post({ t: "ack", layer: this.layer, shown: this.shown });
     }
     this.shownCoverage = message.coverage;
     this.painted = new Map(message.rects);
+    // Only real content un-blanks: a clear lands as a coverage-less flip, and a placement flip may carry no tiles yet.
+    if (this.blank && message.coverage && this.painted.size) { this.blank = false; this.revealPending = true; this.applyVisibility(); }
     this.onPublish();
     return true;
   }
