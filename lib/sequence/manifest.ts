@@ -128,6 +128,14 @@ export function frameAt(manifest: SequenceManifest, progress: number, reduced: b
   const { before, after, mix } = spanAt(manifest, progress, reduced);
   return mix < 0.5 ? before : after;
 }
+/** Frames to preload around `center`, nearest first: [1, -1, 2] plus the first frame 3/15 of the story ahead.
+ * The [1, -1, 2, 3] window was tuned on 16 frames 1/15 apart, where this is the same window; on the dense
+ * 52-frame spans it keeps that look-ahead with the same four plates (the decoded budget holds about ten). */
+export function preloadFrames(frames: readonly { progress: number }[], center: number): number[] {
+  const last = frames.length - 1, reach = frames[center].progress + 3 / 15 - 1e-6;
+  const far = frames.findIndex((frame, i) => i > center && frame.progress >= reach);
+  return [...new Set([center + 1, center - 1, center + 2, far < 0 ? last : far])].filter((i) => i >= 0 && i <= last && i !== center);
+}
 export function imageAt(frame: SequenceFrame, theme: ThemeId, width: number): ImageAsset {
   const images = frame.assets[theme].filter(isImage);
   return images.find((image) => image.width >= width) ?? images[images.length - 1];

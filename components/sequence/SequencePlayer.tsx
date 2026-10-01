@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
-import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
+import { imageAt, isImage, parseManifest, preloadFrames, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
 import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
@@ -226,11 +226,10 @@ export function SequencePlayer() {
         }
       }
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
-      for (const offset of [1, -1, 2, 3]) {
-        const adjacent = manifest.frames[center + offset];
-        if (adjacent) tasks.push({ asset: imageAt(adjacent, THEME_IDS[selected], 1024), priority: 20 - Math.abs(offset) });
-      }
-      for (const offset of [-1, 1]) {
+      preloadFrames(manifest.frames, center).forEach((index, rank) => tasks.push({ asset: imageAt(manifest!.frames[index], THEME_IDS[selected], 1024), priority: 19 - rank }));
+      // Neighbour-theme plates only once the story rests: decoding two extra plates per frame crossed was most of the
+      // scroll decode/eviction churn on the 52-frame story (I5), and a theme swipe starts from rest.
+      if (settled) for (const offset of [-1, 1]) {
         const theme = THEME_IDS[selected + offset];
         if (theme) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 });
       }

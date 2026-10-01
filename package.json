@@ -37,6 +37,8 @@
     "test:fuzz": "SEED=1 STEPS=45 node scripts/fuzz-browser.mjs",
     "test:warm-plan": "node scripts/warm-plan-contracts.mjs",
     "test:feel": "node scripts/feel-contracts.mjs",
+    "test:scroll-budget": "node --import ./scripts/register-ts-resolve.mjs scripts/scroll-budget-contracts.mjs",
+    "test:story-fling": "node scripts/story-fling-browser.mjs",
     "test:story-pacing": "node --import ./scripts/register-ts-resolve.mjs scripts/story-pacing-contracts.mjs",
     "test:sequence": "node --import ./scripts/register-ts-resolve.mjs scripts/sequence-contracts.mjs",
     "test:theme-store": "node --import ./scripts/register-ts-resolve.mjs scripts/theme-store-contracts.mjs",
