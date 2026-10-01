@@ -165,7 +165,7 @@ async function finish(run, name) {
   check(`${name}: decoded plus reserved never exceeds 96 MiB`, cacheSamples.every(row => row.cache.totalBytes <= 96 * 1024 * 1024), Math.max(...cacheSamples.map(row => row.cache.totalBytes)));
   check(`${name}: pinned bytes included in decoded bytes`, cacheSamples.every(row => row.cache.pinnedBytes <= row.cache.decodedBytes));
   check(`${name}: compressed cache within 128 MiB`, cacheSamples.every(row => row.cache.compressedBytes <= 128 * 1024 * 1024));
-  check(`${name}: no more than three active jobs and one high detail job`, cacheSamples.every(row => row.cache.inflight <= 3 && row.cache.highTierInflight <= 1));
+  check(`${name}: PROPOSED RULE (gp-net6) - decodes <= maxActiveJobs, fetches <= six, one high detail job`, cacheSamples.every(row => row.cache.decodingJobs <= row.cache.maxActiveJobs && row.cache.fetching <= 6 && row.cache.highTierInflight <= 1));
   check(`${name}: zero created WebGL contexts`, !probe.contexts.webgl && !probe.contexts.webgl2 && !probe.contexts['experimental-webgl'], probe.contexts);
   check(`${name}: no obsolete source painted over latest intent`, probe.draws.every(row => !row.stale), { draws: probe.draws.length, stale: probe.draws.filter(row => row.stale) });
   check(`${name}: every bitmap resident, closing, or accounted for`, probe.bitmapsCreated - probe.bitmapsClosed === (final.cache?.entries ?? 0) + (final.cache?.decoding ?? 0), { created: probe.bitmapsCreated, closed: probe.bitmapsClosed, entries: final.cache?.entries, decoding: final.cache?.decoding });

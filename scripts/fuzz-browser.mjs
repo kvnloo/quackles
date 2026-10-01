@@ -19,7 +19,7 @@ await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); awai
 const restRaf = await (async () => { const a = await page.evaluate(() => window.__raf); await page.waitForTimeout(2000); return (await page.evaluate(() => window.__raf)) - a; })();
 await page.evaluate(() => { const f = window.__fz = { frames: 0, blank: [], over: [], stop: false }; const vis = (q) => getComputedStyle(document.querySelector(q)).visibility;
   const t = () => { const q = window.__QUACKLES_SEQUENCE__.getState(); f.frames++; if (vis(".sequence-base") !== "visible" && vis(".sequence-detail") !== "visible") f.blank.push(f.frames);
-    if (q.cache) { if (q.cache.totalBytes > q.cache.budgetBytes && f.over.length < 3) f.over.push(["decoded", q.cache.totalBytes]); if (q.cache.inflight > q.cache.maxActiveJobs && f.over.length < 3) f.over.push(["inflight", q.cache.inflight]); }
+    if (q.cache) { if (q.cache.totalBytes > q.cache.budgetBytes && f.over.length < 3) f.over.push(["decoded", q.cache.totalBytes]); if ((q.cache.decodingJobs > q.cache.maxActiveJobs || q.cache.fetching > q.cache.maxFetches) && f.over.length < 3) f.over.push(["inflight", q.cache.decodingJobs, q.cache.fetching]); /* PROPOSED RULE (gp-net6): decode and network capped apart */ }
     if (!f.stop) requestAnimationFrame(t); }; requestAnimationFrame(t); });
 const log = []; const touch = (type, pts) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: pts.map(([x, y], i) => ({ x, y, id: i + 1 })) });
 const themes = ["day", "white", "blue", "dark", "night"]; let vw = 1440, vh = 900;
