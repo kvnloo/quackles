@@ -32,6 +32,15 @@ body {
   overflow-x: clip;
   overscroll-behavior: none;
 }
+/* I10 (owner-confirmed 0dfff12/3f05727): Blue is a full-bleed cobalt field. html/body/nav are solid
+   #0000f2 (not the darker --paper-deep #0000c2, no paper-strip gradient). Other themes are unchanged. */
+html[data-tone="blue"],
+html[data-tone="blue"] body {
+  background: #0000f2;
+}
+html[data-tone="blue"] .site-nav {
+  background: #0000f2;
+}
 .text-select-offer {
   position: fixed;
   z-index: 40;
