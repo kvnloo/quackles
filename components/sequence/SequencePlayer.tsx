@@ -4,10 +4,10 @@ import { useEffect, useRef } from "react";
 import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
-import { imageAt, isImage, parseManifest, spanAt, storyPreloads, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
+import { imageAt, isImage, parseManifest, preloadFrames, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
-import { baseScale, placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
@@ -49,7 +49,7 @@ export function SequencePlayer() {
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
     let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "", paintedInMotion = false;
-    let heldTheme = 2, lastProgress = 0, direction = 1;
+    let heldTheme = 2;
     let themeRelease: ThemeRelease | null = null;
     const releaseDetail = () => {
       detailCanvas.style.visibility = "hidden";
@@ -98,7 +98,6 @@ export function SequencePlayer() {
       if (!manifest || !cache || cancelled) return;
       const current = snapshot(), span = spanAt(manifest, current.progress, current.reducedMotion);
       const frame = span.mix < 0.5 ? span.before : span.after;
-      if (current.progress !== lastProgress) { direction = current.progress > lastProgress ? 1 : -1; lastProgress = current.progress; }
 
       const nextLoadIntent = `${frame.id}/${current.target}`;
       if (nextLoadIntent !== loadIntentKey) { loadIntentKey = nextLoadIntent; failed.clear(); }
@@ -227,9 +226,12 @@ export function SequencePlayer() {
         }
       }
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
-      for (const plate of storyPreloads(manifest.frames, center, direction, settled, selected, manifest.frames.indexOf(frame))) {
-        const theme = THEME_IDS[plate.theme];
-        if (theme) tasks.push({ asset: imageAt(manifest.frames[plate.index], theme, 1024), priority: plate.priority });
+      preloadFrames(manifest.frames, center).forEach((index, rank) => tasks.push({ asset: imageAt(manifest!.frames[index], THEME_IDS[selected], 1024), priority: 19 - rank }));
+      // Neighbour-theme plates only once the story rests: decoding two extra plates per frame crossed was most of the
+      // scroll decode/eviction churn on the 52-frame story (I5), and a theme swipe starts from rest.
+      if (settled) for (const offset of [-1, 1]) {
+        const theme = THEME_IDS[selected + offset];
+        if (theme) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 });
       }
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
@@ -242,11 +244,9 @@ export function SequencePlayer() {
       const beforeImages = beforeAssets.map((asset) => cache!.peek(asset.url));
       const afterImages = afterAssets.map((asset) => cache!.peek(asset.url));
       const eggImage = cache!.peek(eggAsset.url);
-      // Capped while the story moves; repainted at the native plate once it rests (settled flips 140 ms after the last change).
-      const scale = baseScale(devicePixelRatio, !settled);
-      const nextBase = `${span.before.id}/${span.after.id}/${span.mix.toFixed(3)}/${current.theme.toFixed(3)}/${rect.width}/${scale}/${egg.toFixed(3)}/${eggImage ? 1 : 0}`;
+      const nextBase = `${span.before.id}/${span.after.id}/${span.mix.toFixed(3)}/${current.theme.toFixed(3)}/${rect.width}/${devicePixelRatio}/${egg.toFixed(3)}/${eggImage ? 1 : 0}`;
       if (beforeImages.every((image) => image !== undefined) && afterImages.every((image) => image !== undefined) && nextBase !== baseKey) {
-        paintBase(baseCanvas!, beforeImages as NonNullable<(typeof beforeImages)[number]>[], afterImages.length ? afterImages as NonNullable<(typeof afterImages)[number]>[] : undefined, span.mix, mix, rect.width, scale);
+        paintBase(baseCanvas!, beforeImages as NonNullable<(typeof beforeImages)[number]>[], afterImages.length ? afterImages as NonNullable<(typeof afterImages)[number]>[] : undefined, span.mix, mix, rect.width);
         if (eggImage && egg > 0.001) paintEgg(baseCanvas!, eggImage, egg);
         applyPalette(current.theme);
         baseKey = nextBase; paintedKeys = assets.map((asset) => asset.url);
