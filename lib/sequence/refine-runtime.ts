@@ -49,6 +49,7 @@ export function createRefineRuntime(react: Record<LayerId, HTMLCanvasElement>, h
   };
 
   const onMessage = (event: MessageEvent<FromWorker>) => {
+    if (event.target !== worker) return; // a replaced Worker's late messages never touch the new buffers
     const message = event.data;
     if (message.t === "stats") { statsWaiting.get(message.id)?.({ stats: message.stats, keys: message.keys }); statsWaiting.delete(message.id); return; }
     if (message.t === "publish") {
@@ -101,7 +102,7 @@ export function createRefineRuntime(react: Record<LayerId, HTMLCanvasElement>, h
     if (disposed) return;
     counts.errors++;
     worker?.terminate(); worker = null;
-    failPending(() => new Error("Refinement worker restarted"));
+    failPending(() => abort("Refinement worker restarted")); // AbortError: re-requested at once, not held back as failed
     removeBuffers();
     if (counts.restarts >= MAX_RESTARTS) {
       dead = true;

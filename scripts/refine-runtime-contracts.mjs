@@ -249,6 +249,17 @@ await test("proxy (verifier #1): after clear, setVisible(true) keeps both buffer
   r.receive({ t: "publish", layer: "detail", gen: 3, front: 0, flip: true, coverage: c2, rects: [["k2", [0.4, 0.4, 0.5, 0.5, 9000]]] });
   assert.equal(els[0].style.visibility, "visible"); assert.equal(els[1].style.visibility, "hidden"); assert.equal(reveals.length, 2);
 });
+await test("proxy (verifier round 2): a clear-only flip (no coverage) does not un-blank or reveal; the first real content does", () => {
+  const sent = [], els = [fakeCanvas("d0"), fakeCanvas("d1")], reveals = [];
+  const r = new remoteModule.RemoteSurface("detail", els, ["sequence-detail", "sequence-detail-back"], (m) => sent.push(m), () => {}, () => {}, () => reveals.push(1));
+  const c1 = cov(7.4);
+  r.place(W, H, c1, render.detailBackingSize(W, H, c1, DPR)); r.clear(); // gen 2
+  r.receive({ t: "publish", layer: "detail", gen: 2, front: 1, flip: true, coverage: null, rects: [] });
+  r.place(W, H, c1, render.detailBackingSize(W, H, c1, DPR)); r.setVisible(true); // gen 3
+  assert.ok(els.every((e) => e.style.visibility !== "visible"), "empty layer stays hidden"); assert.equal(reveals.length, 0);
+  r.receive({ t: "publish", layer: "detail", gen: 3, front: 0, flip: true, coverage: c1, rects: [["k", [0.4, 0.4, 0.5, 0.5, 9000]]] });
+  assert.equal(els[0].style.visibility, "visible"); assert.equal(reveals.length, 1, "the dissolve plays on real content");
+});
 await test("proxy (verifier #3): a reset publish (context lost) drops claims, hides the layer and forces a re-place", () => {
   const { r, sent, els } = makeRemote(), c1 = cov(7.4), backing = render.detailBackingSize(W, H, c1, DPR);
   r.setVisible(true); r.place(W, H, c1, backing);

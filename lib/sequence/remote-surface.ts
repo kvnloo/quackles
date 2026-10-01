@@ -125,7 +125,8 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
       next.className = this.classes[0]; previous.className = this.classes[1];
       previous.style.visibility = "hidden";
       this.shown = message.front;
-      if (this.blank) { this.blank = false; this.revealPending = true; }
+      // Only real content un-blanks (a clear lands as a flip with no coverage: the layer stays hidden, no reveal wasted).
+      if (this.blank && message.coverage && message.rects.length) { this.blank = false; this.revealPending = true; }
       this.applyVisibility();
       this.post({ t: "ack", layer: this.layer, shown: this.shown });
     }
