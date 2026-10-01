@@ -51,6 +51,9 @@ export function createScrollDriver({
   // shown/target are page scroll fractions; the story receives authored progress (pacing.ts).
   const publish = (value: number) => { shown = value; onProgress(storyAt(value)); };
 
+  // A/B preview/scroll-beats: after a touch fling the page glides on to the next story beat.
+  const beats = reducedMotion ? null : createBeatGlide();
+
   const lenis = new Lenis({
     autoRaf: false,
     lerp: reducedMotion ? 1 : 0.085,
@@ -70,7 +73,9 @@ export function createScrollDriver({
 
   lenis.on("scroll", ({ progress }: { progress: number }) => {
     target = clamp(progress);
-    if (reducedMotion || !(wheeling || gliding())) publish(target);
+    const pin = beats?.pinned() ?? null;
+    if (pin !== null) publish(pin);
+    else if (reducedMotion || !(wheeling || gliding())) publish(target);
     else wake();
   });
 
@@ -94,8 +99,6 @@ export function createScrollDriver({
   addEventListener("keydown", onDirect, { passive: true });
 
   publish(target);
-  // A/B preview/scroll-beats: after a touch fling the page glides on to the next story beat.
-  const beats = reducedMotion ? null : createBeatGlide();
 
   return {
     resize() {

@@ -23,7 +23,12 @@ export const BEATS = [0, 0.4, 0.7, 0.92, 1] as const;
 const STILL_PX_S = 150;
 const HANDOFF_PX_S = 1400;
 
-export type BeatGlide = { destroy: () => void; gliding: () => boolean };
+export type BeatGlide = {
+  destroy: () => void;
+  gliding: () => boolean;
+  /** Page scroll fraction the story should show while the page settles on a beat, else null. */
+  pinned: () => number | null;
+};
 
 export function createBeatGlide(): BeatGlide {
   const maxScroll = () => Math.max(1, document.documentElement.scrollHeight - innerHeight);
@@ -32,6 +37,7 @@ export function createBeatGlide(): BeatGlide {
   let samples: [t: number, y: number][] = [];
   let glideRaf = 0;
   let watchRaf = 0;
+  let pin: number | null = null;
 
   const inspecting = () =>
     (visualViewport?.scale ?? 1) > 1.01 || document.querySelector('[data-inspecting="true"]') !== null;
@@ -51,7 +57,7 @@ export function createBeatGlide(): BeatGlide {
 
   const stop = () => {
     cancelAnimationFrame(glideRaf); cancelAnimationFrame(watchRaf);
-    glideRaf = watchRaf = 0; coasting = false;
+    glideRaf = watchRaf = 0; coasting = false; pin = null;
   };
 
   function targetFrom(y: number, d: number, v: number): number | null {
@@ -81,12 +87,15 @@ export function createBeatGlide(): BeatGlide {
     glideRaf = requestAnimationFrame(step);
   }
 
-  // Keep the page on the beat while what is left of the native fling dies out.
+  // Keep the page on the beat while what is left of the native fling dies out. The story is
+  // pinned to the beat meanwhile, so the fling's last few px (put back each frame) never show.
   function hold(target: number) {
     let quiet = 0;
+    pin = target / maxScroll();
     const step = () => {
       if (Math.abs(scrollY - target) > 0.5) { scrollTo(0, target); quiet = 0; } else quiet++;
       watchRaf = quiet < 12 ? requestAnimationFrame(step) : 0;
+      if (!watchRaf) pin = null;
     };
     watchRaf = requestAnimationFrame(step);
   }
@@ -130,6 +139,7 @@ export function createBeatGlide(): BeatGlide {
 
   return {
     gliding: () => coasting || glideRaf !== 0,
+    pinned: () => pin,
     destroy() {
       stop();
       removeEventListener("touchstart", onTouchStart);
