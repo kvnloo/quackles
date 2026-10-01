@@ -204,13 +204,20 @@ await atest("(3) paused (camera moving): tiles still fetch, none decodes; resume
   assert.equal(net.decodes.length, 3); assert.equal(net.fetches.length, 3, "decoded from the fetched blob");
   assert.deepEqual(net.decodes, [0, 1, 2].map((i) => asset(i).url), "decode order = priority order");
 });
-await atest("(3) fetches are bounded while paused (maxActiveJobs in flight: the legacy caps) and follow priority", async () => {
-  reset(); net.hold = true; const cache = new FrameCache("t", { decodedBudgetBytes: 64 * MIB, maxActiveJobs: 3 });
+await atest("PROPOSED RULE (net6): up to six fetches in flight by priority, decodes still capped at maxActiveJobs", async () => {
+  reset(); net.hold = true; const cache = new FrameCache("t", { decodedBudgetBytes: 64 * MIB, maxActiveJobs: 2 });
   cache.setPaused(true);
-  for (let i = 0; i < 10; i++) cache.load(asset(i), i).catch(() => {});
+  const loads = []; for (let i = 0; i < 10; i++) loads.push(cache.load(asset(i), i).catch(() => {}));
   await tick(10);
-  assert.equal(net.fetches.length, 3); assert.deepEqual(net.fetches, [9, 8, 7].map((i) => asset(i).url));
-  cache.dispose();
+  assert.equal(net.fetches.length, 6, "six network fetches while paused"); assert.deepEqual(net.fetches, [9, 8, 7, 6, 5, 4].map((i) => asset(i).url));
+  net.pending.splice(0).forEach((done) => done()); await tick(10);
+  // Resumed with six blobs fetched: two decode, and the network does not wait for those decodes.
+  let decoding = 0, maxDecoding = 0; const real = globalThis.createImageBitmap;
+  globalThis.createImageBitmap = async (blob) => { decoding++; maxDecoding = Math.max(maxDecoding, decoding); await tick(5); decoding--; return real(blob); };
+  cache.setPaused(false); await tick(2);
+  assert.equal(cache.stats().decodingJobs, 2, "decodes capped at maxActiveJobs"); assert.equal(net.fetches.length, 10, "the remaining fetches start beside the decodes");
+  net.pending.splice(0).forEach((done) => done()); await Promise.all(loads);
+  assert.equal(maxDecoding, 2); globalThis.createImageBitmap = real; cache.dispose();
 });
 await atest("(3) a tile no plan wants any more is dropped whether fetching or fetched", async () => {
   reset(); const cache = new FrameCache("t", { decodedBudgetBytes: 64 * MIB, maxActiveJobs: 2 });

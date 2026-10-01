@@ -7,7 +7,12 @@ export type FrameCacheOptions = {
   decodedBudgetBytes?: number;
   compressedBudgetBytes?: number;
   maxActiveJobs?: number;
+  /** PROPOSED RULE (preview/gp-net6): network fetches in flight, capped apart from decodes. */
+  maxFetches?: number;
 };
+/** PROPOSED RULE (preview/gp-net6, owner decision): up to six tile fetches in flight (a browser's per-host limit); decodes stay
+ * at maxActiveJobs. The legacy rule capped network + decode together at maxActiveJobs, so a slow round trip held a decode slot. */
+export const NETWORK_CAP = 6;
 export type Decoded = { key: string; asset: ImageAsset; bitmap: ImageBitmap; bytes: number; touched: number };
 /** queued -> fetching (network or the compressed cache) -> fetched (blob held) -> decoding (createImageBitmap). */
 type Stage = "queued" | "fetching" | "fetched" | "decoding";
@@ -94,6 +99,7 @@ export class FrameCache {
   private failures = 0;
   private decodedBudgetBytes: number;
   private maxActiveJobs: number;
+  private maxFetches: number;
   // While the camera moves, no new decode starts: decodes (and their GPU uploads) inside the motion were the
   // zoom/pan hitch. Fetches keep running (network only), so a tile is a decode away when the camera rests.
   private paused = false;
@@ -107,6 +113,7 @@ export class FrameCache {
   constructor(revision: string, options: FrameCacheOptions = {}) {
     this.decodedBudgetBytes = options.decodedBudgetBytes ?? DECODED_BUDGET;
     this.maxActiveJobs = options.maxActiveJobs ?? 3;
+    this.maxFetches = options.maxFetches ?? NETWORK_CAP;
     this.disk = new CompressedCache(
       revision,
       options.compressedBudgetBytes ?? COMPRESSED_BUDGET,
@@ -188,12 +195,9 @@ export class FrameCache {
   private pump() {
     if (this.disposed) return;
     const byPriority = (a: Job, b: Job) => b.priority - a.priority;
-    // Jobs in flight in any stage (network + decode) stay <= maxActiveJobs: the legacy contracts count both
-    // (sequence-contracts: network capped at three by default; profile-browser: in-flight <= maxActiveJobs).
-    const cap = this.maxActiveJobs, inFlight = () => this.fetching + this.active;
-    // At rest a fetched tile is a decode away from the screen: decodes take the free slots first.
+    // PROPOSED RULE (net6): decodes <= maxActiveJobs, fetches <= maxFetches, each on its own cap.
     if (!this.paused) for (const job of [...this.jobs.values()].filter((job) => job.stage === "fetched").sort(byPriority)) {
-      if (inFlight() >= cap) break;
+      if (this.active >= this.maxActiveJobs) break;
       const high = job.bytes >= HIGH_TIER;
       if ((high && this.highActive) || !this.room(job.bytes)) continue;
       job.stage = "decoding"; job.active = true; this.active++; if (high) this.highActive++; this.startedDecodes++;
@@ -207,7 +211,7 @@ export class FrameCache {
     }
     // The network runs paused or not (the camera moving pauses decodes only).
     for (const job of [...this.jobs.values()].filter((job) => job.stage === "queued").sort(byPriority)) {
-      if (inFlight() >= cap) break;
+      if (this.fetching >= this.maxFetches) break;
       this.fetch(job);
     }
   }
@@ -260,7 +264,7 @@ export class FrameCache {
   }
   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
   stats() {
-    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.fetching + this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.fetching - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, evictions: this.evictions, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, fetching: this.fetching, maxFetching: this.maxFetching, startedFetches: this.startedFetches, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
+    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.fetching + this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.fetching - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, evictions: this.evictions, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, fetching: this.fetching, maxFetching: this.maxFetching, startedFetches: this.startedFetches, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs, decodingJobs: this.active, maxFetches: this.maxFetches };
   }
   dispose() {
     this.disposed = true;
