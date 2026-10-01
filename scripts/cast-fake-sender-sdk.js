@@ -19,8 +19,15 @@
  *  - https://developers.google.com/cast/docs/reference/web_sender/chrome.cast.media.MediaInfo / LoadRequest /
  *    PhotoMediaMetadata / Image
  *
- * Test hooks (window.__castFake): setDevices(bool), receive(namespace, message), and the outcome knobs requestOutcome
- * ("connect" | an ErrorCode value) and loadOutcome ("ok" | an ErrorCode value), seeded from window.__castFakeInit.
+ * Test hooks (window.__castFake): setDevices(bool), receive(namespace, message), endFromReceiver() (the TV/other
+ * sender stops the app), and knobs seeded from window.__castFakeInit:
+ *   requestOutcome: "connect" | ErrorCode (rejects) | "resolve:<ErrorCode>" (the documented resolve-with-code path)
+ *   loadOutcome:    "ok" | ErrorCode (rejects) | "resolve:<ErrorCode>"
+ *   resume:         true = a session for the configured app already runs (auto-join, ORIGIN_SCOPED): after
+ *                   setOptions the context reports SESSION_RESUMED + CONNECTED without requestSession
+ *   helloOnStart:   a namespace; the receiver says hello on it right after SESSION_STARTED, BEFORE the cast state
+ *                   becomes CONNECTED (an event order the documentation does not rule out)
+ * Overlapping requestSession calls reject the later one with session_error, like a second picker cannot open.
  */
 (() => {
   const init = window.__castFakeInit || {};
@@ -45,7 +52,7 @@
 
   const listeners = new Map();
   const emit = (type, data) => { for (const fn of [...(listeners.get(type) || [])]) fn({ type, ...data }); };
-  let castState = CastState.NO_DEVICES_AVAILABLE, sessionState = SessionState.NO_SESSION, session = null, configured = false;
+  let castState = CastState.NO_DEVICES_AVAILABLE, sessionState = SessionState.NO_SESSION, session = null, configured = false, pending = false;
   const devices = { on: init.devices !== false };
   const setCast = (next) => { if (next === castState) return; castState = next; if (configured) emit(CastContextEventType.CAST_STATE_CHANGED, { castState }); };
   const setSession = (next, extra = {}) => { sessionState = next; if (configured) emit(CastContextEventType.SESSION_STATE_CHANGED, { session, sessionState, errorCode: null, ...extra }); };
@@ -59,7 +66,9 @@
     loadMedia(request) {
       if (!(request instanceof LoadRequest)) throw new Error("loadMedia requires a chrome.cast.media.LoadRequest");
       fake.loads.push({ at: performance.timeOrigin + performance.now(), contentId: request.media.contentId, contentType: request.media.contentType, streamType: request.media.streamType, metadata: request.media.metadata && JSON.parse(JSON.stringify(request.media.metadata)), autoplay: request.autoplay });
-      return fake.loadOutcome === "ok" ? Promise.resolve(null) : Promise.reject(fake.loadOutcome);
+      if (fake.loadOutcome === "ok") return Promise.resolve(null);
+      if (fake.loadOutcome.startsWith("resolve:")) return Promise.resolve(fake.loadOutcome.slice(8));
+      return Promise.reject(fake.loadOutcome);
     }
     sendMessage(namespace, data) {
       if (typeof namespace !== "string" || !namespace.startsWith("urn:x-cast:")) return Promise.reject(ErrorCode.INVALID_PARAMETER);
@@ -79,7 +88,14 @@
       fake.options = { receiverApplicationId: options.receiverApplicationId, autoJoinPolicy: options.autoJoinPolicy };
       configured = true;
       // Discovery runs once configured: devices on the network show up shortly after.
-      setTimeout(() => setCast(devices.on ? CastState.NOT_CONNECTED : CastState.NO_DEVICES_AVAILABLE), 40);
+      setTimeout(() => {
+        if (init.resume && devices.on) {
+          session = new CastSession(fake.options.receiverApplicationId);
+          setSession(SessionState.SESSION_RESUMED); setCast(CastState.CONNECTED);
+          return;
+        }
+        setCast(devices.on ? CastState.NOT_CONNECTED : CastState.NO_DEVICES_AVAILABLE);
+      }, 40);
     }
     getCastState() { return castState; }
     getSessionState() { return sessionState; }
@@ -88,14 +104,20 @@
       fake.calls.push(["requestSession"]);
       if (!configured) throw new Error("requestSession called before setOptions");
       if (castState === CastState.NO_DEVICES_AVAILABLE) return Promise.reject(ErrorCode.RECEIVER_UNAVAILABLE);
+      if (pending) return Promise.reject(ErrorCode.SESSION_ERROR);
       if (fake.requestOutcome === ErrorCode.CANCEL) return new Promise((_, reject) => setTimeout(() => reject(ErrorCode.CANCEL), 30)); // user closed the picker
+      if (fake.requestOutcome.startsWith("resolve:")) return new Promise((resolve) => setTimeout(() => resolve(fake.requestOutcome.slice(8)), 60));
+      pending = true;
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           setSession(SessionState.SESSION_STARTING); setCast(CastState.CONNECTING);
           setTimeout(() => {
+            pending = false;
             if (fake.requestOutcome === "connect") {
               session = new CastSession(fake.options.receiverApplicationId);
-              setSession(SessionState.SESSION_STARTED); setCast(CastState.CONNECTED); resolve(null);
+              setSession(SessionState.SESSION_STARTED);
+              if (init.helloOnStart) fake.receive(init.helloOnStart, JSON.stringify({ v: 1, k: "h", b: "receiver" }));
+              setCast(CastState.CONNECTED); resolve(null);
             } else {
               setSession(SessionState.SESSION_START_FAILED, { errorCode: fake.requestOutcome }); setCast(CastState.NOT_CONNECTED); reject(fake.requestOutcome);
             }
@@ -112,6 +134,7 @@
     removeEventListener(type, handler) { listeners.get(type)?.delete(handler); }
   }
   fake.setDevices = (on) => { devices.on = on; if (!session) setCast(on ? CastState.NOT_CONNECTED : CastState.NO_DEVICES_AVAILABLE); };
+  fake.endFromReceiver = () => { if (!session) return; session = null; setSession(SessionState.SESSION_ENDED); setCast(CastState.NOT_CONNECTED); };
   fake.receive = (namespace, message) => { for (const fn of session?.messageListeners.get(namespace) || []) fn(namespace, message); };
 
   window.chrome = window.chrome || {};

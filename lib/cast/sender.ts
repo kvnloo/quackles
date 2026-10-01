@@ -36,7 +36,7 @@ export function currentView(): CastView {
 
 export const BASIC_NOTE: CastNotice = {
   kind: "info",
-  text: "Basic cast: the TV shows stills of the scene and follows theme and story changes. Zoom isn't mirrored; live zoom sync needs a one-time setup.",
+  text: "Basic cast: the TV shows stills that follow theme and story. Zoom isn't mirrored; live sync needs a one-time setup.",
   href: CAST_DOCS_URL,
 };
 
@@ -62,7 +62,7 @@ export async function startCastSender(options: {
   const pacer = new Pacer();
   const debounce = new MediaDebounce();
   let seq = 0, raf = 0, connected = false, snapshotNext = true, state: SessionState = "unavailable", disposed = false;
-  let sent = 0, bytes = 0, maxBytes = 0, loads = 0, mediaTimer = 0, helloTimer = 0;
+  let sent = 0, bytes = 0, maxBytes = 0, loads = 0, mediaTimer = 0, helloTimer = 0, helloSeen = false;
   const log: { t: number; view: CastView }[] = [];
   const error = (code: unknown) => { const text = castErrorMessage(code); if (text && !disposed) options.onNotice({ kind: "error", text }); };
 
@@ -111,6 +111,8 @@ export async function startCastSender(options: {
 
   transport.onMessage((raw) => {
     if (decode(raw)?.kind !== "hello") return;
+    // The hello may beat the CONNECTED cast state (it is sent on SENDER_CONNECTED): remember it for this session.
+    helloSeen = true;
     window.clearTimeout(helloTimer); helloTimer = 0;
     resync();
   });
@@ -122,13 +124,13 @@ export async function startCastSender(options: {
       if (mode.kind === "custom") {
         resync();
         window.clearTimeout(helloTimer);
-        if (options.kind === "caf") helloTimer = window.setTimeout(() => error("receiver_silent"), RECEIVER_HELLO_TIMEOUT_MS);
+        if (options.kind === "caf" && !helloSeen) helloTimer = window.setTimeout(() => error("receiver_silent"), RECEIVER_HELLO_TIMEOUT_MS);
       } else {
         options.onNotice(BASIC_NOTE);
         offerMedia(true);
       }
     }
-    if (!connected && was) { window.clearTimeout(helloTimer); window.clearTimeout(mediaTimer); shown = null; }
+    if (!connected && was) { window.clearTimeout(helloTimer); window.clearTimeout(mediaTimer); shown = null; helloSeen = false; }
     options.onState(next);
   });
   const storyChanged = () => { schedule(); offerMedia(false); };
@@ -136,7 +138,7 @@ export async function startCastSender(options: {
   const unsubscribeCamera = subscribeInspection(schedule);
   window.__QUACKLES_CAST_SENDER__ = { getState: () => ({ mode: mode.kind, state, sent, bytes, maxBytes, loads, log: log.slice() }) };
   return {
-    start: () => { options.onNotice(null); transport.start().catch(error); },
+    start: () => { if (!connected) helloSeen = false; options.onNotice(null); transport.start().catch(error); },
     stop: () => transport.stop(),
     dispose() {
       disposed = true; cancelAnimationFrame(raf); connected = false;

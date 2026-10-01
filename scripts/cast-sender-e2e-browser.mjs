@@ -15,6 +15,11 @@
  *   S6 errors are visible: requestSession timeout / receiver_unavailable / session_error, loadMedia failure; cancel is silent
  *   S7 no SDK request and no button for iOS (CriOS, Safari) and Firefox UAs; an SDK load failure leaves no button and no error
  *   S8 no page errors anywhere
+ *   S9 adversarial-review paths: the note never covers the hero copy (portrait + landscape) and its dismiss target is
+ *      >= 24 px; a second tap while connecting opens no second picker; the TV ending the session clears the note;
+ *      a hello that beats CONNECTED is not reported as silence; requestSession/loadMedia RESOLVING with an ErrorCode
+ *      surface; an auto-joined (resumed) session gets the still without a tap; notices are announced via a live
+ *      region that exists before they appear
  * OUT_DIR (cast build), BASE_PATH (the build's NEXT_PUBLIC_BASE_PATH), PORT, ASSETS. Run with
  *   node --import ./scripts/register-ts-resolve.mjs scripts/cast-sender-e2e-browser.mjs */
 import fs from "node:fs";
@@ -36,6 +41,7 @@ const UA = {
 };
 const DEVICE = {
   android: { viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.6, isMobile: true, hasTouch: true },
+  landscape: { viewport: { width: 915, height: 412 }, deviceScaleFactor: 2.6, isMobile: true, hasTouch: true },
   desktop: { viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 },
 };
 if (!fs.existsSync(path.join(dir, "cast-receiver/index.html"))) { console.error(`${dir} is not a cast build`); process.exit(2); }
@@ -249,6 +255,73 @@ for (const [outcome, kind, pattern] of [["timeout", "request", /respond|time/i],
   await close(s);
 }
 
+console.log("[android] adversarial-review paths");
+const overlaps = (s) => s.page.evaluate(() => {
+  const n = document.querySelector('[data-testid="cast-notice"]')?.getBoundingClientRect();
+  if (!n) return { notice: null };
+  const hits = [...document.querySelectorAll(".hero-copy h1, .hero-kicker, .hero-label, .hero-note, .site-nav, .theme-seg")].map((el) => [el.className || el.tagName, el.getBoundingClientRect()])
+    .filter(([, r]) => r.width && r.height && n.left < r.right && n.right > r.left && n.top < r.bottom && n.bottom > r.top).map(([name]) => name);
+  const d = document.querySelector('[data-testid="cast-notice"] button')?.getBoundingClientRect();
+  return { notice: [n.left, n.top, n.width, n.height].map(Math.round), hits, dismiss: d ? [Math.round(d.width), Math.round(d.height)] : null };
+});
+for (const device of ["android", "landscape"]) {
+  const s = await open(`note-${device}`, { device });
+  await until(s, () => !!document.querySelector('[data-testid="cast-button"]'), null, 8000);
+  const live0 = await s.page.evaluate(() => document.querySelectorAll('[data-testid="cast-live"][role="status"]').length);
+  check(await connect(s), `note-${device}: did not connect`);
+  await wait(300);
+  const o = await overlaps(s);
+  res[`note_${device}`] = o;
+  if (process.env.SHOTS) await s.page.screenshot({ path: path.join(process.env.SHOTS, `cast-note-${device}.png`) });
+  check(o.notice && o.hits.length === 0, `note-${device}: the note covers ${o.hits?.join(", ")} at ${o.notice}`);
+  check(o.dismiss && o.dismiss[0] >= 24 && o.dismiss[1] >= 24, `note-${device}: dismiss target ${o.dismiss}`);
+  check(live0 === 1 && /still/i.test(await s.page.textContent('[data-testid="cast-live"]')), `note-${device}: no persistent live region announcing the note (before: ${live0})`);
+  if (device === "android") {
+    await s.page.evaluate(() => window.__castFake?.endFromReceiver());
+    await wait(500);
+    check(!(await notice(s)), "tv-ended: the basic note outlived the session");
+    check((await s.page.getAttribute('[data-testid="cast-button"]', "data-state")) === "idle", "tv-ended: button not back to idle");
+  }
+  await close(s);
+}
+{
+  const s = await open("double-tap");
+  await until(s, () => !!document.querySelector('[data-testid="cast-button"]'), null, 8000);
+  await s.page.click('[data-testid="cast-button"]');
+  await until(s, () => document.querySelector('[data-testid="cast-button"]')?.dataset.state === "connecting", null, 2000);
+  await s.page.click('[data-testid="cast-button"]').catch(() => {});
+  await wait(800);
+  const calls = (await fakeState(s)).calls.filter((c) => c[0] === "requestSession").length;
+  check(calls === 1, `double-tap: requestSession called ${calls}x`);
+  check((await notice(s))?.kind !== "error", `double-tap: error shown ${JSON.stringify(await notice(s))}`);
+  await close(s);
+}
+{
+  const s = await open("hello-race", { query: "?castAppId=A1B2C3D4", init: { helloOnStart: "urn:x-cast:ai.quackles.state" } });
+  check(await connect(s), "hello-race: did not connect");
+  await wait(10000);
+  check((await notice(s))?.kind !== "error", `hello-race: a receiver that answered was reported silent: ${JSON.stringify(await notice(s))}`);
+  await close(s);
+}
+for (const [name, init, pattern] of [["request-resolves-code", { requestOutcome: "resolve:timeout" }, /respond|time/i], ["load-resolves-code", { loadOutcome: "resolve:load_media_failed" }, /picture|image|load/i]]) {
+  const s = await open(name, { init });
+  await until(s, () => !!document.querySelector('[data-testid="cast-button"]'), null, 8000);
+  await s.page.click('[data-testid="cast-button"]');
+  await wait(1200);
+  const n = await notice(s);
+  check(n?.kind === "error" && pattern.test(n.text), `${name}: ${JSON.stringify(n)}`);
+  await close(s);
+}
+{
+  const s = await open("resume", { init: { resume: true } });
+  const ok = await until(s, () => document.querySelector('[data-testid="cast-button"]')?.dataset.state === "connected", null, 8000);
+  await wait(500);
+  const f = await fakeState(s);
+  check(ok && !f.calls.some((c) => c[0] === "requestSession"), `resume: not auto-joined (${JSON.stringify(f.calls)})`);
+  check(f.loads.length === 1 && f.loads[0].contentId === plate(0, 2), `resume: still not re-loaded on auto-join (${f.loads.length})`);
+  await close(s);
+}
+
 console.log("[gates] iOS / Firefox / SDK failure");
 for (const ua of ["crios", "safari", "firefox"]) {
   const s = await open(`gate-${ua}`, { ua, device: "android" });
@@ -262,6 +335,7 @@ for (const ua of ["crios", "safari", "firefox"]) {
   await wait(3500);
   check(s.sdkRequests.length >= 1, "sdk-fail: SDK not even requested");
   check(!(await button(s)), "sdk-fail: button shown without an SDK");
+  check(!(await notice(s)), "sdk-fail: a notice appeared without a button to explain it");
   await close(s);
 }
 

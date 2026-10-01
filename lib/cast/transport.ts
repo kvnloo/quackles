@@ -163,7 +163,8 @@ export async function cafSender(appId: string): Promise<SenderTransport | null> 
     start() {
       let request: Promise<unknown>;
       try { request = context.requestSession(); } catch { return Promise.reject("api_not_initialized"); }
-      return request.then(() => { sync(); }, (code: unknown) => { sync(); throw code; });
+      // Documented as Promise<?ErrorCode>: a resolved code is a failure too.
+      return request.then((code) => { sync(); if (code) throw code; }, (code: unknown) => { sync(); throw code; });
     },
     stop() { context.endCurrentSession(true); },
     loadMedia(media) {

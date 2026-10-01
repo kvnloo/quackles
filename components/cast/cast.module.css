@@ -83,14 +83,15 @@
   top: calc(6.4% + 1.4% + max(40px, 9.5cqw) + 1%);
   right: 3.6%;
   z-index: 11;
-  max-width: min(72%, 300px);
+  /* Narrow enough to stay right of the hero headline (it ends near 38% of the frame width). */
+  width: min(46%, 210px);
   margin: 0;
-  padding: 8px 26px 8px 10px;
+  padding: 7px 28px 7px 9px;
   border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
   background: color-mix(in srgb, var(--paper) 88%, transparent);
   color: var(--ink);
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 1.35;
   letter-spacing: 0.02em;
   pointer-events: auto;
@@ -104,8 +105,10 @@
 }
 .dismiss {
   position: absolute;
-  top: 2px;
-  right: 4px;
+  top: 0;
+  right: 0;
+  min-width: 26px;
+  min-height: 26px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -113,4 +116,12 @@
   line-height: 1;
   padding: 4px;
   cursor: pointer;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
