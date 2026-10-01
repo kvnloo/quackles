@@ -7,6 +7,11 @@ export type FrameCacheOptions = {
   decodedBudgetBytes?: number;
   compressedBudgetBytes?: number;
   maxActiveJobs?: number;
+  /**
+   * RFC-002 spike (#45): decode this asset elsewhere (the refinement Worker). Return undefined to decode here. The promise
+   * must reject with an AbortError once `signal` aborts before it settles (the Worker drops that bitmap itself).
+   */
+  decoder?: (asset: ImageAsset, blob: Blob, signal: AbortSignal) => Promise<ImageBitmap> | undefined;
 };
 export type Decoded = { key: string; asset: ImageAsset; bitmap: ImageBitmap; bytes: number; touched: number };
 /** queued -> fetching (network or the compressed cache) -> fetched (blob held) -> decoding (createImageBitmap). */
@@ -94,6 +99,7 @@ export class FrameCache {
   private failures = 0;
   private decodedBudgetBytes: number;
   private maxActiveJobs: number;
+  private decoder: FrameCacheOptions["decoder"];
   // While the camera moves, no new decode starts: decodes (and their GPU uploads) inside the motion were the
   // zoom/pan hitch. Fetches keep running (network only), so a tile is a decode away when the camera rests.
   private paused = false;
@@ -107,6 +113,7 @@ export class FrameCache {
   constructor(revision: string, options: FrameCacheOptions = {}) {
     this.decodedBudgetBytes = options.decodedBudgetBytes ?? DECODED_BUDGET;
     this.maxActiveJobs = options.maxActiveJobs ?? 3;
+    this.decoder = options.decoder;
     this.disk = new CompressedCache(
       revision,
       options.compressedBudgetBytes ?? COMPRESSED_BUDGET,
@@ -240,7 +247,8 @@ export class FrameCache {
       job.controller.signal.throwIfAborted();
       this.decoding++; this.maxDecoding = Math.max(this.maxDecoding, this.decoding);
       let bitmap: ImageBitmap;
-      try { bitmap = await createImageBitmap(job.blob!); this.completedDecodes++; }
+      try { bitmap = await (this.decoder?.(job.asset, job.blob!, job.controller.signal) ?? createImageBitmap(job.blob!)); this.completedDecodes++; }
+      catch (error) { if (error instanceof DOMException && error.name === "AbortError") this.staleDiscard++; throw error; }
       finally { this.decoding--; job.blob = undefined; }
       if (this.disposed || job.controller.signal.aborted) {
         this.close(bitmap); this.staleDiscard++;
