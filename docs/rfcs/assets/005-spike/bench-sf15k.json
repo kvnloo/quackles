@@ -1,0 +1,79 @@
+{
+ "file": "m/sf15k.splat",
+ "profiles": {
+  "phone-390x844@3-cpu4x": {
+   "file": "m/sf15k.splat",
+   "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+   "dpr": 3,
+   "w": 390,
+   "h": 844,
+   "glRenderer": "ANGLE (NVIDIA, Vulkan 1.4.341 (NVIDIA NVIDIA GeForce RTX 3080 Ti (0x00002208)), NVIDIA)",
+   "fetchMs": 292.5,
+   "bytes": 6760384,
+   "loadMs": 5743.79999999702,
+   "firstFrameMs": 6921.899999991059,
+   "frameMs": {
+    "p50": 7.399999991059303,
+    "p95": 17.799999997019768,
+    "max": 104.1000000089407
+   },
+   "fps": 135.13513529840571,
+   "splatCount": 211262,
+   "done": true
+  },
+  "phone-390x844@2-cpu4x": {
+   "file": "m/sf15k.splat",
+   "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+   "dpr": 2,
+   "w": 390,
+   "h": 844,
+   "glRenderer": "ANGLE (NVIDIA, Vulkan 1.4.341 (NVIDIA NVIDIA GeForce RTX 3080 Ti (0x00002208)), NVIDIA)",
+   "fetchMs": 310.19999998807907,
+   "bytes": 6760384,
+   "loadMs": 8615.20000000298,
+   "firstFrameMs": 9885.699999988079,
+   "frameMs": {
+    "p50": 11,
+    "p95": 30.099999994039536,
+    "max": 121.5
+   },
+   "fps": 90.9090909090909,
+   "splatCount": 211262,
+   "done": true
+  },
+  "desktop-1280x800@1": {
+   "file": "m/sf15k.splat",
+   "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+   "dpr": 1,
+   "w": 1280,
+   "h": 800,
+   "glRenderer": "ANGLE (NVIDIA, Vulkan 1.4.341 (NVIDIA NVIDIA GeForce RTX 3080 Ti (0x00002208)), NVIDIA)",
+   "fetchMs": 135,
+   "bytes": 6760384,
+   "loadMs": 2787,
+   "firstFrameMs": 3486.699999988079,
+   "frameMs": {
+    "p50": 3.0999999940395355,
+    "p95": 7.0999999940395355,
+    "max": 57.400000005960464
+   },
+   "fps": 322.58064578152596,
+   "splatCount": 211262,
+   "done": true
+  }
+ },
+ "ksplat": {
+  "file": "m/sf15k.splat",
+  "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+  "dpr": 1,
+  "w": 800,
+  "h": 600,
+  "glRenderer": "ANGLE (NVIDIA, Vulkan 1.4.341 (NVIDIA NVIDIA GeForce RTX 3080 Ti (0x00002208)), NVIDIA)",
+  "fetchMs": 215.80000001192093,
+  "bytes": 6760384,
+  "ksplat_c0": 9300648,
+  "ksplat_c1": 5085340,
+  "ksplat_c2": 5085340,
+  "done": true
+ }
+}

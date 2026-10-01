@@ -1,0 +1,58 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RFC-005 splat bench</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#v{width:100vw;height:100vh}</style>
+<div id="v"></div>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","gs3d":"./node_modules/@mkkellogg/gaussian-splats-3d/build/gaussian-splats-3d.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import * as GS from 'gs3d';
+const q = new URLSearchParams(location.search);
+const file = q.get('file'), frames = +(q.get('frames') || 240), mode = q.get('mode') || 'bench';
+const R = window.RESULT = {file, ua: navigator.userAgent, dpr: devicePixelRatio, w: innerWidth, h: innerHeight};
+const gl = document.createElement('canvas').getContext('webgl2');
+const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+R.glRenderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+try {
+  const t0 = performance.now();
+  const buf = await (await fetch(file)).arrayBuffer(); R.fetchMs = performance.now() - t0; R.bytes = buf.byteLength;
+  if (mode === 'ksplat') {  // measure .ksplat sizes produced by the library's own compressor
+    for (const lvl of [0, 1, 2]) {
+      const sb = await GS.SplatLoader.loadFromFileData(buf, 1, lvl, true);
+      R['ksplat_c' + lvl] = sb.bufferData.byteLength;
+    }
+    R.done = true;
+  } else {
+    const renderer = new THREE.WebGLRenderer({antialias: false, powerPreference: 'high-performance'});
+    renderer.setPixelRatio(devicePixelRatio); renderer.setSize(innerWidth, innerHeight);
+    document.getElementById('v').appendChild(renderer.domElement);
+    const cam = new THREE.PerspectiveCamera(49.591, innerWidth / innerHeight, 0.02, 24); cam.up.set(0, 0, 1);
+    const hero = new THREE.Vector3(0.11, -0.62, 0.1933), look = hero.clone().add(new THREE.Vector3(-0.10607, 0.98490, 0.13686));
+    const tgt = new THREE.Vector3(0.075, 0.04, 0.27);
+    cam.position.copy(hero); cam.lookAt(look);
+    const viewer = new GS.Viewer({selfDrivenMode: false, useBuiltInControls: false, renderer, camera: cam,
+      rootElement: document.getElementById('v'), sharedMemoryForWorkers: false, gpuAcceleratedSort: false,
+      sphericalHarmonicsDegree: 0, antialiased: false, integerBasedSort: true, enableSIMDInSort: true});
+    const t1 = performance.now();
+    await viewer.addSplatScene(file, {format: GS.SceneFormat.Splat, showLoadingUI: false, progressiveLoad: false, splatAlphaRemovalThreshold: 1});
+    R.loadMs = performance.now() - t1;
+    viewer.update(); viewer.render();
+    await new Promise(r => requestAnimationFrame(r)); R.firstFrameMs = performance.now() - t0;
+    const off = hero.clone().sub(tgt), dts = [];
+    let last = performance.now();
+    for (let i = 0; i < frames; i++) {
+      const a = 0.35 * Math.sin(i / frames * Math.PI * 2);  // +-20 deg orbit about the robot
+      const p = off.clone().applyAxisAngle(new THREE.Vector3(0, 0, 1), a).add(tgt);
+      cam.position.copy(p); cam.lookAt(look.clone().sub(hero).applyAxisAngle(new THREE.Vector3(0, 0, 1), a).add(p));
+      viewer.update(); viewer.render(); renderer.getContext().finish();
+      await new Promise(r => requestAnimationFrame(r));
+      const now = performance.now(); dts.push(now - last); last = now;
+    }
+    dts.sort((x, y) => x - y);
+    R.frameMs = {p50: dts[dts.length >> 1], p95: dts[Math.floor(dts.length * .95)], max: dts[dts.length - 1]};
+    R.fps = 1000 / R.frameMs.p50; R.splatCount = viewer.getSplatMesh().getSplatCount();
+    R.done = true;
+  }
+} catch (e) { R.error = String(e && e.stack || e); R.done = true; }
+</script>

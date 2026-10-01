@@ -1,0 +1,102 @@
+{
+ "hero": {
+  "psnr": 31.99,
+  "ssim": 0.9569,
+  "lpips": 0.0426,
+  "dE_mean": 0.93,
+  "dE_p95": 4.23,
+  "frac_dE_gt5": 0.0388,
+  "render_ms_rtx3080ti": 5.33,
+  "n_gaussians": 248070,
+  "regions": {
+   "head": {
+    "dE_mean": 1.95,
+    "dE_p95": 7.64
+   },
+   "torso": {
+    "dE_mean": 2.42,
+    "dE_p95": 8.92
+   },
+   "legs": {
+    "dE_mean": 1.99,
+    "dE_p95": 7.72
+   },
+   "plinth": {
+    "dE_mean": 1.28,
+    "dE_p95": 5.62
+   },
+   "wall": {
+    "dE_mean": 0.14,
+    "dE_p95": 0.28
+   },
+   "print": {
+    "dE_mean": 1.24,
+    "dE_p95": 4.63
+   },
+   "orb": {
+    "dE_mean": 2.21,
+    "dE_p95": 7.26
+   }
+  }
+ },
+ "novel000": {
+  "psnr": 31.8,
+  "ssim": 0.958,
+  "lpips": 0.047,
+  "dE_mean": 0.75,
+  "dE_p95": 2.88,
+  "frac_dE_gt5": 0.027,
+  "render_ms_rtx3080ti": 6.33,
+  "n_gaussians": 248070
+ },
+ "novel001": {
+  "psnr": 33.09,
+  "ssim": 0.9614,
+  "lpips": 0.0443,
+  "dE_mean": 0.7,
+  "dE_p95": 2.68,
+  "frac_dE_gt5": 0.0231,
+  "render_ms_rtx3080ti": 5.79,
+  "n_gaussians": 248070
+ },
+ "novel002": {
+  "psnr": 34.57,
+  "ssim": 0.9697,
+  "lpips": 0.0312,
+  "dE_mean": 0.65,
+  "dE_p95": 2.82,
+  "frac_dE_gt5": 0.0208,
+  "render_ms_rtx3080ti": 7.39,
+  "n_gaussians": 248070
+ },
+ "novel003": {
+  "psnr": 34.85,
+  "ssim": 0.9718,
+  "lpips": 0.0272,
+  "dE_mean": 0.59,
+  "dE_p95": 2.42,
+  "frac_dE_gt5": 0.0184,
+  "render_ms_rtx3080ti": 6.06,
+  "n_gaussians": 248070
+ },
+ "novel004": {
+  "psnr": 35.3,
+  "ssim": 0.9738,
+  "lpips": 0.0297,
+  "dE_mean": 0.51,
+  "dE_p95": 1.81,
+  "frac_dE_gt5": 0.0156,
+  "render_ms_rtx3080ti": 7.37,
+  "n_gaussians": 248070
+ },
+ "novel005": {
+  "psnr": 33.94,
+  "ssim": 0.9629,
+  "lpips": 0.0527,
+  "dE_mean": 0.65,
+  "dE_p95": 2.26,
+  "frac_dE_gt5": 0.02,
+  "render_ms_rtx3080ti": 6.13,
+  "n_gaussians": 248070
+ }
+}

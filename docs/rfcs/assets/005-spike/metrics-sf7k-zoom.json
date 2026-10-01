@@ -1,0 +1,62 @@
+{
+ "zoom4_head": {
+  "psnr": 26.25,
+  "ssim": 0.9117,
+  "lpips": 0.1311,
+  "dE_mean": 1.81,
+  "dE_p95": 8.53,
+  "frac_dE_gt5": 0.1006,
+  "render_ms_rtx3080ti": 6.05,
+  "n_gaussians": 248070
+ },
+ "zoom8_head": {
+  "psnr": 22.78,
+  "ssim": 0.8397,
+  "lpips": 0.2649,
+  "dE_mean": 2.91,
+  "dE_p95": 14.09,
+  "frac_dE_gt5": 0.1623,
+  "render_ms_rtx3080ti": 5.41,
+  "n_gaussians": 248070
+ },
+ "zoom4_foot": {
+  "psnr": 28.07,
+  "ssim": 0.9131,
+  "lpips": 0.2293,
+  "dE_mean": 1.32,
+  "dE_p95": 6.49,
+  "frac_dE_gt5": 0.0657,
+  "render_ms_rtx3080ti": 4.83,
+  "n_gaussians": 248070
+ },
+ "zoom8_foot": {
+  "psnr": 25.37,
+  "ssim": 0.8578,
+  "lpips": 0.3307,
+  "dE_mean": 2.15,
+  "dE_p95": 10.02,
+  "frac_dE_gt5": 0.1108,
+  "render_ms_rtx3080ti": 3.33,
+  "n_gaussians": 248070
+ },
+ "zoom4_plinth": {
+  "psnr": 30.35,
+  "ssim": 0.9142,
+  "lpips": 0.4009,
+  "dE_mean": 0.96,
+  "dE_p95": 3.75,
+  "frac_dE_gt5": 0.0351,
+  "render_ms_rtx3080ti": 4.64,
+  "n_gaussians": 248070
+ },
+ "zoom8_plinth": {
+  "psnr": 29.25,
+  "ssim": 0.9153,
+  "lpips": 0.4838,
+  "dE_mean": 1.33,
+  "dE_p95": 5.45,
+  "frac_dE_gt5": 0.0609,
+  "render_ms_rtx3080ti": 23.15,
+  "n_gaussians": 248070
+ }
+}
