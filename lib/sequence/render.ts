@@ -57,6 +57,21 @@ export function inspectionCrop(
   const y = Math.max(0, Math.min(1 - height, focusY * (1 - height)));
   return { x, y, width, height, scale };
 }
+/** PROPOSED RULE (preview/gp-motion-decode): tiles that may decode while the camera moves - those intersecting the visible
+ * crop (no margin) of a tier no higher than what is painted (`paintedWidth`) or strictly below `below` (default: the plan's tier,
+ * layers[0]; the underlay sits below it). A higher tier would be a promotion inside the motion. */
+export function motionDecodeKeys(layers: { variant: { width: number; height: number }; tasks: { asset: ImageAsset; sourceX: number; sourceY: number }[] }[], paintedWidth: number, crop: Crop, below = layers[0]?.variant.width ?? 0): string[] {
+  const top = below, keys: string[] = [];
+  const x1 = crop.x + crop.width, y1 = crop.y + crop.height;
+  for (const { variant, tasks } of layers) {
+    if (!(variant.width <= paintedWidth || variant.width < top)) continue;
+    for (const { asset, sourceX, sourceY } of tasks) {
+      const a = sourceX / variant.width, b = sourceY / variant.height, c = (sourceX + asset.width) / variant.width, d = (sourceY + asset.height) / variant.height;
+      if (c > crop.x && a < x1 && d > crop.y && b < y1) keys.push(asset.url);
+    }
+  }
+  return keys;
+}
 /** Where a moving camera will come to rest (coast/spring target; during a pinch the target is the camera itself), or null at
  * rest. Its tiles are fetched during the motion and decoded once the camera rests (the cache pauses decodes, not fetches). */
 export function prefetchCrop(s: { cameraMoving: boolean; targetZoom: number; targetFocusX: number; targetFocusY: number }): Crop | null {

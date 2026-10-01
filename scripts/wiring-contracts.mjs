@@ -48,4 +48,9 @@ test("paintDetail places via placeDetail (no percentage left/top/width/height pl
 test("container resize re-places the detail canvas (placeDetail in the ResizeObserver handler)", () => {
   assert.ok(/const resized = \(\) => \{[\s\S]*placeDetail\(detailCanvas[\s\S]*new ResizeObserver\(resized\)/.test(player));
 });
+test("PROPOSED RULE (gp-motion-decode): while moving the player allows the visible crop's current/lower-tier tiles to decode and paints at most one tile a frame", () => {
+  assert.ok(/cache\.allowWhileMoving\(\s*moving\s*\?\s*motionDecodeKeys\(/.test(player), "allowWhileMoving(moving ? motionDecodeKeys(...) : [])");
+  const motionDrains = player.match(/\.drain\((0\)|moving \? 0 :)/g) || [];
+  assert.ok(motionDrains.length >= 2, "underlay and detail drain one tile per frame while moving (drain(0))");
+});
 console.log(`${n} passed`);
