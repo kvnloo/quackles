@@ -9,7 +9,7 @@ import { applyHiddenPolicy, describeInspectionSources, type InspectionSourcesRec
 import { PREVIEW } from "@/lib/preview";
 import { mushroomScene, previewManifest, previewNote, previewPolicy, previewPrefetch, previewThemeIndices } from "@/lib/sequence/preview-policy";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
-import { placeDetail, centreFirst, cropInside, detailBackingSize, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, prefetchCrop, sharpPlan, tileAssets, tilePriority, underlayPlan, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { placeDetail, centreFirst, cropInside, detailBackingSize, detailPlan, eggWeight, inspectionCrop, motionDecodeKeys, paintBase, paintDetail, paintEgg, prefetchCrop, sharpPlan, tileAssets, tilePriority, underlayPlan, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { TileSurface, type PaintedRect, type SurfaceStamp } from "@/lib/sequence/tile-surface";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
@@ -314,6 +314,11 @@ export function SequencePlayer() {
       }
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
+      // PROPOSED RULE (preview/gp-motion-decode, owner decision; conflicts with D6/F7 "no decode inside motion"): while the
+      // camera moves, one decode in flight (cache.ts MOTION_DECODES) for tiles in the visible crop at the painted tier or lower.
+      const visibleCrop = inspecting ? inspectionCrop(inspect.zoom, inspect.focusX, inspect.focusY) : crop;
+      const motionLayers = [...(layers.length === 1 && layers[0].alpha === 1 ? [layers[0].plan] : []), ...(underlayCurrent ? [underlayCurrent] : [])];
+      cache.allowWhileMoving(moving ? motionDecodeKeys(motionLayers, state.detailWidth, visibleCrop, settledWidth) : []);
       cache.pin([...assets.map((asset) => asset.url), ...layers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url)), ...(underlayCurrent?.tasks.map(({ asset }) => asset.url) ?? []), ...floorTodo.map(({ asset }) => asset.url)]);
       cache.retain(tasks.map(({ asset }) => asset.url));
       for (const task of tasks) request(task.asset, task.priority);
@@ -373,6 +378,12 @@ export function SequencePlayer() {
             if (state.rendered) state.rendered = { ...state.rendered, tierWidth: state.detailWidth, urls: [...paintedKeys, ...detailKeys], generation };
             if (detailSurface.pending) schedule();
           }
+        } else if (detailKey && paintedCoverage && plan.variant.width === state.detailWidth) {
+          // PROPOSED RULE (gp-motion-decode): moving, same tier, no re-place: at most one decoded visible tile a frame goes into
+          // the layer riding with the camera.
+          const visibleKeys = new Set(motionDecodeKeys([plan], plan.variant.width, visibleCrop));
+          detailSurface.setQueue(centreFirst(plan.tasks, plan.variant, visibleCrop).filter(({ task }) => visibleKeys.has(task.asset.url) && cache!.peek(task.asset.url)).map(({ task }) => ({ key: task.asset.url, bitmap: () => cache!.peek(task.asset.url)?.bitmap, variantWidth: plan.variant.width, variantHeight: plan.variant.height, sourceX: task.sourceX, sourceY: task.sourceY, width: task.asset.width, height: task.asset.height })));
+          if (detailSurface.pending && detailSurface.drain(0)) { paint.detail.rects = detailSurface.rects(); schedule(); }
         }
       } else if (layers.length && (baseKey === nextBase || inspecting)) {
         const coverage = layers[0].plan.coverage;
@@ -424,13 +435,14 @@ export function SequencePlayer() {
         if (floorSurface.drain(frameStart + 11)) paint.floor.rects = floorSurface.rects();
         if (floorSurface.pending) schedule();
       }
-      if (underlayCurrent && !moving && baseKey === nextBase) {
+      // PROPOSED RULE (gp-motion-decode): the underlay also paints while moving, one tile a frame (drain(0)).
+      if (underlayCurrent && baseKey === nextBase) {
         // Fixed backing (the coverage is always 2:3 in image pixels): a re-place is a pixel copy, never a reallocation.
         const u = underlayCurrent, long = Math.min(UNDERLAY_BACKING, Math.ceil(u.coverage.height * u.variant.height));
         underlay.place(rect.width, rect.height, u.coverage, { width: Math.round(long * (u.coverage.width * u.variant.width) / (u.coverage.height * u.variant.height)), height: long });
         paint.underlay.rects = underlay.rects();
         underlay.setQueue(u.tasks.filter((task) => cache!.peek(task.asset.url)).map((task) => ({ key: task.asset.url, bitmap: () => cache!.peek(task.asset.url)?.bitmap, variantWidth: u.variant.width, variantHeight: u.variant.height, sourceX: task.sourceX, sourceY: task.sourceY, width: task.asset.width, height: task.asset.height })));
-        if (underlay.drain(frameStart + 9)) paint.underlay.rects = underlay.rects();
+        if (underlay.drain(moving ? 0 : frameStart + 9)) paint.underlay.rects = underlay.rects();
         if (underlay.pending) schedule();
       }
       // The pyramid underlay shows only while inspecting (at 1x it is decoded and painted, but hidden: the hero stays the plate).

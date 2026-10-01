@@ -230,6 +230,41 @@ test("(3) landing prefetch: while the camera moves, tiles are planned at where i
   assert.deepEqual(render.prefetchCrop({ ...coast, targetZoom: 3, zoom: 5 }), inspectionCrop(3, 0.8, 0.35), "zooming out: the landing zoom");
 });
 
+// ---- PROPOSED RULE (preview/gp-motion-decode, owner decision; conflicts with D6/F7 "no decode starts inside motion") --------
+// While the camera moves, a bounded decode budget: at most ONE decode in flight, and only tiles of the current (painted) tier
+// or lower that intersect the visible crop. Everything else still waits for rest.
+await atest("PROPOSED RULE (motion-decode): paused, only allowed tiles decode, one at a time; the rest wait for rest", async () => {
+  reset(); const cache = new FrameCache("t", { decodedBudgetBytes: 64 * MIB, maxActiveJobs: 2 });
+  let decoding = 0, maxDecoding = 0; const real = globalThis.createImageBitmap;
+  globalThis.createImageBitmap = async (blob) => { decoding++; maxDecoding = Math.max(maxDecoding, decoding); await tick(4); decoding--; return real(blob); };
+  try {
+    cache.setPaused(true);
+    cache.allowWhileMoving([asset(0).url, asset(1).url, asset(2).url]);
+    const loads = [0, 1, 2, 3, 4].map((i) => cache.load(asset(i), 90 - i));
+    await tick(60);
+    assert.deepEqual([...net.decodes].sort(), [0, 1, 2].map((i) => asset(i).url).sort(), "only the allowed tiles decode while moving");
+    assert.equal(maxDecoding, 1, "one decode in flight while moving");
+    assert.equal(cache.stats().motionDecodes, 3);
+    cache.setPaused(false); await Promise.all(loads);
+    assert.equal(net.decodes.length, 5);
+  } finally { globalThis.createImageBitmap = real; }
+});
+test("PROPOSED RULE (motion-decode): the allowed set is the visible crop at the painted tier or lower, never a higher tier, never the margin", () => {
+  assert.equal(typeof render.motionDecodeKeys, "function", "render.motionDecodeKeys missing");
+  const crop = inspectionCrop(7.4, 0.37, 0.41), current = planTier(7.4), lower = tiers[tiers.indexOf(current) - 2], higher = tiers[tiers.indexOf(current) + 1];
+  const wide = { x: crop.x - crop.width / 2, y: crop.y - crop.height / 2, width: crop.width * 2, height: crop.height * 2, scale: crop.scale };
+  const plan = { variant: current, tasks: tileAssets(current, wide, 0) }, under = { variant: lower, tasks: tileAssets(lower, wide, 0) }, up = { variant: higher, tasks: tileAssets(higher, crop, 0) };
+  const keys = new Set(render.motionDecodeKeys([plan, under, up], current.width, crop));
+  const visible = (v) => new Set(tileAssets(v, crop, 0).map((t) => t.asset.url));
+  for (const t of plan.tasks) assert.equal(keys.has(t.asset.url), visible(current).has(t.asset.url), "current tier: visible crop only");
+  for (const t of under.tasks) assert.equal(keys.has(t.asset.url), visible(lower).has(t.asset.url), "lower tier: visible crop only");
+  for (const t of up.tasks) assert.equal(keys.has(t.asset.url), false, "no tile above the painted tier");
+  assert.ok(plan.tasks.length > visible(current).size, "the margin exists (the test means something)");
+  // Nothing painted yet: the lower tiers still qualify, the plan tier (above what is on screen) does not.
+  const none = new Set(render.motionDecodeKeys([plan, under], 0, crop));
+  assert.ok([...visible(lower)].every((k) => none.has(k))); assert.ok(plan.tasks.every((t) => !none.has(t.asset.url) || under.tasks.some((u) => u.asset.url === t.asset.url)));
+});
+
 // ---- (4) budget per tier ----------------------------------------------------------------------------------------------
 const withNavigator = (nav, coarse, fn) => {
   const saved = Object.getOwnPropertyDescriptor(globalThis, "navigator"), savedMM = globalThis.matchMedia;
@@ -321,4 +356,5 @@ await atest("(6) a tier probe that fails transiently (5xx / network) is retried 
     assert.equal(probe.tierKnown(variant(100)), true);
   } finally { performance.now = realNow; }
 });
+
 console.log(`${n} passed`);
