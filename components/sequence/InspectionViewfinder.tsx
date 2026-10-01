@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isZoomedIn } from "@/lib/sequence/camera-zoom";
 import {
   inspectionSnapshot,
   subscribeInspection,
@@ -125,7 +126,7 @@ export function InspectionViewfinder() {
       const atHero = sequenceSnapshot().progress <= 0.006;
       const active =
         atHero &&
-        ((inspection.active && inspection.zoom > 1.04) || nativeScale > 1.02);
+        ((inspection.active && inspection.zoom > 1.04) || isZoomedIn(nativeScale));
       const crop = active ? currentCrop() : EMPTY_CROP;
 
       // While the camera moves only the crop rectangle changes; the thumbnail source changes only on a paint
@@ -140,7 +141,7 @@ export function InspectionViewfinder() {
       // the currently visible source crop so it remains a stable heads-up
       // control instead of being zoomed offscreen with the poster.
       const nativePinch =
-        nativeScale > 1.02 &&
+        isZoomedIn(nativeScale) &&
         !(inspection.active || inspection.zoom > 1.0005);
       if (nativePinch) {
         const baseSize = 0.21;
@@ -202,7 +203,7 @@ export function InspectionViewfinder() {
       const inspection = inspectionSnapshot();
       const nativeScale = window.visualViewport?.scale ?? 1;
       const atHero = sequenceSnapshot().progress <= 0.006;
-      const active = atHero && ((inspection.active && inspection.zoom > 1.04) || nativeScale > 1.02);
+      const active = atHero && ((inspection.active && inspection.zoom > 1.04) || isZoomedIn(nativeScale));
       const themeDragging = frame.dataset.themeDragging === "true";
       if (shouldResampleViewfinder({ active, themeDragging })) copySource();
       schedule();

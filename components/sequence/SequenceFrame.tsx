@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, type ReactNode } from "react";
 import { inspectionSnapshot, subscribeInspection } from "@/lib/sequence/inspection";
+import { heroTouchPolicy, heroZoomed } from "@/lib/sequence/camera-zoom";
 import { dragTheme, snapshot } from "@/lib/sequence/store";
 
 export function SequenceFrame({ children }: { children: ReactNode }) {
@@ -21,17 +22,11 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
       if (previous?.horizontal && node.hasPointerCapture(previous.id)) node.releasePointerCapture(previous.id);
       if (previous?.horizontal) clearThemeDragging();
     };
-    const inspecting = () => {
-      const state = inspectionSnapshot();
-      return state.zoom > 1.02 || state.targetZoom > 1.02;
-    };
+    const inspecting = () => heroZoomed(inspectionSnapshot());
     const syncTouch = () => {
-      // Whenever the hero is inspectable (any zoom above 1x, or a camera still heading there) every touch belongs
-      // to the camera; at rest at 1x vertical swipes stay native page scroll. Set on the state change, so it is
-      // already in place when the next gesture's first finger lands (touch-action is fixed at touchstart).
-      const zoomed = inspecting() || inspectionSnapshot().active;
-      node.style.touchAction = zoomed ? "none" : "pan-y";
-      document.documentElement.style.overscrollBehavior = zoomed ? "none" : "";
+      const policy = heroTouchPolicy(inspectionSnapshot());
+      node.style.touchAction = policy.touchAction;
+      document.documentElement.style.overscrollBehavior = policy.overscrollBehavior;
     };
     const down = (event: PointerEvent) => {
       if (inspecting()) return;
