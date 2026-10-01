@@ -19,6 +19,9 @@ import { armLockFade, startLockFade } from "@/lib/sequence/lock-fade";
 import { applyPalette, configure, presentTheme, selectTheme, setProgress, setThemeRange, snapshot, subscribe, themeIndices } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
+import { refineCaps, refineMode, type RefineMode } from "@/lib/sequence/refine-mode";
+import { createRefineRuntime, type RefineRuntime } from "@/lib/sequence/refine-runtime";
+import { RemoteSurface } from "@/lib/sequence/remote-surface";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
 type PlayerState = { ready: boolean; manifestId: string | null; frameCount: number; frames: { id: string; progress: number; phase: string }[]; requested: FrameState | null; rendered: FrameState | null; detailWidth: number; detailTiles: number; drawCount: number; errors: string[]; stalePaints: number; inspectionSources: InspectionSourcesReceipt; preview: string; note: string | null };
@@ -34,6 +37,8 @@ type SequenceDebug = {
     zoom: number;
     inspection: ReturnType<typeof inspectionSnapshot>;
     profile: SequencePerfProfile;
+    /** RFC-002 spike: where tile decode + compositing ran, and the Worker's publication counters. */
+    refine: { mode: RefineMode } & Partial<ReturnType<RefineRuntime["stats"]>>;
   };
 };
 /** What is painted where (source space, last rect on top), for the gigapixel-feel harness. */
@@ -45,23 +50,36 @@ export function SequencePlayer() {
   useEffect(() => {
     const container = host.current, baseCanvas = base.current, floorCanvas = floor.current, underCanvas = under.current, detailCanvas = detail.current;
     if (!container || !baseCanvas || !floorCanvas || !underCanvas || !detailCanvas) return;
+    // RFC-002 spike (#45): on the worker path the three tile layers are painted by a Worker on OffscreenCanvas (two buffers
+    // each, atomic flips) and tiles decode there; the main thread plans and moves the camera. Fallback: the main-thread path.
+    const syncPaint = () => {
+      paint.detail.rects = detailSurface.rects(); paint.underlay.rects = underlay.rects(); paint.floor.rects = floorSurface.rects();
+    };
+    const runtime = refineMode(PREVIEW, location.search, refineCaps()) === "worker"
+      ? createRefineRuntime({ detail: detailCanvas, underlay: underCanvas, floor: floorCanvas }, () => { syncPaint(); schedule(); })
+      : null;
+    type Surface = TileSurface | RemoteSurface;
+    const show = (canvas: HTMLCanvasElement, surface: Surface, visible: boolean) => {
+      if (surface instanceof RemoteSurface) surface.setVisible(visible); else canvas.style.visibility = visible ? "visible" : "hidden";
+    };
     // Floor: the whole image at the lowest pyramid tier, painted once while idle (hidden at 1x), kept for the session.
     // Its tiles are pinned only until drawn; the canvas keeps the pixels. Nothing zoomed ever falls back to the bare plate.
-    const floorSurface = new TileSurface(floorCanvas);
+    const floorSurface: Surface = runtime?.surfaces.floor ?? new TileSurface(floorCanvas);
     // Detail: progressive and centre-first (render.ts centreFirst) for a single layer. The context is created with alpha
     // before any paint so unpainted tiles stay transparent (the underlay shows), never black.
-    detailCanvas.getContext("2d");
-    const detailSurface = new TileSurface(detailCanvas);
+    if (!runtime) detailCanvas.getContext("2d");
+    const detailSurface: Surface = runtime?.surfaces.detail ?? new TileSurface(detailCanvas);
+    const fadeTarget: HTMLElement = runtime?.fade ?? detailCanvas;
     let floorPlan: { key: string; variant: TileAsset; tasks: ReturnType<typeof tileAssets> } | null = null;
     // Persistent low-tier underlay (render.ts underlayPlan): painted tile by tile under the detail layer, pinned in the cache,
     // so a pan, flick or zoom-out past the painted detail shows a pyramid tier, not the 1024 plate.
-    const underlay = new TileSurface(underCanvas);
+    const underlay: Surface = runtime?.surfaces.underlay ?? new TileSurface(underCanvas);
     let underlayCurrent: NonNullable<ReturnType<typeof underlayPlan>> | null = null;
     const paint: PaintReport = { detail: { rects: [] }, underlay: { rects: [] }, floor: { rects: [] } };
     window.__QUACKLES_PAINT__ = paint;
     const UNDERLAY_BACKING = 2048;
     const releaseUnderlay = () => {
-      underCanvas.style.visibility = "hidden"; underlay.clear(); underlayCurrent = null; paint.underlay.rects = [];
+      show(underCanvas, underlay, false); underlay.clear(); underlayCurrent = null; paint.underlay.rects = [];
     };
     const profile = sequencePerfProfile();
     // Preview config (lib/preview.ts): theme range, tile families, mushroom-only scene. Production = "policy", all five themes.
@@ -77,8 +95,8 @@ export function SequencePlayer() {
     let heldTheme = 2;
     let themeRelease: ThemeRelease | null = null;
     const releaseDetail = () => {
-      detailCanvas.style.visibility = "hidden";
-      if (detailCanvas.width !== 1 || detailCanvas.height !== 1) { detailCanvas.width = 1; detailCanvas.height = 1; }
+      show(detailCanvas, detailSurface, false);
+      if (!runtime && (detailCanvas.width !== 1 || detailCanvas.height !== 1)) { detailCanvas.width = 1; detailCanvas.height = 1; }
       detailKeys = []; detailKey = ""; detailThemeKey = ""; paintedCoverage = null; paintedMix = -1; paintedInMotion = false;
       state.detailWidth = 0; state.detailTiles = 0; paint.detail.rects = []; detailSurface.clear();
       releaseUnderlay();
@@ -294,7 +312,7 @@ export function SequencePlayer() {
       // Floor: planned once the hero has settled (mayWarm) or as soon as inspection starts; re-planned only for a new scene.
       const lowest = underlayTiers.find((variant) => variant.width > plateWidth);
       const floorKey = lowest ? `${frame.id}/${showThemes.join("+")}/${eggShown ? "egg" : ""}/${lowest.width}` : "";
-      if (floorPlan && floorPlan.key !== floorKey) { floorSurface.clear(); floorPlan = null; paint.floor.rects = []; floorCanvas!.style.visibility = "hidden"; }
+      if (floorPlan && floorPlan.key !== floorKey) { floorSurface.clear(); floorPlan = null; paint.floor.rects = []; show(floorCanvas!, floorSurface, false); }
       if (!floorPlan && lowest && (inspecting || mayWarm({ painted: firstPaintAt > 0, inspecting, moving, sinceFirstPaintMs: firstPaintAt ? performance.now() - firstPaintAt : 0 }))) {
         const full = tileAssets(lowest, { x: 0, y: 0, width: 1, height: 1, scale: 1 }, 0);
         if (full.reduce((sum, { asset }) => sum + asset.width * asset.height * 4, 0) <= profile.underlayBudgetBytes) floorPlan = { key: floorKey, variant: lowest, tasks: full };
@@ -357,11 +375,11 @@ export function SequencePlayer() {
           if (detailSurface.pending) {
             // First appearance of the sharp layer (it was hidden/released): dissolve it in. Later tiles do not re-fade.
             const freshLock = !detailKey; const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            if (freshLock) armLockFade(detailCanvas!, reduced);
+            if (freshLock) armLockFade(fadeTarget, reduced);
             detailSurface.drain(frameStart + 6);
-            detailCanvas!.dataset.smoothing = "high";
-            detailCanvas!.style.visibility = "visible";
-            if (freshLock) startLockFade(detailCanvas!, reduced);
+            for (const canvas of runtime?.elements.detail ?? [detailCanvas!]) canvas.dataset.smoothing = "high";
+            show(detailCanvas!, detailSurface, true);
+            if (freshLock) startLockFade(fadeTarget, reduced);
             window.dispatchEvent(new Event("quackles:detail-painted"));
             detailKey = `${frame.id}/${plan.variant.width}@1.00/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
             detailKeys = plan.tasks.map(({ asset }) => asset.url);
@@ -374,7 +392,7 @@ export function SequencePlayer() {
             if (detailSurface.pending) schedule();
           }
         }
-      } else if (layers.length && (baseKey === nextBase || inspecting)) {
+      } else if (!runtime && layers.length && (baseKey === nextBase || inspecting)) {
         const coverage = layers[0].plan.coverage;
         const decoded = layers.map((layer) => ({
           ...layer,
@@ -434,8 +452,8 @@ export function SequencePlayer() {
         if (underlay.pending) schedule();
       }
       // The pyramid underlay shows only while inspecting (at 1x it is decoded and painted, but hidden: the hero stays the plate).
-      underCanvas!.style.visibility = inspecting && underlay.coverage && paint.underlay.rects.length ? "visible" : "hidden";
-      floorCanvas!.style.visibility = inspecting && paint.floor.rects.length ? "visible" : "hidden";
+      show(underCanvas!, underlay, !!(inspecting && underlay.coverage && paint.underlay.rects.length));
+      show(floorCanvas!, floorSurface, !!(inspecting && paint.floor.rects.length));
       if (inspecting) {
         // The base is a persistent underlay: keep it visible so any part of the viewport the detail canvas does not
         // cover (camera jump beyond the painted buffer) shows the plate, never the page background.
@@ -481,6 +499,12 @@ export function SequencePlayer() {
     // The detail canvas is placed in css px (transform), so a container resize (window resize, mobile URL bar) must re-place it.
     // Re-place immediately (registration is exact at once) and force a repaint for the new resolution without hiding the layer.
     const resized = () => {
+      if (runtime) {
+        const r = container.getBoundingClientRect();
+        for (const surface of Object.values(runtime.surfaces)) surface.relayout(r.width, r.height);
+        if (detailKey) paintedCoverage = null;
+        changed(); return;
+      }
       if (underlay.coverage) { const r = container.getBoundingClientRect(); placeDetail(underCanvas, r.width, r.height, underlay.coverage); }
       if (floorSurface.coverage) { const r = container.getBoundingClientRect(); placeDetail(floorCanvas, r.width, r.height, floorSurface.coverage); }
       if (detailKey && detailCanvas.dataset.crop) {
@@ -497,7 +521,7 @@ export function SequencePlayer() {
     window.__QUACKLES_SEQUENCE__ = {
       setProgress(value) { scrollTo({ top: Math.max(0, Math.min(1, value)) * Math.max(1, document.documentElement.scrollHeight - innerHeight), behavior: "instant" }); setProgress(value); },
       setTheme: selectTheme,
-      getState: () => ({ ...state, failedTiles: failed.size, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot(), profile }),
+      getState: () => ({ ...state, failedTiles: failed.size, current: snapshot(), cache: cache?.stats() ?? null, surfaceBytes: (baseCanvas.width * baseCanvas.height + detailCanvas.width * detailCanvas.height) * 4, zoom: visualViewport?.scale ?? 1, inspection: inspectionSnapshot(), profile, refine: { mode: runtime ? "worker" : "main", ...runtime?.stats() } }),
     };
     const controller = new AbortController();
     void (async () => {
@@ -522,6 +546,7 @@ export function SequencePlayer() {
           decodedBudgetBytes: profile.decodedBudgetBytes,
           compressedBudgetBytes: profile.compressedBudgetBytes,
           maxActiveJobs: profile.maxActiveJobs,
+          decoder: runtime?.decoder,
         });
         state.manifestId = parsed.id; state.frameCount = parsed.frames.length;
         state.frames = parsed.frames.map(({ id, progress, phase }) => ({ id, progress, phase }));
@@ -534,7 +559,7 @@ export function SequencePlayer() {
       cancelled = true; controller.abort(); unsubscribe(); unsubscribeInspection(); observer.disconnect();
       cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(retryTimer); clearTimeout(inspectionSettleTimer); clearTimeout(warmTimer);
       visualViewport?.removeEventListener("resize", changed); visualViewport?.removeEventListener("scroll", changed);
-      delete window.__QUACKLES_SEQUENCE__; delete window.__QUACKLES_PAINT__; cache?.dispose();
+      delete window.__QUACKLES_SEQUENCE__; delete window.__QUACKLES_PAINT__; cache?.dispose(); runtime?.dispose();
     };
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">

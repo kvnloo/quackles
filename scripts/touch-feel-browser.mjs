@@ -22,7 +22,8 @@ const browser = await chromium.launch({ executablePath: "/usr/bin/google-chrome-
 const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.6, isMobile: true, hasTouch: true });
 const page = await ctx.newPage(); const cdp = await ctx.newCDPSession(page);
 await page.route("**/quackles-assets/**", async (route) => { const f = path.join(ASSETS, new URL(route.request().url()).pathname.replace(/^\/quackles-assets\//, "")); if (!fs.existsSync(f)) return route.fulfill({ status: 404, body: "" }); await route.fulfill({ body: fs.readFileSync(f), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } }); });
-await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0); await page.waitForTimeout(2200);
+await page.addInitScript(() => { const long = window.__feelLong = []; try { new PerformanceObserver((l) => { for (const e of l.getEntries()) long.push([e.startTime, e.duration]); }).observe({ type: "longtask", buffered: true }); } catch {} });
+await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/${process.env.REFINE ? `?refine=${process.env.REFINE}` : ""}`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0); await page.waitForTimeout(2200);
 const profile = await page.evaluate(() => window.__QUACKLES_SEQUENCE__.getState().profile?.id ?? null);
 const frameBox = await page.evaluate(() => { const r = document.querySelector(".poster-frame").getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
 const cx = Math.round(frameBox.x + frameBox.w / 2), cy = Math.round(frameBox.y + Math.min(frameBox.h, 915 - frameBox.y) / 2);
@@ -172,6 +173,11 @@ res.throttled4x = { frames: dts.length, p50ms: pct(0.5), p95ms: pct(0.95), maxMs
 const tp = (await rows("throttledPinch")).filter((r) => r.n === 2); const pd = tp.slice(1).map((r, i) => r.t - tp[i].t).sort((a, b) => a - b);
 res.throttled4xPinch = { frames: pd.length, p50ms: pd.length ? r2(pd[Math.floor(0.5 * pd.length)]) : null, p95ms: pd.length ? r2(pd[Math.min(pd.length - 1, Math.floor(0.95 * pd.length))]) : null, maxErrPx: r2(maxErr(tp, 2)) };
 
+// Main-thread long tasks (> 50 ms) from the first gesture to the end, and inside the 4x-throttled phase.
+res.longTasks = await page.evaluate(() => { const rows = window.__feel.rows, t0 = rows[0]?.t ?? 0, th = rows.filter((r) => r.phase === "throttled" || r.phase === "throttledPinch");
+  const all = window.__feelLong.filter(([t]) => t >= t0), thr = th.length ? all.filter(([t]) => t >= th[0].t && t <= th[th.length - 1].t) : [];
+  const sum = (xs) => Math.round(xs.reduce((a, [, d]) => a + d, 0)); return { n: all.length, maxMs: Math.round(Math.max(0, ...all.map(([, d]) => d))), totalMs: sum(all), throttledN: thr.length, throttledMaxMs: Math.round(Math.max(0, ...thr.map(([, d]) => d))) }; });
+res.refine = await page.evaluate(() => window.__QUACKLES_SEQUENCE__.getState().refine ?? null);
 await page.evaluate(() => { window.__feel.stop = true; });
 console.log(JSON.stringify(res)); await ctx.close(); await browser.close(); server.kill();
 if (bad.length) { console.error("FAIL", bad); process.exit(1); }

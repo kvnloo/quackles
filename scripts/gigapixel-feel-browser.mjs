@@ -30,7 +30,12 @@
  *  GATE=1 exits 1 when a plain-pass target misses: hq p90 <= 500 ms, under-resolved < 10%, plate-edge 0, blank 0, blue 0,
  *  redecodes <= 5% of decodes; blank/blue also gated in the throttled pass.
  *  Raster: the host GPU (GPU=0: SwiftShader). Frame times are desktop-GPU raster with the phone's CPU emulated at 1x / 4x.
- *  OUT_DIR (+BASE_PATH), PORT, ASSETS, LATENCY, TRACE, PASSES=plain,throttled, DEVICE_MEMORY, GPU, TIERS, PLATE, OUT_JSON, SEED. */
+ *   longTasks   main-thread long tasks (PerformanceObserver "longtask", > 50 ms) during the replay: count, max, total.
+ *   staleFrames frames where the visible detail buffer reports painted rects outside its own placement (data-crop): pixels
+ *               published for another placement (RFC-002 atomic publication). The layers are re-queried every frame (the
+ *               worker path swaps two buffers per layer; the shown one carries the class).
+ *  OUT_DIR (+BASE_PATH), PORT, ASSETS, LATENCY, TRACE, PASSES=plain,throttled, DEVICE_MEMORY, GPU, TIERS, PLATE, OUT_JSON, SEED,
+ *  REFINE=main|worker (appends ?refine=, the RFC-002 in-process A/B; builds without the flag ignore it). */
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -44,6 +49,7 @@ const PASSES = (process.env.PASSES || "plain,throttled").split(",");
 const DEVICE_MEMORY = Number(process.env.DEVICE_MEMORY || 8);
 // Tier widths of the displayed pyramid (default: the White 1GP of gigapixel-single) and the plate width.
 const TIERS = (process.env.TIERS || "1614,3228,6455,12910,25820").split(",").map(Number), PLATE = Number(process.env.PLATE || 1024);
+const QUERY = process.env.REFINE ? `?refine=${process.env.REFINE}` : "";
 const CHROME = ["/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/google-chrome"].find(fs.existsSync);
 
 // ---- trace -> CDP touch script -------------------------------------------------------------------------------------
@@ -80,12 +86,13 @@ const INIT = `(() => {
     return cib.call(this, src, ...rest);
   };
   window.__gpxDecodes = decodes;
+  const long = window.__gpxLong = [];
+  try { new PerformanceObserver((list) => { for (const e of list.getEntries()) long.push([e.startTime, e.duration]); }).observe({ type: "longtask", buffered: true }); } catch {}
 })();`;
 
 function sampler({ tiers, plate }) {
   const frame = document.querySelector(".poster-frame"), camera = document.querySelector(".sequence-camera");
-  const detail = document.querySelector(".sequence-detail"), base = document.querySelector(".sequence-base");
-  const underlay = document.querySelector(".sequence-underlay"), floorEl = document.querySelector(".sequence-floor"), fallback = document.querySelector(".poster-plate");
+  const base = document.querySelector(".sequence-base"), fallback = document.querySelector(".poster-plate");
   const S = window.__gpx = { rows: [], stop: false, fingers: 0, gestures: [], legacyWidth: 0, paints: [] };
   const pts = new Set();
   const touch = (e) => e.pointerType === "touch";
@@ -124,6 +131,12 @@ function sampler({ tiers, plate }) {
     const r = frame.getBoundingClientRect();
     const z = m.a || 1, cx = -m.e / (z * r.width), cy = -m.f / (z * r.height), cw = 1 / z, ch = 1 / z;
     const paint = window.__QUACKLES_PAINT__ || null;
+    const detail = document.querySelector(".sequence-detail"), underlay = document.querySelector(".sequence-underlay"), floorEl = document.querySelector(".sequence-floor");
+    let misplaced = 0;
+    if (paint && visible(detail) && detail.dataset.crop && paint.detail.rects.length) {
+      const [x, y, w, h] = detail.dataset.crop.split(",").map(Number), e = 1e-6;
+      misplaced = paint.detail.rects.some((q) => q[0] < x - e || q[1] < y - e || q[2] > x + w + e || q[3] > y + h + e) ? 1 : 0;
+    }
     const d = layerOf(paint, "detail", detail, r, m), u = underlay ? layerOf(paint, "underlay", underlay, r, m) : null, f = floorEl ? layerOf(paint, "floor", floorEl, r, m) : null;
     const baseOn = visible(base), fallbackOn = !!fallback && getComputedStyle(fallback).visibility !== "hidden";
     // Required: the device pixels across the image at this zoom, capped at the top tier (what the pyramid can give).
@@ -137,7 +150,7 @@ function sampler({ tiers, plate }) {
       if (edge && tier < need / 4.5) deepEdge++;
       if (!res) { plateAny++; if (edge) plateEdge++; }
     }
-    S.rows.push([t, S.fingers, z, below / n, plateEdge, plateAny / n, need, minTier, baseOn || fallbackOn || visible(detail) ? 0 : 1, !baseOn && fallbackOn && (painted ||= window.__QUACKLES_SEQUENCE__.getState().drawCount > 0) ? 1 : 0, window.__QUACKLES_INSPECTION__.getState().cameraMoving ? 1 : 0, m.e, m.f, deepEdge]);
+    S.rows.push([t, S.fingers, z, below / n, plateEdge, plateAny / n, need, minTier, baseOn || fallbackOn || visible(detail) ? 0 : 1, !baseOn && fallbackOn && (painted ||= window.__QUACKLES_SEQUENCE__.getState().drawCount > 0) ? 1 : 0, window.__QUACKLES_INSPECTION__.getState().cameraMoving ? 1 : 0, m.e, m.f, deepEdge, misplaced]);
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
@@ -215,7 +228,7 @@ async function runPass(browser, name) {
     if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: "" }).catch(() => {});
     await route.fulfill({ body: fs.readFileSync(file), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } }).catch(() => {});
   });
-  await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`);
+  await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/${QUERY}`);
   await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0, null, { timeout: 30000 });
   await page.waitForTimeout(8000); // idle warm-up after first paint (the owner idled ~25 s before the first touch)
   const frameBox = await page.evaluate(() => { const r = document.querySelector(".poster-frame").getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
@@ -236,13 +249,14 @@ async function runPass(browser, name) {
   }
   await page.waitForTimeout(3000);
   if (name === "throttled") await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
-  const data = await page.evaluate(() => { window.__gpx.stop = true; const s = window.__QUACKLES_SEQUENCE__.getState(); return { rows: window.__gpx.rows, paints: window.__gpx.paints, gestures: window.__gpx.gestures, end: s.cache, errors: s.errors, decodes: [...window.__gpxDecodes.values()], profile: s.profile, painted: !!window.__QUACKLES_PAINT__ }; });
+  const data = await page.evaluate(() => { window.__gpx.stop = true; const s = window.__QUACKLES_SEQUENCE__.getState(); return { rows: window.__gpx.rows, paints: window.__gpx.paints, gestures: window.__gpx.gestures, end: s.cache, errors: s.errors, decodes: [...window.__gpxDecodes.values()], profile: s.profile, painted: !!window.__QUACKLES_PAINT__, long: window.__gpxLong, refine: s.refine ?? null }; });
   await ctx.close();
   return analyse(name, data, fetched, checks.filter(Boolean), errors);
 }
 
 function analyse(name, data, fetched, checks, pageErrors) {
-  const rows = data.rows.map(([t, n, z, below, plateEdge, plateAny, need, minTier, blank, blue, moving, tx, ty, deepEdge]) => ({ t, n, z, below, plateEdge, plateAny, need, minTier, blank, blue, moving, tx, ty, deepEdge }));
+  const rows = data.rows.map(([t, n, z, below, plateEdge, plateAny, need, minTier, blank, blue, moving, tx, ty, deepEdge, misplaced]) => ({ t, n, z, below, plateEdge, plateAny, need, minTier, blank, blue, moving, tx, ty, deepEdge, misplaced }));
+  const t0 = rows[0]?.t ?? 0, longs = (data.long || []).filter(([t]) => t >= t0).map(([, d]) => d);
   const zoomed = rows.filter((r) => r.z > 1.05);
   const under = (r) => r.below > 0.05;
   const hq = (r) => r.below === 0;
@@ -318,7 +332,9 @@ function analyse(name, data, fetched, checks, pageErrors) {
     plateEdgeFrames: zoomed.filter((r) => r.plateEdge > 0).length,
     plateOnlyFrames: zoomed.filter((r) => r.plateAny === 1).length,
     edgeDeepSoftFrames: zoomed.filter((r) => r.deepEdge > 0).length,
-    blankFrames: rows.filter((r) => r.blank).length, blueFrames: rows.filter((r) => r.blue).length,
+    blankFrames: rows.filter((r) => r.blank).length, blueFrames: rows.filter((r) => r.blue).length, staleFrames: rows.filter((r) => r.misplaced).length,
+    longTasks: { n: longs.length, maxMs: longs.length ? Math.round(Math.max(...longs)) : 0, totalMs: Math.round(longs.reduce((a, b) => a + b, 0)) },
+    refine: data.refine,
     thrash: {
       closedBitmaps: data.end.closedBitmaps, evictions: data.end.evictions ?? null, completedDecodes: data.end.completedDecodes, staleDiscard: data.end.staleDiscard,
       closedPerGestureP50: pct(perGesture.map((g) => g.closed), 0.5), closedPerGestureMax: pct(perGesture.map((g) => g.closed), 1),
@@ -352,6 +368,7 @@ const bad = [];
 for (const r of results) {
   if (r.pass === "retry") { if (r.hqMs == null) bad.push(`retry: a tile whose first request failed was not retried while the camera stayed still (under-resolved ${(r.finalUnder * 100).toFixed(0)}% after ${RETRY_WINDOW_MS / 1000} s)`); continue; }
   if (r.blankFrames) bad.push(`${r.pass}: ${r.blankFrames} blank frames`);
+  if (r.staleFrames) bad.push(`${r.pass}: ${r.staleFrames} frames show detail published for another placement`);
   if (r.blueFrames) bad.push(`${r.pass}: ${r.blueFrames} blue (fallback) frames`);
   if (r.pageErrors || r.errors || r.failures) bad.push(`${r.pass}: errors ${r.pageErrors}/${r.errors}, failures ${r.failures}`);
   if (r.reportMismatch) bad.push(`${r.pass}: painted-rect report disagrees with canvas pixels at ${r.reportMismatch} samples`);

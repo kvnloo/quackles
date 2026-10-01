@@ -64,6 +64,7 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
   }
 
   /** Hands the whole queue to the Worker (it paints in its own frames). Returns how many tiles were handed off. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- same call shape as TileSurface.drain
   drain(_deadline?: number) {
     const count = this.outgoing.length;
     if (count) this.post({ t: "queue", layer: this.layer, gen: this.gen, stamps: this.outgoing });
@@ -75,6 +76,7 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
   rects(): PaintedRect[] { return [...this.painted.values()]; }
 
   clear() {
+    if (!this.coverage && !this.shownCoverage && !this.painted.size) return; // already clear: no message
     this.outgoing = []; this.painted.clear(); this.coverage = null; this.backing = null; this.shownCoverage = null;
     this.post({ t: "clear", layer: this.layer, gen: ++this.gen });
   }
@@ -91,10 +93,10 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
   }
 
   /** A Worker publish. A flip places the new buffer and swaps both buffers' class + visibility in this one task. */
-  receive(message: Publish) {
+  receive(message: Publish): boolean {
     if (message.gen !== this.gen) {
       if (message.flip) this.post({ t: "ack", layer: this.layer, shown: this.shown });
-      return;
+      return false; // stale generation: nothing on screen changes
     }
     if (message.flip) {
       const next = this.elements[message.front], previous = this.front();
@@ -107,5 +109,6 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
     this.shownCoverage = message.coverage;
     this.painted = new Map(message.rects);
     this.onPublish();
+    return true;
   }
 }

@@ -5,12 +5,12 @@ export const LOCK_FADE_MS = 160;
 export function lockFadeMs(reducedMotion: boolean): number { return reducedMotion ? 0 : LOCK_FADE_MS; }
 
 /** Call BEFORE painting a fresh (previously hidden) detail canvas. */
-export function armLockFade(canvas: HTMLCanvasElement, reducedMotion: boolean) {
+export function armLockFade(canvas: HTMLElement, reducedMotion: boolean) {
   if (lockFadeMs(reducedMotion) === 0) { canvas.style.transition = "none"; canvas.style.opacity = "1"; return; }
   canvas.style.transition = "none"; canvas.style.opacity = "0";
 }
 /** Call AFTER painting it. */
-export function startLockFade(canvas: HTMLCanvasElement, reducedMotion: boolean) {
+export function startLockFade(canvas: HTMLElement, reducedMotion: boolean) {
   const ms = lockFadeMs(reducedMotion); if (ms === 0) return;
   void canvas.offsetWidth; // commit opacity:0 before transitioning
   canvas.style.transition = `opacity ${ms}ms ease-out`; canvas.style.opacity = "1";
