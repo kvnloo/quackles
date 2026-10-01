@@ -12,9 +12,12 @@ const browser = await chromium.launch({ executablePath: "/usr/bin/google-chrome-
 async function run(reduced) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: reduced ? "reduce" : "no-preference" }); const page = await ctx.newPage();
   await page.route("**/quackles-assets/**", async (route) => { const f = path.join(ASSETS, new URL(route.request().url()).pathname.replace(/^\/quackles-assets\//, "")); if (!fs.existsSync(f)) return route.fulfill({ status: 404, body: "" }); await route.fulfill({ body: fs.readFileSync(f), contentType: "image/webp", headers: { "access-control-allow-origin": "*" } }); });
-  await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0); await page.waitForTimeout(2200);
+  await page.goto(`http://127.0.0.1:${port}${process.env.BASE_PATH || ""}/${process.env.REFINE ? `?refine=${process.env.REFINE}` : ""}`); await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0); await page.waitForTimeout(2200);
   await page.evaluate(() => { const d = document.querySelector(".sequence-detail"); const f = window.__lf = { samples: [], stop: false, sawVisible: false, repaints: 0, lastOpacity: null }; window.addEventListener('quackles:detail-painted', () => { f.repaints++; });
-    const t0 = performance.now(); const tick = () => { const cs = getComputedStyle(d); const vis = cs.visibility === "visible"; const op = +cs.opacity;
+    // The shown detail buffer, re-queried each frame, and its EFFECTIVE opacity (itself x ancestors up to the camera): the
+    // RFC-002 worker path swaps two buffers and fades a wrapper; on the main path this equals the canvas opacity.
+    const effective = (el) => { let o = 1; for (let n = el; n && !n.classList?.contains("sequence-camera"); n = n.parentElement) o *= +getComputedStyle(n).opacity; return o; };
+    const t0 = performance.now(); const tick = () => { const d = document.querySelector(".sequence-detail"); const cs = getComputedStyle(d); const vis = cs.visibility === "visible"; const op = effective(d);
       if (vis) { f.samples.push([+(performance.now() - t0).toFixed(0), +op.toFixed(3)]); f.sawVisible = true; }
       if (!f.stop) requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
   await page.evaluate(() => window.__QUACKLES_INSPECTION__.setTarget(4, 0.44, 0.28));

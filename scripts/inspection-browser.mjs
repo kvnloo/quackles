@@ -101,7 +101,7 @@ const state = (page) =>
 async function open(context) {
   const page = await context.newPage();
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto(BASE, { waitUntil: "networkidle", timeout: 120000 });
+  await page.goto(process.env.REFINE ? `${BASE}/?refine=${process.env.REFINE}` : BASE, { waitUntil: "networkidle", timeout: 120000 }); // REFINE: RFC-002 A/B
   await page.waitForFunction(
     () =>
       window.__QUACKLES_SEQUENCE__?.getState().ready &&
