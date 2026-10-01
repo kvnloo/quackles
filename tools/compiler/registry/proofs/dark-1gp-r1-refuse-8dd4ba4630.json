@@ -1,0 +1,706 @@
+{
+ "schema": "quackles.compiler.proof/1",
+ "verdict": "REFUSE",
+ "reasons": [
+  "plate-vs-master: ['cell [0, 0] dE 41.281 > 10.0 (localized divergence, review)', 'cell [1, 0] dE 35.794 > 10.0 (localized divergence, review)', 'cell [2, 0] dE 17.373 > 10.0 (localized divergence, review)', 'cell [0, 1] dE 41.567 > 10.0 (localized divergence, review)', 'cell [1, 1] dE 26.012 > 10.0 (localized divergence, review)', 'cell [2, 1] dE 20.975 > 10.0 (localized divergence, review)', 'cell [0, 2] dE 30.688 > 10.0 (localized divergence, review)', 'cell [1, 2] dE 24.156 > 10.0 (localized divergence, review)', 'cell [2, 2] dE 31.316 > 10.0 (localized divergence, review)', 'cell [0, 3] dE 27.177 > 10.0 (localized divergence, review)', 'cell [1, 3] dE 20.627 > 10.0 (localized divergence, review)', 'cell [2, 3] dE 20.827 > 10.0 (localized divergence, review)']"
+ ],
+ "master": {
+  "id": "dark-1gp-r1",
+  "theme": "dark",
+  "family": "gp-1gp",
+  "kind": "chunked",
+  "source": "/mnt/zer0models/quackles-1gp/dark/chunks",
+  "width": 25820,
+  "height": 38730,
+  "sha256": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d",
+  "recipe": {
+   "id": "render_1gp.py"
+  },
+  "blend": {
+   "path": "/mnt/zer0models/home-offload/kvn/offload-2026-09-21/Documents-Codex/2026-09-16/c/work/calibration/quality-final-white.blend",
+   "sha256": "7b9f0b6dc09542b281d25d52129b6a9c892e8d9639da48403b98de2700e42421",
+   "present": true
+  },
+  "edits": null,
+  "renderer": {
+   "samples": 16,
+   "devices": [
+    "CPU:Intel Core i9-10900KF CPU @ 3.70GHz",
+    "OPTIX:NVIDIA GeForce RTX 3080 Ti"
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "kind": "plate",
+   "path": "@repo/public/preview-scene/sequence/cinematic-proof-v2/dark/p0000000-1024.webp",
+   "sha256": "d7501ed015ae4ed3733a785d587dc1ac8cfa8942e98ff1f3d1bb0711c62dc146",
+   "status": "claimed",
+   "recorded_sha256": "d7501ed015ae4ed3733a785d587dc1ac8cfa8942e98ff1f3d1bb0711c62dc146",
+   "url": null
+  },
+  {
+   "kind": "pyramid",
+   "path": "/mnt/zer0models/quackles-1gp/assets-repo/dark/p0000000/gp",
+   "sha256": "d3a9a16d292ef5475ea64abfcc16201c04a580df039264d7193ac74e60158ad4",
+   "status": "claimed",
+   "recorded_sha256": "d3a9a16d292ef5475ea64abfcc16201c04a580df039264d7193ac74e60158ad4",
+   "url": "/quackles-assets/dark/p0000000/gp"
+  }
+ ],
+ "contract": {
+  "plate_dE_max": 5.0,
+  "plate_abs_dL_max": 3.0,
+  "plate_shift_px_max": 1.0,
+  "plate_aspect_tol": 0.005,
+  "cell_dE_report": 10.0,
+  "level0_dE_max": 1.0,
+  "nest_dE_max": 2.5,
+  "nest_abs_dL_max": 1.0,
+  "nest_reduce": 4,
+  "nest_shift_px_max": 0.5,
+  "shift_min_luma_std": 4.0,
+  "compare_width": 384
+ },
+ "checks": [
+  {
+   "name": "master-integrity",
+   "pass": true,
+   "metrics": {
+    "sha256": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d"
+   },
+   "thresholds": {
+    "sha256": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d"
+   },
+   "detail": null
+  },
+  {
+   "name": "provenance",
+   "pass": true,
+   "metrics": {},
+   "thresholds": {},
+   "detail": null
+  },
+  {
+   "name": "one-family",
+   "pass": true,
+   "metrics": {
+    "masters": [
+     "dark-1gp-r1"
+    ]
+   },
+   "thresholds": {},
+   "detail": null
+  },
+  {
+   "name": "plate-vs-master",
+   "pass": false,
+   "metrics": {
+    "compare_size": [
+     384,
+     576
+    ],
+    "plate_size": [
+     1024,
+     1536
+    ],
+    "aspect_err": 0.0,
+    "full": {
+     "dE": 28.149,
+     "dL": -9.378,
+     "dRGB": [
+      -24.13,
+      -20.81,
+      -17.98
+     ],
+     "maxAbs": 195,
+     "shift_px": [
+      0.02,
+      0.01
+     ],
+     "edge_corr": 0.5358
+    },
+    "worst_cell": {
+     "cell": [
+      0,
+      1
+     ],
+     "dE": 41.567,
+     "dL": -41.537
+    },
+    "cells": [
+     {
+      "cell": [
+       0,
+       0
+      ],
+      "dE": 41.281,
+      "dL": -41.252
+     },
+     {
+      "cell": [
+       1,
+       0
+      ],
+      "dE": 35.794,
+      "dL": -35.533
+     },
+     {
+      "cell": [
+       2,
+       0
+      ],
+      "dE": 17.373,
+      "dL": -0.828
+     },
+     {
+      "cell": [
+       0,
+       1
+      ],
+      "dE": 41.567,
+      "dL": -41.537
+     },
+     {
+      "cell": [
+       1,
+       1
+      ],
+      "dE": 26.012,
+      "dL": -3.935
+     },
+     {
+      "cell": [
+       2,
+       1
+      ],
+      "dE": 20.975,
+      "dL": 0.603
+     },
+     {
+      "cell": [
+       0,
+       2
+      ],
+      "dE": 30.688,
+      "dL": -19.758
+     },
+     {
+      "cell": [
+       1,
+       2
+      ],
+      "dE": 24.156,
+      "dL": -4.983
+     },
+     {
+      "cell": [
+       2,
+       2
+      ],
+      "dE": 31.316,
+      "dL": -18.916
+     },
+     {
+      "cell": [
+       0,
+       3
+      ],
+      "dE": 27.177,
+      "dL": 18.507
+     },
+     {
+      "cell": [
+       1,
+       3
+      ],
+      "dE": 20.627,
+      "dL": 18.166
+     },
+     {
+      "cell": [
+       2,
+       3
+      ],
+      "dE": 20.827,
+      "dL": 16.927
+     }
+    ]
+   },
+   "thresholds": {
+    "plate_dE_max": 5.0,
+    "plate_abs_dL_max": 3.0,
+    "plate_shift_px_max": 1.0,
+    "plate_aspect_tol": 0.005
+   },
+   "detail": [
+    "cell [0, 0] dE 41.281 > 10.0 (localized divergence, review)",
+    "cell [1, 0] dE 35.794 > 10.0 (localized divergence, review)",
+    "cell [2, 0] dE 17.373 > 10.0 (localized divergence, review)",
+    "cell [0, 1] dE 41.567 > 10.0 (localized divergence, review)",
+    "cell [1, 1] dE 26.012 > 10.0 (localized divergence, review)",
+    "cell [2, 1] dE 20.975 > 10.0 (localized divergence, review)",
+    "cell [0, 2] dE 30.688 > 10.0 (localized divergence, review)",
+    "cell [1, 2] dE 24.156 > 10.0 (localized divergence, review)",
+    "cell [2, 2] dE 31.316 > 10.0 (localized divergence, review)",
+    "cell [0, 3] dE 27.177 > 10.0 (localized divergence, review)",
+    "cell [1, 3] dE 20.627 > 10.0 (localized divergence, review)",
+    "cell [2, 3] dE 20.827 > 10.0 (localized divergence, review)"
+   ]
+  },
+  {
+   "name": "pyramid-geometry",
+   "pass": true,
+   "metrics": {
+    "levels": [
+     [
+      25820,
+      38730
+     ],
+     [
+      12910,
+      19365
+     ],
+     [
+      6455,
+      9683
+     ],
+     [
+      3228,
+      4842
+     ],
+     [
+      1614,
+      2421
+     ]
+    ],
+    "tile": 512
+   },
+   "thresholds": {},
+   "detail": null
+  },
+  {
+   "name": "pyramid-level0",
+   "pass": true,
+   "metrics": {
+    "tiles": [
+     {
+      "tile": [
+       0,
+       0
+      ],
+      "dE": 0.0,
+      "dL": 0.0,
+      "maxAbs": 0
+     },
+     {
+      "tile": [
+       49,
+       74
+      ],
+      "dE": 0.0,
+      "dL": 0.0,
+      "maxAbs": 0
+     },
+     {
+      "tile": [
+       25,
+       37
+      ],
+      "dE": 0.0,
+      "dL": 0.0,
+      "maxAbs": 0
+     },
+     {
+      "tile": [
+       46,
+       25
+      ],
+      "dE": 0.0,
+      "dL": 0.0,
+      "maxAbs": 0
+     },
+     {
+      "tile": [
+       40,
+       43
+      ],
+      "dE": 0.0,
+      "dL": 0.0,
+      "maxAbs": 0
+     },
+     {
+      "tile": [
+       18,
+       62
+      ],
+      "dE": 0.0,
+      "dL": 0.0,
+      "maxAbs": 0
+     }
+    ],
+    "worst_dE": 0.0
+   },
+   "thresholds": {
+    "level0_dE_max": 1.0
+   },
+   "detail": null
+  },
+  {
+   "name": "pyramid-nesting",
+   "pass": true,
+   "metrics": {
+    "pairs": [
+     {
+      "levels": [
+       0,
+       1
+      ],
+      "pass": true,
+      "worst_dE": 1.085,
+      "worst_abs_dL": 0.061,
+      "median_shift_px": 0.01,
+      "tiles": [
+       {
+        "tile": [
+         3,
+         22
+        ],
+        "dE": 0.622,
+        "dL": 0.061,
+        "shift_px": [
+         -0.01,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         13,
+         15
+        ],
+        "dE": 0.536,
+        "dL": -0.029,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         0,
+         22
+        ],
+        "dE": 0.799,
+        "dL": 0.044,
+        "shift_px": [
+         -0.01,
+         -0.02
+        ]
+       },
+       {
+        "tile": [
+         19,
+         18
+        ],
+        "dE": 0.683,
+        "dL": -0.038,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         12,
+         13
+        ],
+        "dE": 0.892,
+        "dL": 0.052,
+        "shift_px": [
+         0.01,
+         0.01
+        ]
+       },
+       {
+        "tile": [
+         10,
+         9
+        ],
+        "dE": 1.085,
+        "dL": 0.026,
+        "shift_px": [
+         0.01,
+         0.0
+        ]
+       }
+      ]
+     },
+     {
+      "levels": [
+       1,
+       2
+      ],
+      "pass": true,
+      "worst_dE": 0.516,
+      "worst_abs_dL": 0.034,
+      "median_shift_px": 0.01,
+      "tiles": [
+       {
+        "tile": [
+         9,
+         10
+        ],
+        "dE": 0.399,
+        "dL": 0.014,
+        "shift_px": [
+         -0.01,
+         -0.01
+        ]
+       },
+       {
+        "tile": [
+         8,
+         8
+        ],
+        "dE": 0.398,
+        "dL": 0.011,
+        "shift_px": [
+         0.01,
+         0.01
+        ]
+       },
+       {
+        "tile": [
+         8,
+         7
+        ],
+        "dE": 0.252,
+        "dL": 0.003,
+        "shift_px": [
+         0.02,
+         -0.03
+        ]
+       },
+       {
+        "tile": [
+         7,
+         6
+        ],
+        "dE": 0.516,
+        "dL": 0.034,
+        "shift_px": [
+         -0.01,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         7,
+         8
+        ],
+        "dE": 0.396,
+        "dL": 0.014,
+        "shift_px": [
+         0.01,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         10,
+         9
+        ],
+        "dE": 0.464,
+        "dL": 0.018,
+        "shift_px": [
+         0.04,
+         -0.01
+        ]
+       }
+      ]
+     },
+     {
+      "levels": [
+       2,
+       3
+      ],
+      "pass": true,
+      "worst_dE": 0.878,
+      "worst_abs_dL": 0.038,
+      "median_shift_px": 0.0,
+      "tiles": [
+       {
+        "tile": [
+         3,
+         4
+        ],
+        "dE": 0.472,
+        "dL": 0.02,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         0,
+         5
+        ],
+        "dE": 0.245,
+        "dL": 0.011,
+        "shift_px": [
+         0.02,
+         0.02
+        ]
+       },
+       {
+        "tile": [
+         4,
+         3
+        ],
+        "dE": 0.49,
+        "dL": 0.024,
+        "shift_px": [
+         0.03,
+         0.01
+        ]
+       },
+       {
+        "tile": [
+         3,
+         6
+        ],
+        "dE": 0.542,
+        "dL": 0.03,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         3,
+         3
+        ],
+        "dE": 0.573,
+        "dL": 0.038,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         5,
+         4
+        ],
+        "dE": 0.878,
+        "dL": 0.028,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       }
+      ]
+     },
+     {
+      "levels": [
+       3,
+       4
+      ],
+      "pass": true,
+      "worst_dE": 0.764,
+      "worst_abs_dL": 0.047,
+      "median_shift_px": 0.0,
+      "tiles": [
+       {
+        "tile": [
+         1,
+         1
+        ],
+        "dE": 0.611,
+        "dL": 0.046,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         2,
+         2
+        ],
+        "dE": 0.612,
+        "dL": 0.028,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         1,
+         2
+        ],
+        "dE": 0.459,
+        "dL": 0.024,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         2,
+         3
+        ],
+        "dE": 0.615,
+        "dL": 0.031,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         2,
+         1
+        ],
+        "dE": 0.764,
+        "dL": 0.047,
+        "shift_px": [
+         0.01,
+         0.0
+        ]
+       },
+       {
+        "tile": [
+         2,
+         0
+        ],
+        "dE": 0.584,
+        "dL": 0.017,
+        "shift_px": [
+         0.0,
+         0.0
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "thresholds": {
+    "nest_dE_max": 2.5,
+    "nest_abs_dL_max": 1.0,
+    "nest_reduce": 4,
+    "nest_shift_px_max": 0.5
+   },
+   "detail": null
+  }
+ ],
+ "tool": {
+  "git_head": "2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2",
+  "name": "tools/compiler"
+ },
+ "created_at": "2026-10-01T00:26:13+00:00"
+}

@@ -1,0 +1,330 @@
+{
+ "schema": "quackles.compiler.master/1",
+ "id": "dark-1gp-r1",
+ "theme": "dark",
+ "family": "gp-1gp",
+ "kind": "chunked",
+ "source": "/mnt/zer0models/quackles-1gp/dark/chunks",
+ "width": 25820,
+ "height": 38730,
+ "megapixels": 1000.009,
+ "sha256": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d",
+ "chunks": [
+  {
+   "name": "c0_0.png",
+   "col": 0,
+   "row": 0,
+   "x": 0,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "ad3f7296f26bc37fb89d02612937404a8201a11dca3bfa4164d15bad9a4b4ca0"
+  },
+  {
+   "name": "c1_0.png",
+   "col": 1,
+   "row": 0,
+   "x": 5164,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "d390aa5fd1fa4d95e524b81d35c8624d068874d93bee2f8ad00329ecd5525736"
+  },
+  {
+   "name": "c2_0.png",
+   "col": 2,
+   "row": 0,
+   "x": 10328,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "37c5ca3db6f902c8ec0abd6faebab20721cfa5ae5bf7352c44f126a2c3062f99"
+  },
+  {
+   "name": "c3_0.png",
+   "col": 3,
+   "row": 0,
+   "x": 15492,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "af0604d9ad64d085f287867c1debe0714eafefc7dc9067af5540912d44fe0dfa"
+  },
+  {
+   "name": "c4_0.png",
+   "col": 4,
+   "row": 0,
+   "x": 20656,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "b008a603549b72b51f097fa4e732b7275947d4216a0fcbf74f0491e9e9fa82e4"
+  },
+  {
+   "name": "c0_1.png",
+   "col": 0,
+   "row": 1,
+   "x": 0,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "0012eacb70a78b94c6012f4d016ffae5be9baa795987da2d6c5cb8bb7d5d6270"
+  },
+  {
+   "name": "c1_1.png",
+   "col": 1,
+   "row": 1,
+   "x": 5164,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "85a317edde3016e094044889d1472ac25249e76fd428fa0b3f6345ae60869352"
+  },
+  {
+   "name": "c2_1.png",
+   "col": 2,
+   "row": 1,
+   "x": 10328,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "5a28f85a19ebc5f4d431a5c41eb50c529dbb393cc8526ed7dbaf32909175a7d2"
+  },
+  {
+   "name": "c3_1.png",
+   "col": 3,
+   "row": 1,
+   "x": 15492,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "0d8b5e3e9d1856793f71f3110f0e241e7b72dcf16d6a0d39fc655c329b906f00"
+  },
+  {
+   "name": "c4_1.png",
+   "col": 4,
+   "row": 1,
+   "x": 20656,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "9d30d08e30e3630311404fd18bfb9f1a803b08f7f8548b2ee2e4fee914108a53"
+  },
+  {
+   "name": "c0_2.png",
+   "col": 0,
+   "row": 2,
+   "x": 0,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "fd7c0d10d0bafe40b7d04c5eb301cd4bf39bfb774f31cd387a5f9ecec74b72ee"
+  },
+  {
+   "name": "c1_2.png",
+   "col": 1,
+   "row": 2,
+   "x": 5164,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "a4e2a94b43e46714fd456c8d08caf4a37ee0c203ff1ededf4007a4dd3df4cda8"
+  },
+  {
+   "name": "c2_2.png",
+   "col": 2,
+   "row": 2,
+   "x": 10328,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "0c34a1d2e4b14bac2a96696fd31d7e07d83387a826b576b9db0344c471a90270"
+  },
+  {
+   "name": "c3_2.png",
+   "col": 3,
+   "row": 2,
+   "x": 15492,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "dd4175d10a6b5ed2d081aa5f6321569a695d99ca59566c015053102c79b7ba00"
+  },
+  {
+   "name": "c4_2.png",
+   "col": 4,
+   "row": 2,
+   "x": 20656,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "3ee2dbaa400c9185d9cf06fc2a59b189ae5566cd486fbce882da1efb8ad7ad67"
+  },
+  {
+   "name": "c0_3.png",
+   "col": 0,
+   "row": 3,
+   "x": 0,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "ef467257a2066a2027cb770f8efd6c461755c27332d87cbfdade249074c3c5f2"
+  },
+  {
+   "name": "c1_3.png",
+   "col": 1,
+   "row": 3,
+   "x": 5164,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "34482aefe11dc27ded61a14dacad4a1d5b9fc9ffe9118d3122834520943e4b82"
+  },
+  {
+   "name": "c2_3.png",
+   "col": 2,
+   "row": 3,
+   "x": 10328,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "53de56cb1de600781afd2766c4a73d422a32b1b276b26d186572d3afc79062ff"
+  },
+  {
+   "name": "c3_3.png",
+   "col": 3,
+   "row": 3,
+   "x": 15492,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "9003a4551c6f6b38f0db2c2efae35662250e34b717fb824808e0b8d2a2038db0"
+  },
+  {
+   "name": "c4_3.png",
+   "col": 4,
+   "row": 3,
+   "x": 20656,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "73a43f12300340b7f2ababa7c043485f74cab332a4a7cb41281a271db77ee779"
+  },
+  {
+   "name": "c0_4.png",
+   "col": 0,
+   "row": 4,
+   "x": 0,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "f53c5112b6e33ae6dd2003c905c99a9c25d4789d6a5ffbc10be49d21dbdeeb89"
+  },
+  {
+   "name": "c1_4.png",
+   "col": 1,
+   "row": 4,
+   "x": 5164,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "415ee7c28f3cfb0ec41daffbc284c26e20171efc2cc6ded2b7043c40ce371971"
+  },
+  {
+   "name": "c2_4.png",
+   "col": 2,
+   "row": 4,
+   "x": 10328,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "31eb1cbcd2ac16f0d0e3cdd32e31b64088807813673e267530e019817a11bf88"
+  },
+  {
+   "name": "c3_4.png",
+   "col": 3,
+   "row": 4,
+   "x": 15492,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "b5f69064992361f992e7a6a01885f75df9ba2f5e5d5205c4f2c046df0bb0df9d"
+  },
+  {
+   "name": "c4_4.png",
+   "col": 4,
+   "row": 4,
+   "x": 20656,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "9b6842eb22a0d65642bf4cc63bcc8cc58de1dc1d33ac9d340825f86409c45574"
+  }
+ ],
+ "recipe": {
+  "id": "render_1gp.py"
+ },
+ "blend": {
+  "path": "/mnt/zer0models/home-offload/kvn/offload-2026-09-21/Documents-Codex/2026-09-16/c/work/calibration/quality-final-white.blend",
+  "sha256": "7b9f0b6dc09542b281d25d52129b6a9c892e8d9639da48403b98de2700e42421",
+  "present": true
+ },
+ "edits": null,
+ "renderer": {
+  "samples": 16,
+  "devices": [
+   "CPU:Intel Core i9-10900KF CPU @ 3.70GHz",
+   "OPTIX:NVIDIA GeForce RTX 3080 Ti"
+  ]
+ },
+ "notes": "Historical 1GP render (quality-final-* studio scene, not the theme's cinematic plate scene).",
+ "registered_at": "2026-10-01T00:26:05+00:00",
+ "derivatives": [
+  {
+   "kind": "plate",
+   "status": "claimed",
+   "path": "@repo/public/preview-scene/sequence/cinematic-proof-v2/dark/p0000000-1024.webp",
+   "url": null,
+   "width": 1024,
+   "height": 1536,
+   "sha256": "d7501ed015ae4ed3733a785d587dc1ac8cfa8942e98ff1f3d1bb0711c62dc146",
+   "master_id": "dark-1gp-r1",
+   "parent": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d",
+   "recorded_at": "2026-10-01T00:26:05+00:00"
+  },
+  {
+   "kind": "pyramid",
+   "status": "claimed",
+   "path": "/mnt/zer0models/quackles-1gp/assets-repo/dark/p0000000/gp",
+   "url": "/quackles-assets/dark/p0000000/gp",
+   "sha256": "d3a9a16d292ef5475ea64abfcc16201c04a580df039264d7193ac74e60158ad4",
+   "files": 5201,
+   "tileSize": 512,
+   "levels": [
+    [
+     25820,
+     38730
+    ],
+    [
+     12910,
+     19365
+    ],
+    [
+     6455,
+     9683
+    ],
+    [
+     3228,
+     4842
+    ],
+    [
+     1614,
+     2421
+    ]
+   ],
+   "master_id": "dark-1gp-r1",
+   "parent": "a6cfb2f24ed42077c7ed6ad760447052cf2ea917aa9b6d59c3255098dcdb5e0d",
+   "recorded_at": "2026-10-01T00:26:06+00:00"
+  }
+ ]
+}

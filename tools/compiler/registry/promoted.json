@@ -1,0 +1,100 @@
+{
+ "blue": {
+  "derivatives": [
+   {
+    "height": 1536,
+    "kind": "plate",
+    "levels": null,
+    "path": "@repo/public/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp",
+    "sha256": "05dbf7c61873d604016c867172912e9409976c0ed86634f32cfe739e309c3769",
+    "tileSize": null,
+    "url": "cinematic-proof-v2/blue/p0000000-1024.webp",
+    "width": 1024
+   },
+   {
+    "height": null,
+    "kind": "pyramid",
+    "levels": [
+     [
+      11584,
+      17376
+     ],
+     [
+      5792,
+      8688
+     ],
+     [
+      2896,
+      4344
+     ],
+     [
+      1448,
+      2172
+     ]
+    ],
+    "path": "/mnt/zer0models/quackles-1gp/assets-repo/blue/p0000000",
+    "sha256": "04a6e691b4c896d1e3c7f34f35b3230c0947f5e3f6be7a2ee3181a7abc0af714",
+    "tileSize": 512,
+    "url": "/quackles-assets/blue/p0000000",
+    "width": null
+   }
+  ],
+  "family": "legacy-201mp",
+  "master_id": "blue-201mp",
+  "master_sha256": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
+  "promoted_at": "2026-10-01T00:26:22+00:00",
+  "proof": "@repo/tools/compiler/registry/proofs/blue-201mp-accept-f17b72170a.json",
+  "proof_sha256": "997d537488acaf4f47b68bf8fea67e9e0fd734efc81222a5afc5b7a6558051ee"
+ },
+ "mushroom": {
+  "derivatives": [
+   {
+    "height": 1152,
+    "kind": "plate",
+    "levels": null,
+    "path": "@repo/public/preview-scene/sequence/hidden/night-moss.png",
+    "sha256": "9c1f10a930379e3233b7b8e15647fead795593410ee181652c1d9569fddcad8f",
+    "tileSize": null,
+    "url": "hidden/night-moss.png",
+    "width": 768
+   },
+   {
+    "height": null,
+    "kind": "pyramid",
+    "levels": [
+     [
+      25820,
+      38730
+     ],
+     [
+      12910,
+      19365
+     ],
+     [
+      6455,
+      9683
+     ],
+     [
+      3228,
+      4842
+     ],
+     [
+      1614,
+      2421
+     ]
+    ],
+    "path": "/mnt/zer0models/quackles-1gp/assets-repo/mushroom/p0000000/gp",
+    "sha256": "d08ab98f7239bf77877c5b4a60bb5ea04c0bd018a0a8c5f9aef86d9470b36935",
+    "tileSize": 512,
+    "url": "/quackles-assets/mushroom/p0000000/gp",
+    "width": null
+   }
+  ],
+  "family": "gp-1gp",
+  "master_id": "mushroom-1gp-r1",
+  "master_sha256": "9be1cdcf76f58619001fd1284d95d4a107b7aa4d561d23531fb925f68fcb1db6",
+  "promoted_at": "2026-10-01T00:26:22+00:00",
+  "proof": "@repo/tools/compiler/registry/proofs/mushroom-1gp-r1-accept-59477c0042.json",
+  "proof_sha256": "bd4fc757060154b5249cc044e76acf5d17182b9aec95284957081ae4f0c99342"
+ }
+}

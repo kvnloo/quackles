@@ -1,0 +1,80 @@
+{
+ "schema": "quackles.compiler.master/1",
+ "id": "blue-201mp",
+ "theme": "blue",
+ "family": "legacy-201mp",
+ "kind": "single",
+ "source": "/mnt/zer0models/quackles-200mp/blue-p0-200mp.png",
+ "width": 11584,
+ "height": 17376,
+ "megapixels": 201.284,
+ "sha256": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
+ "chunks": null,
+ "recipe": {
+  "id": "blender/render_blue_200mp.py@72b0786"
+ },
+ "blend": {
+  "path": "/mnt/zer0models/home-offload/kvn/offload-2026-09-21/Documents-Codex/2026-09-16/c/work/calibration/quality-final-cobalt.blend",
+  "sha256": "2e4535af8943c264c9834e05e15bf07b20c1dfe9ab2a2dd9195001d4c8ca706e",
+  "present": true
+ },
+ "edits": null,
+ "renderer": {
+  "engine": "CYCLES",
+  "device": "GPU+CPU",
+  "devices": [
+   "CPU:Intel Core i9-10900KF CPU @ 3.70GHz",
+   "OPTIX:NVIDIA GeForce RTX 3080 Ti"
+  ],
+  "samples": 16,
+  "tiles": "2x2-crop",
+  "seconds": 1730.0895943420473,
+  "robot_mesh_hash": "a81d06107f23d84afb65f99403b8bea27f82df697ac94a8e47ac16258820b38a"
+ },
+ "notes": "Accepted Blue control (DECISIONS D1/D2). Rendered as 2x2 crops, stitched.",
+ "registered_at": "2026-10-01T00:25:28+00:00",
+ "derivatives": [
+  {
+   "kind": "plate",
+   "status": "claimed",
+   "path": "@repo/public/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp",
+   "url": "cinematic-proof-v2/blue/p0000000-1024.webp",
+   "width": 1024,
+   "height": 1536,
+   "sha256": "05dbf7c61873d604016c867172912e9409976c0ed86634f32cfe739e309c3769",
+   "master_id": "blue-201mp",
+   "parent": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
+   "recorded_at": "2026-10-01T00:25:28+00:00"
+  },
+  {
+   "kind": "pyramid",
+   "status": "claimed",
+   "path": "/mnt/zer0models/quackles-1gp/assets-repo/blue/p0000000",
+   "url": "/quackles-assets/blue/p0000000",
+   "sha256": "04a6e691b4c896d1e3c7f34f35b3230c0947f5e3f6be7a2ee3181a7abc0af714",
+   "files": 1055,
+   "tileSize": 512,
+   "levels": [
+    [
+     11584,
+     17376
+    ],
+    [
+     5792,
+     8688
+    ],
+    [
+     2896,
+     4344
+    ],
+    [
+     1448,
+     2172
+    ]
+   ],
+   "master_id": "blue-201mp",
+   "parent": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
+   "recorded_at": "2026-10-01T00:25:28+00:00"
+  }
+ ]
+}

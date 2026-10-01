@@ -1,0 +1,330 @@
+{
+ "schema": "quackles.compiler.master/1",
+ "id": "mushroom-1gp-r1",
+ "theme": "mushroom",
+ "family": "gp-1gp",
+ "kind": "chunked",
+ "source": "/mnt/zer0models/quackles-1gp/mushroom/chunks",
+ "width": 25820,
+ "height": 38730,
+ "megapixels": 1000.009,
+ "sha256": "9be1cdcf76f58619001fd1284d95d4a107b7aa4d561d23531fb925f68fcb1db6",
+ "chunks": [
+  {
+   "name": "c0_0.png",
+   "col": 0,
+   "row": 0,
+   "x": 0,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "87911d52a85793f5bf27dd01ac5fa52e95271dd8322f23eb1b4db4f4ec2d175b"
+  },
+  {
+   "name": "c1_0.png",
+   "col": 1,
+   "row": 0,
+   "x": 5164,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "40e1409c0053440ae313f90d5f77b66cbd25e08045de1d48b46cf84f6fbacf56"
+  },
+  {
+   "name": "c2_0.png",
+   "col": 2,
+   "row": 0,
+   "x": 10328,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "0fbddff872beacf374e728861c25b40b4f99b8e3dfa36fbc46350f949f7bf6c8"
+  },
+  {
+   "name": "c3_0.png",
+   "col": 3,
+   "row": 0,
+   "x": 15492,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "563d970a313a9cd1480c8b5fbd1b96b629aaeeff741a5e922e8c3a473fb37435"
+  },
+  {
+   "name": "c4_0.png",
+   "col": 4,
+   "row": 0,
+   "x": 20656,
+   "y": 0,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "af3f52a6180cd16959ec5f0e0c70f70764a3c46e91efb1f63f71e0a50795281f"
+  },
+  {
+   "name": "c0_1.png",
+   "col": 0,
+   "row": 1,
+   "x": 0,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "8bd9ca649f0b5d6c5c8d59c0a2b16aada29494517a1e818a665e68ce3e20e84d"
+  },
+  {
+   "name": "c1_1.png",
+   "col": 1,
+   "row": 1,
+   "x": 5164,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "f61ad2e8703be7dcc9722e8d4c528746ddea3ad2b566b4b2248b302f76756df0"
+  },
+  {
+   "name": "c2_1.png",
+   "col": 2,
+   "row": 1,
+   "x": 10328,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "6276486c6d9eb89391815a44607ee46f0e34c43f7413e53dd4c893e01562cc5b"
+  },
+  {
+   "name": "c3_1.png",
+   "col": 3,
+   "row": 1,
+   "x": 15492,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "9caf3536bf05a9c7ddecda13acda724a5c0f4f996891a4194109b567c357d3f2"
+  },
+  {
+   "name": "c4_1.png",
+   "col": 4,
+   "row": 1,
+   "x": 20656,
+   "y": 7746,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "bc27c40d4e3448eba2fc1ecf52492c9a45f9fab68f25365a1cb65c3eb17d6a4c"
+  },
+  {
+   "name": "c0_2.png",
+   "col": 0,
+   "row": 2,
+   "x": 0,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "3e70e2e51d38c48b05779e0646f0799e21a8eb5e71f40d9e6fba0936e76c52fe"
+  },
+  {
+   "name": "c1_2.png",
+   "col": 1,
+   "row": 2,
+   "x": 5164,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "ef128014eb6f0154bc20f166401580a68dbc242a9b17588f010ef0be0eb60947"
+  },
+  {
+   "name": "c2_2.png",
+   "col": 2,
+   "row": 2,
+   "x": 10328,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "84cdc2c2eb4c16176810a19022f66ae8493df25087e81cf608b8a0272f903d5b"
+  },
+  {
+   "name": "c3_2.png",
+   "col": 3,
+   "row": 2,
+   "x": 15492,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "d884568500f6318ba6c9dee67d5e6ab4228f05c8dddeb9f4d3ab5cdaf65f27b0"
+  },
+  {
+   "name": "c4_2.png",
+   "col": 4,
+   "row": 2,
+   "x": 20656,
+   "y": 15492,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "8d828544f0e102e979e79e4e8fd7beb97f161f62c6406374c07cd5e33095b8d2"
+  },
+  {
+   "name": "c0_3.png",
+   "col": 0,
+   "row": 3,
+   "x": 0,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "2fac5e9b8c7a62dbf341cbc4b7312a015c5f47d553801ebd4127f29da4f43cda"
+  },
+  {
+   "name": "c1_3.png",
+   "col": 1,
+   "row": 3,
+   "x": 5164,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "ac7307debe68e70a28dec51d101119f74e18a574dbbe2f62b3b8f6256f68d88e"
+  },
+  {
+   "name": "c2_3.png",
+   "col": 2,
+   "row": 3,
+   "x": 10328,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "9e6268608b0f2a6768310536f7bd863f95fba66a2608784b4ed972303c46a71d"
+  },
+  {
+   "name": "c3_3.png",
+   "col": 3,
+   "row": 3,
+   "x": 15492,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "1d2b29d0661ebb689840f1778da21b626fa388c20d0d1a1fc123b00e38de3425"
+  },
+  {
+   "name": "c4_3.png",
+   "col": 4,
+   "row": 3,
+   "x": 20656,
+   "y": 23238,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "90a8df89e8d1187e2e6c62469ffa284baf2a08187f9cc6921ebb58976fcb0152"
+  },
+  {
+   "name": "c0_4.png",
+   "col": 0,
+   "row": 4,
+   "x": 0,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "03059e6218b053b2ff61158fc74f1c55d950004eaa7181357ed27517851022a2"
+  },
+  {
+   "name": "c1_4.png",
+   "col": 1,
+   "row": 4,
+   "x": 5164,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "eb79509ddad32c42d376fd088896d8bbe969e993a11c3ef54cde901cebf686f3"
+  },
+  {
+   "name": "c2_4.png",
+   "col": 2,
+   "row": 4,
+   "x": 10328,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "f124c8c6e991769e44176d62e0e98da706b3eb6941053764ac43b10856f8f5e4"
+  },
+  {
+   "name": "c3_4.png",
+   "col": 3,
+   "row": 4,
+   "x": 15492,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "d4bfb5d46f207eda9c23aefbce07b97f520c216e45901058ab9193ca1c0dd694"
+  },
+  {
+   "name": "c4_4.png",
+   "col": 4,
+   "row": 4,
+   "x": 20656,
+   "y": 30984,
+   "w": 5164,
+   "h": 7746,
+   "sha256": "4d685ef49d4428ae1c923d5e73d18167e69f7c8c221cc9d8c86cc833a511b200"
+  }
+ ],
+ "recipe": {
+  "id": "render_1gp.py"
+ },
+ "blend": {
+  "path": "/mnt/zer0models/project-artifacts/quackles/night-mushroom-rsi/rounds/r03/scene.blend",
+  "sha256": "fcdddb49f3baa23f57b4c738d4c9efec063b8206fe30eb593a2a443b411b6a84",
+  "present": true
+ },
+ "edits": null,
+ "renderer": {
+  "samples": 16,
+  "devices": [
+   "CPU:Intel Core i9-10900KF CPU @ 3.70GHz",
+   "OPTIX:NVIDIA GeForce RTX 3080 Ti"
+  ]
+ },
+ "notes": "Hidden egg scene. Audited against its authored plate; DECISIONS D8 open.",
+ "registered_at": "2026-10-01T00:25:35+00:00",
+ "derivatives": [
+  {
+   "kind": "plate",
+   "status": "claimed",
+   "path": "@repo/public/preview-scene/sequence/hidden/night-moss.png",
+   "url": "hidden/night-moss.png",
+   "width": 768,
+   "height": 1152,
+   "sha256": "9c1f10a930379e3233b7b8e15647fead795593410ee181652c1d9569fddcad8f",
+   "master_id": "mushroom-1gp-r1",
+   "parent": "9be1cdcf76f58619001fd1284d95d4a107b7aa4d561d23531fb925f68fcb1db6",
+   "recorded_at": "2026-10-01T00:25:35+00:00"
+  },
+  {
+   "kind": "pyramid",
+   "status": "claimed",
+   "path": "/mnt/zer0models/quackles-1gp/assets-repo/mushroom/p0000000/gp",
+   "url": "/quackles-assets/mushroom/p0000000/gp",
+   "sha256": "d08ab98f7239bf77877c5b4a60bb5ea04c0bd018a0a8c5f9aef86d9470b36935",
+   "files": 5201,
+   "tileSize": 512,
+   "levels": [
+    [
+     25820,
+     38730
+    ],
+    [
+     12910,
+     19365
+    ],
+    [
+     6455,
+     9683
+    ],
+    [
+     3228,
+     4842
+    ],
+    [
+     1614,
+     2421
+    ]
+   ],
+   "master_id": "mushroom-1gp-r1",
+   "parent": "9be1cdcf76f58619001fd1284d95d4a107b7aa4d561d23531fb925f68fcb1db6",
+   "recorded_at": "2026-10-01T00:25:36+00:00"
+  }
+ ]
+}

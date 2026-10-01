@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "fps": "node scripts/fps-harness.mjs",
     "test:scroll": "node scripts/scroll-perf.mjs",
+    "test:compiler": "python3 -m unittest discover -s tools/compiler/tests -p 'test_*.py' && python3 tools/compiler/compile.py check-manifest public/preview-scene/sequence/manifest.json --policy lib/sequence/inspection-source.ts --root public/preview-scene/sequence --hidden public/preview-scene/sequence/hidden-pyramids.json > /dev/null",
     "test": "npm run lint && npm run typecheck",
     "preview": "python3 -m http.server 43217 --bind 0.0.0.0 --directory out",
     "test:mobile": "node scripts/mobile-validation.mjs",
