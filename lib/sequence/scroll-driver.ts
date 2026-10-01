@@ -1,6 +1,7 @@
 "use client";
 
 import Lenis from "lenis";
+import { createFlingBoost } from "./fling-boost";
 import { storyAt } from "./pacing";
 
 type ScrollProgressListener = (progress: number) => void;
@@ -93,6 +94,8 @@ export function createScrollDriver({
   addEventListener("keydown", onDirect, { passive: true });
 
   publish(target);
+  // A/B preview/scroll-boost: touch fling momentum carries ~1.8x as far (the drag stays native).
+  const boost = reducedMotion ? null : createFlingBoost();
 
   return {
     resize() {
@@ -118,6 +121,7 @@ export function createScrollDriver({
       });
     },
     destroy() {
+      boost?.destroy();
       cancelAnimationFrame(raf);
       cancelAnimationFrame(restartRaf);
       removeEventListener("wheel", onWheel);
