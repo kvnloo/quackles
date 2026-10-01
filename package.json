@@ -26,6 +26,7 @@
     "test:wiring": "node scripts/wiring-contracts.mjs",
     "test:touch": "node scripts/touch-input-browser.mjs",
     "test:touch-feel": "node scripts/touch-feel-browser.mjs",
+    "test:blue-chrome": "node scripts/blue-chrome-browser.mjs",
     "test:scroll-state": "node scripts/scroll-state-browser.mjs",
     "test:ui-stability": "node scripts/ui-stability-browser.mjs",
     "test:profiles": "node scripts/profile-browser.mjs",
