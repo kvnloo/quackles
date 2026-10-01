@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { settleCamera, shouldKeepTicking } from "@/lib/sequence/camera-settle";
+import { isZoomedIn } from "@/lib/sequence/camera-zoom";
 import {
   advanceSpring,
   inspectionSnapshot,
@@ -247,7 +248,7 @@ export function HeroInspection() {
       const current = inspectionSnapshot();
       if (
         !current.active ||
-        current.targetZoom <= 1.02 ||
+        !isZoomedIn(current.targetZoom) ||
         event.pointerType === "touch" ||
         event.buttons ||
         !atHero()
@@ -406,7 +407,7 @@ export function HeroInspection() {
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (pointers.size === 1) {
         const current = inspectionSnapshot();
-        if (Math.max(current.zoom, current.targetZoom) > 1.02) {
+        if (isZoomedIn(Math.max(current.zoom, current.targetZoom))) {
           startPan(event.clientX, event.clientY);
           capture(event.pointerId);
         }
@@ -504,7 +505,7 @@ export function HeroInspection() {
         pinch = null;
         // 2 -> 1: the remaining finger keeps panning the camera it is holding.
         const current = inspectionSnapshot();
-        if (current.zoom > 1.02) {
+        if (isZoomedIn(current.zoom)) {
           const [rest] = tracked();
           startPan(rest.x, rest.y);
         } else {
@@ -516,7 +517,7 @@ export function HeroInspection() {
       if (pinch) {
         pinch = null;
         const current = inspectionSnapshot();
-        if (current.zoom <= 1.02) releaseHome();
+        if (!isZoomedIn(current.zoom)) releaseHome();
         else commitCamera({}, false, false);
         return;
       }
@@ -539,7 +540,7 @@ export function HeroInspection() {
         const coast = Math.hypot(flickX.velocity, flickY.velocity) > 0.05;
         const placed = {
           ...inspectionSnapshot(),
-          active: pan.zoom > 1.02,
+          active: isZoomedIn(pan.zoom),
           zoom: pan.zoom,
           targetZoom: pan.zoom,
           zoomVelocity: 0,

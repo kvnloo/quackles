@@ -15,6 +15,7 @@ import { requestedDetailWidth } from "@/lib/sequence/motion-quality";
 import { armLockFade, startLockFade } from "@/lib/sequence/lock-fade";
 import { applyPalette, configure, presentTheme, selectTheme, setProgress, snapshot, subscribe, themeIndices } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
+import { isZoomedIn } from "@/lib/sequence/camera-zoom";
 import { applyStoryProgress } from "./SequenceScroll";
 
 type FrameState = { frameId: string; frameProgress: number; progress: number; themes: ThemeId[]; mix: number; tierWidth: number; generation: number; urls: string[] };
@@ -41,8 +42,8 @@ export function SequencePlayer() {
     const profile = sequencePerfProfile();
     const eggAsset: ImageAsset = { url: assetPath("/preview-scene/sequence/hidden/night-moss.png"), width: 768, height: 1152 };
     let manifest: SequenceManifest | null = null, cache: FrameCache | null = null, mushroomPyramid: Variant[] = [];
-    let cancelled = false, pendingFrame = 0, settleTimer = 0, settled = true, generation = 0;
-    let inspectionSettleTimer = 0, inspectionSettled = true;
+    let cancelled = false, pendingFrame = 0, settleTimer = 0, generation = 0;
+    let inspectionSettleTimer = 0;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
     let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "", paintedInMotion = false;
@@ -138,7 +139,7 @@ export function SequencePlayer() {
       const inspecting = inspect.active || inspect.targetZoom > 1.0005;
       const plateWidth = beforeAssets[0].width;
       const desiredWidth = requestedDetailWidth({ moving, settledWidth, paintedWidth: state.detailWidth, plateWidth });
-      const detailEligible = inspecting || nativeCrop.scale > 1.02;
+      const detailEligible = inspecting || isZoomedIn(nativeCrop.scale);
       const nextIntent = `${span.before.id}/${span.after.id}/${span.mix}/${current.theme}/${desiredWidth}`;
       if (nextIntent !== intentKey) { intentKey = nextIntent; generation++; }
       state.requested = { frameId: frame.id, frameProgress: frame.progress, progress: current.progress, themes, mix, tierWidth: desiredWidth, generation, urls: assets.map((asset) => asset.url) };
@@ -312,8 +313,8 @@ export function SequencePlayer() {
       }
     }
     const changed = () => {
-      settled = false; window.clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(() => { settled = true; schedule(); }, 140);
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(schedule, 140);
       schedule();
     };
     const unsubscribe = subscribe(changed);
@@ -334,12 +335,8 @@ export function SequencePlayer() {
       if (nextKey === inspectionIntentKey) return;
       inspectionIntentKey = nextKey;
 
-      inspectionSettled = false;
       window.clearTimeout(inspectionSettleTimer);
-      inspectionSettleTimer = window.setTimeout(() => {
-        inspectionSettled = true;
-        schedule();
-      }, 32);
+      inspectionSettleTimer = window.setTimeout(schedule, 32);
       schedule();
     };
     inspectionChanged();
