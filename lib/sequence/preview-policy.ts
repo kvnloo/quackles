@@ -35,6 +35,15 @@ export function previewThemeIndices(preview: Preview): number[] {
   return THEME_IDS.flatMap((id, index) => (allowed.has(id) ? [index] : []));
 }
 
+/** The manifest's defaultTheme (public/preview-scene/sequence/manifest.json; preview-config-contracts keeps them equal). */
+export const MANIFEST_DEFAULT_THEME: ThemeId = "blue";
+/** The theme the page shows before the manifest arrives, chosen as configure() will choose it: the manifest default when the
+ * preview shows it, else its first scene. A single-scene preview never starts on (or requests) another scene. */
+export function previewStartTheme(preview: Preview): number {
+  const indices = previewThemeIndices(preview), preferred = THEME_IDS.indexOf(MANIFEST_DEFAULT_THEME);
+  return indices.includes(preferred) ? preferred : indices[0];
+}
+
 /** The hidden moss scene as a one-frame manifest: its plate + its pyramid under every theme id. */
 export function mushroomScene(manifest: SequenceManifest, plate: ImageAsset, pyramid: Variant[]): SequenceManifest {
   const base = manifest.frames.find((frame) => frame.id === "p0000000") ?? manifest.frames[0];

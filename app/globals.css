@@ -694,7 +694,8 @@ a:focus-visible {
     radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--paper) 86%, #fff 14%) 0, var(--paper) 34%, var(--paper-deep) 100%);
 }
 .experience-shell .poster-frame {
-  width: min(100vw, calc(100svh * 2 / 3));
+  /* Largest 2:3 contain-fit in the stage: full bleed on a portrait phone, height-bound and centred on wider windows. */
+  width: min(100%, calc(100svh * 2 / 3));
   max-width: none;
   aspect-ratio: 2 / 3;
   flex: none;
@@ -811,17 +812,12 @@ a:focus-visible {
     width: 100%;
     max-width: none;
   }
-  .experience-shell .poster-frame {
-    width: min(82vw, calc(100svh * 2 / 3));
-    height: auto;
-  }
 }
 @media (max-width: 699px) {
   .experience-shell .poster-stage {
     place-items: start center;
   }
   .experience-shell .poster-frame {
-    width: 100vw;
     box-shadow: none;
   }
   .scene-hud .theme-seg {

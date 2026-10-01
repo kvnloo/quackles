@@ -5,7 +5,7 @@ import { feelThemeStop } from "@/lib/feel/drive";
 import { selectLiveTheme } from "@/lib/sequence/live-theme";
 import { snapshot, subscribe } from "@/lib/sequence/store";
 import { PREVIEW } from "@/lib/preview";
-import { previewThemeIndices } from "@/lib/sequence/preview-policy";
+import { previewStartTheme, previewThemeIndices } from "@/lib/sequence/preview-policy";
 
 /** Buttons for the preview's scenes only (production: all five). Hidden for a single scene. */
 const INDICES = previewThemeIndices(PREVIEW);
@@ -22,7 +22,7 @@ function slotOf(theme: number) {
 }
 
 export function ThemeControl() {
-  const theme = useSyncExternalStore(subscribe, () => snapshot().presented, () => 2);
+  const theme = useSyncExternalStore(subscribe, () => snapshot().presented, () => previewStartTheme(PREVIEW));
   if (!SHOWN) return null;
   const nearest = Math.round(theme), count = INDICES.length, full = count === THEME_IDS.length;
   return <div className="theme-seg" role="radiogroup" aria-label="Studio theme" style={full ? undefined : { gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>

@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { PREVIEW, PREVIEWS } from "../lib/preview.ts";
-import { previewPolicy, previewManifest, previewThemeIndices, previewNote, mushroomScene } from "../lib/sequence/preview-policy.ts";
+import { previewPolicy, previewManifest, previewThemeIndices, previewNote, mushroomScene, previewStartTheme, MANIFEST_DEFAULT_THEME } from "../lib/sequence/preview-policy.ts";
 import { applyInspectionPolicy, applyHiddenPolicy, familyOf, INSPECTION_POLICY, HIDDEN_POLICY } from "../lib/sequence/inspection-source.ts";
 import { configure, dragTheme, selectTheme, setThemeRange, snapshot } from "../lib/sequence/store.ts";
 
@@ -111,6 +111,13 @@ test("themes outside a preview's scenes serve NO tile variants (no probes/reques
   }
   const all = previewManifest(manifest, PREVIEWS["scenes-gigapixel"]);
   assert.ok(THEME_IDS.every((t) => heroFamilies(all, t).includes("gp-1gp")), "full-scene previews keep every theme's tiles");
+});
+test("start theme: the manifest default when shown, else the preview's first scene; the store starts there", () => {
+  assert.equal(MANIFEST_DEFAULT_THEME, manifest.defaultTheme, "MANIFEST_DEFAULT_THEME drifted from manifest.json");
+  assert.equal(previewStartTheme(PREVIEWS.production), THEME_IDS.indexOf(manifest.defaultTheme));
+  assert.equal(previewStartTheme(PREVIEWS["gigapixel-single"]), THEME_IDS.indexOf("white"));
+  const start = previewStartTheme(PREVIEW), s = snapshot(); // before any configure(): what the first frame shows
+  assert.deepEqual([s.theme, s.target, s.presented], [start, start, start]);
 });
 test("store: theme range limits drag/select and default; full range restores production", () => {
   const parsedLike = { ...manifest, defaultTheme: "blue" };

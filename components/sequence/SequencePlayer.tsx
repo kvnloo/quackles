@@ -7,7 +7,7 @@ import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, describeInspectionSources, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { PREVIEW } from "@/lib/preview";
-import { mushroomScene, previewManifest, previewNote, previewPolicy, previewPrefetch, previewThemeIndices } from "@/lib/sequence/preview-policy";
+import { mushroomScene, previewManifest, previewNote, previewPolicy, previewPrefetch, previewStartTheme, previewThemeIndices } from "@/lib/sequence/preview-policy";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
 import { placeDetail, centreFirst, cropInside, detailBackingSize, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, prefetchCrop, sharpPlan, tileAssets, tilePriority, underlayPlan, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { TileSurface, type PaintedRect, type SurfaceStamp } from "@/lib/sequence/tile-surface";
@@ -74,7 +74,7 @@ export function SequencePlayer() {
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
     let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "", paintedInMotion = false;
-    let heldTheme = 2;
+    let heldTheme = previewStartTheme(PREVIEW);
     let themeRelease: ThemeRelease | null = null;
     const releaseDetail = () => {
       detailCanvas.style.visibility = "hidden";
@@ -541,7 +541,7 @@ export function SequencePlayer() {
     <div className="sequence-camera">
       {PREVIEW.scenes === "mushroom"
         ? <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/hidden/night-moss.png")} width={768} height={1152} alt="Microduck on the night moss" fetchPriority="high" />
-        : <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp")} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />}
+        : <img ref={fallback} className="poster-plate" src={assetPath(`/preview-scene/sequence/cinematic-proof-v2/${THEME_IDS[previewStartTheme(PREVIEW)]}/p0000000-1024.webp`)} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />}
       <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
       <canvas ref={floor} className="sequence-floor" aria-hidden />
       <canvas ref={under} className="sequence-underlay" aria-hidden />

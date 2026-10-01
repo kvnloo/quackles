@@ -1,7 +1,10 @@
 import { THEME_IDS, type SequenceManifest, type ThemeId } from "./manifest";
+import { PREVIEW } from "../preview";
+import { previewStartTheme } from "./preview-policy";
 
 type State = { progress: number; theme: number; target: number; presented: number; reducedMotion: boolean };
-let state: State = { progress: 0, theme: 2, target: 2, presented: 2, reducedMotion: false };
+const START = previewStartTheme(PREVIEW);
+let state: State = { progress: 0, theme: START, target: START, presented: START, reducedMotion: false };
 let manifest: SequenceManifest | null = null;
 let displayedTheme = -1;
 let animation = 0;
