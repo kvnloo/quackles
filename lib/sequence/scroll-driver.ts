@@ -1,6 +1,7 @@
 "use client";
 
 import Lenis from "lenis";
+import { createBeatGlide } from "./beat-glide";
 import { storyAt } from "./pacing";
 
 type ScrollProgressListener = (progress: number) => void;
@@ -93,6 +94,8 @@ export function createScrollDriver({
   addEventListener("keydown", onDirect, { passive: true });
 
   publish(target);
+  // A/B preview/scroll-beats: after a touch fling the page glides on to the next story beat.
+  const beats = reducedMotion ? null : createBeatGlide();
 
   return {
     resize() {
@@ -118,6 +121,7 @@ export function createScrollDriver({
       });
     },
     destroy() {
+      beats?.destroy();
       cancelAnimationFrame(raf);
       cancelAnimationFrame(restartRaf);
       removeEventListener("wheel", onWheel);
