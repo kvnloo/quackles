@@ -35,4 +35,15 @@ test("loop termination: never tick forever when the camera is not active (stored
   assert.equal(shouldKeepTicking({ active: true, settled: true, converged: true, activeChanged: false }), false);
   assert.equal(shouldKeepTicking({ active: true, settled: true, converged: true, activeChanged: true }), true, "a state change needs one more tick");
 });
+// PROPOSED RULE (preview/gp-settle, owner decision): the camera counts as settled once it moves under 2 px/frame on screen
+// (120 CSS px/s at 60 Hz), not only inside the loose spring tolerance.
+const phone = { width: 412, height: 915 };
+const pxS = (z, px) => px / (phone.height * (z - 1)); // focus-units/s that move the image px CSS px/s at zoom z
+test("PROPOSED RULE: a camera gliding under 2 px/frame on screen is settled (was: only inside the loose velocity tolerance)", () => {
+  const slow = at(0, 0, 0.00005, 0, 0, pxS(8, 100)), fast = at(0, 0, 0.00005, 0, 0, pxS(8, 200));
+  assert.ok(Math.abs(slow.fyV) > SETTLE_TOL.velocity, "the slow case is outside the loose tolerance");
+  assert.equal(settleCamera(slow, target, phone).settled, true, "100 px/s settles");
+  assert.equal(settleCamera(fast, target, phone).settled, false, "200 px/s does not");
+  assert.equal(settleCamera(slow, target).settled, false, "without a frame size the loose tolerance alone decides");
+});
 console.log(`${n} passed`);
