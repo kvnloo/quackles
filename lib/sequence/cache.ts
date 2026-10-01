@@ -266,6 +266,12 @@ export class FrameCache {
       job.reject(error instanceof Error ? error : new Error(String(error)));
     }
   }
+  /** Drop decoded entries whose URL matches (their pixels are gone, e.g. a restarted refinement Worker); they reload on demand. */
+  forget(match: (url: string) => boolean) {
+    let dropped = 0;
+    for (const [key, image] of [...this.decoded]) if (match(key)) { this.decoded.delete(key); this.used -= image.bytes; dropped++; }
+    return dropped;
+  }
   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
   stats() {
     return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.fetching + this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.fetching - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, evictions: this.evictions, staleDiscard: this.staleDiscard, failures: this.failures, paused: this.paused, startedDecodes: this.startedDecodes, fetching: this.fetching, maxFetching: this.maxFetching, startedFetches: this.startedFetches, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };

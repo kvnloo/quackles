@@ -19,7 +19,7 @@ import { armLockFade, startLockFade } from "@/lib/sequence/lock-fade";
 import { applyPalette, configure, presentTheme, selectTheme, setProgress, setThemeRange, snapshot, subscribe, themeIndices } from "@/lib/sequence/store";
 import { syncedTheme, themeDetailReady, type ThemeRelease } from "@/lib/sequence/synced-theme";
 import { applyStoryProgress } from "./SequenceScroll";
-import { refineCaps, refineMode, type RefineMode } from "@/lib/sequence/refine-mode";
+import { isTileUrl, refineCaps, refineMode, type RefineMode } from "@/lib/sequence/refine-mode";
 import { createRefineRuntime, type RefineRuntime } from "@/lib/sequence/refine-runtime";
 import { RemoteSurface } from "@/lib/sequence/remote-surface";
 
@@ -43,7 +43,7 @@ type SequenceDebug = {
 };
 /** What is painted where (source space, last rect on top), for the gigapixel-feel harness. */
 type PaintReport = { detail: { rects: PaintedRect[] }; underlay: { rects: PaintedRect[] }; floor: { rects: PaintedRect[] } };
-declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug; __QUACKLES_PAINT__?: PaintReport } }
+declare global { interface Window { __QUACKLES_SEQUENCE__?: SequenceDebug; __QUACKLES_PAINT__?: PaintReport; __QUACKLES_REFINE__?: RefineRuntime } }
 
 export function SequencePlayer() {
   const host = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), floor = useRef<HTMLCanvasElement>(null), under = useRef<HTMLCanvasElement>(null), detail = useRef<HTMLCanvasElement>(null), fallback = useRef<HTMLImageElement>(null), note = useRef<HTMLParagraphElement>(null);
@@ -56,8 +56,19 @@ export function SequencePlayer() {
       paint.detail.rects = detailSurface.rects(); paint.underlay.rects = underlay.rects(); paint.floor.rects = floorSurface.rects();
     };
     const runtime = refineMode(PREVIEW, location.search, refineCaps()) === "worker"
-      ? createRefineRuntime({ detail: detailCanvas, underlay: underCanvas, floor: floorCanvas }, () => { syncPaint(); schedule(); })
+      ? createRefineRuntime({ detail: detailCanvas, underlay: underCanvas, floor: floorCanvas }, {
+        onPublish: () => { syncPaint(); schedule(); },
+        // The sharp-lock dissolve starts when the Worker's first pixels are really on screen, not at the hand-off.
+        onReveal: (layer) => {
+          if (layer !== "detail" || !runtime) return;
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          armLockFade(runtime.fade, reduced); startLockFade(runtime.fade, reduced);
+        },
+        // A replaced Worker lost every decoded tile: forget them in the cache and re-plan from scratch.
+        onRestart: () => { cache?.forget(isTileUrl); releaseDetail(); floorPlan = null; underlayCurrent = null; syncPaint(); schedule(); },
+      })
       : null;
+    if (runtime) window.__QUACKLES_REFINE__ = runtime;
     type Surface = TileSurface | RemoteSurface;
     const show = (canvas: HTMLCanvasElement, surface: Surface, visible: boolean) => {
       if (surface instanceof RemoteSurface) surface.setVisible(visible); else canvas.style.visibility = visible ? "visible" : "hidden";
@@ -375,11 +386,11 @@ export function SequencePlayer() {
           if (detailSurface.pending) {
             // First appearance of the sharp layer (it was hidden/released): dissolve it in. Later tiles do not re-fade.
             const freshLock = !detailKey; const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            if (freshLock) armLockFade(fadeTarget, reduced);
+            if (freshLock && !runtime) armLockFade(fadeTarget, reduced);
             detailSurface.drain(frameStart + 6);
             for (const canvas of runtime?.elements.detail ?? [detailCanvas!]) canvas.dataset.smoothing = "high";
             show(detailCanvas!, detailSurface, true);
-            if (freshLock) startLockFade(fadeTarget, reduced);
+            if (freshLock && !runtime) startLockFade(fadeTarget, reduced);
             window.dispatchEvent(new Event("quackles:detail-painted"));
             detailKey = `${frame.id}/${plan.variant.width}@1.00/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
             detailKeys = plan.tasks.map(({ asset }) => asset.url);
@@ -559,7 +570,7 @@ export function SequencePlayer() {
       cancelled = true; controller.abort(); unsubscribe(); unsubscribeInspection(); observer.disconnect();
       cancelAnimationFrame(pendingFrame); clearTimeout(settleTimer); clearTimeout(retryTimer); clearTimeout(inspectionSettleTimer); clearTimeout(warmTimer);
       visualViewport?.removeEventListener("resize", changed); visualViewport?.removeEventListener("scroll", changed);
-      delete window.__QUACKLES_SEQUENCE__; delete window.__QUACKLES_PAINT__; cache?.dispose(); runtime?.dispose();
+      delete window.__QUACKLES_SEQUENCE__; delete window.__QUACKLES_PAINT__; cache?.dispose(); runtime?.dispose(); delete window.__QUACKLES_REFINE__;
     };
   }, []);
   return <div ref={host} className="sequence-player" data-testid="sequence-player">

@@ -16,4 +16,7 @@ const core = new RefineCore({
   requestFrame: (callback) => { if (typeof scope.requestAnimationFrame === "function") scope.requestAnimationFrame(callback); else setTimeout(callback, 16); },
   now: () => performance.now(),
 });
-scope.onmessage = (event) => core.handle(event.data);
+scope.onmessage = (event) => {
+  if ((event.data as { t: string }).t === "crash") throw new Error("refine worker: crash requested (e2e)");
+  core.handle(event.data);
+};

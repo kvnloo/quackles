@@ -18,7 +18,7 @@ export type CoreEnv = {
   now(): number;
 };
 type Op = Extract<ToWorker, { t: "place" | "queue" | "clear" }>;
-type Layer = { id: LayerId; buffers: [SurfaceCanvas, SurfaceCanvas]; shown: 0 | 1; surface: TileSurface; gen: number; inbox: Op[]; awaiting: boolean; dirty: boolean };
+type Layer = { id: LayerId; buffers: [SurfaceCanvas, SurfaceCanvas]; shown: 0 | 1; surface: TileSurface; gen: number; inbox: Op[]; awaiting: boolean; dirty: boolean; lost: boolean };
 /** Per-frame draw budget (ms since the frame started) per layer: the sharp layer first. */
 const BUDGET: Record<LayerId, number> = { detail: 8, underlay: 10, floor: 12 };
 
@@ -40,13 +40,17 @@ export class RefineCore {
       case "init":
         for (const id of LAYERS) {
           const buffers = message.layers[id];
-          const layer: Layer = { id, buffers, shown: 0, gen: 0, inbox: [], awaiting: false, dirty: false, surface: undefined as unknown as TileSurface };
+          const layer: Layer = { id, buffers, shown: 0, gen: 0, inbox: [], awaiting: false, dirty: false, lost: false, surface: undefined as unknown as TileSurface };
           // Moved content goes to the buffer the main thread is not showing; once it shows it, later moves go to the other.
           layer.surface = new TileSurface(buffers[0], { place: () => {}, swap: () => buffers[1 - layer.shown] });
           this.layers.set(id, layer);
+          // A restored context has lost every pixel the painted map still claims.
+          for (const buffer of buffers) (buffer as Partial<EventTarget>).addEventListener?.("contextrestored", () => this.contextRestored(id));
         }
         return;
       case "decode": return this.decode(message.key, message.job, message.blob);
+      case "crash": return; // handled (thrown) by the Worker shell
+      case "stats": this.env.post({ t: "stats", id: message.id, stats: this.stats(), keys: [...this.bitmaps.keys()] }); return;
       case "cancel": { const job = this.jobs.get(message.job); if (job) job.cancelled = true; return; }
       case "close": {
         const held = this.bitmaps.get(message.key);
@@ -83,6 +87,13 @@ export class RefineCore {
     });
   }
 
+  /** The 2D context of a layer buffer was lost and restored: its pixels are gone. Reset the layer at the next frame. */
+  contextRestored(id: LayerId) {
+    const layer = this.layers.get(id);
+    if (!layer) return;
+    layer.lost = true; this.requestFrame();
+  }
+
   private requestFrame() {
     if (this.frameQueued) return;
     this.frameQueued = true;
@@ -98,6 +109,13 @@ export class RefineCore {
     let more = false;
     for (const layer of this.layers.values()) {
       if (layer.awaiting) continue;
+      if (layer.lost) {
+        layer.lost = false; layer.surface.clear(); layer.dirty = false;
+        const front = layer.surface.canvas === layer.buffers[1] ? 1 : 0;
+        this.outbox.push({ t: "publish", layer: layer.id, gen: layer.gen, front, flip: false, coverage: null, rects: [], reset: true });
+        this.counters.publishes++;
+        continue;
+      }
       for (const op of layer.inbox.splice(0)) {
         if (op.t === "place") { layer.gen = op.gen; layer.surface.place(0, 0, op.coverage, op.backing); layer.dirty = true; }
         else if (op.t === "clear") { layer.gen = op.gen; layer.surface.clear(); layer.dirty = true; }

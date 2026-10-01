@@ -19,14 +19,21 @@ export type ToWorker<C = OffscreenCanvas> =
   | { t: "queue"; layer: LayerId; gen: number; stamps: WireStamp[] }
   | { t: "clear"; layer: LayerId; gen: number }
   /** The main thread handled a flip publish; `shown` is the buffer it really shows (a stale flip is not applied). */
-  | { t: "ack"; layer: LayerId; shown: 0 | 1 };
+  | { t: "ack"; layer: LayerId; shown: 0 | 1 }
+  /** Debug/e2e: reply with the Worker's counters. */
+  | { t: "stats"; id: number }
+  /** Debug/e2e: make the Worker throw (crash recovery test). */
+  | { t: "crash" };
 
+export type WorkerStats = { decoded: number; staleDrops: number; staleQueues: number; failures: number; drawn: number; flips: number; publishes: number; bitmaps: number; jobs: number };
 export type FromWorker =
+  | { t: "stats"; id: number; stats: WorkerStats; keys: string[] }
   | { t: "decoded"; key: string; job: number; width: number; height: number }
   | { t: "stale"; key: string; job: number }
   | { t: "decodeFailed"; key: string; job: number; message: string }
   /**
    * Posted one frame AFTER the pixels it describes were drawn (so they are committed). `flip`: the content is in buffer
    * `front`, not the one on screen: the main thread places that buffer at `coverage` and swaps in one task.
+   * `reset`: the context was lost and restored (pixels gone): the main thread hides the layer, drops claims, re-places.
    */
-  | { t: "publish"; layer: LayerId; gen: number; front: 0 | 1; flip: boolean; coverage: Crop | null; rects: [string, PaintedRect][] };
+  | { t: "publish"; layer: LayerId; gen: number; front: 0 | 1; flip: boolean; coverage: Crop | null; rects: [string, PaintedRect][]; reset?: boolean };

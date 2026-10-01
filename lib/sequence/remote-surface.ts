@@ -22,6 +22,10 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
   private painted = new Map<string, PaintedRect>();
   private outgoing: WireStamp[] = [];
   private visible = false;
+  /** Nothing of the current generation is on screen yet (start, clear, reset, rebind): stay hidden until a flip lands. */
+  private blank = true;
+  private revealPending = false;
+  private onReveal: () => void;
   private css = { width: 0, height: 0 };
   private layer: LayerId;
   private elements: [E, E];
@@ -33,8 +37,24 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
     layer: LayerId, elements: [E, E], classes: [string, string], post: (message: ToWorker) => void,
     placer: (element: E, cssWidth: number, cssHeight: number, coverage: Crop) => void = (element, w, h, c) => placeDetail(element as unknown as HTMLCanvasElement, w, h, c),
     onPublish: () => void = () => {},
+    onReveal: () => void = () => {},
   ) {
-    this.layer = layer; this.elements = elements; this.classes = classes; this.post = post; this.placer = placer; this.onPublish = onPublish;
+    this.layer = layer; this.elements = elements; this.classes = classes; this.post = post; this.placer = placer; this.onPublish = onPublish; this.onReveal = onReveal;
+  }
+  private applyVisibility() {
+    const on = this.visible && !this.blank;
+    this.front().style.visibility = on ? "visible" : "hidden";
+    if (on && this.revealPending) { this.revealPending = false; this.onReveal(); }
+  }
+  private forgetPixels() {
+    this.outgoing = []; this.painted.clear(); this.coverage = null; this.backing = null; this.shownCoverage = null;
+    this.blank = true; this.revealPending = false; this.applyVisibility();
+  }
+  /** A new Worker (the old one died): new buffers, nothing on screen, everything re-placed from scratch. */
+  rebind(elements: [E, E], post: (message: ToWorker) => void) {
+    this.front().style.visibility = "hidden";
+    this.elements = elements; this.post = post; this.shown = 0; this.gen++;
+    this.forgetPixels();
   }
   get pending() { return this.outgoing.length; }
   get density() { return this.coverage && this.backing ? this.backing.width / this.coverage.width : 0; }
@@ -77,13 +97,13 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
 
   clear() {
     if (!this.coverage && !this.shownCoverage && !this.painted.size) return; // already clear: no message
-    this.outgoing = []; this.painted.clear(); this.coverage = null; this.backing = null; this.shownCoverage = null;
+    this.forgetPixels(); // hidden now: the Worker's clear lands later, and the old front must not reappear meanwhile
     this.post({ t: "clear", layer: this.layer, gen: ++this.gen });
   }
 
   setVisible(visible: boolean) {
     this.visible = visible;
-    this.front().style.visibility = visible ? "visible" : "hidden";
+    this.applyVisibility();
   }
 
   /** Container resized: re-place the shown buffer at its published coverage. */
@@ -94,6 +114,7 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
 
   /** A Worker publish. A flip places the new buffer and swaps both buffers' class + visibility in this one task. */
   receive(message: Publish): boolean {
+    if (message.reset) { this.forgetPixels(); this.onPublish(); return true; }
     if (message.gen !== this.gen) {
       if (message.flip) this.post({ t: "ack", layer: this.layer, shown: this.shown });
       return false; // stale generation: nothing on screen changes
@@ -102,8 +123,10 @@ export class RemoteSurface<E extends Element = HTMLCanvasElement> {
       const next = this.elements[message.front], previous = this.front();
       if (message.coverage) this.placer(next, this.css.width, this.css.height, message.coverage);
       next.className = this.classes[0]; previous.className = this.classes[1];
-      next.style.visibility = this.visible ? "visible" : "hidden"; previous.style.visibility = "hidden";
+      previous.style.visibility = "hidden";
       this.shown = message.front;
+      if (this.blank) { this.blank = false; this.revealPending = true; }
+      this.applyVisibility();
       this.post({ t: "ack", layer: this.layer, shown: this.shown });
     }
     this.shownCoverage = message.coverage;

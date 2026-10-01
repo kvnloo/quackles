@@ -182,6 +182,14 @@ await test("core: a tile whose bitmap was closed before its turn is skipped, not
   assert.equal(ctx.posted.find((m) => m.t === "publish").rects.length, 1);
 });
 
+await test("core: a stats request is answered with the worker's counters (bitmaps held, stale drops, stale queues)", async () => {
+  const ctx = makeCore();
+  ctx.core.handle({ t: "decode", key: "a", job: 1, blob: { key: "a" } }); ctx.decodes.get("a").resolve(ctx.bitmap("a")); await tick();
+  ctx.core.handle({ t: "stats", id: 7 });
+  const reply = ctx.posted.find((m) => m.t === "stats");
+  assert.ok(reply && reply.id === 7 && reply.stats.bitmaps === 1 && reply.stats.staleDrops === 0 && Array.isArray(reply.keys) && reply.keys[0] === "a", JSON.stringify(reply));
+});
+
 // ---- main-thread proxy ----------------------------------------------------------------------------------------------
 const makeRemote = () => {
   const sent = [], placed = [], els = [fakeCanvas("d0"), fakeCanvas("d1")];
@@ -227,6 +235,39 @@ await test("proxy: clear drops claims at once and bumps the generation", () => {
   assert.deepEqual(sent.at(-1), { t: "clear", layer: "detail", gen: 2 });
 });
 
+await test("proxy (verifier #1): after clear, setVisible(true) keeps both buffers hidden until a flip of the new generation lands, then reveals once", () => {
+  const sent = [], els = [fakeCanvas("d0"), fakeCanvas("d1")], reveals = [];
+  const r = new remoteModule.RemoteSurface("detail", els, ["sequence-detail", "sequence-detail-back"], (m) => sent.push(m), () => {}, () => {}, () => reveals.push(1));
+  const c1 = cov(7.4), c2 = cov(9.1);
+  r.setVisible(true); r.place(W, H, c1, render.detailBackingSize(W, H, c1, DPR));
+  assert.equal(els[0].style.visibility, "hidden", "nothing published yet: hidden");
+  r.receive({ t: "publish", layer: "detail", gen: 1, front: 1, flip: true, coverage: c1, rects: [["k", [0.4, 0.4, 0.5, 0.5, 9000]]] });
+  assert.equal(els[1].style.visibility, "visible"); assert.equal(reveals.length, 1);
+  r.clear(); assert.equal(els[1].style.visibility, "hidden", "clear hides the old pixels at once");
+  r.place(W, H, c2, render.detailBackingSize(W, H, c2, DPR)); r.setVisible(true);
+  assert.ok(els.every((e) => e.style.visibility !== "visible"), "old front stays hidden while the new content is in flight");
+  r.receive({ t: "publish", layer: "detail", gen: 3, front: 0, flip: true, coverage: c2, rects: [["k2", [0.4, 0.4, 0.5, 0.5, 9000]]] });
+  assert.equal(els[0].style.visibility, "visible"); assert.equal(els[1].style.visibility, "hidden"); assert.equal(reveals.length, 2);
+});
+await test("proxy (verifier #3): a reset publish (context lost) drops claims, hides the layer and forces a re-place", () => {
+  const { r, sent, els } = makeRemote(), c1 = cov(7.4), backing = render.detailBackingSize(W, H, c1, DPR);
+  r.setVisible(true); r.place(W, H, c1, backing);
+  r.receive({ t: "publish", layer: "detail", gen: 1, front: 1, flip: true, coverage: c1, rects: [["k", [0, 0, 1, 1, 1]]] });
+  r.receive({ t: "publish", layer: "detail", gen: 1, front: 1, flip: false, coverage: null, rects: [], reset: true });
+  assert.deepEqual(r.rects(), []); assert.equal(r.coverage, null); assert.equal(els[1].style.visibility, "hidden");
+  const n = sent.length; r.place(W, H, c1, backing); assert.equal(sent.length, n + 1, "same placement is re-sent after a reset");
+});
+await test("core (verifier #3): a restored context resets the layer: painted claims dropped, a reset publish follows", async () => {
+  const ctx = makeCore(), c1 = cov(7.4), s1 = stampsFor(c1);
+  await decodeAll(ctx, s1);
+  ctx.core.handle({ t: "place", layer: "detail", gen: 1, coverage: c1, backing: render.detailBackingSize(W, H, c1, DPR) });
+  ctx.core.handle({ t: "queue", layer: "detail", gen: 1, stamps: wire(s1) });
+  ctx.frame(); ctx.frame(); ctx.core.handle({ t: "ack", layer: "detail", shown: 1 }); ctx.posted.length = 0;
+  ctx.core.contextRestored("detail");
+  ctx.frame(); ctx.frame();
+  const pub = ctx.posted.find((m) => m.t === "publish");
+  assert.ok(pub && pub.reset === true && pub.rects.length === 0, JSON.stringify(pub));
+});
 // ---- FrameCache decoder hook ----------------------------------------------------------------------------------------
 globalThis.window = globalThis;
 globalThis.fetch = async (url) => ({ ok: true, status: 200, blob: async () => ({ url, size: 10 }) });
@@ -254,4 +295,12 @@ await test("cache: a decoder hook takes the decode (no main-thread createImageBi
   cache.dispose();
 });
 
+await test("cache (verifier #2): forget() drops decoded entries matching a predicate so they are requested again", async () => {
+  const cache = new FrameCache("forget", { decodedBudgetBytes: 64 * 1024 * 1024 });
+  const a = { url: "/q/gp/1/0_0.webp", width: 512, height: 512 }, b = { url: "/x/p0000000-1024.webp", width: 512, height: 512 };
+  await cache.load(a); await cache.load(b);
+  assert.equal(cache.forget((url) => url.includes("/gp/")), 1);
+  assert.equal(cache.peek(a.url), undefined); assert.ok(cache.peek(b.url));
+  cache.dispose();
+});
 console.log(`${n} refine-runtime contracts passed`);
