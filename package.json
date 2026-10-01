@@ -25,6 +25,7 @@
     "test:blank-frames": "node scripts/blank-frame-browser.mjs",
     "test:wiring": "node scripts/wiring-contracts.mjs",
     "test:touch": "node scripts/touch-input-browser.mjs",
+    "test:touch-feel": "node scripts/touch-feel-browser.mjs",
     "test:scroll-state": "node scripts/scroll-state-browser.mjs",
     "test:ui-stability": "node scripts/ui-stability-browser.mjs",
     "test:profiles": "node scripts/profile-browser.mjs",
