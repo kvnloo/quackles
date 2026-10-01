@@ -46,4 +46,11 @@ test("PROPOSED RULE: a camera gliding under 2 px/frame on screen is settled (was
   assert.equal(settleCamera(fast, target, phone).settled, false, "200 px/s does not");
   assert.equal(settleCamera(slow, target).settled, false, "without a frame size the loose tolerance alone decides");
 });
+test("PROPOSED RULE guard: a camera just leaving for a far target is slow but NOT settled (no decode/sharp-lock at the start of a glide)", () => {
+  // A spring starting from rest toward a target 0.05 focus away (~320 px at 8x): its first-frame speed is far under 2 px/frame.
+  const start = at(0, 0, 0.05, 0, 0, -pxS(8, 40));
+  assert.equal(settleCamera(start, target, phone).settled, false);
+  // A slow tail a few px from the target still settles.
+  assert.equal(settleCamera(at(0, 0, pxS(8, 20), 0, 0, -pxS(8, 60)), target, phone).settled, true);
+});
 console.log(`${n} passed`);

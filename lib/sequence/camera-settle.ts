@@ -26,11 +26,20 @@ export function screenSpeed(c: CameraValues, frame: { width: number; height: num
   const z = Math.max(1, c.zoom), span = Math.max(0, z - 1);
   return Math.hypot(c.fxV * frame.width * span, c.fyV * frame.height * span) + Math.abs(c.zoomV) * Math.max(frame.width, frame.height) / 2;
 }
+/** Screen distance (CSS px) still to travel to the target. */
+export function screenDistance(c: CameraValues, t: CameraTarget, frame: { width: number; height: number }): number {
+  const span = Math.max(0, Math.max(1, c.zoom) - 1);
+  return Math.hypot((c.focusX - t.fx) * frame.width * span, (c.focusY - t.fy) * frame.height * span) + Math.abs(c.zoom - t.zoom) * Math.max(frame.width, frame.height) / 2;
+}
+/** Slow AND near: a spring leaving from rest is slow on its first frames too, so speed alone would call the start of every glide
+ * "settled". The tail of the critically-damped spring (omega ~3.6/s) at 2 px/frame is ~33 px from the target. */
+const slowAndNear = (c: CameraValues, t: CameraTarget, frame: { width: number; height: number }) =>
+  screenSpeed(c, frame) < SCREEN_SETTLE_PX_S && screenDistance(c, t, frame) < SCREEN_SETTLE_PX_S / 3;
 export function settleCamera(c: CameraValues, t: CameraTarget, frame?: { width: number; height: number }): CameraValues & { settled: boolean; converged: boolean } {
   const within = (tol: { zoom: number; focus: number; velocity: number }) =>
     Math.abs(c.zoom - t.zoom) < tol.zoom && Math.abs(c.focusX - t.fx) < tol.focus && Math.abs(c.focusY - t.fy) < tol.focus &&
     Math.abs(c.zoomV) < tol.velocity && Math.abs(c.fxV) < tol.velocity && Math.abs(c.fyV) < tol.velocity;
-  const settled = within(SETTLE_TOL) || (!!frame && screenSpeed(c, frame) < SCREEN_SETTLE_PX_S), converged = within({ ...CONVERGE_TOL, focus: convergeFocusTol(t.zoom) });
+  const settled = within(SETTLE_TOL) || (!!frame && slowAndNear(c, t, frame)), converged = within({ ...CONVERGE_TOL, focus: convergeFocusTol(t.zoom) });
   if (converged) return { zoom: t.zoom, focusX: t.fx, focusY: t.fy, zoomV: 0, fxV: 0, fyV: 0, settled: true, converged: true };
   return { ...c, settled, converged: false };
 }
