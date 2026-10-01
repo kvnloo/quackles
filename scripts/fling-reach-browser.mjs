@@ -10,7 +10,7 @@
  * EXPECT (optional) asserts a variant's contract:
  *  beats  every flick rests on a story beat (|page - beat| <= 2 px) ahead of where it was released, settle <= 1600 ms
  *  short  story length = 2/3 of the 4-viewport story (8/3 viewports +-1%), and the 2,200 px/s flick reaches >= 1.4x native's fraction
- *  boost  reach at each speed >= 1.6x and <= 2.0x the native coast (NATIVE_JSON from a native build), rest gap <= 2 px
+ *  boost  momentum (page travel after lift) at each speed is 1.6x..2.0x a native build's (NATIVE_JSON), rest gap <= 2 px
  *  wheel  wheel is native: page = sum of deltas, story on the page every frame (gap p95 <= 2 px), lag <= 50 ms
  * OUT_DIR(+BASE_PATH), PORT. JSON on stdout; exit 1 on failure. */
 import { spawn } from "node:child_process";
@@ -69,7 +69,7 @@ const res = { reach: [], wheel: null }, bad = [];
     await page.evaluate(() => { window.__fr.tag = "idle"; window.__fr.rows = []; });
     let stop = rs[0].t; for (let i = rs.length - 1; i > 0; i--) if (Math.abs(rs[i].story - rs[i - 1].story) > 0.5) { stop = rs[i].t; break; }
     const end = rs.at(-1);
-    const row = { v, reach: r3((end.y - rs[0].y) / geo.max), travelPx: r1(end.y - rs[0].y), releasedAt: r3(yLift / geo.max), settleMs: Math.round(stop - tLift), restGap: r1(Math.abs(end.story - end.y)) };
+    const row = { v, reach: r3((end.y - rs[0].y) / geo.max), travelPx: r1(end.y - rs[0].y), coastPx: r1(end.y - yLift), releasedAt: r3(yLift / geo.max), settleMs: Math.round(stop - tLift), restGap: r1(Math.abs(end.story - end.y)) };
     const at = await page.evaluate((b) => b.map((p) => (window.__QUACKLES_SEQUENCE__.scrollAt ?? ((x) => x))(p)), BEATS);
     row.restBeat = BEATS.find((_, i) => Math.abs(at[i] * geo.max - end.y) <= 2) ?? null;
     res.reach.push(row);
@@ -87,8 +87,8 @@ const res = { reach: [], wheel: null }, bad = [];
     const native = JSON.parse(fs.readFileSync(process.env.NATIVE_JSON, "utf8"));
     for (const row of res.reach) {
       const n0 = native.reach.find((r) => r.v === row.v);
-      const ratio = row.travelPx / n0.travelPx; row.travelVsNative = r3(ratio);
-      if (expect === "boost" && !(ratio >= 1.6 && ratio <= 2.0)) bad.push(`v${row.v}: travel ${ratio.toFixed(2)}x native (want 1.6..2.0)`);
+      const ratio = row.coastPx / n0.coastPx; row.coastVsNative = r3(ratio);
+      if (expect === "boost" && !(ratio >= 1.6 && ratio <= 2.0)) bad.push(`v${row.v}: momentum ${ratio.toFixed(2)}x native (want 1.6..2.0)`);
       if (expect === "short" && row.v === 2200 && !(row.reach >= 1.4 * n0.reach)) bad.push(`v2200: reach ${row.reach} < 1.4x native ${n0.reach}`);
     }
   }
