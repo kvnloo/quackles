@@ -594,7 +594,8 @@ a:focus-visible {
   padding: 20px 16px;
 }
 .scroll-space {
-  height: 400svh;
+  /* A/B preview/scroll-short: two-thirds of the 400svh story (same plates, beats and pacing knots). */
+  height: calc(400svh * 2 / 3);
   pointer-events: none;
 }
 @media (min-width: 431px) {
