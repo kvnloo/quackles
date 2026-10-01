@@ -25,6 +25,8 @@
  *   loadOutcome:    "ok" | ErrorCode (rejects) | "resolve:<ErrorCode>"
  *   resume:         true = a session for the configured app already runs (auto-join, ORIGIN_SCOPED): after
  *                   setOptions the context reports SESSION_RESUMED + CONNECTED without requestSession
+ *                   "timeout-then-connects": rejects with timeout, but the session starts anyway a moment later
+ *   helloOnResume:  a namespace; on auto-join the receiver says hello before CONNECTED (receiver SENDER_CONNECTED)
  *   helloOnStart:   a namespace; the receiver says hello on it right after SESSION_STARTED, BEFORE the cast state
  *                   becomes CONNECTED (an event order the documentation does not rule out)
  * Overlapping requestSession calls reject the later one with session_error, like a second picker cannot open.
@@ -52,7 +54,7 @@
 
   const listeners = new Map();
   const emit = (type, data) => { for (const fn of [...(listeners.get(type) || [])]) fn({ type, ...data }); };
-  let castState = CastState.NO_DEVICES_AVAILABLE, sessionState = SessionState.NO_SESSION, session = null, configured = false, pending = false;
+  let castState = CastState.NO_DEVICES_AVAILABLE, sessionState = SessionState.NO_SESSION, session = null, configured = false, pending = false, ending = false;
   const devices = { on: init.devices !== false };
   const setCast = (next) => { if (next === castState) return; castState = next; if (configured) emit(CastContextEventType.CAST_STATE_CHANGED, { castState }); };
   const setSession = (next, extra = {}) => { sessionState = next; if (configured) emit(CastContextEventType.SESSION_STATE_CHANGED, { session, sessionState, errorCode: null, ...extra }); };
@@ -66,6 +68,7 @@
     loadMedia(request) {
       if (!(request instanceof LoadRequest)) throw new Error("loadMedia requires a chrome.cast.media.LoadRequest");
       fake.loads.push({ at: performance.timeOrigin + performance.now(), contentId: request.media.contentId, contentType: request.media.contentType, streamType: request.media.streamType, metadata: request.media.metadata && JSON.parse(JSON.stringify(request.media.metadata)), autoplay: request.autoplay });
+      if (ending) return Promise.reject(ErrorCode.SESSION_ERROR);
       if (fake.loadOutcome === "ok") return Promise.resolve(null);
       if (fake.loadOutcome.startsWith("resolve:")) return Promise.resolve(fake.loadOutcome.slice(8));
       return Promise.reject(fake.loadOutcome);
@@ -91,7 +94,9 @@
       setTimeout(() => {
         if (init.resume && devices.on) {
           session = new CastSession(fake.options.receiverApplicationId);
-          setSession(SessionState.SESSION_RESUMED); setCast(CastState.CONNECTED);
+          setSession(SessionState.SESSION_RESUMED);
+          if (init.helloOnResume) fake.receive(init.helloOnResume, JSON.stringify({ v: 1, k: "h", b: "receiver" }));
+          setCast(CastState.CONNECTED);
           return;
         }
         setCast(devices.on ? CastState.NOT_CONNECTED : CastState.NO_DEVICES_AVAILABLE);
@@ -107,6 +112,10 @@
       if (pending) return Promise.reject(ErrorCode.SESSION_ERROR);
       if (fake.requestOutcome === ErrorCode.CANCEL) return new Promise((_, reject) => setTimeout(() => reject(ErrorCode.CANCEL), 30)); // user closed the picker
       if (fake.requestOutcome.startsWith("resolve:")) return new Promise((resolve) => setTimeout(() => resolve(fake.requestOutcome.slice(8)), 60));
+      if (fake.requestOutcome === "timeout-then-connects") {
+        setTimeout(() => { session = new CastSession(fake.options.receiverApplicationId); setSession(SessionState.SESSION_STARTED); setCast(CastState.CONNECTED); }, 300);
+        return new Promise((_, reject) => setTimeout(() => reject(ErrorCode.TIMEOUT), 60));
+      }
       pending = true;
       return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -127,8 +136,10 @@
     }
     endCurrentSession(stopCasting) {
       fake.calls.push(["endCurrentSession", stopCasting]);
-      if (!session) return;
-      setSession(SessionState.SESSION_ENDING); session = null; setSession(SessionState.SESSION_ENDED); setCast(CastState.NOT_CONNECTED);
+      if (!session || ending) return;
+      // Ending is asynchronous: the session object still exists (and refuses loads) until SESSION_ENDED.
+      ending = true; setSession(SessionState.SESSION_ENDING);
+      setTimeout(() => { ending = false; session = null; setSession(SessionState.SESSION_ENDED); setCast(CastState.NOT_CONNECTED); }, 400);
     }
     addEventListener(type, handler) { if (!listeners.has(type)) listeners.set(type, new Set()); listeners.get(type).add(handler); }
     removeEventListener(type, handler) { listeners.get(type)?.delete(handler); }

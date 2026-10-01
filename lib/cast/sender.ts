@@ -13,7 +13,7 @@ import { castMedia, MediaDebounce, type CastMedia } from "./media";
 import { CAST_BUILD, CAST_DOCS_URL, CAST_PREVIEW_ID, RECEIVER_HELLO_TIMEOUT_MS, castErrorMessage, type CastMode, type CastTransportKind } from "./config";
 import { cafSender, shimSender, type SenderTransport, type SessionState } from "./transport";
 
-export type CastNotice = { kind: "info" | "error"; text: string; href?: string };
+export type CastNotice = { kind: "info" | "error"; text: string; short?: string; href?: string; code?: string };
 type SenderDebug = { getState: () => { mode: CastMode["kind"]; state: SessionState; sent: number; bytes: number; maxBytes: number; loads: number; log: { t: number; view: CastView }[] } };
 declare global { interface Window { __QUACKLES_CAST_SENDER__?: SenderDebug } }
 
@@ -37,8 +37,18 @@ export function currentView(): CastView {
 export const BASIC_NOTE: CastNotice = {
   kind: "info",
   text: "Basic cast: the TV shows stills that follow theme and story. Zoom isn't mirrored; live sync needs a one-time setup.",
+  short: "Basic cast: stills only, no zoom.",
   href: CAST_DOCS_URL,
 };
+
+/** The basic-mode note is shown once per browser session (re-connects and auto-joins don't repeat it). */
+function noteShownThisSession() {
+  try {
+    if (sessionStorage.getItem("quackles-cast-note") === "1") return true;
+    sessionStorage.setItem("quackles-cast-note", "1");
+  } catch { /* storage blocked: show it */ }
+  return false;
+}
 
 let manifestJob: Promise<SequenceManifest> | null = null;
 function loadManifest() {
@@ -62,9 +72,14 @@ export async function startCastSender(options: {
   const pacer = new Pacer();
   const debounce = new MediaDebounce();
   let seq = 0, raf = 0, connected = false, snapshotNext = true, state: SessionState = "unavailable", disposed = false;
-  let sent = 0, bytes = 0, maxBytes = 0, loads = 0, mediaTimer = 0, helloTimer = 0, helloSeen = false;
+  let sent = 0, bytes = 0, maxBytes = 0, loads = 0, mediaTimer = 0, helloTimer = 0, helloSeen = false, stopping = false, silentShown = false;
   const log: { t: number; view: CastView }[] = [];
-  const error = (code: unknown) => { const text = castErrorMessage(code); if (text && !disposed) options.onNotice({ kind: "error", text }); };
+  const error = (code: unknown) => {
+    const text = castErrorMessage(code);
+    if (!text || disposed || stopping) return; // a stop the user asked for is not an error
+    silentShown = code === "receiver_silent";
+    options.onNotice({ kind: "error", text, code: typeof code === "string" ? code : undefined });
+  };
 
   // ---- custom mode: state stream
   const frame = () => {
@@ -87,6 +102,7 @@ export async function startCastSender(options: {
   // ---- basic mode: debounced stills
   let shown: CastMedia | null = null, latest: CastMedia | null = null;
   const load = (media: CastMedia) => {
+    if (stopping) return;
     loads++;
     shown = media;
     transport.loadMedia(media).catch((code) => { if (shown === media) error(code ?? "load_media_failed"); });
@@ -114,6 +130,7 @@ export async function startCastSender(options: {
     // The hello may beat the CONNECTED cast state (it is sent on SENDER_CONNECTED): remember it for this session.
     helloSeen = true;
     window.clearTimeout(helloTimer); helloTimer = 0;
+    if (silentShown) { silentShown = false; options.onNotice(null); } // it answered after all
     resync();
   });
   transport.onState((next) => {
@@ -121,12 +138,13 @@ export async function startCastSender(options: {
     const was = connected;
     connected = next === "connected";
     if (connected && !was) {
+      stopping = false;
       if (mode.kind === "custom") {
         resync();
         window.clearTimeout(helloTimer);
         if (options.kind === "caf" && !helloSeen) helloTimer = window.setTimeout(() => error("receiver_silent"), RECEIVER_HELLO_TIMEOUT_MS);
       } else {
-        options.onNotice(BASIC_NOTE);
+        if (!noteShownThisSession()) options.onNotice(BASIC_NOTE);
         offerMedia(true);
       }
     }
@@ -138,8 +156,14 @@ export async function startCastSender(options: {
   const unsubscribeCamera = subscribeInspection(schedule);
   window.__QUACKLES_CAST_SENDER__ = { getState: () => ({ mode: mode.kind, state, sent, bytes, maxBytes, loads, log: log.slice() }) };
   return {
-    start: () => { if (!connected) helloSeen = false; options.onNotice(null); transport.start().catch(error); },
-    stop: () => transport.stop(),
+    start: () => {
+      if (!connected) helloSeen = false;
+      stopping = false;
+      options.onNotice(null);
+      // A request error that arrives once the session is already up (e.g. a late timeout) is stale: ignore it.
+      transport.start().catch((code) => { if (!connected) error(code); });
+    },
+    stop: () => { stopping = true; window.clearTimeout(mediaTimer); window.clearTimeout(helloTimer); transport.stop(); },
     dispose() {
       disposed = true; cancelAnimationFrame(raf); connected = false;
       window.clearTimeout(helloTimer); window.clearTimeout(mediaTimer);

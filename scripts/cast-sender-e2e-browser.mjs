@@ -259,7 +259,8 @@ console.log("[android] adversarial-review paths");
 const overlaps = (s) => s.page.evaluate(() => {
   const n = document.querySelector('[data-testid="cast-notice"]')?.getBoundingClientRect();
   if (!n) return { notice: null };
-  const hits = [...document.querySelectorAll(".hero-copy h1, .hero-kicker, .hero-label, .hero-note, .site-nav, .theme-seg")].map((el) => [el.className || el.tagName, el.getBoundingClientRect()])
+  const shown = (el) => { const cs = getComputedStyle(el); return cs.visibility !== "hidden" && cs.display !== "none" && Number(cs.opacity) > 0.05; };
+  const hits = [...document.querySelectorAll(".hero-copy h1, .hero-kicker, .hero-label, .hero-note, .site-nav, .theme-seg, .interaction-hint")].filter(shown).map((el) => [el.className || el.tagName, el.getBoundingClientRect()])
     .filter(([, r]) => r.width && r.height && n.left < r.right && n.right > r.left && n.top < r.bottom && n.bottom > r.top).map(([name]) => name);
   const d = document.querySelector('[data-testid="cast-notice"] button')?.getBoundingClientRect();
   return { notice: [n.left, n.top, n.width, n.height].map(Math.round), hits, dismiss: d ? [Math.round(d.width), Math.round(d.height)] : null };
@@ -289,10 +290,13 @@ for (const device of ["android", "landscape"]) {
   await until(s, () => !!document.querySelector('[data-testid="cast-button"]'), null, 8000);
   await s.page.click('[data-testid="cast-button"]');
   await until(s, () => document.querySelector('[data-testid="cast-button"]')?.dataset.state === "connecting", null, 2000);
-  await s.page.click('[data-testid="cast-button"]').catch(() => {});
+  // Click in the same task as the state check, so it cannot land after CONNECTED.
+  const stateAtClick = await s.page.evaluate(() => { const b = document.querySelector('[data-testid="cast-button"]'); const at = b.dataset.state; b.click(); return at; });
   await wait(800);
-  const calls = (await fakeState(s)).calls.filter((c) => c[0] === "requestSession").length;
-  check(calls === 1, `double-tap: requestSession called ${calls}x`);
+  const f = await fakeState(s);
+  const calls = f.calls.filter((c) => c[0] === "requestSession").length;
+  check(stateAtClick === "connecting", `double-tap: second click landed in state ${stateAtClick}, test is vacuous`);
+  check(calls === 1 && !f.calls.some((c) => c[0] === "endCurrentSession"), `double-tap: ${JSON.stringify(f.calls)}`);
   check((await notice(s))?.kind !== "error", `double-tap: error shown ${JSON.stringify(await notice(s))}`);
   await close(s);
 }
@@ -301,6 +305,52 @@ for (const device of ["android", "landscape"]) {
   check(await connect(s), "hello-race: did not connect");
   await wait(10000);
   check((await notice(s))?.kind !== "error", `hello-race: a receiver that answered was reported silent: ${JSON.stringify(await notice(s))}`);
+  await close(s);
+}
+{
+  // Stop while a theme change is still inside the debounce: the pending load must not fire into the ending session.
+  const s = await open("stop-in-debounce");
+  check(await connect(s), "stop-in-debounce: did not connect");
+  await wait(400);
+  const n0 = (await fakeState(s)).loads.length;
+  await s.page.evaluate(() => window.__QUACKLES_SEQUENCE__.setTheme("night"));
+  await wait(60);
+  await s.page.click('[data-testid="cast-button"]');
+  await wait(1200);
+  check((await fakeState(s)).loads.length === n0, "stop-in-debounce: loadMedia fired after Stop");
+  check((await notice(s))?.kind !== "error", `stop-in-debounce: false error ${JSON.stringify(await notice(s))}`);
+  // Second session in the same page: the basic note was already shown once this browser session.
+  check(await connect(s), "reconnect: did not connect");
+  await wait(400);
+  check(!(await notice(s)), `reconnect: basic note shown again ${JSON.stringify(await notice(s))}`);
+  await close(s);
+}
+{
+  const s = await open("timeout-then-connects", { query: "?castAppId=A1B2C3D4", init: { requestOutcome: "timeout-then-connects" } }); // custom: no basic note to mask the error
+  await until(s, () => !!document.querySelector('[data-testid="cast-button"]'), null, 8000);
+  await s.page.click('[data-testid="cast-button"]');
+  const ok = await until(s, () => document.querySelector('[data-testid="cast-button"]')?.dataset.state === "connected", null, 3000);
+  await wait(300);
+  check(ok && (await notice(s))?.kind !== "error", `timeout-then-connects: a working session shows ${JSON.stringify(await notice(s))}`);
+  await close(s);
+}
+{
+  const s = await open("late-hello", { query: "?castAppId=A1B2C3D4" });
+  check(await connect(s), "late-hello: did not connect");
+  check(await until(s, () => document.querySelector('[data-testid="cast-notice"]')?.dataset.kind === "error", null, 12000), "late-hello: no silence error first");
+  await s.page.evaluate(() => window.__castFake?.receive("urn:x-cast:ai.quackles.state", JSON.stringify({ v: 1, k: "h", b: "receiver" })));
+  await wait(300);
+  check(!(await notice(s)), `late-hello: silence error stayed after the receiver answered ${JSON.stringify(await notice(s))}`);
+  await close(s);
+}
+for (const hello of [true, false]) {
+  const s = await open(`custom-resume-${hello ? "hello" : "silent"}`, { query: "?castAppId=A1B2C3D4", init: { resume: true, ...(hello ? { helloOnResume: "urn:x-cast:ai.quackles.state" } : {}) } });
+  const ok = await until(s, () => document.querySelector('[data-testid="cast-button"]')?.dataset.state === "connected", null, 8000);
+  await wait(9500);
+  const f = await fakeState(s), n = await notice(s);
+  check(ok && f.messages.some((m) => JSON.parse(m.data).f === 1) && f.loads.length === 0, `custom-resume: no snapshot / used loadMedia (${f.messages.length} msgs, ${f.loads.length} loads)`);
+  if (hello) check(n?.kind !== "error", `custom-resume-hello: false silence error ${JSON.stringify(n)}`);
+  else check(n?.kind === "error", "custom-resume-silent: a silent resumed receiver produced no error");
   await close(s);
 }
 for (const [name, init, pattern] of [["request-resolves-code", { requestOutcome: "resolve:timeout" }, /respond|time/i], ["load-resolves-code", { loadOutcome: "resolve:load_media_failed" }, /picture|image|load/i]]) {

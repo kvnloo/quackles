@@ -39,6 +39,8 @@ export function CastSender() {
             setState(next);
             // The basic-mode note describes a live session: it goes when the session does (errors stay).
             if (next !== "connected") setNotice((current) => (current?.kind === "info" ? null : current));
+            // A working session supersedes an earlier request error (e.g. a picker timeout that connected anyway).
+            else setNotice((current) => (current?.kind === "error" && current.code !== "receiver_silent" ? null : current));
           },
           onNotice: (next) => { if (!cancelled) setNotice(next); },
         });
@@ -98,7 +100,7 @@ export function CastSender() {
       <span className={styles.srOnly} role="status" aria-live="polite" data-testid="cast-live">{notice?.text ?? ""}</span>
       {notice && (
         <p className={styles.notice} data-testid="cast-notice" data-kind={notice.kind}>
-          {notice.text}
+          {notice.short ? <><span className={styles.long}>{notice.text}</span><span className={styles.short}>{notice.short}</span></> : notice.text}
           {notice.href && <> <a href={notice.href} target="_blank" rel="noopener noreferrer">Setup</a></>}
           <button type="button" className={styles.dismiss} aria-label="Dismiss" onClick={() => setNotice(null)}>×</button>
         </p>

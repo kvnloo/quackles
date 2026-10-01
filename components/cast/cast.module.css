@@ -125,3 +125,11 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+.short {
+  display: none;
+}
+/* Narrow frames (landscape phones): the full sentence would cover the HUD hints. */
+@container (max-width: 340px) {
+  .long { display: none; }
+  .short { display: inline; }
+}
