@@ -4,7 +4,8 @@
  * headless fling curve is the desktop ui::FlingCurve, not Android's: compare builds with each other, not with a phone.
  *  R. From the hero (story top), one 300 px flick released at 1,500 / 2,200 / 3,000 px/s. Reported per speed:
  *     reach = page travel / story length (scrollHeight - innerHeight), settleMs = touchEnd -> last painted story change,
- *     restGap = |painted story px - page px| at rest.
+ *     restGap = |painted story px - page px| at rest; storyAfterPageMs = story stop - page stop;
+ *     paintLagMaxPx = max |painted - published story px| (renderer falling behind the scroll).
  *  W. Desktop 1440x900: 5 wheel notches of 100 px, 60 ms apart, mid-story. wheelLagMs = last wheel event -> last story
  *     change; wheelGapP95 = |published story px - page px| per frame while moving.
  * EXPECT (optional) asserts a variant's contract:
@@ -68,8 +69,9 @@ const res = { reach: [], wheel: null }, bad = [];
     const rs = await page.evaluate((tag) => window.__fr.rows.filter((r) => r.tag === tag), `v${v}`);
     await page.evaluate(() => { window.__fr.tag = "idle"; window.__fr.rows = []; });
     let stop = rs[0].t; for (let i = rs.length - 1; i > 0; i--) if (Math.abs(rs[i].story - rs[i - 1].story) > 0.5) { stop = rs[i].t; break; }
+    let pageStop = rs[0].t; for (let i = rs.length - 1; i > 0; i--) if (Math.abs(rs[i].y - rs[i - 1].y) > 0.5) { pageStop = rs[i].t; break; }
     const end = rs.at(-1);
-    const row = { v, reach: r3((end.y - rs[0].y) / geo.max), travelPx: r1(end.y - rs[0].y), coastPx: r1(end.y - yLift), releasedAt: r3(yLift / geo.max), settleMs: Math.round(stop - tLift), restGap: r1(Math.abs(end.story - end.y)) };
+    const row = { v, reach: r3((end.y - rs[0].y) / geo.max), travelPx: r1(end.y - rs[0].y), coastPx: r1(end.y - yLift), releasedAt: r3(yLift / geo.max), settleMs: Math.round(stop - tLift), storyAfterPageMs: Math.round(stop - pageStop), paintLagMaxPx: r1(Math.max(...rs.map((r) => Math.abs(r.story - r.pub)))), restGap: r1(Math.abs(end.story - end.y)) };
     const at = await page.evaluate((b) => b.map((p) => (window.__QUACKLES_SEQUENCE__.scrollAt ?? ((x) => x))(p)), BEATS);
     row.restBeat = BEATS.find((_, i) => Math.abs(at[i] * geo.max - end.y) <= 2) ?? null;
     res.reach.push(row);
