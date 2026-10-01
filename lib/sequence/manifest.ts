@@ -128,13 +128,18 @@ export function frameAt(manifest: SequenceManifest, progress: number, reduced: b
   const { before, after, mix } = spanAt(manifest, progress, reduced);
   return mix < 0.5 ? before : after;
 }
-/** Frames to preload around `center`, nearest first: [1, -1, 2] plus the first frame 3/15 of the story ahead.
- * The [1, -1, 2, 3] window was tuned on 16 frames 1/15 apart, where this is the same window; on the dense
- * 52-frame spans it keeps that look-ahead with the same four plates (the decoded budget holds about ten). */
-export function preloadFrames(frames: readonly { progress: number }[], center: number): number[] {
-  const last = frames.length - 1, reach = frames[center].progress + 3 / 15 - 1e-6;
-  const far = frames.findIndex((frame, i) => i > center && frame.progress >= reach);
-  return [...new Set([center + 1, center - 1, center + 2, far < 0 ? last : far])].filter((i) => i >= 0 && i <= last && i !== center);
+/** Story plates to decode before they are shown, as { frame index, theme index, priority }: the next, previous, second
+ * and third frame in the direction of travel ([1, -1, 2, 3] scrolling down, mirrored scrolling up), and, once the story
+ * rests, the shown frame in the neighbouring themes (the first frame of a theme swipe). Four look-ahead plates is what
+ * the balanced 64 MiB budget (~10 plates, two on screen) keeps until the scroll arrives on the dense 52-frame spans:
+ * reaching further ahead by story distance decoded plates twice (evicted before use), and decoding the neighbour themes
+ * for every frame crossed was most of the scroll decode churn (I5). */
+export function storyPreloads(frames: readonly unknown[], center: number, direction: number, settled: boolean, theme: number, shown = center) {
+  const step = direction < 0 ? -1 : 1, last = frames.length - 1;
+  const plates = [1, -1, 2, 3].map((offset) => center + offset * step).filter((index) => index >= 0 && index <= last);
+  const out = plates.map((index, rank) => ({ index, theme, priority: 19 - rank }));
+  if (settled) for (const neighbour of [theme - 1, theme + 1]) if (neighbour >= 0 && neighbour < THEME_IDS.length) out.push({ index: shown, theme: neighbour, priority: 30 });
+  return out;
 }
 export function imageAt(frame: SequenceFrame, theme: ThemeId, width: number): ImageAsset {
   const images = frame.assets[theme].filter(isImage);

@@ -195,10 +195,13 @@ function composite(context: CanvasRenderingContext2D, images: Decoded[], mix: nu
   if (images[1] && mix > 0) { context.globalAlpha = mix; context.drawImage(images[1].bitmap, 0, 0, width, height); context.globalAlpha = 1; }
 }
 let scratch: HTMLCanvasElement | undefined;
-export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: Decoded[] | undefined, progressMix: number, themeMix: number, cssWidth: number) {
+/** Device px per CSS px for the story canvas. While the story moves, at most 2 (3fa1942): a 3.5x phone otherwise paints and
+ * composites the full plate on every frame of a scroll (I5). At rest, the screen's own ratio, so a resting plate is never
+ * resampled below its native width (a 2x cap drew the 1024 plate from 822 px on a 411 CSS px, 3.5x phone). */
+export const baseScale = (dpr: number, moving: boolean) => (moving ? Math.min(dpr, 2) : dpr);
+export function paintBase(canvas: HTMLCanvasElement, before: Decoded[], after: Decoded[] | undefined, progressMix: number, themeMix: number, cssWidth: number, scale: number) {
   const images = after?.length ? [...before, ...after] : before;
-  // At most 2 device px per CSS px (3fa1942): a 3.5x phone otherwise paints and composites the full plate on every frame of a scroll.
-  const width = Math.min(Math.max(...images.map((image) => image.asset.width)), Math.ceil(cssWidth * Math.min(devicePixelRatio, 2)));
+  const width = Math.min(Math.max(...images.map((image) => image.asset.width)), Math.ceil(cssWidth * scale));
   const height = Math.round(width * images[0].asset.height / images[0].asset.width);
   if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
   const context = canvas.getContext("2d", { alpha: false });
