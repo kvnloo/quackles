@@ -324,6 +324,46 @@ export function HeroInspection() {
     } | null = null;
     const tracked = () => [...pointers.values()];
     let pan: { x: number; y: number; focusX: number; focusY: number; zoom: number; pendingX: number; pendingY: number; samples: { t: number; x: number; y: number }[] } | null = null;
+    let touchSettleTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearTouchSettle = () => {
+      if (touchSettleTimer !== null) clearTimeout(touchSettleTimer);
+      touchSettleTimer = null;
+    };
+
+    const freezeDirectTouch = () => {
+      clearTouchSettle();
+      const current = inspectionSnapshot();
+      const next: InspectionState = {
+        ...current,
+        active: current.zoom > 1.002,
+        targetZoom: current.zoom,
+        zoomVelocity: 0,
+        targetFocusX: current.focusX,
+        targetFocusY: current.focusY,
+        focusVelocityX: 0,
+        focusVelocityY: 0,
+        cameraMoving: false,
+      };
+      setInspectionState(next);
+      syncFrameState(next);
+      return next;
+    };
+
+    const publishDirectTouch = (next: InspectionState) => {
+      clearTouchSettle();
+      setInspectionState(next);
+      syncFrameState(next);
+      touchSettleTimer = setTimeout(() => {
+        if (!pointers.size) return;
+        const current = inspectionSnapshot();
+        if (!current.cameraMoving) return;
+        const settled = { ...current, cameraMoving: false };
+        setInspectionState(settled);
+        syncFrameState(settled);
+      }, 120);
+    };
+
     const onPinchDown = (event: PointerEvent) => {
       if (event.pointerType === "mouse" || !atHero()) return;
       if (
@@ -334,27 +374,30 @@ export function HeroInspection() {
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (pointers.size < 2) {
         const current = inspectionSnapshot();
-        if (current.targetZoom > 1.02) {
-          pan = {
-            x: event.clientX,
-            y: event.clientY,
-            focusX: current.targetFocusX,
-            focusY: current.targetFocusY,
-            zoom: current.targetZoom,
-            pendingX: current.targetFocusX,
-            pendingY: current.targetFocusY,
-            samples: [{ t: performance.now(), x: event.clientX, y: event.clientY }],
-          };
-          try { frame.setPointerCapture(event.pointerId); } catch { /* already released */ }
-          cancelAnimationFrame(animation);
-          animation = 0;
-          lastTick = 0;
+        if (Math.max(current.zoom, current.targetZoom) > 1.02) {
+          const direct = freezeDirectTouch();
+          if (direct.zoom > 1.02) {
+            pan = {
+              x: event.clientX,
+              y: event.clientY,
+              focusX: direct.focusX,
+              focusY: direct.focusY,
+              zoom: direct.zoom,
+              pendingX: direct.focusX,
+              pendingY: direct.focusY,
+              samples: [{ t: performance.now(), x: event.clientX, y: event.clientY }],
+            };
+            try { frame.setPointerCapture(event.pointerId); } catch { /* already released */ }
+            cancelAnimationFrame(animation);
+            animation = 0;
+            lastTick = 0;
+          }
         }
         return;
       }
       pan = null;
       updateRect();
-      const current = inspectionSnapshot();
+      const current = freezeDirectTouch();
       const [a, b] = tracked();
       const midX = (a.x + b.x) / 2;
       const midY = (a.y + b.y) / 2;
@@ -367,7 +410,7 @@ export function HeroInspection() {
       );
       pinch = {
         distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
-        zoom: Math.max(current.targetZoom, 1),
+        zoom: Math.max(current.zoom, 1),
         sourceX: crop.x + fx * crop.width,
         sourceY: crop.y + fy * crop.height,
       };
@@ -394,15 +437,18 @@ export function HeroInspection() {
         pan.samples.push({ t: performance.now(), x: event.clientX, y: event.clientY });
         if (pan.samples.length > 8) pan.samples.shift();
         const moved = Math.hypot(event.clientX - pan.x, event.clientY - pan.y) > 2;
-        syncFrameState({
+        publishDirectTouch({
           ...inspectionSnapshot(),
           active: true,
           zoom,
           targetZoom: zoom,
+          zoomVelocity: 0,
           focusX,
           focusY,
           targetFocusX: focusX,
           targetFocusY: focusY,
+          focusVelocityX: 0,
+          focusVelocityY: 0,
           cameraMoving: moved,
         });
         return;
@@ -432,18 +478,49 @@ export function HeroInspection() {
       const span = 1 / zoom;
       const cropX = Math.max(0, Math.min(1 - span, pinch.sourceX - fx * span));
       const cropY = Math.max(0, Math.min(1 - span, pinch.sourceY - fy * span));
-      setInspectionState({
+      const focusX = zoom <= 1.001 ? 0.5 : (cropX * zoom) / (zoom - 1);
+      const focusY = zoom <= 1.001 ? 0.5 : (cropY * zoom) / (zoom - 1);
+      publishDirectTouch({
+        ...current,
         active: zoom > 1.002,
+        zoom,
         targetZoom: zoom,
-        targetFocusX: zoom <= 1.001 ? 0.5 : (cropX * zoom) / (zoom - 1),
-        targetFocusY: zoom <= 1.001 ? 0.5 : (cropY * zoom) / (zoom - 1),
+        zoomVelocity: 0,
+        focusX,
+        focusY,
+        targetFocusX: focusX,
+        targetFocusY: focusY,
+        focusVelocityX: 0,
+        focusVelocityY: 0,
+        cameraMoving: true,
       });
-      requestTick();
     };
     const onPinchEnd = (event: PointerEvent) => {
       pointers.delete(event.pointerId);
       if (pointers.size < 2) pinch = null;
+
+      if (pointers.size === 1) {
+        const remaining = tracked()[0];
+        const current = freezeDirectTouch();
+        if (current.zoom > 1.02) {
+          pan = {
+            x: remaining.x,
+            y: remaining.y,
+            focusX: current.focusX,
+            focusY: current.focusY,
+            zoom: current.zoom,
+            pendingX: current.focusX,
+            pendingY: current.focusY,
+            samples: [{ t: performance.now(), x: remaining.x, y: remaining.y }],
+          };
+        } else {
+          pan = null;
+        }
+        return;
+      }
+
       if (!pointers.size && pan) {
+        clearTouchSettle();
         const now = performance.now();
         const reduced = sequenceSnapshot().reducedMotion;
         const flickX = reduced ? { focus: pan.pendingX, velocity: 0 } : flickFocusTarget({
@@ -477,6 +554,14 @@ export function HeroInspection() {
         syncFrameState(placed);
         pan = null;
         if (coast) requestTick();
+      } else if (!pointers.size) {
+        clearTouchSettle();
+        const current = inspectionSnapshot();
+        if (current.cameraMoving) {
+          const settled = { ...current, cameraMoving: false };
+          setInspectionState(settled);
+          syncFrameState(settled);
+        }
       }
     };
 
@@ -526,6 +611,7 @@ export function HeroInspection() {
 
     return () => {
       cancelAnimationFrame(animation);
+      clearTouchSettle();
       resizeObserver.disconnect();
       unsubscribeSequence();
       frame.removeEventListener("wheel", onWheel, { capture: true });
