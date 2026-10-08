@@ -24,8 +24,11 @@ const res = {}, bad = [];
 const cx = 720, cy = 450; await touch("touchStart", [[cx - 20, cy], [cx + 20, cy]]);
 for (let i = 1; i <= 12; i++) { const half = 20 + (60 * i) / 12; await touch("touchMove", [[cx - half, cy], [cx + half, cy]]); await page.waitForTimeout(30); }
 await page.waitForTimeout(300); const held = await st(); await touch("touchEnd", []); await settle(); const after = await st();
-res.pinch = { heldTargetZoom: +held.target.toFixed(2), settledZoom: +after.zoom.toFixed(2), detailWidth: after.w };
-if (Math.abs(held.target - 4) / 4 > 0.08) bad.push(`pinch scale off: ${held.target.toFixed(2)} vs 4`); if (!after.w) bad.push("no sharp lock after pinch release");
+res.pinch = { heldZoom: +held.zoom.toFixed(2), heldTargetZoom: +held.target.toFixed(2), heldMoving: held.moving, settledZoom: +after.zoom.toFixed(2), detailWidth: after.w };
+if (Math.abs(held.zoom - 4) / 4 > 0.08) bad.push(`direct pinch scale off: rendered ${held.zoom.toFixed(2)} vs 4`);
+if (Math.abs(held.zoom - held.target) > 0.02) bad.push(`pinch still trails a spring: rendered ${held.zoom.toFixed(2)} target ${held.target.toFixed(2)}`);
+if (held.moving) bad.push("held-still pinch keeps cameraMoving=true");
+if (!after.w) bad.push("no sharp lock after pinch release");
 // T2 pan tracks finger 1:1
 const shot = async () => sharp(await page.screenshot()).extract({ left: 420, top: 0, width: 600, height: 900 }).greyscale().blur(1.5).raw().toBuffer();
 const shift = (A, B) => { let best = null; const W = 600, H = 900; for (let dy = -130; dy <= 130; dy += 2) for (let dx = -130; dx <= 130; dx += 2) { let e = 0, n = 0; for (let y = 300; y < 600; y += 6) for (let x = 200; x < 400; x += 6) { const yy = y + dy, xx = x + dx; if (yy < 0 || yy >= H || xx < 0 || xx >= W) continue; e += Math.abs(A[y * W + x] - B[yy * W + xx]); n++; } e /= n; if (!best || e < best[0]) best = [e, dy, dx]; } return best; };
