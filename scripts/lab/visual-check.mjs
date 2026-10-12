@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Settled-state visual check (#53): same states on each ref, pixel diff of each candidate against the base.
- * Each state: cold context, setTarget, then wait until the camera is at rest and no detail paint for 1.5 s (max 25 s;
- * cache activity is recorded in `settled.busy`, not required). Screenshot = the .poster-frame box. Diff runs in a separate blank page (the
+ * Each state: cold context, setTarget, then wait until the camera is at rest, the painted detail tier covers the need,
+ * and no detail paint for 1.5 s (max 25 s; `settled.timedOut` otherwise). Cache activity is recorded in `settled.busy`,
+ * not required: nightly's FrameCache never idles at rest. Screenshot = the .poster-frame box. Diff runs in a separate blank page (the
  * measured app is never read back). Uses the builds/servers prepared by run.mjs (LAB_DIR worktrees with out/).
  *
  *   node scripts/lab/visual-check.mjs --base <sha> --cand <sha>[,<sha>] --out experiments/results/<run>/visual.json
@@ -38,16 +39,20 @@ async function shoot(browser, sha, port, state) {
   await page.evaluate(() => { window.__vcPaint = performance.now(); addEventListener("quackles:detail-painted", () => { window.__vcPaint = performance.now(); }); });
   await page.evaluate(({ zoom, x, y }) => window.__QUACKLES_INSPECTION__.setTarget(zoom, x, y), state);
   const t0 = Date.now();
-  let settled = false;
+  let settled = null;
   while (Date.now() - t0 < 25000) {
     await sleep(250);
     const s = await page.evaluate(() => {
       const st = window.__QUACKLES_SEQUENCE__.getState(), i = window.__QUACKLES_INSPECTION__.getState();
-      return { moving: i.cameraMoving, busy: (st.cache?.inflight ?? 0) + (st.cache?.queued ?? 0), quietMs: performance.now() - window.__vcPaint, detailWidth: st.detailWidth, zoom: i.zoom };
+      const frame = document.querySelector(".poster-frame").getBoundingClientRect();
+      // Sharp: the painted tier covers the need (frame device px x zoom, capped at the 201MP fixture width), as in run.mjs.
+      const need = Math.min(Math.ceil(frame.width * devicePixelRatio * i.zoom), 11584);
+      return { moving: i.cameraMoving, sharp: i.zoom < 1.02 || st.detailWidth >= 0.98 * need, need, busy: (st.cache?.inflight ?? 0) + (st.cache?.queued ?? 0), quietMs: performance.now() - window.__vcPaint, detailWidth: st.detailWidth, zoom: i.zoom };
     });
     // Settled = camera at rest and no detail paint for 1.5 s. Cache activity is reported, not required: nightly's FrameCache
     // never idles at rest (decode/evict loop, #53 wave 2), so an idle-cache criterion never holds.
-    if (!s.moving && s.quietMs > 1500) { settled = s; break; }
+    if (!s.moving && s.sharp && s.quietMs > 1500) { settled = s; break; }
+    settled = { ...s, timedOut: true };
   }
   const box = await page.locator(".poster-frame").boundingBox();
   const file = path.join(outDir, `${state.id}-${sha.slice(0, 8)}.png`);
