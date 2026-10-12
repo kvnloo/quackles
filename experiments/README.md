@@ -122,6 +122,11 @@ The owner's commit audit on #50 names two historical controls. Neither has been 
 ## Results
 
 - [`results/`](results/) holds the committed summaries of baseline runs. Read each one's **Pins** section before comparing anything.
+- **Baseline smoke** [`20261012-baseline-db694b3`](results/20261012-baseline-db694b3/summary.md): harness `db694b3`, assets `4c2c52a3`, Chromium 141 headless, SwiftShader, 4-vCPU cloud host, 5 cold trials per cell with rotated order. What it shows about the harness:
+  - `nightly` (`71c9813a`) and `cd62cd66` PASS every smoke gate on both profiles. There was no external network, no 404, a single source family (`blue/p0000000`, master `sha256:f8741314…`) and no blank polls.
+  - `2d22784d` (Q1) is **NOT RUN** in 10/10 trials because of missing assets.
+  - On `nightly` mobile-emulated (4× CPU), the build's detail never reached the 8× need before the next tape step in 5/5 trials, so `timeToSharpMs` is `null`.
+  - The `cd62cd66` cells are not same-viewport comparable with `nightly`, because maxZoom 4 clamps the 8× steps.
 - These runs are a **harness smoke**: headless Chromium on a shared cloud host with SwiftShader. They show that the collector and controls agree. They are not performance evidence, not a feel verdict, and not a ranking. No physical-device or emulated-mobile conclusion follows from them.
 
 ## Not covered yet (by design)
