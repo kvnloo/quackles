@@ -248,7 +248,7 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
     const startPerf = await page.evaluate(() => performance.now());
     const t0 = performance.now();
     const marks = [], jitter = [];
-    let sharpStepAt = null, sharpStepZoom = null, unsupported = new Set();
+    let sharpStepAt = null, sharpStepZoom = null, sharpFromZoom = null, lastZoom = 1, unsupported = new Set();
     for (const step of tape.steps) {
       const wait = step.t - (performance.now() - t0);
       if (wait > 1) await sleep(wait);
@@ -257,7 +257,8 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
       if (step.action === "setTarget") {
         if (!facts.hasSetTarget) { unsupported.add("setTarget"); continue; }
         const at = await page.evaluate(({ zoom, x, y }) => { window.__QUACKLES_INSPECTION__.setTarget(zoom, x, y); return performance.now(); }, step);
-        if (step.measure === "sharp") { sharpStepAt = at; sharpStepZoom = step.zoom; }
+        if (step.measure === "sharp") { sharpStepAt = at; sharpStepZoom = step.zoom; sharpFromZoom = lastZoom; }
+        lastZoom = step.zoom;
       } else if (step.action === "wheel") {
         await cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: px, y: py, deltaX: step.deltaX ?? 0, deltaY: step.deltaY });
       } else if (step.action === "mouseMove") {
@@ -297,7 +298,10 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
     // capped at the fixture width) with the camera at rest. Poll granularity: POLL_MS.
     const fixtureWidth = receipt.fixture.width;
     if (sharpStepAt == null) receipt.metricNotes.timeToSharpMs = unsupported.has("setTarget") ? "build has no __QUACKLES_INSPECTION__.setTarget" : "tape has no measure:'sharp' step";
-    else if (!fixtureWidth) receipt.metricNotes.timeToSharpMs = `fixture width unknown (observed source families: ${families.join(", ") || "none"})`;
+    else if (facts.maxZoom != null && Math.min(sharpStepZoom, facts.maxZoom) <= Math.min(sharpFromZoom, facts.maxZoom) + 0.01) {
+      // The build clamps both zooms to the same value: the step only pans an already-refined view, so "sharp" may already hold.
+      receipt.metricNotes.timeToSharpMs = `sharp step ${sharpFromZoom}x->${sharpStepZoom}x is clamped to maxZoom ${round(facts.maxZoom)} on both sides; no zoom change to measure`;
+    } else if (!fixtureWidth) receipt.metricNotes.timeToSharpMs = `fixture width unknown (observed source families: ${families.join(", ") || "none"})`;
     else {
       const hit = data.polls.find(([t, dw, z, moving]) => t >= sharpStepAt && dw != null && z != null && !moving && z >= Math.min(sharpStepZoom, facts.maxZoom ?? sharpStepZoom) * 0.98 && dw >= 0.98 * Math.min(Math.ceil(box.width * profile.deviceScaleFactor * z), fixtureWidth));
       receipt.metrics.timeToSharpMs = hit ? round(hit[0] - sharpStepAt) : null;

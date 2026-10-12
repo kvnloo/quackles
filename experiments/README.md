@@ -115,7 +115,7 @@ The owner's commit audit on #50 names two historical controls. Neither has been 
 |---|---|---|
 | Q0 | `17132d90` (Sep 15 quiet native-scroll film) | Not on the `nightly` first-parent line. Predates the sequence/inspection hooks the tape needs. Not run. |
 | Q1 | `2d22784d` (Sep 21, reversible inspection + Blue ~200MP DZI) | **NOT RUN.** It requests DZI levels (`blue/p0000000/12/*`) that no revision of `quackles-assets` has. Its 404s are missing assets, not a loss. |
-| Q1-nightly-promotion | `cd62cd66` (Sep 21, "Promote merged PR #39 state to nightly") | Q1 + `5f11714` (maps DZI variants to committed levels). It runs against assets `4c2c52a3`. `maxZoom` is 4, so the tape's 8× steps are clamped. |
+| Q1-nightly-promotion | `cd62cd66` (Sep 21, "Promote merged PR #39 state to nightly") | Q1 + `5f11714` (maps DZI variants to committed levels). It runs against assets `4c2c52a3`. `maxZoom` is 4, so the tape's 8× steps are clamped and `timeToSharpMs` is `null` (no zoom change to measure). |
 
 #52 (`fix/direct-touch-p0-resume-20261008`) is **closed and unmerged**. It is counted as an input-lane candidate, not as landed behavior.
 
