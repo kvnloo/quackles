@@ -9,7 +9,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { median, round } from "./lib.mjs";
+import { median, RECEIPT_SCHEMA, round } from "./lib.mjs";
 
 const dir = process.argv[2];
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : null; };
@@ -18,7 +18,7 @@ if (!dir || !arg("base") || !arg("cand")) {
   process.exit(2);
 }
 const matches = (r, ref) => r.branch === ref || r.sha === ref || r.sha.startsWith(ref);
-const receipts = fs.readdirSync(dir).filter((f) => f.endsWith(".json") && f !== "run.json").map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
+const receipts = fs.readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"))).filter((r) => r.schema === RECEIPT_SCHEMA);
 
 // Metric getters: receipt metrics plus the attribution the runner records in extra.
 const METRICS = {

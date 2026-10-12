@@ -1,0 +1,70 @@
+# Paired comparison: `20261012-w1-smoke-27d3af4`
+
+Base `71c9813` vs `d269afba`, `6f2ef5d2`. Pairs = same trial number. Diff = candidate - base (negative = fewer/faster). CI: seeded bootstrap of the median diff. beyondNoise = CI excludes 0 and |median diff| > base MAD.
+
+| scenario | mode | profile | candidate | metric | n | base median | cand median | median diff | 95% CI | base MAD | beyond noise |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | framesOver50Ms | 7 | 47 | 7 | -40 | [-41, -36] | 1 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | framesOver33Ms | 7 | 50 | 11 | -39 | [-39, -39] | 1 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | rafP95Ms | 7 | 36.5 | 20.8 | -16.6 | [-20.1, -13.4] | 2.5 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | rafP99Ms | 7 | 162.2 | 31.4 | -130.3 | [-142.5, -120] | 10.7 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | maxFrameMs | 7 | 221.1 | 227.4 | 7.2 | [-51.5, 72.2] | 13.7 | no |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | inputToCameraMs | 7 | 59.7 | 55.3 | -6 | [-7.2, 5.6] | 4.5 | no |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | timeToSharpMs | 7 | 2813.8 | 2761.9 | 4.2 | [-136.6, 29.7] | 33.1 | no |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | detailPaints | 7 | 46 | 7 | -39 | [-41, -36] | 3 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | detailPaintsAtRest | 7 | 24 | 3 | -21 | [-23, -19] | 2 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | detailPaintsMoving | 7 | 22 | 4 | -18 | [-19, -16] | 1 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | longFramesWithPaint | 7 | 46 | 7 | -39 | [-40, -36] | 2 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | loafScriptMs | 7 | 4754 | 853 | -3838 | [-3983, -3778] | 97 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | decodes | 7 | 561 | 708 | 150 | [135, 156] | 7 | **yes** |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | requests | 7 | 197 | 196 | -1 | [-6, 8] | 4 | no |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | decodedPeakBytes | 7 | 67108864 | 67108864 | 0 | [0, 0] | 0 | no |
+| smoke-inspect | A | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | blankFrames | 7 | 0 | 0 | 0 | [0, 0] | 0 | no |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | framesOver50Ms | 7 | 47 | 6 | -41 | [-43, -37] | 1 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | framesOver33Ms | 7 | 50 | 12 | -38 | [-42, -36] | 1 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | rafP95Ms | 7 | 36.5 | 21 | -15.5 | [-20.3, -11.8] | 2.5 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | rafP99Ms | 7 | 162.2 | 32.1 | -127.2 | [-139.2, -119.3] | 10.7 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | maxFrameMs | 7 | 221.1 | 220.7 | -9.3 | [-12.1, 11.6] | 13.7 | no |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | inputToCameraMs | 7 | 59.7 | 57 | -5.7 | [-10.7, 6.2] | 4.5 | no |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | timeToSharpMs | 7 | 2813.8 | 2832.8 | 19 | [-45.9, 82.1] | 33.1 | no |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | detailPaints | 7 | 46 | 5 | -40 | [-43, -37] | 3 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | detailPaintsAtRest | 7 | 24 | 2 | -21 | [-24, -20] | 2 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | detailPaintsMoving | 7 | 22 | 3 | -19 | [-19, -17] | 1 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | longFramesWithPaint | 7 | 46 | 5 | -40 | [-42, -37] | 2 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | loafScriptMs | 7 | 4754 | 789 | -3961 | [-4101, -3774] | 97 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | decodes | 7 | 561 | 728 | 173 | [160, 185] | 7 | **yes** |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | requests | 7 | 197 | 197 | 2 | [-5, 3] | 4 | no |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | decodedPeakBytes | 7 | 67108864 | 67108864 | 0 | [0, 0] | 0 | no |
+| smoke-inspect | A | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | blankFrames | 7 | 0 | 0 | 0 | [0, 0] | 0 | no |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | framesOver50Ms | 7 | 48 | 8 | -41 | [-43, -38] | 0 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | framesOver33Ms | 7 | 52 | 14 | -39 | [-42, -34] | 1 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | rafP95Ms | 7 | 55.9 | 21.2 | -35.2 | [-40.9, -30.9] | 5.1 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | rafP99Ms | 7 | 174.7 | 34 | -140.7 | [-144, -125.1] | 4.6 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | maxFrameMs | 7 | 251.3 | 203.6 | -31.8 | [-47.7, -1.5] | 31.1 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | inputToCameraMs | 7 | 57.1 | 60.4 | 0.3 | [-0.6, 5.8] | 2.4 | no |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | timeToSharpMs | 7 | 2535.6 | 2558.2 | -31.3 | [-72.6, 37.6] | 11.8 | no |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | detailPaints | 7 | 47 | 7 | -40 | [-41, -39] | 0 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | detailPaintsAtRest | 7 | 24 | 3 | -21 | [-22, -20] | 1 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | detailPaintsMoving | 7 | 23 | 4 | -19 | [-20, -18] | 1 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | longFramesWithPaint | 7 | 46 | 7 | -39 | [-40, -39] | 0 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | loafScriptMs | 7 | 5029 | 915 | -4040 | [-4179, -3835] | 74 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | decodes | 7 | 563 | 719 | 150 | [144, 169] | 9 | **yes** |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | requests | 7 | 2 | 13 | 8 | [0, 11] | 0 | no |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | decodedPeakBytes | 7 | 67108864 | 67108864 | 0 | [0, 0] | 0 | no |
+| smoke-inspect | C | desktop | `d269afba2df89b0ba0f778ba46da75278b3c5edd` | blankFrames | 7 | 0 | 0 | 0 | [0, 0] | 0 | no |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | framesOver50Ms | 7 | 48 | 5 | -43 | [-43, -41] | 0 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | framesOver33Ms | 7 | 52 | 12 | -40 | [-45, -37] | 1 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | rafP95Ms | 7 | 55.9 | 21.6 | -34.8 | [-41.1, -30.3] | 5.1 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | rafP99Ms | 7 | 174.7 | 32.3 | -142.4 | [-147.7, -130.9] | 4.6 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | maxFrameMs | 7 | 251.3 | 228.7 | -37.7 | [-48.3, 35] | 31.1 | no |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | inputToCameraMs | 7 | 57.1 | 58.8 | 3.7 | [-1.1, 5] | 2.4 | no |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | timeToSharpMs | 7 | 2535.6 | 2550.4 | 4.9 | [-63.7, 72.4] | 11.8 | no |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | detailPaints | 7 | 47 | 5 | -42 | [-42, -41] | 0 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | detailPaintsAtRest | 7 | 24 | 2 | -22 | [-23, -21] | 1 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | detailPaintsMoving | 7 | 23 | 3 | -20 | [-21, -19] | 1 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | longFramesWithPaint | 7 | 46 | 5 | -41 | [-42, -41] | 0 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | loafScriptMs | 7 | 5029 | 808 | -4126 | [-4258, -3942] | 74 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | decodes | 7 | 563 | 759 | 190 | [184, 206] | 9 | **yes** |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | requests | 7 | 2 | 3 | 1 | [-7, 6] | 0 | no |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | decodedPeakBytes | 7 | 67108864 | 67108864 | 0 | [0, 0] | 0 | no |
+| smoke-inspect | C | desktop | `6f2ef5d216e9d24633a6ad62000912ac0c4e7e08` | blankFrames | 7 | 0 | 0 | 0 | [0, 0] | 0 | no |

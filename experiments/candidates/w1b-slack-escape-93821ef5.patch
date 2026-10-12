@@ -1,0 +1,145 @@
+From 93821ef545b3ed345c336a87fed7ef3290da36c4 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 12 Oct 2026 15:00:00 +0000
+Subject: [PATCH] lab(#53 w1b): cap the detail repaint inset by the paint's
+ slack per side
+
+Wave 1 challenger (6f2ef5d2) dropped the inset only on image-edge
+sides. Lab probe: when sharpPlan's budget/cap fallback paints coverage
+== crop (2.5x on the Blue 201MP pyramid), interior sides have no slack
+either, so the same crop still "escaped" and repainted ~9x/s at rest.
+
+slackInsets() caps each side's early-repaint inset by the slack the
+painted coverage had beyond the painted crop on that side; the
+image-edge case is the zero-slack special case. Experimental candidate
+for Quackles Lab; not for promotion without phone evidence.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014RvgE21Cg9C77BBH5USAp9
+---
+ components/sequence/SequencePlayer.tsx |  8 +++----
+ lib/sequence/render.ts                 | 29 +++++++++++++++++++-------
+ scripts/detail-escape-contracts.mjs    | 21 +++++++++++++++++--
+ 3 files changed, 44 insertions(+), 14 deletions(-)
+
+diff --git a/components/sequence/SequencePlayer.tsx b/components/sequence/SequencePlayer.tsx
+index 5c56bfb..255d58a 100644
+--- a/components/sequence/SequencePlayer.tsx
++++ b/components/sequence/SequencePlayer.tsx
+@@ -7,7 +7,7 @@ import { FrameCache } from "@/lib/sequence/cache";
+ import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
+ import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
+ import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
+-import { placeDetail, cropEscapes, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
++import { placeDetail, cropEscapes, slackInsets, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+ import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
+ import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
+ import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
+@@ -45,7 +45,7 @@ export function SequencePlayer() {
+     let inspectionSettleTimer = 0, inspectionSettled = true;
+     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
+     let paintedKeys: string[] = [], detailKeys: string[] = [];
+-    let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "";
++    let paintedCoverage: Crop | null = null, paintedCrop: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "";
+     let heldTheme = 2;
+     let themeRelease: ThemeRelease | null = null;
+     const releaseDetail = () => {
+@@ -271,7 +271,7 @@ export function SequencePlayer() {
+         const primaryReady = ready(decoded[0]);
+         const mixChanged = Math.abs(showMix - paintedMix) > 0.001;
+         const upgrade = layers[0].plan.variant.width > state.detailWidth;
+-        const escaping = !paintedCoverage || cropEscapes(crop, paintedCoverage, crop.width * 0.12);
++        const escaping = !paintedCoverage || !paintedCrop || cropEscapes(crop, paintedCoverage, slackInsets(paintedCrop, paintedCoverage, crop.width * 0.12));
+         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
+         if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
+           // First appearance of the sharp layer (it was hidden/released): dissolve it in. Repaints of a visible layer do not re-fade.
+@@ -286,7 +286,7 @@ export function SequencePlayer() {
+           window.dispatchEvent(new Event("quackles:detail-painted"));
+           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
+           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
+-          paintedCoverage = coverage;
++          paintedCoverage = coverage; paintedCrop = crop;
+           detailThemeKey = visibleThemeKey;
+           paintedMix = allReady ? showMix : 0;
+           state.detailWidth = paintLayers[0].plan.variant.width;
+diff --git a/lib/sequence/render.ts b/lib/sequence/render.ts
+index 7eb2d3b..d9cfab5 100644
+--- a/lib/sequence/render.ts
++++ b/lib/sequence/render.ts
+@@ -132,14 +132,27 @@ export function cropInside(inner: Crop, outer: Crop, inset = 0): boolean {
+ export const DETAIL_CANVAS_CAP = 4096;
+ 
+ /** Grow the painted source rect until the backing store would exceed the cap. */
+-/** Does a pan need a fresh detail paint? The inset repaints early, before the crop reaches the painted edge; a coverage side
+- * already on the image boundary has nothing beyond it, so it takes no inset (else low zoom or an edge crop repaints forever). */
+-export function cropEscapes(inner: Crop, outer: Crop, inset = 0): boolean {
+-  const atStart = (v: number) => v <= 1e-9, atEnd = (v: number) => v >= 1 - 1e-9;
+-  const left = atStart(outer.x) ? 0 : inset, top = atStart(outer.y) ? 0 : inset;
+-  const right = atEnd(outer.x + outer.width) ? 0 : inset, bottom = atEnd(outer.y + outer.height) ? 0 : inset;
+-  return inner.x < outer.x + left || inner.y < outer.y + top
+-    || inner.x + inner.width > outer.x + outer.width - right || inner.y + inner.height > outer.y + outer.height - bottom;
++export type Insets = { left: number; top: number; right: number; bottom: number };
++/** Early-repaint inset per side, capped by the slack the paint had on that side (painted coverage beyond the crop). A side
++ * with no slack (image edge, or sharpPlan's budget/cap fallback where coverage == crop) cannot gain coverage by
++ * repainting, so it takes no inset; otherwise the same crop "escapes" forever and every render repaints. */
++export function slackInsets(paintedCrop: Crop, coverage: Crop, inset: number): Insets {
++  return {
++    left: Math.max(0, Math.min(inset, paintedCrop.x - coverage.x)),
++    top: Math.max(0, Math.min(inset, paintedCrop.y - coverage.y)),
++    right: Math.max(0, Math.min(inset, coverage.x + coverage.width - (paintedCrop.x + paintedCrop.width))),
++    bottom: Math.max(0, Math.min(inset, coverage.y + coverage.height - (paintedCrop.y + paintedCrop.height))),
++  };
++}
++/** Does a pan need a fresh detail paint? True when the crop leaves the painted coverage shrunk by the insets. A number
++ * applies to every side not already on the image boundary (nothing lies beyond it). */
++export function cropEscapes(inner: Crop, outer: Crop, inset: number | Insets = 0): boolean {
++  const eps = 1e-9;
++  const i = typeof inset === "number"
++    ? { left: outer.x <= eps ? 0 : inset, top: outer.y <= eps ? 0 : inset, right: outer.x + outer.width >= 1 - eps ? 0 : inset, bottom: outer.y + outer.height >= 1 - eps ? 0 : inset }
++    : inset;
++  return inner.x < outer.x + i.left - eps || inner.y < outer.y + i.top - eps
++    || inner.x + inner.width > outer.x + outer.width - i.right + eps || inner.y + inner.height > outer.y + outer.height - i.bottom + eps;
+ }
+ export function fittedBuffer(cssWidth: number, cssHeight: number, crop: Crop, dpr: number, cap = DETAIL_CANVAS_CAP, margin = 0.4): Crop {
+   let pad = margin;
+diff --git a/scripts/detail-escape-contracts.mjs b/scripts/detail-escape-contracts.mjs
+index 3a879db..3bbe53c 100644
+--- a/scripts/detail-escape-contracts.mjs
++++ b/scripts/detail-escape-contracts.mjs
+@@ -1,9 +1,11 @@
+ #!/usr/bin/env node
+ /** #53 contract: the detail layer repaints for a pan only when the crop can leave the painted coverage. A side of the coverage
+  * that already reaches the image edge has nothing beyond it, so it needs no early-repaint inset. Before this, the 12% inset
+- * on every side made a zoom < ~1.32 crop (or any crop on an image edge) "escape" forever: a full repaint on every render. */
++ * on every side made a zoom < ~1.32 crop (or any crop on an image edge) "escape" forever: a full repaint on every render.
++ * The same holds for any side the paint had no slack on (sharpPlan's budget/cap fallback paints coverage == crop), so the
++ * inset per side is capped by that side's slack at paint time. */
+ import assert from "node:assert/strict";
+-import { bufferedCrop, cropEscapes, inspectionCrop } from "../lib/sequence/render.ts";
++import { bufferedCrop, cropEscapes, inspectionCrop, slackInsets } from "../lib/sequence/render.ts";
+ let n = 0; const test = (name, fn) => { fn(); n++; console.log("PASS", name); };
+ const inset = (crop) => crop.width * 0.12;
+ const painted = (zoom, x, y) => { const crop = inspectionCrop(zoom, x, y); return { crop, coverage: bufferedCrop(crop, 0.4) }; };
+@@ -28,4 +30,19 @@ test("a crop outside the coverage always escapes", () => {
+   const { crop, coverage } = painted(8, 0.2, 0.2);
+   assert.equal(cropEscapes({ ...crop, x: crop.x + 0.3 }, coverage, inset(crop)), true);
+ });
++test("no slack on a side (budget-limited coverage == crop): the same crop does not escape, a pan past it does", () => {
++  const crop = inspectionCrop(2.5, 0.5, 0.5), coverage = { ...crop }; // sharpPlan's margin-0 fallback
++  const insets = slackInsets(crop, coverage, inset(crop));
++  assert.deepEqual(insets, { left: 0, top: 0, right: 0, bottom: 0 });
++  assert.equal(cropEscapes(crop, coverage, insets), false);
++  assert.equal(cropEscapes({ ...crop, x: crop.x + 0.001 }, coverage, insets), true);
++});
++test("inset per side is capped by the slack the paint had on that side", () => {
++  const { crop, coverage } = painted(8, 0.5, 0.5);
++  const insets = slackInsets(crop, coverage, inset(crop));
++  for (const side of ["left", "top", "right", "bottom"]) assert.ok(Math.abs(insets[side] - inset(crop)) < 1e-12, side); // 40% buffer > 12% inset
++  const edge = painted(8, 0, 0.5), e = slackInsets(edge.crop, edge.coverage, inset(edge.crop));
++  assert.equal(e.left, 0);
++  assert.ok(e.right > 0);
++});
+ console.log(`${n} passed`);
+-- 
+2.43.0
+

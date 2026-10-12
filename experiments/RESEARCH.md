@@ -86,11 +86,44 @@ Verdicts:
   - **More decodes, beyond noise** (+27–34% on smoke, up to about 5× on the unseen C pass). Freeing the main thread lets the at-rest decode/evict loop (Queue Q1) spin faster.
   - Decoding is off the main thread here and memory stays bounded. But it costs CPU and battery, and it must be fixed before any promotion.
 
-### W1b: cap the inset by the paint's slack per side (in progress)
+### W1b: cap the inset by the paint's slack per side
 
 - **Contender:** `93821ef5`, built on `6f2ef5d2`. `slackInsets()` caps each side's early-repaint inset by the slack the painted coverage had beyond the painted crop. The image-edge case is the zero-slack special case.
-- **Run:** held-out tape `heldout-midzoom-hold`, committed in `c052457` before any W1b result. 10 paired trials, nightly vs W1 challenger vs W1b, modes A and C.
-- **Results:** pending.
+- **Run:** held-out tape `heldout-midzoom-hold`, committed in `c052457` before any W1b result. 10 paired trials, modes A and C (`20261012-w1b-heldout-c052457`).
+  - The receipts mark the harness dirty because an uncommitted `visual-check.mjs` edit sat in the tree.
+  - `run.mjs` was unchanged at `c052457`.
+
+v2 vs v1 (paired):
+
+| metric | A | C |
+|---|---|---|
+| paints at rest | 19 → 2 (beyond noise) | 20 → 2 (beyond noise) |
+| paints while moving | **9 → 24 (worse)** | **11 → 22 (worse)** |
+| rAF p99 | **+42 ms (worse)** | **+57 ms (worse)** |
+| max frame | **+77 ms (worse)** | **+78 ms (worse)** |
+| time to sharp | +77 ms (n.s.) | **+159 ms (worse)** |
+| frames >50 ms | −3 (n.s.) | −5 (beyond noise) |
+| decodes | +24 (beyond noise) | −136 (beyond noise) |
+
+- **Verdict: REJECT `93821ef5`.** It removes the at-rest loop as intended, but more repaints move into motion, and the tail and post-stop sharpening get worse. That is the trade the mission rules out.
+- **Why the moving repaints rose is not yet explained.** In theory, smaller insets should escape less often. A working guess: zero-slack coverage painted at the end of one gesture makes the next gesture's first moves escape every frame, while each motion repaint again hits the budget's margin-0 fallback. This needs a trace before any v3 (Queue Q2b).
+
+Held-out confirmation of the W1 challenger vs nightly on the same run:
+
+| metric | A | C |
+|---|---|---|
+| frames >50 ms | 47 → 28 (−20, CI [−23, −17]) | 50 → 31 (−19) |
+| rAF p99 | 187 → 105 ms | 208 → 98 ms |
+| max frame | 304 → 233 ms | 337 → 236 ms |
+| **time to sharp** | **−805 ms (CI [−998, −771])** | **−1147 ms (CI [−1195, −1074])** |
+| decodes | +134 (beyond noise) | +293 (beyond noise) |
+| decoded peak | = budget | = budget |
+| blank polls | 0 | 0 |
+
+**Wave 1 outcome: KEEP `6f2ef5d2` as the lab candidate.** It is better than nightly beyond noise on three tapes, two of them unseen. It is pixel-identical at four settled states, its time to sharp is equal or better, and memory stays at the budget. It is not for promotion yet:
+- it has a known residual at-rest loop when coverage == crop;
+- it has higher decode churn (Q1);
+- it has no GPU-host or phone evidence (Q3, Q4).
 
 ## Queue (highest expected value first)
 
@@ -106,19 +139,21 @@ Verdicts:
      - the decoded peak exceeds the budget;
      - **story-scroll smoothness regresses** (adjacent-frame plates exist for scrolling). Run `npm run test:scroll` / `fps-harness` and add a scroll tape.
    - **Contenders:**
-     - incumbent: the W1 or W1b winner;
+     - incumbent: the W1 winner `6f2ef5d2`;
      - simplest alternative: do not evict wanted entries at all, so the job waits;
      - challenger: priority-aware eviction.
-2. **Q2, remaining long frames.** `maxFrameMs` stays at about 220–330 ms in every build. These are the first sharp-tier paint and tier upgrades: a full 2400×3600 canvas redraw of 48–54 tiles. Candidates, in order:
+2. **Q2b, residual zero-slack repaint loop** (W1 candidate). Trace why W1b moved repaints into motion before trying again. A likely better lever is the budget fallback itself (`sharpPlan` margin 0 at 2.5× on the 201 MP tier), together with Q1, rather than the escape test.
+3. **Q2, remaining long frames.** `maxFrameMs` stays at about 220–330 ms in every build. These are the first sharp-tier paint and tier upgrades: a full 2400×3600 canvas redraw of 48–54 tiles. Candidates, in order:
    - incremental paint of only the newly exposed or upgraded tiles;
    - splitting a paint across frames, keeping the old surface visible until it is complete;
    - avoiding `imageSmoothingQuality: "high"` only where the scale is exactly 1:1. This needs a pixel check and must not reduce quality.
-3. **Q3, a calibrated GPU host.** Re-run W0/W1 with `GPU=1` on a host with a real GPU. The SwiftShader numbers overstate paint cost.
-4. **Q4, physical phone.** Run the W1/W1b finalist plus the Q1 winner on Android Chrome with the same tapes (touch tapes need a CDP touch port of the tape format) and a human blind A/B feel review.
-5. **Q5, collector overhead.** Calibrate the collector (rAF loop, polls, LoAF observer) against an uninstrumented control.
+4. **Q3, a calibrated GPU host.** Re-run W0/W1 with `GPU=1` on a host with a real GPU. The SwiftShader numbers overstate paint cost.
+5. **Q4, physical phone.** Run the W1/W1b finalist plus the Q1 winner on Android Chrome with the same tapes (touch tapes need a CDP touch port of the tape format) and a human blind A/B feel review.
+6. **Q5, collector overhead.** Calibrate the collector (rAF loop, polls, LoAF observer) against an uninstrumented control.
 
 ## Negative findings
 
 - **Warm caches alone don't help frame pacing.** W0: B and C vs A show no reduction in long frames. Prefetch and warm-up work cannot fix this bottleneck.
 - **The identical-key repaint skip (`d269afba`) is not enough.** It misses the per-frame repaints during edge pans, because the coverage changes slightly every frame while it stays at the image edge.
+- **Slack-capped insets (`93821ef5`, W1b) are rejected.** They fix at-rest repaints but add repaints in motion, worsen the tail (p99 +42–57 ms, max +77 ms), and slow time to sharp (+159 ms in C).
 - **`2d22784d` (Q1 control) is not runnable** against any `quackles-assets` revision (missing DZI levels). Use `cd62cd66`.

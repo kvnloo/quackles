@@ -7,7 +7,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { checkReceipt, summarize, SUMMARY_METRICS } from "./lib.mjs";
+import { checkReceipt, RECEIPT_SCHEMA, summarize, SUMMARY_METRICS } from "./lib.mjs";
 
 const dir = process.argv[2];
 if (!dir || !fs.existsSync(dir)) {
@@ -17,8 +17,9 @@ if (!dir || !fs.existsSync(dir)) {
 const outFlag = process.argv.indexOf("--out");
 const outDir = outFlag > 0 ? process.argv[outFlag + 1] : dir;
 const manifest = fs.existsSync(path.join(dir, "run.json")) ? JSON.parse(fs.readFileSync(path.join(dir, "run.json"), "utf8")) : null;
-const receipts = fs.readdirSync(dir).filter((f) => f.endsWith(".json") && f !== "run.json").sort()
-  .map((f) => ({ f, r: JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) }));
+// Receipts only: run.json, visual.json and other side files in the run directory are not cells.
+const receipts = fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort()
+  .map((f) => ({ f, r: JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) })).filter(({ r }) => r.schema === RECEIPT_SCHEMA);
 const invalid = receipts.map(({ f, r }) => [f, checkReceipt(r)]).filter(([, p]) => p.length);
 if (invalid.length) {
   for (const [f, p] of invalid) console.error(`${f}: ${p.join("; ")}`);
