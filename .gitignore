@@ -71,3 +71,6 @@ __pycache__/
 /blender/assets/studio_small*
 
 .cache/
+
+# Quackles Lab (#53): receipts, traces and screenshots stay local (worktrees live in ~/.cache/quackles-lab)
+/results/

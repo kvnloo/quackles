@@ -44,7 +44,11 @@
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",
-    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs"
+    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs",
+    "lab:inventory": "node scripts/lab/inventory.mjs",
+    "lab:run": "node scripts/lab/run.mjs",
+    "lab:aggregate": "node scripts/lab/aggregate.mjs",
+    "test:lab": "node --test scripts/lab/lab.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
