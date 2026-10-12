@@ -249,6 +249,7 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
     const t0 = performance.now();
     const marks = [], jitter = [];
     let sharpStepAt = null, sharpStepZoom = null, sharpFromZoom = null, lastZoom = 1, unsupported = new Set();
+    const targetTimes = [];
     for (const step of tape.steps) {
       const wait = step.t - (performance.now() - t0);
       if (wait > 1) await sleep(wait);
@@ -257,6 +258,7 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
       if (step.action === "setTarget") {
         if (!facts.hasSetTarget) { unsupported.add("setTarget"); continue; }
         const at = await page.evaluate(({ zoom, x, y }) => { window.__QUACKLES_INSPECTION__.setTarget(zoom, x, y); return performance.now(); }, step);
+        targetTimes.push(at);
         if (step.measure === "sharp") { sharpStepAt = at; sharpStepZoom = step.zoom; sharpFromZoom = lastZoom; }
         lastZoom = step.zoom;
       } else if (step.action === "wheel") {
@@ -303,9 +305,11 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
       receipt.metricNotes.timeToSharpMs = `sharp step ${sharpFromZoom}x->${sharpStepZoom}x is clamped to maxZoom ${round(facts.maxZoom)} on both sides; no zoom change to measure`;
     } else if (!fixtureWidth) receipt.metricNotes.timeToSharpMs = `fixture width unknown (observed source families: ${families.join(", ") || "none"})`;
     else {
-      const hit = data.polls.find(([t, dw, z, moving]) => t >= sharpStepAt && dw != null && z != null && !moving && z >= Math.min(sharpStepZoom, facts.maxZoom ?? sharpStepZoom) * 0.98 && dw >= 0.98 * Math.min(Math.ceil(box.width * profile.deviceScaleFactor * z), fixtureWidth));
+      // Window ends at the next viewport step: after it the camera is somewhere else.
+      const windowEnd = targetTimes.find((t) => t > sharpStepAt) ?? Infinity;
+      const hit = data.polls.find(([t, dw, z, moving]) => t >= sharpStepAt && t < windowEnd && dw != null && z != null && !moving && z >= Math.min(sharpStepZoom, facts.maxZoom ?? sharpStepZoom) * 0.98 && dw >= 0.98 * Math.min(Math.ceil(box.width * profile.deviceScaleFactor * z), fixtureWidth));
       receipt.metrics.timeToSharpMs = hit ? round(hit[0] - sharpStepAt) : null;
-      receipt.metricNotes.timeToSharpMs = hit ? `setTarget(${sharpStepZoom}) -> detailWidth >= min(frame device px x zoom, ${fixtureWidth}) at rest; ${POLL_MS} ms poll` : "sharp state not reached before the next tape step/end";
+      receipt.metricNotes.timeToSharpMs = hit ? `setTarget(${sharpStepZoom}) -> detailWidth >= min(frame device px x zoom, ${fixtureWidth}) at rest; ${POLL_MS} ms poll` : `sharp state not reached within ${Number.isFinite(windowEnd) ? round(windowEnd - sharpStepAt, 0) : "the rest of the tape"} ms (until the next viewport step)`;
       receipt.extra.timeToSharpTarget = { zoom: Math.min(sharpStepZoom, facts.maxZoom ?? sharpStepZoom), fixtureWidth };
     }
 

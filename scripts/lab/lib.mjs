@@ -125,7 +125,7 @@ const SUMMARY_METRICS = [
 
 /**
  * Groups receipts into cells (branch + sha + scenario + profile) and reports, per metric, the median, min and max
- * across valid trials. No composite score and no ranking: cells are listed in first-seen order.
+ * across valid trials. No composite score and no ranking: cells keep the order receipts are passed in.
  */
 export function summarize(receipts) {
   const cells = new Map();
@@ -142,7 +142,8 @@ export function summarize(receipts) {
     if (r.status === "PASS") cell.pass++;
     else if (r.status === "FAIL") cell.fail++;
     else cell.notRun++;
-    for (const f of r.validation?.failed ?? []) cell.failures.add(f);
+    // A NOT RUN trial's gate results are diagnostics, not failures of the build.
+    if (r.status === "FAIL") for (const f of r.validation?.failed ?? []) cell.failures.add(f);
     for (const f of r.validation?.notRun ?? []) cell.notRunReasons.add(f);
     // Only trials that ran contribute numbers; a NOT RUN trial is never a zero.
     if (r.status !== "NOT RUN") cell.rows.push({ ...r.metrics, firstPaintReportedMs: r.extra?.firstPaintReportedMs ?? null });

@@ -73,6 +73,8 @@ test("summary never turns NOT RUN into numbers and never merges SHAs", () => {
   assert.equal(cells[1].status, "NOT RUN");
   assert.equal(cells[1].stats.rafP95Ms, null);
   assert.deepEqual(cells[1].notRunReasons, ["build failed"]);
+  const missingAssets = receipt({ status: "NOT RUN", validation: { passed: [], failed: ["no-http-errors: 404"], notRun: ["assets missing"] } });
+  assert.deepEqual(summarize([missingAssets])[0].failures, []);
   const failed = summarize([ran, receipt({ status: "FAIL", validation: { passed: [], failed: ["no-blank-polls: 3 polls"], notRun: [] } })]);
   assert.equal(failed[0].status, "FAIL");
 });
