@@ -1,0 +1,43 @@
+From d269afba2df89b0ba0f778ba46da75278b3c5edd Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 12 Oct 2026 12:00:00 +0000
+Subject: [PATCH] lab(#53 w1 simplest): skip a detail repaint whose key is
+ unchanged
+
+Simplest alternative to the edge-escape challenger: when the next paint
+has the same frame, layer widths/alphas (2 dp) and coverage as the
+painted canvas, skip it. Experimental candidate for Quackles Lab.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014RvgE21Cg9C77BBH5USAp9
+---
+ components/sequence/SequencePlayer.tsx | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/components/sequence/SequencePlayer.tsx b/components/sequence/SequencePlayer.tsx
+index 14998e3..dc39633 100644
+--- a/components/sequence/SequencePlayer.tsx
++++ b/components/sequence/SequencePlayer.tsx
+@@ -273,7 +273,9 @@ export function SequencePlayer() {
+         const upgrade = layers[0].plan.variant.width > state.detailWidth;
+         const escaping = !paintedCoverage || !cropInside(crop, paintedCoverage, crop.width * 0.12);
+         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
+-        if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
++        // Same frame, layers and coverage as what is already on the canvas: repainting cannot change a pixel.
++        const nextDetailKey = paintLayers ? `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}` : "";
++        if (paintLayers && nextDetailKey !== detailKey && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
+           // First appearance of the sharp layer (it was hidden/released): dissolve it in. Repaints of a visible layer do not re-fade.
+           const freshLock = !detailKey; const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+           if (freshLock) armLockFade(detailCanvas!, reduced);
+@@ -284,7 +286,7 @@ export function SequencePlayer() {
+           })));
+           if (freshLock) startLockFade(detailCanvas!, reduced);
+           window.dispatchEvent(new Event("quackles:detail-painted"));
+-          detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
++          detailKey = nextDetailKey;
+           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
+           paintedCoverage = coverage;
+           detailThemeKey = visibleThemeKey;
+-- 
+2.43.0
+
