@@ -1,0 +1,18 @@
+{
+  "schema": "quackles-lab.tape.v1",
+  "id": "heldout-midzoom-hold",
+  "seed": 3,
+  "description": "Held-out tape for wave 1b (written before any w1b result was seen; not used for tuning). Mid zooms where the 201MP tier's buffered coverage does not fit the decoded budget (coverage == crop), with long at-rest holds: 2.5x interior hold, small 3x pans, 2x near the top edge, a 4x interior jump measured for sharpness, and a final 1.6x hold. x/y are fractions of the .poster-frame box.",
+  "warmupMs": 3000,
+  "steps": [
+    { "t": 0, "action": "mark", "label": "tape-start" },
+    { "t": 0, "action": "setTarget", "zoom": 2.5, "x": 0.45, "y": 0.55, "label": "hold-2.5x" },
+    { "t": 4000, "action": "setTarget", "zoom": 3, "x": 0.5, "y": 0.5, "label": "small-pan" },
+    { "t": 4300, "action": "setTarget", "zoom": 3, "x": 0.53, "y": 0.5, "label": "small-pan" },
+    { "t": 4600, "action": "setTarget", "zoom": 3, "x": 0.56, "y": 0.52, "label": "small-pan" },
+    { "t": 7500, "action": "setTarget", "zoom": 2, "x": 0.3, "y": 0, "label": "top-edge" },
+    { "t": 10500, "action": "setTarget", "zoom": 4, "x": 0.4, "y": 0.6, "measure": "sharp" },
+    { "t": 15500, "action": "setTarget", "zoom": 1.6, "x": 0.5, "y": 0.5, "label": "hold-1.6x" },
+    { "t": 20000, "action": "mark", "label": "tape-end" }
+  ]
+}
