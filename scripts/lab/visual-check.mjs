@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Settled-state visual check (#53): same states on each ref, pixel diff of each candidate against the base.
- * Each state: cold context, setTarget, then wait until the camera is at rest, the app's cache has no queued/inflight work
- * and no detail paint for 1.5 s (max 25 s). Screenshot = the .poster-frame box. Diff runs in a separate blank page (the
+ * Each state: cold context, setTarget, then wait until the camera is at rest and no detail paint for 1.5 s (max 25 s;
+ * cache activity is recorded in `settled.busy`, not required). Screenshot = the .poster-frame box. Diff runs in a separate blank page (the
  * measured app is never read back). Uses the builds/servers prepared by run.mjs (LAB_DIR worktrees with out/).
  *
  *   node scripts/lab/visual-check.mjs --base <sha> --cand <sha>[,<sha>] --out experiments/results/<run>/visual.json
@@ -45,7 +45,9 @@ async function shoot(browser, sha, port, state) {
       const st = window.__QUACKLES_SEQUENCE__.getState(), i = window.__QUACKLES_INSPECTION__.getState();
       return { moving: i.cameraMoving, busy: (st.cache?.inflight ?? 0) + (st.cache?.queued ?? 0), quietMs: performance.now() - window.__vcPaint, detailWidth: st.detailWidth, zoom: i.zoom };
     });
-    if (!s.moving && s.busy === 0 && s.quietMs > 1500) { settled = s; break; }
+    // Settled = camera at rest and no detail paint for 1.5 s. Cache activity is reported, not required: nightly's FrameCache
+    // never idles at rest (decode/evict loop, #53 wave 2), so an idle-cache criterion never holds.
+    if (!s.moving && s.quietMs > 1500) { settled = s; break; }
   }
   const box = await page.locator(".poster-frame").boundingBox();
   const file = path.join(outDir, `${state.id}-${sha.slice(0, 8)}.png`);
