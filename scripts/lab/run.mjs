@@ -4,6 +4,7 @@
  *
  *   node scripts/lab/run.mjs --refs nightly --trials 5
  *   node scripts/lab/run.mjs --refs nightly,2d22784d --profiles desktop,mobile-emulated --trials 5
+ *   node scripts/lab/run.mjs --refs nightly --modes A,B,C,D --trials 7      # cache/preparation decomposition
  *
  * For each ref: resolve the exact SHA, check it out into an isolated `git worktree` under LAB_DIR, build it with
  * same-origin assets (NEXT_PUBLIC_ASSET_ORIGIN=""), and serve out/ with the existing scripts/static-server.mjs. The
@@ -32,6 +33,7 @@ const REFS = arg("refs", "nightly").split(",").filter(Boolean);
 const TAPE_PATH = path.resolve(arg("tape", path.join(HERE, "tapes/smoke-inspect.json")));
 const TRIALS = Number(arg("trials", "5"));
 const PROFILE_IDS = arg("profiles", "desktop").split(",");
+const MODE_IDS = arg("modes", "A").split(",");
 const REMOTE = process.env.REMOTE || "origin";
 const ASSETS_DIR = path.resolve(process.env.ASSETS_DIR || path.join(REPO, "../quackles-assets"));
 // Outside the checkout: worktrees inside it would be swept up by `npm test` (eslint + tsc over **/*.ts).
@@ -48,6 +50,15 @@ const PROFILES = {
   "mobile-emulated": { viewport: { width: 412, height: 915 }, deviceScaleFactor: 3.5, isMobile: true, hasTouch: true, cpuThrottle: 4, label: "emulated mobile viewport + 4x CPU throttle (NOT a physical phone)" },
 };
 
+// Cache/preparation modes (#53 first experiment). Same commit, fixture, viewport and tape; only what is already warm
+// differs. Preparation (a full tape pass) is timed and counted separately from the measured pass.
+const MODES = {
+  A: { cache: "cold", label: "normal pipeline, cold context" },
+  B: { cache: "warm-compressed", label: "prep pass, then reload with asset URLs blocked: tiles only from the app's Cache API (compressed cache)" },
+  C: { cache: "warm-decoded", label: "prep pass, then a 2nd pass in the same document: decoded cache warm within the app's own budget" },
+  D: { cache: "painted-camera-only", label: "DIAGNOSTIC: prep pass's camera transforms replayed on the already-painted surface; refinement idle. Never a shippable winner" },
+};
+
 function findChrome(dir) {
   for (const p of ["chrome-linux/chrome", "chrome-linux64/chrome", "chrome"]) if (fs.existsSync(path.join(dir, p))) return path.join(dir, p);
   return null;
@@ -56,6 +67,13 @@ const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8",
 const tryGit = (cwd, ...args) => { try { return git(cwd, ...args); } catch { return null; } };
 const fileHash = (p) => (fs.existsSync(p) ? sha256(fs.readFileSync(p)) : null);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** Seeded Fisher-Yates (LCG), so a run's mode order is reproducible from its seed. */
+function shuffle(items, seed) {
+  const a = [...items];
+  let x = seed >>> 0;
+  for (let i = a.length - 1; i > 0; i--) { x = (Math.imul(x, 1103515245) + 12345) >>> 0; const j = x % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
 
 function resolveRef(ref) {
   const sha = tryGit(REPO, "rev-parse", "--verify", `${REMOTE}/${ref}^{commit}`) ?? tryGit(REPO, "rev-parse", "--verify", `${ref}^{commit}`);
@@ -138,15 +156,34 @@ function installCollector({ pollMs }) {
   const camera = document.querySelector(".sequence-camera");
   const frame = document.querySelector(".poster-frame");
   const layers = [".sequence-base", ".sequence-detail", ".poster-plate"].map((s) => document.querySelector(s));
-  const C = (window.__lab = { frames: [], wheel: [], polls: [], paints: [], stop: false, selectorsFound: !!camera && !!frame && layers.some(Boolean) });
+  const C = (window.__lab = { frames: [], cam: [], wheel: [], polls: [], paints: [], loaf: [], stop: false, selectorsFound: !!camera && !!frame && layers.some(Boolean) });
   const transform = () => (camera ? camera.style.transform || getComputedStyle(camera).transform : "");
   const pending = [];
   addEventListener("wheel", (e) => { const rec = { ts: e.timeStamp, before: transform(), latency: null }; C.wheel.push(rec); pending.push(rec); }, { capture: true, passive: true });
-  addEventListener("quackles:detail-painted", () => C.paints.push(performance.now()));
+  // Each detail paint: time, backing size, tiles, and whether the camera was moving (in motion vs post-stop sharpening).
+  const detailCanvas = document.querySelector(".sequence-detail");
+  addEventListener("quackles:detail-painted", () => {
+    const s = window.__QUACKLES_SEQUENCE__?.getState?.(), i = window.__QUACKLES_INSPECTION__?.getState?.();
+    C.paints.push([performance.now(), detailCanvas?.width ?? null, detailCanvas?.height ?? null, s?.detailTiles ?? null, s?.detailWidth ?? null, i?.cameraMoving ? 1 : 0, i?.zoom ?? null]);
+  });
+  // Long Animation Frames (Chrome 123+): where a slow frame's time went (script attribution, style/layout, render).
+  try {
+    C.loafObserver = new PerformanceObserver((list) => {
+      if (C.stop) return;
+      for (const e of list.getEntries()) {
+        C.loaf.push([e.startTime, e.duration, e.blockingDuration, e.renderStart, e.styleAndLayoutStart,
+          e.scripts.map((x) => [x.invoker || x.name, x.sourceFunctionName || "", Math.round(x.duration), Math.round(x.forcedStyleAndLayoutDuration)])]);
+      }
+    });
+    C.loafObserver.observe({ type: "long-animation-frame" });
+  } catch { C.loaf = null; }
+  let lastTr = null;
   const loop = () => {
     if (C.stop) return;
     const now = performance.now();
     C.frames.push(now);
+    const tr = transform();
+    if (tr !== lastTr) { C.cam.push([now, tr]); lastTr = tr; }
     if (pending.length) {
       const tr = transform();
       for (let i = pending.length - 1; i >= 0; i--) if (tr !== pending[i].before) { pending[i].latency = now - pending[i].ts; pending.splice(i, 1); }
@@ -165,15 +202,54 @@ function installCollector({ pollMs }) {
   poll();
 }
 
-async function runTrial({ browser, build, port, tape, profileId, trial, runId, ctx }) {
+/** Plays the tape once; returns step timing (in-page performance.now) for the measured or preparation pass. */
+async function playTape(page, cdp, box, tape, facts) {
+  const t0 = performance.now();
+  const r = { marks: [], jitter: [], targetTimes: [], sharpStepAt: null, sharpStepZoom: null, sharpFromZoom: null, unsupported: new Set() };
+  let lastZoom = 1;
+  for (const step of tape.steps) {
+    const wait = step.t - (performance.now() - t0);
+    if (wait > 1) await sleep(wait);
+    r.jitter.push(performance.now() - t0 - step.t);
+    const px = box.x + (step.x ?? 0.5) * box.width, py = box.y + (step.y ?? 0.5) * box.height;
+    if (step.action === "setTarget") {
+      if (!facts.hasSetTarget) { r.unsupported.add("setTarget"); continue; }
+      const at = await page.evaluate(({ zoom, x, y }) => { window.__QUACKLES_INSPECTION__.setTarget(zoom, x, y); return performance.now(); }, step);
+      r.targetTimes.push(at);
+      if (step.measure === "sharp") { r.sharpStepAt = at; r.sharpStepZoom = step.zoom; r.sharpFromZoom = lastZoom; }
+      lastZoom = step.zoom;
+    } else if (step.action === "wheel") {
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: px, y: py, deltaX: step.deltaX ?? 0, deltaY: step.deltaY });
+    } else if (step.action === "mouseMove") {
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: px, y: py });
+    } else if (step.action === "mark") r.marks.push(step.label);
+  }
+  await sleep(SETTLE_MS);
+  return r;
+}
+
+/** Back to 1x at rest (between a preparation pass and the measured pass). */
+async function resetToRest(page) {
+  await page.evaluate(() => window.__QUACKLES_INSPECTION__?.reset?.());
+  await page.waitForFunction(() => { const i = window.__QUACKLES_INSPECTION__?.getState?.(); return !i || (i.zoom < 1.001 && !i.cameraMoving); }, undefined, { timeout: 15000, polling: 100 }).catch(() => {});
+  await sleep(1500);
+}
+
+const appCounters = (page) => page.evaluate(() => {
+  const c = window.__QUACKLES_SEQUENCE__?.getState?.().cache;
+  return c ? { decodes: c.completedDecodes ?? null, networkRequests: c.networkRequests ?? null, closedBitmaps: c.closedBitmaps ?? null, staleDiscard: c.staleDiscard ?? null, compressedBytes: c.compressedBytes ?? null, compressedBudgetBytes: c.compressedBudgetBytes ?? null, decodedBytes: c.decodedBytes ?? null, budgetBytes: c.budgetBytes ?? null } : null;
+});
+const delta = (a, b) => (a && b ? Object.fromEntries(Object.keys(b).filter((k) => !/Budget|Bytes$/.test(k)).map((k) => [k, b[k] != null && a[k] != null ? b[k] - a[k] : null])) : null);
+
+async function runTrial({ browser, build, port, tape, profileId, mode = "A", trial, runId, ctx }) {
   const profile = PROFILES[profileId];
-  const scenario = { id: tape.id, seed: tape.seed, tapeHash: `sha256:${ctx.tapeHash}`, tape: path.relative(REPO, TAPE_PATH) };
-  const out = path.join(RESULTS_DIR, runId, `${slug(build.ref)}-${tape.id}-${profileId}-t${trial}.json`);
+  const scenario = { id: tape.id, mode, modeLabel: MODES[mode].label, seed: tape.seed, tapeHash: `sha256:${ctx.tapeHash}`, tape: path.relative(REPO, TAPE_PATH) };
+  const out = path.join(RESULTS_DIR, runId, `${slug(build.ref)}-${tape.id}-${mode}-${profileId}-t${trial}.json`);
   const traceOut = path.join(RESULTS_DIR, runId, "traces", path.basename(out));
   const receipt = {
     schema: RECEIPT_SCHEMA, runId, branch: build.ref, sha: build.sha, trial, status: "NOT RUN",
     harness: ctx.harness, fixture: fixtureFor([], ctx.assetsSha, ctx.assetsDirty),
-    environment: { ...ctx.environment, profile: profileId, profileLabel: profile.label, viewport: profile.viewport, dpr: profile.deviceScaleFactor, cpuThrottle: profile.cpuThrottle, network: "local-loopback-unthrottled; external hosts unresolvable", cache: "cold", instrumentation: "normal" },
+    environment: { ...ctx.environment, profile: profileId, profileLabel: profile.label, viewport: profile.viewport, dpr: profile.deviceScaleFactor, cpuThrottle: profile.cpuThrottle, network: "local-loopback-unthrottled; external hosts unresolvable", cache: MODES[mode].cache, instrumentation: "normal" },
     scenario, metrics: {}, metricNotes: {}, extra: {},
     validation: { passed: [], failed: [], notRun: ["collector-overhead-calibration (no uninstrumented control yet)", "gpu-completion (JS timings only)", "physical-device", "pixel-fidelity/source-pop checks"] },
     limitations: [], artifacts: { trace: path.relative(REPO, traceOut), screenshots: [], buildLog: path.relative(REPO, build.log) },
@@ -197,7 +273,8 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
   const context = await browser.newContext({ viewport: profile.viewport, deviceScaleFactor: profile.deviceScaleFactor, isMobile: profile.isMobile, hasTouch: profile.hasTouch, serviceWorkers: "block" });
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
-  const net = { requests: 0, bytes: 0, aborted: 0, failed: [], external: [], httpErrors: [], assetPaths: [] };
+  const freshNet = () => ({ requests: 0, bytes: 0, aborted: 0, blocked: 0, failed: [], external: [], httpErrors: [], assetPaths: [] });
+  let net = freshNet();
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e.message || e)));
   page.on("request", (r) => {
@@ -214,6 +291,7 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
   page.on("requestfailed", (r) => {
     const why = r.failure()?.errorText ?? "unknown";
     if (/ERR_ABORTED/.test(why)) net.aborted++;
+    else if (/ERR_BLOCKED_BY_CLIENT/.test(why)) net.blocked++;
     else net.failed.push(`${why} ${r.url().slice(0, 120)}`);
   });
 
@@ -244,34 +322,62 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
       receipt.validation.notRun.unshift(".poster-frame not found: tape coordinates undefined for this build");
       return finish();
     }
+    // ---- preparation (B/C/D): one full tape pass, timed and counted separately ------------------------------------
+    let replay = null;
+    if (mode !== "A") {
+      const prepT0 = Date.now(), before = await appCounters(page);
+      if (mode === "D") await page.evaluate(installCollector, { pollMs: POLL_MS });
+      await playTape(page, cdp, box, tape, facts);
+      if (mode === "D") replay = await page.evaluate(() => { window.__lab.stop = true; window.__lab.loafObserver?.disconnect(); const c = window.__lab.cam; return c.map(([t, tr]) => [t - c[0][0], tr]); });
+      await resetToRest(page);
+      receipt.extra.prepAssetPaths = net.assetPaths;
+      receipt.extra.prep = { wallMs: Date.now() - prepT0, requests: net.requests, transferredBytes: net.bytes, app: delta(before, await appCounters(page)) };
+      if (mode === "B") {
+        await sleep(1000); // let Cache API writes land
+        const disk = await appCounters(page);
+        receipt.extra.prep.compressedBytes = disk?.compressedBytes ?? null;
+        receipt.extra.prep.compressedBudgetBytes = disk?.compressedBudgetBytes ?? null;
+        await cdp.send("Network.enable");
+        await cdp.send("Network.setBlockedURLs", { urls: ["*/quackles-assets/*"] });
+        net = freshNet();
+        await page.reload({ waitUntil: "load", timeout: 120000 });
+        const fp = await page.waitForFunction(() => (window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0 ? performance.now() : 0), undefined, { timeout: 60000, polling: "raf" }).then((h) => h.jsonValue()).catch(() => null);
+        if (fp == null) { receipt.validation.notRun.unshift("B: app never painted after the warm reload"); return finish(); }
+        receipt.extra.firstPaintReportedMs = round(fp);
+        await sleep(tape.warmupMs ?? 0);
+      }
+    }
+
+    net = freshNet();
+    const measuredBefore = await appCounters(page);
     await page.evaluate(installCollector, { pollMs: POLL_MS });
     const startPerf = await page.evaluate(() => performance.now());
-    const t0 = performance.now();
-    const marks = [], jitter = [];
-    let sharpStepAt = null, sharpStepZoom = null, sharpFromZoom = null, lastZoom = 1, unsupported = new Set();
-    const targetTimes = [];
-    for (const step of tape.steps) {
-      const wait = step.t - (performance.now() - t0);
-      if (wait > 1) await sleep(wait);
-      jitter.push(performance.now() - t0 - step.t);
-      const px = box.x + (step.x ?? 0.5) * box.width, py = box.y + (step.y ?? 0.5) * box.height;
-      if (step.action === "setTarget") {
-        if (!facts.hasSetTarget) { unsupported.add("setTarget"); continue; }
-        const at = await page.evaluate(({ zoom, x, y }) => { window.__QUACKLES_INSPECTION__.setTarget(zoom, x, y); return performance.now(); }, step);
-        targetTimes.push(at);
-        if (step.measure === "sharp") { sharpStepAt = at; sharpStepZoom = step.zoom; sharpFromZoom = lastZoom; }
-        lastZoom = step.zoom;
-      } else if (step.action === "wheel") {
-        await cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: px, y: py, deltaX: step.deltaX ?? 0, deltaY: step.deltaY });
-      } else if (step.action === "mouseMove") {
-        await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: px, y: py });
-      } else if (step.action === "mark") marks.push(step.label);
-    }
-    await sleep(SETTLE_MS);
+    let played;
+    if (mode === "D") {
+      // Camera-only: replay the prep pass's per-frame transforms onto the painted surface. No app input, no refinement.
+      await page.evaluate((cam) => new Promise((resolve) => {
+        const el = document.querySelector(".sequence-camera"), t0 = performance.now();
+        let k = 0;
+        const step = (now) => {
+          while (k + 1 < cam.length && cam[k + 1][0] <= now - t0) k++;
+          el.style.transform = cam[k][1];
+          if (k + 1 < cam.length) requestAnimationFrame(step); else resolve();
+        };
+        requestAnimationFrame(step);
+      }), replay);
+      await sleep(SETTLE_MS);
+      await page.evaluate(() => { const el = document.querySelector(".sequence-camera"); el.style.transform = "none"; });
+      played = { marks: [], jitter: [0], targetTimes: [], sharpStepAt: null, unsupported: new Set() };
+      receipt.extra.replayedTransforms = replay.length;
+    } else played = await playTape(page, cdp, box, tape, facts);
+    const { marks, jitter, targetTimes, sharpStepAt, sharpStepZoom, sharpFromZoom, unsupported } = played;
+    receipt.extra.measuredApp = delta(measuredBefore, await appCounters(page));
     const data = await page.evaluate(() => {
       window.__lab.stop = true;
+      window.__lab.loafObserver?.disconnect();
       const s = window.__QUACKLES_SEQUENCE__?.getState?.();
-      return { ...window.__lab, end: { errors: s?.errors ?? null, stalePaints: s?.stalePaints ?? null, staleDiscard: s?.cache?.staleDiscard ?? null, cacheFailures: s?.cache?.failures ?? null, inspectionSources: s?.inspectionSources ?? null } };
+      const { loafObserver, ...lab } = window.__lab; // eslint-disable-line no-unused-vars
+      return { ...lab, end: { errors: s?.errors ?? null, stalePaints: s?.stalePaints ?? null, staleDiscard: s?.cache?.staleDiscard ?? null, cacheFailures: s?.cache?.failures ?? null, inspectionSources: s?.inspectionSources ?? null } };
     });
     const shot = path.join(RESULTS_DIR, runId, "screens", path.basename(out, ".json") + ".png");
     fs.mkdirSync(path.dirname(shot), { recursive: true });
@@ -282,6 +388,16 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
     const fs_ = frameStats(data.frames);
     Object.assign(receipt.metrics, { rafP50Ms: fs_.rafP50Ms, rafP95Ms: fs_.rafP95Ms, rafP99Ms: fs_.rafP99Ms, maxFrameMs: fs_.maxFrameMs, framesOver33Ms: fs_.framesOver33Ms, framesOver50Ms: fs_.framesOver50Ms });
     receipt.extra.frames = fs_.frames;
+    // Attribution: long frames (> 50 ms) that contain a detail paint, and where those paints happened.
+    {
+      const fr = data.frames, P = data.paints;
+      let longs = 0, withPaint = 0;
+      for (let i = 1; i < fr.length; i++) if (fr[i] - fr[i - 1] > 50) { longs++; if (P.some((p) => p[0] > fr[i - 1] - 1 && p[0] <= fr[i] + 1)) withPaint++; }
+      const mp = P.map((p) => (p[1] * p[2]) / 1e6).filter(Number.isFinite);
+      receipt.extra.detailPaints = { n: P.length, whileMoving: P.filter((p) => p[5]).length, atRest: P.filter((p) => !p[5]).length, backingMPMedian: round(percentile(mp, 50)), backingMPMax: round(mp.length ? Math.max(...mp) : null), tilesMedian: percentile(P.map((p) => p[3]), 50), longFrames: longs, longFramesWithPaint: withPaint };
+      const L = data.loaf || [];
+      receipt.extra.loaf = data.loaf ? { n: L.length, durationMs: round(L.reduce((a, e) => a + e[1], 0)), blockingMs: round(L.reduce((a, e) => a + e[2], 0)), scriptMs: L.reduce((a, e) => a + e[5].reduce((b, x) => b + x[2], 0), 0), forcedStyleLayoutMs: L.reduce((a, e) => a + e[5].reduce((b, x) => b + x[3], 0), 0) } : null;
+    }
     receipt.extra.tapeJitterP95Ms = round(percentile(jitter, 95));
     if (receipt.extra.tapeJitterP95Ms > 16) receipt.limitations.push(`tape dispatch jitter p95 ${receipt.extra.tapeJitterP95Ms} ms (Node timers + CDP round trips)`);
 
@@ -289,9 +405,9 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
     receipt.metrics.inputToCameraMs = round(percentile(wheelLat, 50));
     receipt.metricNotes.inputToCameraMs = `median over ${wheelLat.length}/${data.wheel.length} wheel events: event.timeStamp -> first rAF callback whose .sequence-camera transform differs. Not photon latency.`;
     receipt.extra.inputToCameraP95Ms = round(percentile(wheelLat, 95));
-    if (!data.wheel.length) receipt.metricNotes.inputToCameraMs = "no wheel events reached the page";
+    if (!data.wheel.length) receipt.metricNotes.inputToCameraMs = mode === "D" ? "D replays camera transforms; no input" : "no wheel events reached the page";
 
-    const families = sourceFamilies(net.assetPaths);
+    const families = sourceFamilies(net.assetPaths.length ? net.assetPaths : (receipt.extra.prepAssetPaths ?? []));
     receipt.fixture = fixtureFor(families, ctx.assetsSha, ctx.assetsDirty);
     receipt.extra.sourceFamilies = families;
     receipt.extra.inspectionSources = data.end.inspectionSources;
@@ -299,7 +415,8 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
     // Time to sharp: from the "sharp" setTarget until the painted detail tier covers the need (frame device px x zoom,
     // capped at the fixture width) with the camera at rest. Poll granularity: POLL_MS.
     const fixtureWidth = receipt.fixture.width;
-    if (sharpStepAt == null) receipt.metricNotes.timeToSharpMs = unsupported.has("setTarget") ? "build has no __QUACKLES_INSPECTION__.setTarget" : "tape has no measure:'sharp' step";
+    if (mode === "D") receipt.metricNotes.timeToSharpMs = "D is camera-only: refinement idle by construction";
+    else if (sharpStepAt == null) receipt.metricNotes.timeToSharpMs = unsupported.has("setTarget") ? "build has no __QUACKLES_INSPECTION__.setTarget" : "tape has no measure:'sharp' step";
     else if (facts.maxZoom != null && Math.min(sharpStepZoom, facts.maxZoom) <= Math.min(sharpFromZoom, facts.maxZoom) + 0.01) {
       // The build clamps both zooms to the same value: the step only pans an already-refined view, so "sharp" may already hold.
       receipt.metricNotes.timeToSharpMs = `sharp step ${sharpFromZoom}x->${sharpStepZoom}x is clamped to maxZoom ${round(facts.maxZoom)} on both sides; no zoom change to measure`;
@@ -336,6 +453,9 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
     gate("no-external-network", !net.external.length, [...new Set(net.external)].join(", "));
     gate("no-http-errors", !net.httpErrors.length, net.httpErrors.slice(0, 5).join(", "));
     gate("no-failed-requests", !net.failed.length, net.failed.slice(0, 3).join(" | "));
+    const budget = (await appCounters(page).catch(() => null))?.budgetBytes;
+    if (budget && receipt.metrics.decodedPeakBytes != null) gate("decoded-within-budget", receipt.metrics.decodedPeakBytes <= budget, `${receipt.metrics.decodedPeakBytes} > ${budget}`);
+    if (mode === "B") gate("B-assets-served-from-compressed-cache", net.blocked === 0, `${net.blocked} asset requests hit the blocked network`);
     gate("single-source-family", families.length <= 1, families.join(", "));
     if (receipt.metrics.blankFrames != null) gate("no-blank-polls", receipt.metrics.blankFrames === 0, `${receipt.metrics.blankFrames} polls`);
     if (unsupported.size) receipt.validation.notRun.push(`tape steps unsupported by build: ${[...unsupported].join(", ")}`);
@@ -349,7 +469,7 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
       receipt.validation.notRun.unshift(`assets missing at quackles-assets@${ctx.assetsSha.slice(0, 12)}: ${missing.length} x 404 (e.g. ${missing[0].slice(4)})`);
     } else receipt.status = receipt.validation.failed.length ? "FAIL" : "PASS";
     fs.mkdirSync(path.dirname(traceOut), { recursive: true });
-    fs.writeFileSync(traceOut, JSON.stringify({ frames: data.frames, wheel: data.wheel, polls: data.polls, paints: data.paints, marks, jitter, net, startPerf }));
+    fs.writeFileSync(traceOut, JSON.stringify({ mode, loaf: data.loaf, cam: data.cam, frames: data.frames, wheel: data.wheel, polls: data.polls, paints: data.paints, marks, jitter, net, startPerf }));
   } catch (err) {
     receipt.status = "NOT RUN";
     receipt.validation.notRun.unshift(`harness error: ${String(err.message || err).split("\n")[0]}`);
@@ -362,6 +482,7 @@ async function runTrial({ browser, build, port, tape, profileId, trial, runId, c
 async function main() {
   if (!CHROME) throw new Error("Chromium not found; set CHROME");
   if (!fs.existsSync(path.join(ASSETS_DIR, ".git"))) throw new Error(`ASSETS_DIR ${ASSETS_DIR} is not a git checkout of kvnloo/quackles-assets`);
+  for (const m of MODE_IDS) if (!MODES[m]) throw new Error(`unknown mode ${m}; known: ${Object.keys(MODES).join(", ")}`);
   for (const p of PROFILE_IDS) if (!PROFILES[p]) throw new Error(`unknown profile ${p}; known: ${Object.keys(PROFILES).join(", ")}`);
   const tape = validateTape(JSON.parse(fs.readFileSync(TAPE_PATH, "utf8")));
   const harnessSha = git(REPO, "rev-parse", "HEAD");
@@ -397,16 +518,18 @@ async function main() {
     harness: { sha: harnessSha, dirty: harnessDirty, runner: "scripts/lab/run.mjs" },
     environment: { browser: `Chromium ${browser.version()}`, headless: true, gpuFlags: gpuArgs.length ? "GPU=1 (vulkan)" : "default headless (likely SwiftShader)", device: `${os.cpus()[0]?.model ?? "unknown"} x${os.cpus().length}, ${Math.round(os.totalmem() / 2 ** 30)} GiB, ${os.platform()} ${os.release()}`, node: process.version, refreshRate: "unknown (headless); see idleRafMs", thermal: "unknown" },
   };
-  const manifest = { runId, startedAt: new Date().toISOString(), command: `node scripts/lab/run.mjs ${process.argv.slice(2).join(" ")}`, tape: { id: tape.id, path: path.relative(REPO, TAPE_PATH), hash: `sha256:${ctx.tapeHash}` }, trials: TRIALS, profiles: PROFILE_IDS, assets: { repo: "kvnloo/quackles-assets", sha: assetsSha, dirty: assetsDirty }, harness: ctx.harness, environment: ctx.environment, builds: builds.map(({ worktree, log, ...b }) => b), order: [] };
+  const manifest = { runId, startedAt: new Date().toISOString(), command: `node scripts/lab/run.mjs ${process.argv.slice(2).join(" ")}`, tape: { id: tape.id, path: path.relative(REPO, TAPE_PATH), hash: `sha256:${ctx.tapeHash}` }, trials: TRIALS, profiles: PROFILE_IDS, assets: { repo: "kvnloo/quackles-assets", sha: assetsSha, dirty: assetsDirty }, harness: ctx.harness, environment: ctx.environment, builds: builds.map(({ worktree, log, ...b }) => b), modes: MODE_IDS, order: [], modeOrder: [] };
   try {
     for (let trial = 1; trial <= TRIALS; trial++) {
-      // Rotate contender order every trial so no build always runs first (warm host, thermal drift).
-      const k = (trial - 1) % builds.length;
-      const order = [...builds.slice(k), ...builds.slice(0, k)];
+      // Seeded random contender order per trial, so no build systematically runs first (warm host, thermal drift).
+      const order = shuffle(builds, tape.seed * 7919 + trial);
       manifest.order.push(order.map((b) => b.ref));
-      for (const b of order) for (const profileId of PROFILE_IDS) {
-        const r = await runTrial({ browser, build: b, port: ports.get(b.sha), tape, profileId, trial, runId, ctx });
-        console.error(`[lab] t${trial} ${b.ref} ${profileId}: ${r.status} raf p95 ${r.metrics.rafP95Ms} max ${r.metrics.maxFrameMs} sharp ${r.metrics.timeToSharpMs} ${r.validation.failed.join("; ")}`);
+      // Paired + randomized: every mode runs in every trial, in a seeded shuffled order.
+      const modes = shuffle(MODE_IDS, tape.seed * 1000 + trial);
+      manifest.modeOrder.push(modes);
+      for (const b of order) for (const profileId of PROFILE_IDS) for (const mode of modes) {
+        const r = await runTrial({ browser, build: b, port: ports.get(b.sha), tape, profileId, mode, trial, runId, ctx });
+        console.error(`[lab] t${trial} ${b.ref} ${profileId} ${mode}: ${r.status} raf p95 ${r.metrics.rafP95Ms} max ${r.metrics.maxFrameMs} sharp ${r.metrics.timeToSharpMs} ${r.validation.failed.join("; ")}`);
       }
     }
   } finally {

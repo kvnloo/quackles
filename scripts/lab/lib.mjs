@@ -130,10 +130,10 @@ const SUMMARY_METRICS = [
 export function summarize(receipts) {
   const cells = new Map();
   for (const r of receipts) {
-    const key = [r.branch, r.sha, r.scenario?.id, r.environment?.profile].join("|");
+    const key = [r.branch, r.sha, r.scenario?.id, r.scenario?.mode ?? "A", r.environment?.profile].join("|");
     if (!cells.has(key)) {
       cells.set(key, {
-        branch: r.branch, sha: r.sha, scenario: r.scenario?.id, profile: r.environment?.profile,
+        branch: r.branch, sha: r.sha, scenario: r.scenario?.id, mode: r.scenario?.mode ?? "A", profile: r.environment?.profile,
         trials: 0, pass: 0, fail: 0, notRun: 0, failures: new Set(), notRunReasons: new Set(), rows: [],
       });
     }
@@ -156,7 +156,7 @@ export function summarize(receipts) {
     }
     const status = cell.notRun === cell.trials ? "NOT RUN" : cell.fail ? "FAIL" : "PASS";
     return {
-      branch: cell.branch, sha: cell.sha, scenario: cell.scenario, profile: cell.profile, status,
+      branch: cell.branch, sha: cell.sha, scenario: cell.scenario, mode: cell.mode, profile: cell.profile, status,
       trials: cell.trials, pass: cell.pass, fail: cell.fail, notRun: cell.notRun,
       failures: [...cell.failures], notRunReasons: [...cell.notRunReasons], stats,
     };

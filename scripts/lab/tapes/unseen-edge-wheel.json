@@ -1,0 +1,26 @@
+{
+  "schema": "quackles-lab.tape.v1",
+  "id": "unseen-edge-wheel",
+  "seed": 2,
+  "description": "Retest tape (#53 loop step 5), written before any candidate result was seen and never used for tuning. Different gestures from smoke-inspect: a 2.5x zoom onto the left image edge, an edge-hugging pan, a slow 6x zoom near the bottom-right corner, a long low-zoom hold, and wheel bursts at a different anchor with mixed step sizes. x/y are fractions of the .poster-frame box.",
+  "warmupMs": 3000,
+  "steps": [
+    { "t": 0, "action": "mark", "label": "tape-start" },
+    { "t": 0, "action": "setTarget", "zoom": 2.5, "x": 0, "y": 0.3 },
+    { "t": 2500, "action": "setTarget", "zoom": 2.5, "x": 0, "y": 0.5, "label": "edge-pan" },
+    { "t": 3000, "action": "setTarget", "zoom": 2.5, "x": 0, "y": 0.7, "label": "edge-pan" },
+    { "t": 3500, "action": "setTarget", "zoom": 2.5, "x": 0.05, "y": 0.9, "label": "edge-pan" },
+    { "t": 6000, "action": "setTarget", "zoom": 6, "x": 0.9, "y": 0.95, "measure": "sharp" },
+    { "t": 10000, "action": "setTarget", "zoom": 1.25, "x": 0.5, "y": 0.5, "label": "low-zoom-hold" },
+    { "t": 14000, "action": "setTarget", "zoom": 1, "x": 0.5, "y": 0.5 },
+    { "t": 15500, "action": "mouseMove", "x": 0.3, "y": 0.7 },
+    { "t": 15600, "action": "wheel", "x": 0.3, "y": 0.7, "deltaY": -60 },
+    { "t": 15640, "action": "wheel", "x": 0.3, "y": 0.7, "deltaY": -60 },
+    { "t": 15680, "action": "wheel", "x": 0.3, "y": 0.7, "deltaY": -240 },
+    { "t": 15720, "action": "wheel", "x": 0.3, "y": 0.7, "deltaY": -60 },
+    { "t": 18000, "action": "wheel", "x": 0.3, "y": 0.7, "deltaY": 240 },
+    { "t": 18080, "action": "wheel", "x": 0.3, "y": 0.7, "deltaY": 120 },
+    { "t": 18160, "action": "wheel", "x": 0.3, "y": 0.7, "deltaY": 60 },
+    { "t": 21000, "action": "mark", "label": "tape-end" }
+  ]
+}

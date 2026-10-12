@@ -28,10 +28,10 @@ const cells = summarize(receipts.map(({ r }) => r));
 
 const fmt = (s) => (s ? (s.min === s.max ? `${s.median}` : `${s.median} (${s.min}..${s.max})`) : "n/a");
 const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
-const header = ["branch", "sha", "scenario", "profile", "status", "trials", "pass", "fail", "notRun",
+const header = ["branch", "sha", "scenario", "mode", "profile", "status", "trials", "pass", "fail", "notRun",
   ...SUMMARY_METRICS.flatMap((m) => [`${m}_median`, `${m}_min`, `${m}_max`]), "failures", "notRunReasons"];
 const csv = [header.join(","), ...cells.map((c) => [
-  c.branch, c.sha, c.scenario, c.profile, c.status, c.trials, c.pass, c.fail, c.notRun,
+  c.branch, c.sha, c.scenario, c.mode, c.profile, c.status, c.trials, c.pass, c.fail, c.notRun,
   ...SUMMARY_METRICS.flatMap((m) => (c.stats[m] ? [c.stats[m].median, c.stats[m].min, c.stats[m].max] : ["", "", ""])),
   c.failures.join(" | "), c.notRunReasons.join(" | "),
 ].map(csvCell).join(","))].join("\n") + "\n";
@@ -52,7 +52,7 @@ const md = [
   `- Browser: ${env.browser} headless=${env.headless}; GPU: ${env.gpu ?? "unknown"} (${env.gpuFlags})`,
   `- Host: ${env.device}; node ${env.node}; idle rAF ${env.idleRafMs} ms`,
   `- Network: ${env.network}; cache: ${env.cache}; instrumentation: ${env.instrumentation}`,
-  manifest ? `- Trial order (rotated): ${manifest.order.map((o) => o.join(" > ")).join(" / ")}` : null,
+  manifest ? `- Trial order (seeded random): ${manifest.order.map((o) => o.join(" > ")).join(" / ")}` : null,
   "",
   "## Builds",
   "",
@@ -65,12 +65,12 @@ const md = [
   "",
   "## Cells",
   "",
-  "| branch | sha | profile | status | trials P/F/NR | rAF p50 | rAF p95 | rAF p99 | max frame | >33 ms | >50 ms | first paint (app) | time to sharp | input->camera | requests | bytes | aborts | stale work | blank polls | decoded peak | surface est. |",
-  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
-  ...cells.map((c) => `| \`${c.branch}\` | \`${c.sha.slice(0, 12)}\` | ${c.profile} | **${c.status}** | ${c.pass}/${c.fail}/${c.notRun} | ${["rafP50Ms", "rafP95Ms", "rafP99Ms", "maxFrameMs", "framesOver33Ms", "framesOver50Ms", "firstPaintReportedMs", "timeToSharpMs", "inputToCameraMs", "requests", "transferredBytes", "abortCount", "staleWorkCount", "blankFrames", "decodedPeakBytes", "gpuResidentBytesEstimate"].map((m) => fmt(c.stats[m])).join(" | ")} |`),
+  "| branch | sha | mode | profile | status | trials P/F/NR | rAF p50 | rAF p95 | rAF p99 | max frame | >33 ms | >50 ms | first paint (app) | time to sharp | input->camera | requests | bytes | aborts | stale work | blank polls | decoded peak | surface est. |",
+  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+  ...cells.map((c) => `| \`${c.branch}\` | \`${c.sha.slice(0, 12)}\` | ${c.mode} | ${c.profile} | **${c.status}** | ${c.pass}/${c.fail}/${c.notRun} | ${["rafP50Ms", "rafP95Ms", "rafP99Ms", "maxFrameMs", "framesOver33Ms", "framesOver50Ms", "firstPaintReportedMs", "timeToSharpMs", "inputToCameraMs", "requests", "transferredBytes", "abortCount", "staleWorkCount", "blankFrames", "decodedPeakBytes", "gpuResidentBytesEstimate"].map((m) => fmt(c.stats[m])).join(" | ")} |`),
   "",
   ...cells.filter((c) => c.failures.length || c.notRunReasons.length).flatMap((c) => [
-    `### \`${c.branch}\` ${c.profile}`, "",
+    `### \`${c.branch}\` ${c.mode} ${c.profile}`, "",
     ...c.failures.map((f) => `- FAIL: ${f}`), ...[...new Set(c.notRunReasons.map((f) => f.replace(/\d+ x 404/, "N x 404")))].map((f) => `- not covered: ${f}`), "",
   ]),
   "## Units and caveats",
