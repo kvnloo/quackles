@@ -132,6 +132,15 @@ export function cropInside(inner: Crop, outer: Crop, inset = 0): boolean {
 export const DETAIL_CANVAS_CAP = 4096;
 
 /** Grow the painted source rect until the backing store would exceed the cap. */
+/** Does a pan need a fresh detail paint? The inset repaints early, before the crop reaches the painted edge; a coverage side
+ * already on the image boundary has nothing beyond it, so it takes no inset (else low zoom or an edge crop repaints forever). */
+export function cropEscapes(inner: Crop, outer: Crop, inset = 0): boolean {
+  const atStart = (v: number) => v <= 1e-9, atEnd = (v: number) => v >= 1 - 1e-9;
+  const left = atStart(outer.x) ? 0 : inset, top = atStart(outer.y) ? 0 : inset;
+  const right = atEnd(outer.x + outer.width) ? 0 : inset, bottom = atEnd(outer.y + outer.height) ? 0 : inset;
+  return inner.x < outer.x + left || inner.y < outer.y + top
+    || inner.x + inner.width > outer.x + outer.width - right || inner.y + inner.height > outer.y + outer.height - bottom;
+}
 export function fittedBuffer(cssWidth: number, cssHeight: number, crop: Crop, dpr: number, cap = DETAIL_CANVAS_CAP, margin = 0.4): Crop {
   let pad = margin;
   while (pad > 0.001) {

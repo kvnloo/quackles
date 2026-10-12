@@ -7,7 +7,7 @@ import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
-import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { placeDetail, cropEscapes, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
@@ -271,7 +271,7 @@ export function SequencePlayer() {
         const primaryReady = ready(decoded[0]);
         const mixChanged = Math.abs(showMix - paintedMix) > 0.001;
         const upgrade = layers[0].plan.variant.width > state.detailWidth;
-        const escaping = !paintedCoverage || !cropInside(crop, paintedCoverage, crop.width * 0.12);
+        const escaping = !paintedCoverage || cropEscapes(crop, paintedCoverage, crop.width * 0.12);
         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
         if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
           // First appearance of the sharp layer (it was hidden/released): dissolve it in. Repaints of a visible layer do not re-fade.
