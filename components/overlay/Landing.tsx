@@ -42,7 +42,7 @@ export function Landing() {
                 DRAG ← → TO CHANGE SCENE COLOR
               </span>}
               {PREVIEW.zoom !== "none" && <span className="interaction-hint interaction-hint-inspect">
-                SCROLL ↑ OR CLICK TO INSPECT
+                {STORY ? "SCROLL ↑ OR CLICK TO INSPECT" : "PINCH OR CLICK TO ZOOM"}
               </span>}
               {STORY && <span className="interaction-hint interaction-hint-specs">
                 SCROLL ↓ TO SEE SPECS

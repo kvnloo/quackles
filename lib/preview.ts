@@ -18,10 +18,11 @@ const ALL: ThemeId[] = [...THEME_IDS];
 
 export const PREVIEWS = {
   production: { id: "production", scenes: ALL, story: true, zoom: "policy" },
+  home: { id: "home", scenes: ALL, story: false, zoom: "policy" }, // owner 2026-10-12: main page = zoom + colour only, no scroll story
   "scenes-lowres": { id: "scenes-lowres", scenes: ALL, story: true, zoom: "none" },
   "scenes-250mp": { id: "scenes-250mp", scenes: ALL, story: true, zoom: "201mp" },
   "scenes-gigapixel": { id: "scenes-gigapixel", scenes: ALL, story: true, zoom: "1gp" },
   "gigapixel-single": { id: "gigapixel-single", scenes: ["white"], story: false, zoom: "1gp" }, // owner 2026-09-30: brighter 1GP image (was the dark moss scene)
 } satisfies Record<string, Preview>;
 
-export const PREVIEW: Preview = PREVIEWS["gigapixel-single"];
+export const PREVIEW: Preview = PREVIEWS.home;
