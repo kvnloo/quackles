@@ -23,15 +23,21 @@ let n = 0;
 const test = (name, fn) => { fn(); n++; console.log("PASS", name); };
 
 test("registry holds production + the four preview branches with the owner's configs", () => {
-  assert.deepEqual(Object.keys(PREVIEWS).sort(), ["gigapixel-single", "production", "scenes-250mp", "scenes-gigapixel", "scenes-lowres"]);
+  assert.deepEqual(Object.keys(PREVIEWS).sort(), ["gigapixel-single", "home", "production", "scenes-250mp", "scenes-gigapixel", "scenes-lowres"]);
   assert.deepEqual(PREVIEWS["scenes-lowres"], { id: "scenes-lowres", scenes: THEME_IDS, story: true, zoom: "none" });
   assert.deepEqual(PREVIEWS["scenes-250mp"], { id: "scenes-250mp", scenes: THEME_IDS, story: true, zoom: "201mp" });
   assert.deepEqual(PREVIEWS["scenes-gigapixel"], { id: "scenes-gigapixel", scenes: THEME_IDS, story: true, zoom: "1gp" });
   assert.deepEqual(PREVIEWS["gigapixel-single"], { id: "gigapixel-single", scenes: ["white"], story: false, zoom: "1gp" }); // owner 2026-09-30: brighter image
+  assert.deepEqual(PREVIEWS.home, { id: "home", scenes: THEME_IDS, story: false, zoom: "policy" }); // owner 2026-10-12: main page = zoom + colour only, no scroll story
   assert.deepEqual(PREVIEWS.production, { id: "production", scenes: THEME_IDS, story: true, zoom: "policy" });
 });
 test(`checked-in PREVIEW is ${process.env.PREVIEW_EXPECT || "production"}`, () => {
   assert.deepEqual(PREVIEW, PREVIEWS[process.env.PREVIEW_EXPECT || "production"]);
+});
+test("home: all five themes, no story, production inspection policy verbatim", () => {
+  assert.deepEqual(previewThemeIndices(PREVIEWS.home), [0, 1, 2, 3, 4]);
+  assert.deepEqual(previewPolicy(PREVIEWS.home).themes, INSPECTION_POLICY);
+  assert.equal(JSON.stringify(previewManifest(manifest, PREVIEWS.home)), JSON.stringify(applyInspectionPolicy(manifest, INSPECTION_POLICY)));
 });
 test("production: policy resolution is byte-identical to INSPECTION_POLICY/HIDDEN_POLICY", () => {
   const p = previewPolicy(PREVIEWS.production);

@@ -14,6 +14,7 @@ const ASSETS = process.env.ASSETS || "/mnt/zer0models/quackles-1gp/assets-repo";
 const SHOTS = process.env.SHOTS || "";
 const EXPECT = {
   production: { frames: 52, buttons: 5, story: true, zoomThemes: ["blue"], plateOnly: ["day", "white", "dark", "night"], family: /\/blue\/p0000000\/\d\/|\/mushroom\/p0000000\/gp\//, note: null },
+  home: { frames: 52, buttons: 5, story: false, zoomThemes: ["blue"], plateOnly: ["day", "white", "dark", "night"], family: /\/blue\/p0000000\/\d\/|\/mushroom\/p0000000\/gp\//, note: null },
   "scenes-lowres": { frames: 52, buttons: 5, story: true, zoomThemes: [], plateOnly: ["day", "white", "blue", "dark", "night"], family: null, note: null },
   "scenes-250mp": { frames: 52, buttons: 5, story: true, zoomThemes: ["blue"], plateOnly: ["day", "white", "dark", "night"], family: /\/blue\/p0000000\/\d\//, note: "250MP: Blue only; 4 renders pending" },
   "scenes-gigapixel": { frames: 52, buttons: 5, story: true, zoomThemes: ["day", "white", "blue", "dark", "night"], plateOnly: [], family: /\/(day|white|blue|dark|night|mushroom)\/p0000000\/gp\/\d\//, note: "1GP source: not scene-matched" },
@@ -55,10 +56,12 @@ check((noteText ?? null) === EXPECT.note && s.note === EXPECT.note, `note ${JSON
 const scroll = await page.evaluate(() => ({ space: !!document.querySelector(".scroll-space"), beats: !!document.querySelector(".hero-copy"), height: document.documentElement.scrollHeight, inner: innerHeight }));
 check(scroll.space === EXPECT.story && scroll.beats === EXPECT.story, `story DOM ${JSON.stringify(scroll)} != story:${EXPECT.story}`);
 if (!EXPECT.story) check(scroll.height <= scroll.inner + 2, `single scene must not scroll (${scroll.height} > ${scroll.inner})`);
+const hints = await page.locator(".interaction-hints").textContent().catch(() => "");
+if (!EXPECT.story) check(!/scroll/i.test(hints), `story:false must not hint at scrolling (${JSON.stringify(hints)})`);
 await shot("01-hero");
 
 const zoomResults = {};
-const themes = EXPECT.story ? ["day", "white", "blue", "dark", "night"] : [null];
+const themes = EXPECT.buttons > 1 ? ["day", "white", "blue", "dark", "night"] : [null];
 for (const theme of themes) {
   if (theme) await setTheme(theme);
   const before = await state();
@@ -75,6 +78,7 @@ for (const theme of themes) {
 
 if (!EXPECT.story) {
   // Real touch pinch (CDP) + one-finger pan on the single scene.
+  if (EXPECT.buttons > 1) await setTheme(EXPECT.zoomThemes[0]); // pinch where deep zoom exists
   const cdp = await context.newCDPSession(page);
   const touch = (type, points) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y], id) => ({ x, y, id })) });
   await touch("touchStart", [[180, 460], [230, 460]]);
