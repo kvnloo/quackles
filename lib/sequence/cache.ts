@@ -9,7 +9,7 @@ export type FrameCacheOptions = {
   maxActiveJobs?: number;
 };
 export type Decoded = { key: string; asset: ImageAsset; bitmap: ImageBitmap; bytes: number; touched: number };
-type Job = { asset: ImageAsset; priority: number; bytes: number; reserved: boolean; controller: AbortController; resolve: (image: Decoded) => void; reject: (error: Error) => void; promise: Promise<Decoded>; active: boolean };
+type Job = { asset: ImageAsset; priority: number; bytes: number; reserved: boolean; controller: AbortController; resolve: (image: Decoded) => void; reject: (error: Error) => void; promise: Promise<Decoded>; active: boolean; deferred?: boolean };
 
 class CompressedCache {
   private cache: Promise<Cache | null>;
@@ -94,6 +94,7 @@ export class FrameCache {
   private warming = new Set<string>();
   private warmQueue: ImageAsset[] = [];
   private warmActive = 0;
+  private admissionPasses = 0;
   constructor(revision: string, options: FrameCacheOptions = {}) {
     this.decodedBudgetBytes = options.decodedBudgetBytes ?? DECODED_BUDGET;
     this.maxActiveJobs = options.maxActiveJobs ?? 3;
@@ -107,14 +108,20 @@ export class FrameCache {
     if (image) image.touched = performance.now();
     return image;
   }
-  pin(keys: Iterable<string>) { this.pinned = new Set(keys); this.pump(); }
+  pin(keys: Iterable<string>) {
+    const next = new Set(keys);
+    if (next.size === this.pinned.size && [...next].every((key) => this.pinned.has(key))) return; // same demand: nothing to reconsider
+    this.pinned = next; this.pump();
+  }
   /** The wanted set with its current priorities (bare URLs count as priority 0). Priorities change as the story moves. */
   retain(entries: Iterable<string | readonly [string, number]>) {
-    this.wanted = new Map();
+    const next = new Map<string, number>();
     for (const entry of entries) {
       const [key, priority] = typeof entry === "string" ? [entry, 0] : entry;
-      this.wanted.set(key, Math.max(priority, this.wanted.get(key) ?? -Infinity));
+      next.set(key, Math.max(priority, next.get(key) ?? -Infinity));
     }
+    if (next.size === this.wanted.size && [...next].every(([key, priority]) => this.wanted.get(key) === priority)) return;
+    this.wanted = next;
     for (const [key, job] of this.jobs) {
       if (this.wanted.has(key)) job.priority = this.wanted.get(key)!;
       if (this.wanted.has(key) || this.pinned.has(key)) continue;
@@ -138,7 +145,12 @@ export class FrameCache {
     return promise;
   }
   warm(asset: ImageAsset) {
-    if (this.disposed || this.decoded.has(asset.url) || this.jobs.has(asset.url) || this.warming.has(asset.url)) return;
+    if (this.disposed || this.decoded.has(asset.url) || this.jobs.has(asset.url)) return;
+    this.keepCompressed(asset);
+  }
+  /** Fetch into the compressed cache only (no decode), when the network is otherwise idle. */
+  private keepCompressed(asset: ImageAsset) {
+    if (this.warming.has(asset.url)) return;
     this.warming.add(asset.url);
     this.warmQueue.push(asset);
     this.pumpWarm();
@@ -166,9 +178,12 @@ export class FrameCache {
   /** Current usefulness: pinned (on screen) > wanted by priority > not wanted at all. */
   private demand(key: string) { return this.pinned.has(key) ? Infinity : this.wanted.get(key) ?? -Infinity; }
   private room(bytes: number, priority: number) {
-    // A job may evict only images no more useful than itself: unwanted first, then the least useful, then LRU.
-    const evictable = [...this.decoded.values()].filter((image) => this.demand(image.key) <= priority)
+    // Admission: a job may evict only images strictly less useful than itself (unwanted first, then the least useful,
+    // then LRU), and evicts nothing unless that frees enough room. Equally useful work waits instead of swapping places.
+    const evictable = [...this.decoded.values()].filter((image) => this.demand(image.key) < priority)
       .sort((a, b) => this.demand(a.key) - this.demand(b.key) || a.touched - b.touched);
+    const free = this.decodedBudgetBytes - this.used - this.reserved;
+    if (free < bytes && free + evictable.reduce((sum, image) => sum + image.bytes, 0) < bytes) return false;
     while (this.used + this.reserved + bytes > this.decodedBudgetBytes && evictable.length) {
       const image = evictable.shift()!;
       this.decoded.delete(image.key); this.used -= image.bytes; this.close(image.bitmap);
@@ -177,11 +192,18 @@ export class FrameCache {
   }
   private pump() {
     if (this.disposed) return;
+    this.admissionPasses++;
     const pending = [...this.jobs.values()].filter((job) => !job.active).sort((a, b) => b.priority - a.priority);
     for (const job of pending) {
       if (this.active >= this.maxActiveJobs) break;
       const high = job.bytes >= HIGH_TIER;
-      if ((high && this.highActive) || !this.room(job.bytes, this.pinned.has(job.asset.url) ? Infinity : job.priority)) continue;
+      if (high && this.highActive) continue;
+      if (!this.room(job.bytes, this.pinned.has(job.asset.url) ? Infinity : job.priority)) {
+        // Deferred until demand or capacity changes (the next retain/pin change or job completion re-runs this pass).
+        // Meanwhile keep it compressed, so admission later costs a decode, not a fetch.
+        if (!job.deferred) { job.deferred = true; this.keepCompressed(job.asset); }
+        continue;
+      }
       job.active = true; this.active++; if (high) this.highActive++;
       this.maxInflight = Math.max(this.maxInflight, this.active); this.maxHighTierInflight = Math.max(this.maxHighTierInflight, this.highActive);
       job.reserved = true; this.reserved += job.bytes; this.maxBytes = Math.max(this.maxBytes, this.used + this.reserved);
@@ -225,7 +247,7 @@ export class FrameCache {
   }
   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
   stats() {
-    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
+    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, deferred: [...this.jobs.values()].filter((job) => job.deferred && !job.active).length, admissionPasses: this.admissionPasses, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
   }
   dispose() {
     this.disposed = true;

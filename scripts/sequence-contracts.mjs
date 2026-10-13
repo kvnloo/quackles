@@ -50,13 +50,13 @@ function environment(options = {}) {
   globalThis.window = { caches: storage };
   globalThis.caches = storage;
   globalThis.Response = ResponseFixture;
-  globalThis.fetch = async (url, { signal }) => {
+  globalThis.fetch = async (url, { signal } = {}) => { // warm/compressed-only fetches pass no init
     const asset = options.assets?.get(url) ?? { width: 1024, height: 1536 };
     const record = { url, signal, attempt: requests.filter(row => row.url === url).length + 1 };
     requests.push(record); activeFetch++; maxFetch = Math.max(maxFetch, activeFetch);
     try {
       if (options.fetchGate) await options.fetchGate.promise;
-      signal.throwIfAborted();
+      signal?.throwIfAborted();
       if (options.failFirst && record.attempt === 1) throw new TypeError('Injected network failure');
       return new ResponseFixture({ asset, size: options.encodedBytes ?? 1200, type: 'image/webp' });
     } finally { activeFetch--; }
@@ -110,9 +110,12 @@ await check('serialize high detail work and count decode reservations', async ()
   const jobs = assets.map(row => cache.load(row));
   await until(() => env.activeDecode === 1, 'first detail decode');
   const pending = bounded(cache); assert.equal(pending.reservedBytes, 24 * MiB); assert.equal(pending.highTierInflight, 1);
-  gate.resolve(); await Promise.all(jobs); await sleep(5);
-  const result = bounded(cache); assert.equal(env.maxDecode, 1);
+  // 6 x 24 MiB of equally wanted detail exceeds the 96 MiB budget: the first four decode, the other two wait (#53 Q1:
+  // equal priorities no longer evict each other in a decode/evict cycle) and are rejected when the player is disposed.
+  gate.resolve(); await Promise.all(jobs.slice(0, 4)); await sleep(5);
+  const result = bounded(cache); assert.equal(env.maxDecode, 1); assert.equal(result.deferred, 2); assert.equal(result.closedBitmaps, 0);
   cache.dispose(); assert.ok(env.bitmaps.every(bitmap => bitmap.closed));
+  assert.deepEqual((await Promise.allSettled(jobs.slice(4))).map(row => row.reason?.name), ['AbortError', 'AbortError']);
   return { pending, final: result, maxSimultaneousDecodes: env.maxDecode };
 });
 await check('evict old frames while the currently drawn bitmap remains pinned', async () => {
@@ -175,6 +178,134 @@ await check('reject a full master larger than decoded budget', async () => {
   await assert.rejects(cache.load(asset('too-large', 8192)), /use tiles/);
   assert.equal(env.requests.length, 0); cache.dispose(); return { budgetBytes: DECODED_BUDGET };
 });
+// ---- #53 Q1: bounded admission + priority-aware eviction ---------------------------------------------------------------
+// A player-like demand loop: retain the wanted set (with priorities), request what is neither decoded nor already waiting,
+// and re-render when a request settles (SequencePlayer.request/schedule). Q1_LEGACY_RETAIN=1 retains bare URLs (v1 API).
+const PLATE = 1024 * 1536 * 4;
+const legacyRetain = process.env.Q1_LEGACY_RETAIN === '1';
+function demand(cache, wanted) {
+  const waiting = new Set(); let renders = 0, scheduled = false;
+  const render = () => {
+    scheduled = false; renders++;
+    const rows = wanted();
+    cache.pin(rows.filter(row => row.pinned).map(row => row.asset.url));
+    cache.retain(legacyRetain ? rows.map(row => row.asset.url) : rows.map(row => [row.asset.url, row.priority]));
+    for (const { asset: row, priority } of rows) {
+      if (cache.peek(row.url) || waiting.has(row.url)) continue;
+      waiting.add(row.url);
+      cache.load(row, priority).catch(() => {}).finally(() => { waiting.delete(row.url); schedule(); });
+    }
+  };
+  const schedule = () => { if (!scheduled && renders < 400) { scheduled = true; setTimeout(render, 0); } };
+  render();
+  return { get renders() { return renders; }, waiting, rerender: () => schedule() };
+}
+// Decoded + reserved bytes sampled every millisecond while a check runs.
+function budgetWatch(cache) {
+  let max = 0; const timer = setInterval(() => { max = Math.max(max, cache.stats().totalBytes); }, 1); timer.unref?.(); // a failed check must not keep the process alive
+  return { stop() { clearInterval(timer); max = Math.max(max, cache.stats().totalBytes); return max; } };
+}
+// Quiet = no new decode for `ms`: what "at rest" means for the cache.
+async function quiet(env, ms = 60, cap = 3000) {
+  let last = env.bitmaps.length, since = performance.now(); const start = since;
+  while (performance.now() - start < cap) { await sleep(5); if (env.bitmaps.length !== last) { last = env.bitmaps.length; since = performance.now(); } else if (performance.now() - since >= ms) return true; }
+  return false;
+}
+const plates = (prefix, n) => Array.from({ length: n }, (_, i) => asset(`${prefix}-${i}`));
+
+await check('Q1: wanted bytes exceeding the decoded budget settle without a decode/evict cycle', async () => {
+  const env = environment(), cache = new FrameCache('q1-over', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
+  const rows = plates('spec', 6).map(row => ({ asset: row, priority: 19 }));      // six equal speculative plates, room for four
+  const loop = demand(cache, () => rows);
+  const settled = await quiet(env); const decodes = env.bitmaps.length, renders = loop.renders;
+  await sleep(150);                                                               // stay at rest: nothing may churn
+  const max = watch.stop(), stats = cache.stats();
+  assert.ok(settled, `cache never went quiet: ${env.bitmaps.length} decodes in 3 s`);
+  assert.equal(env.bitmaps.length, decodes, 'decodes continued at rest');
+  assert.ok(decodes <= rows.length, `${decodes} decodes for ${rows.length} wanted assets`);
+  assert.equal(stats.closedBitmaps, 0, 'a wanted, equally useful image was evicted');
+  assert.ok(max <= 4 * PLATE, `decoded + reserved ${max} > budget`);
+  cache.dispose(); return { decodes, renders, maxBytes: max, entries: stats.entries, queued: stats.queued };
+});
+
+await check('Q1: low-priority work never displaces an immediately useful image', async () => {
+  const env = environment(), cache = new FrameCache('q1-useful', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
+  const useful = plates('tile', 4).map(row => ({ asset: row, priority: 90 }));
+  let rows = useful; const loop = demand(cache, () => rows);
+  await quiet(env); const first = useful.map(row => cache.peek(row.asset.url));
+  assert.ok(first.every(Boolean), 'useful images decoded');
+  const spec = asset('speculative'); rows = [...useful, { asset: spec, priority: 19 }]; loop.rerender();
+  await quiet(env); await sleep(50);
+  const max = watch.stop();
+  assert.ok(useful.every(row => cache.peek(row.asset.url) && !cache.peek(row.asset.url).bitmap.closed), 'a useful image was evicted for speculative work');
+  assert.equal(cache.peek(spec.url), undefined, 'speculative plate decoded without capacity');
+  assert.ok(max <= 4 * PLATE);
+  const stats = cache.stats();
+  assert.equal(stats.closedBitmaps, 0, `${stats.closedBitmaps} bitmaps closed: useful images were displaced (and re-decoded) on the way`);
+  cache.dispose();
+  return { decodes: env.bitmaps.length, closed: stats.closedBitmaps, maxBytes: max };
+});
+
+await check('Q1: priorities that change during forward and reverse story scrolling keep the current frame fed without churn', async () => {
+  const env = environment(), cache = new FrameCache('q1-scroll', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
+  const frames = plates('frame', 9); let center = 2;
+  // SequencePlayer: current frame pinned (required), adjacent frames +1,-1,+2,+3 at 19,19,18,17 (speculative).
+  const wanted = () => [{ asset: frames[center], priority: 100, pinned: true },
+    ...[[1, 19], [-1, 19], [2, 18], [3, 17]].filter(([o]) => frames[center + o]).map(([o, p]) => ({ asset: frames[center + o], priority: p }))];
+  const loop = demand(cache, wanted); const steps = [];
+  for (const next of [3, 4, 5, 4, 3, 2]) {
+    center = next; loop.rerender();
+    const t0 = performance.now(); await until(() => cache.peek(frames[center].url), `current frame ${center} decoded`);
+    const fed = performance.now() - t0;
+    const settled = await quiet(env); const decodes = env.bitmaps.length; await sleep(80);
+    steps.push({ center, fedMs: Math.round(fed), settled, churnAtRest: env.bitmaps.length - decodes });
+  }
+  const max = watch.stop();
+  assert.ok(steps.every(step => step.settled && step.churnAtRest === 0), `churn at rest: ${JSON.stringify(steps)}`);
+  assert.ok(max <= 4 * PLATE, `decoded + reserved ${max} > budget`);
+  assert.ok(env.bitmaps.length <= 6 * 5, `${env.bitmaps.length} decodes for 6 steps`);
+  cache.dispose(); return { steps, decodes: env.bitmaps.length, maxBytes: max };
+});
+
+await check('Q1: deferred requests dedupe, abort when stale, stay compressed, and resolve when capacity frees (no timers)', async () => {
+  const env = environment(), cache = new FrameCache('q1-deferred', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
+  const useful = plates('busy', 4);
+  cache.retain(useful.map(row => [row.url, 90])); await Promise.all(useful.map(row => cache.load(row, 90)));
+  const spec = asset('later'), stale = asset('stale');
+  cache.retain([...useful.map(row => [row.url, 90]), [spec.url, 19], [stale.url, 19]]);
+  const first = cache.load(spec, 19), again = cache.load(spec, 19);
+  assert.equal(first, again, 'duplicate request created a second job');
+  const staleJob = cache.load(stale, 19).then(() => 'resolved', error => error.name);
+  let settledSpec = false; first.then(() => { settledSpec = true; }, () => { settledSpec = true; });
+  await sleep(40);
+  assert.equal(settledSpec, false, 'deferred request resolved without capacity');
+  assert.equal(cache.peek(spec.url), undefined);
+  assert.ok(env.cacheStores.get('quackles-sequence-q1-deferred')?.entries.has(spec.url), 'deferred speculative asset not kept compressed');
+  cache.retain([...useful.map(row => [row.url, 90]), [spec.url, 19]]);                       // stale drops out of demand
+  assert.equal(await staleJob, 'AbortError');
+  const requestsBefore = env.requests.filter(row => row.url === spec.url).length;
+  cache.retain([...useful.slice(1).map(row => [row.url, 90]), [spec.url, 19]]);             // demand change frees capacity
+  const image = await first;
+  const max = watch.stop();
+  assert.equal(image.bitmap.closed, false);
+  assert.equal(env.requests.filter(row => row.url === spec.url).length, requestsBefore, 'admitted deferred job re-fetched instead of reading the compressed copy');
+  assert.equal(cache.stats().queued, 0, 'unresolved deferred work left behind');
+  assert.ok(max <= 4 * PLATE);
+  cache.dispose(); return { maxBytes: max, specRequests: requestsBefore };
+});
+
+await check('Q1: identical demand does not re-run admission (reconsider only on demand or capacity change)', async () => {
+  const env = environment(), cache = new FrameCache('q1-idle', { decodedBudgetBytes: 2 * PLATE });
+  const rows = plates('idle', 3); const tuples = rows.map(row => [row.url, 19]);
+  cache.retain(tuples); rows.forEach(row => cache.load(row, 19).catch(() => {})); await quiet(env);
+  const before = cache.stats().admissionPasses;
+  assert.equal(typeof before, 'number', 'cache does not count admission passes');
+  for (let i = 0; i < 100; i++) { cache.retain(tuples); cache.pin([]); }
+  assert.equal(cache.stats().admissionPasses, before, 'identical retain/pin re-ran admission');
+  cache.retain([...tuples.slice(1)]); assert.ok(cache.stats().admissionPasses > before, 'a demand change did not reconsider deferred work');
+  cache.dispose(); return { before, after: cache.stats().admissionPasses };
+});
+
 await check('explicit nonuniform frame positions and static reduced motion frames', async () => {
   const themeIds = ['day', 'white', 'blue', 'dark', 'night'];
   const fixture = { version: 1, id: 'fixture-only', aspect: [2, 3], defaultTheme: 'white', themes: themeIds.map(id => ({ id, label: id, palette: { paper: '#ffffff', deep: '#eeeeee', ink: '#111111', cobalt: '#2222ff' } })), frames: [0, .45, .56, .84, 1].map((progress, i) => ({ id: `f${i}`, progress, phase: 'fixture', windPhase: progress, assets: Object.fromEntries(themeIds.map(id => [id, [asset(`${id}-${i}`)]])) })), reducedMotion: [{ from: 0, frameId: 'f0' }, { from: .56, frameId: 'f4' }] };
