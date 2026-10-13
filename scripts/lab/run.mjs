@@ -151,6 +151,23 @@ function fixtureFor(families, assetsSha, assetsDirty) {
   return { ...base, id: mp ? `${families[0].replace(/\//g, "-")}-${mp}mp` : families[0], masterHash: meta?.source?.sha256 ? `sha256:${meta.source.sha256}` : null, width, height, tileSize: dzi?.tileSize ?? null, codec: dzi ? `${dzi.level0 ?? dzi.format} (L0), ${dzi.mips ?? dzi.format} (mips)` : null };
 }
 
+// Per-asset decode counter, installed before the app (identical in every arm). Blobs are tagged with their URL whether they
+// come from fetch() or from the app's compressed Cache API copy (stored as URL-less Responses), then counted at
+// createImageBitmap. Keys are URL pathnames.
+const DECODE_COUNTER = `(() => {
+  const born = new WeakMap(); window.__labDecodes = new Map();
+  const blob = Response.prototype.blob;
+  Response.prototype.blob = async function () { const b = await blob.call(this); const u = this.url || this.__labUrl; if (u) born.set(b, u); return b; };
+  if (window.Cache) { const match = Cache.prototype.match;
+    Cache.prototype.match = async function (req, opts) { const r = await match.call(this, req, opts); if (r) r.__labUrl = typeof req === "string" ? new URL(req, location.href).href : req.url; return r; }; }
+  const cib = window.createImageBitmap;
+  window.createImageBitmap = function (src, ...rest) {
+    const u = src instanceof Blob ? born.get(src) : null;
+    if (u) { const k = new URL(u, location.href).pathname; window.__labDecodes.set(k, (window.__labDecodes.get(k) || 0) + 1); }
+    return cib.call(this, src, ...rest);
+  };
+})();`;
+
 // ---- in-page collector (installed at tape start; reads only app-published debug state, no readPixels) --------------
 function installCollector({ pollMs }) {
   const camera = document.querySelector(".sequence-camera");
@@ -196,21 +213,40 @@ function installCollector({ pollMs }) {
     if (C.stop) return;
     const s = window.__QUACKLES_SEQUENCE__?.getState?.();
     const i = window.__QUACKLES_INSPECTION__?.getState?.();
-    C.polls.push([performance.now(), s?.detailWidth ?? null, i?.zoom ?? null, i?.cameraMoving ?? null, s?.cache?.decodedBytes ?? null, s?.surfaceBytes ?? null, layers.some(visible) ? 0 : 1]);
+    C.polls.push([performance.now(), s?.detailWidth ?? null, i?.zoom ?? null, i?.cameraMoving ?? null, s?.cache?.decodedBytes ?? null, s?.surfaceBytes ?? null, layers.some(visible) ? 0 : 1, (s?.cache?.queued ?? 0) + (s?.cache?.inflight ?? 0), s?.current?.progress ?? null]);
     setTimeout(poll, pollMs);
   };
   poll();
 }
 
 /** Plays the tape once; returns step timing (in-page performance.now) for the measured or preparation pass. */
-async function playTape(page, cdp, box, tape, facts) {
+/** In-page snapshot at a tape mark: app cache counters, detail paints so far, per-URL decode counts. */
+const pageSnapshot = (page) => page.evaluate(() => {
+  const st = window.__QUACKLES_SEQUENCE__?.getState?.(), c = st?.cache;
+  return { t: performance.now(), progress: st?.current?.progress ?? null, zoom: window.__QUACKLES_INSPECTION__?.getState?.().zoom ?? null,
+    cache: c ? { decodes: c.completedDecodes, closedBitmaps: c.closedBitmaps, staleDiscard: c.staleDiscard, networkRequests: c.networkRequests, queued: c.queued, inflight: c.inflight, deferred: c.deferred ?? null, decodedBytes: c.decodedBytes } : null,
+    surfaceBytes: st?.surfaceBytes ?? null, detailPaints: window.__lab?.paints?.length ?? null, decodeCounts: window.__labDecodes ? Object.fromEntries(window.__labDecodes) : null };
+});
+
+/** Renderer main-thread time (CDP Performance) and browser-wide process CPU time (CDP SystemInfo; all Chromium processes). */
+async function cpuSnapshot(cdp, browserCdp) {
+  const out = {};
+  try { for (const m of (await cdp.send("Performance.getMetrics")).metrics) if (["TaskDuration", "ScriptDuration", "LayoutDuration", "RecalcStyleDuration", "JSHeapUsedSize"].includes(m.name)) out[m.name] = m.value; } catch { /* unavailable */ }
+  try { out.processCpuSeconds = (await browserCdp.send("SystemInfo.getProcessInfo")).processInfo.reduce((a, p) => a + p.cpuTime, 0); } catch { out.processCpuSeconds = null; }
+  return out;
+}
+
+/** Plays the tape once; returns step timing (in-page performance.now) and mark snapshots. "settle" waits for refinement to
+ * finish (camera at rest, painted tier >= need, no detail paint for 1.5 s, story progress steady; capped by timeoutMs) and
+ * shifts every later step by the time it waited. */
+async function playTape(page, cdp, box, tape, facts, browserCdp = null, viewport = null) {
   const t0 = performance.now();
-  const r = { marks: [], jitter: [], targetTimes: [], sharpStepAt: null, sharpStepZoom: null, sharpFromZoom: null, unsupported: new Set() };
-  let lastZoom = 1;
+  const r = { marks: [], jitter: [], targetTimes: [], sharpStepAt: null, sharpStepZoom: null, sharpFromZoom: null, unsupported: new Set(), settles: [] };
+  let lastZoom = 1, offset = 0;
   for (const step of tape.steps) {
-    const wait = step.t - (performance.now() - t0);
+    const wait = step.t + offset - (performance.now() - t0);
     if (wait > 1) await sleep(wait);
-    r.jitter.push(performance.now() - t0 - step.t);
+    r.jitter.push(performance.now() - t0 - step.t - offset);
     const px = box.x + (step.x ?? 0.5) * box.width, py = box.y + (step.y ?? 0.5) * box.height;
     if (step.action === "setTarget") {
       if (!facts.hasSetTarget) { r.unsupported.add("setTarget"); continue; }
@@ -220,9 +256,33 @@ async function playTape(page, cdp, box, tape, facts) {
       lastZoom = step.zoom;
     } else if (step.action === "wheel") {
       await cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: px, y: py, deltaX: step.deltaX ?? 0, deltaY: step.deltaY });
+    } else if (step.action === "pageWheel") {
+      // Story scroll: a trusted wheel over the page outside the poster frame (viewport fractions).
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: (step.vx ?? 0.1) * (viewport?.width ?? 1440), y: (step.vy ?? 0.5) * (viewport?.height ?? 1000), deltaX: 0, deltaY: step.deltaY });
     } else if (step.action === "mouseMove") {
       await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: px, y: py });
-    } else if (step.action === "mark") r.marks.push(step.label);
+    } else if (step.action === "settle") {
+      const started = performance.now();
+      const reached = await page.waitForFunction(() => {
+        const st = window.__QUACKLES_SEQUENCE__?.getState?.(), i = window.__QUACKLES_INSPECTION__?.getState?.();
+        if (!st || !i) return false;
+        const S = (window.__labSettle ||= { paints: 0, at: performance.now(), progress: st.current?.progress });
+        const paints = window.__lab?.paints?.length ?? 0;
+        if (paints !== S.paints || st.current?.progress !== S.progress) { S.paints = paints; S.progress = st.current?.progress; S.at = performance.now(); }
+        const frame = document.querySelector(".poster-frame")?.getBoundingClientRect();
+        const need = frame ? Math.min(Math.ceil(frame.width * devicePixelRatio * i.zoom), 11584) : Infinity;
+        const sharp = i.zoom < 1.02 || st.detailWidth >= 0.98 * need;
+        return !i.cameraMoving && sharp && performance.now() - S.at > 1500;
+      }, undefined, { timeout: step.timeoutMs ?? 15000, polling: 100 }).then(() => true).catch(() => false);
+      await page.evaluate(() => { delete window.__labSettle; });
+      const waited = performance.now() - started;
+      r.settles.push({ label: step.label ?? "settle", reached, waitedMs: Math.round(waited) });
+      offset += Math.max(0, waited - 1);
+    }
+    if (step.action === "mark" || step.action === "settle") {
+      const snap = await pageSnapshot(page).catch(() => null);
+      if (snap) r.marks.push({ label: step.action === "settle" ? `${step.label ?? "settle"}:end` : step.label, ...snap, cpu: browserCdp ? await cpuSnapshot(cdp, browserCdp) : null });
+    }
   }
   await sleep(SETTLE_MS);
   return r;
@@ -271,8 +331,11 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
   }
 
   const context = await browser.newContext({ viewport: profile.viewport, deviceScaleFactor: profile.deviceScaleFactor, isMobile: profile.isMobile, hasTouch: profile.hasTouch, serviceWorkers: "block" });
+  await context.addInitScript(DECODE_COUNTER);
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
+  const browserCdp = await browser.newBrowserCDPSession().catch(() => null);
+  await cdp.send("Performance.enable").catch(() => {});
   const freshNet = () => ({ requests: 0, bytes: 0, aborted: 0, blocked: 0, failed: [], external: [], httpErrors: [], assetPaths: [] });
   let net = freshNet();
   const pageErrors = [];
@@ -327,7 +390,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     if (mode !== "A") {
       const prepT0 = Date.now(), before = await appCounters(page);
       if (mode === "D") await page.evaluate(installCollector, { pollMs: POLL_MS });
-      await playTape(page, cdp, box, tape, facts);
+      await playTape(page, cdp, box, tape, facts, null, profile.viewport);
       if (mode === "D") replay = await page.evaluate(() => { window.__lab.stop = true; window.__lab.loafObserver?.disconnect(); const c = window.__lab.cam; return c.map(([t, tr]) => [t - c[0][0], tr]); });
       await resetToRest(page);
       receipt.extra.prepAssetPaths = net.assetPaths;
@@ -352,6 +415,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     const measuredBefore = await appCounters(page);
     await page.evaluate(installCollector, { pollMs: POLL_MS });
     const startPerf = await page.evaluate(() => performance.now());
+    const startSnap = { label: "measured-start", ...(await pageSnapshot(page)), cpu: await cpuSnapshot(cdp, browserCdp) };
     let played;
     if (mode === "D") {
       // Camera-only: replay the prep pass's per-frame transforms onto the painted surface. No app input, no refinement.
@@ -369,9 +433,10 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
       await page.evaluate(() => { const el = document.querySelector(".sequence-camera"); el.style.transform = "none"; });
       played = { marks: [], jitter: [0], targetTimes: [], sharpStepAt: null, unsupported: new Set() };
       receipt.extra.replayedTransforms = replay.length;
-    } else played = await playTape(page, cdp, box, tape, facts);
+    } else played = await playTape(page, cdp, box, tape, facts, browserCdp, profile.viewport);
     const { marks, jitter, targetTimes, sharpStepAt, sharpStepZoom, sharpFromZoom, unsupported } = played;
     receipt.extra.measuredApp = delta(measuredBefore, await appCounters(page));
+    receipt.extra.settles = played.settles ?? [];
     const data = await page.evaluate(() => {
       window.__lab.stop = true;
       window.__lab.loafObserver?.disconnect();
@@ -379,6 +444,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
       const { loafObserver, ...lab } = window.__lab; // eslint-disable-line no-unused-vars
       return { ...lab, end: { errors: s?.errors ?? null, stalePaints: s?.stalePaints ?? null, staleDiscard: s?.cache?.staleDiscard ?? null, cacheFailures: s?.cache?.failures ?? null, inspectionSources: s?.inspectionSources ?? null } };
     });
+    const endSnap = { label: "measured-end", ...(await pageSnapshot(page)), cpu: await cpuSnapshot(cdp, browserCdp) };
     const shot = path.join(RESULTS_DIR, runId, "screens", path.basename(out, ".json") + ".png");
     fs.mkdirSync(path.dirname(shot), { recursive: true });
     await page.screenshot({ path: shot });
@@ -388,6 +454,41 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     const fs_ = frameStats(data.frames);
     Object.assign(receipt.metrics, { rafP50Ms: fs_.rafP50Ms, rafP95Ms: fs_.rafP95Ms, rafP99Ms: fs_.rafP99Ms, maxFrameMs: fs_.maxFrameMs, framesOver33Ms: fs_.framesOver33Ms, framesOver50Ms: fs_.framesOver50Ms });
     receipt.extra.frames = fs_.frames;
+    // Phases between tape marks (and settle ends): frame tails, decode/evict work, re-decodes per asset, queued work,
+    // detail paints and CPU. "stationary" = from the "refined" settle to the "stationary-end" mark (30 s hold at rest).
+    {
+      const snaps = [startSnap, ...played.marks, endSnap].filter((m) => Number.isFinite(m?.t)).sort((a, b) => a.t - b.t);
+      const assetDelta = (a, b) => {
+        const A = a?.decodeCounts ?? {}, B = b?.decodeCounts ?? {};
+        let decodes = 0, redecodes = 0, maxPerAsset = 0, repeatedAssets = 0;
+        for (const [k, n] of Object.entries(B)) {
+          const d = n - (A[k] ?? 0); if (d <= 0) continue;
+          decodes += d; maxPerAsset = Math.max(maxPerAsset, d);
+          const again = (A[k] ?? 0) > 0 ? d : d - 1; // decodes of an asset that had already been decoded in this document
+          if (again > 0) { redecodes += again; repeatedAssets++; }
+        }
+        return B && a?.decodeCounts ? { decodes, redecodes, repeatedAssets, maxPerAsset } : null;
+      };
+      const cpuDelta = (a, b) => (a?.cpu && b?.cpu ? {
+        mainThreadTaskMs: round((b.cpu.TaskDuration - a.cpu.TaskDuration) * 1000), scriptMs: round((b.cpu.ScriptDuration - a.cpu.ScriptDuration) * 1000),
+        layoutStyleMs: round((b.cpu.LayoutDuration - a.cpu.LayoutDuration + b.cpu.RecalcStyleDuration - a.cpu.RecalcStyleDuration) * 1000),
+        processCpuMs: a.cpu.processCpuSeconds != null && b.cpu.processCpuSeconds != null ? round((b.cpu.processCpuSeconds - a.cpu.processCpuSeconds) * 1000) : null,
+      } : null);
+      const phase = (a, b) => {
+        const fr = data.frames.filter((t) => t >= a.t && t < b.t);
+        const pol = data.polls.filter((p) => p[0] >= a.t && p[0] < b.t);
+        return {
+          from: a.label, to: b.label, ms: round(b.t - a.t), ...frameStats(fr),
+          appDecodes: a.cache && b.cache ? b.cache.decodes - a.cache.decodes : null, evictions: a.cache && b.cache ? b.cache.closedBitmaps - a.cache.closedBitmaps : null,
+          perAsset: assetDelta(a, b), maxQueued: pol.length ? Math.max(...pol.map((p) => p[7] ?? 0)) : null,
+          detailPaints: data.paints.filter((p) => p[0] >= a.t && p[0] < b.t).length, cpu: cpuDelta(a, b),
+        };
+      };
+      receipt.extra.phases = snaps.slice(1).map((b, k) => phase(snaps[k], b));
+      receipt.extra.run = { perAsset: assetDelta(startSnap, endSnap), cpu: cpuDelta(startSnap, endSnap), jsHeapUsedBytesEnd: endSnap.cpu?.JSHeapUsedSize ?? null };
+      const ref = snaps.find((m) => m.label === "refined:end"), end = snaps.find((m) => m.label === "stationary-end");
+      receipt.extra.stationary = ref && end ? { ...phase(ref, end), refinedReached: played.settles?.find((x) => x.label === "refined")?.reached ?? null } : null;
+    }
     // Attribution: long frames (> 50 ms) that contain a detail paint, and where those paints happened.
     {
       const fr = data.frames, P = data.paints;
@@ -443,7 +544,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     receipt.metrics.decodedPeakBytes = decoded.length ? Math.max(...decoded) : null;
     receipt.metricNotes.decodedPeakBytes = decoded.length ? `app-reported cache.decodedBytes, max over ${POLL_MS} ms polls` : "build does not publish cache.decodedBytes";
     receipt.metrics.gpuResidentBytesEstimate = surface.length ? Math.max(...surface) : null;
-    receipt.metricNotes.gpuResidentBytesEstimate = surface.length ? "ESTIMATE: app-reported canvas backing-store bytes (w x h x 4), max over polls; excludes textures/compositor" : "build does not publish surfaceBytes";
+    receipt.metricNotes.gpuResidentBytesEstimate = surface.length ? "ESTIMATE: app-reported canvas backing-store bytes (w x h x 4), max over polls; excludes textures/compositor. GPU memory itself is not measurable here (SwiftShader)" : "build does not publish surfaceBytes";
     receipt.extra.unsupportedSteps = [...unsupported];
 
     // ---- correctness gates (a FAIL is a FAIL regardless of speed) ------------------------------------------------
@@ -479,6 +580,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     receipt.status = "NOT RUN";
     receipt.validation.notRun.unshift(`harness error: ${String(err.message || err).split("\n")[0]}`);
   } finally {
+    await browserCdp?.detach().catch(() => {});
     await context.close().catch(() => {});
   }
   return finish();

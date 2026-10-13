@@ -36,7 +36,7 @@ export const sha256 = (data) => createHash("sha256").update(data).digest("hex");
 
 export const tapeHash = (tape) => sha256(stableStringify(tape));
 
-const TAPE_ACTIONS = new Set(["wait", "setTarget", "wheel", "mouseMove", "mark"]);
+const TAPE_ACTIONS = new Set(["wait", "setTarget", "wheel", "mouseMove", "mark", "pageWheel", "settle"]);
 
 /** Throws on a malformed tape (steps must already be in time order); returns the tape. */
 export function validateTape(tape) {
@@ -50,7 +50,7 @@ export function validateTape(tape) {
     if (!TAPE_ACTIONS.has(step.action)) errors.push(`step ${i}: unknown action ${step.action}`);
     if (!Number.isFinite(step.t) || step.t < last) errors.push(`step ${i}: t must be finite and non-decreasing`);
     last = step.t;
-    for (const k of ["x", "y"]) {
+    for (const k of ["x", "y", "vx", "vy"]) {
       if (k in step && !(step[k] >= 0 && step[k] <= 1)) errors.push(`step ${i}: ${k} must be a frame fraction in [0,1]`);
     }
   }

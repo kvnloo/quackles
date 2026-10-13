@@ -38,6 +38,22 @@ const METRICS = {
   requests: (r) => r.metrics.requests,
   decodedPeakBytes: (r) => r.metrics.decodedPeakBytes,
   blankFrames: (r) => r.metrics.blankFrames,
+  // Q1: whole measured run, the 30 s stationary hold after refinement, and the story-scroll phases.
+  runRedecodes: (r) => r.extra?.run?.perAsset?.redecodes,
+  runMaxDecodesPerAsset: (r) => r.extra?.run?.perAsset?.maxPerAsset,
+  runProcessCpuMs: (r) => r.extra?.run?.cpu?.processCpuMs,
+  runMainThreadMs: (r) => r.extra?.run?.cpu?.mainThreadTaskMs,
+  stationaryDecodes: (r) => r.extra?.stationary?.appDecodes,
+  stationaryEvictions: (r) => r.extra?.stationary?.evictions,
+  stationaryDetailPaints: (r) => r.extra?.stationary?.detailPaints,
+  stationaryProcessCpuMs: (r) => r.extra?.stationary?.cpu?.processCpuMs,
+  stationaryOver33Ms: (r) => r.extra?.stationary?.framesOver33Ms,
+  refineSettleMs: (r) => r.extra?.settles?.find((x) => x.label === "refined")?.waitedMs,
+  scrollFwdP95Ms: (r) => r.extra?.phases?.find((x) => x.from === "scroll-forward")?.rafP95Ms,
+  scrollFwdMaxMs: (r) => r.extra?.phases?.find((x) => x.from === "scroll-forward")?.maxFrameMs,
+  scrollRevP95Ms: (r) => r.extra?.phases?.find((x) => x.from === "scroll-reverse")?.rafP95Ms,
+  scrollRevMaxMs: (r) => r.extra?.phases?.find((x) => x.from === "scroll-reverse")?.maxFrameMs,
+  scrollOver33Ms: (r) => { const ph = (r.extra?.phases ?? []).filter((x) => x.from === "scroll-forward" || x.from === "scroll-reverse"); return ph.length ? ph.reduce((a, x) => a + (x.framesOver33Ms ?? 0), 0) : null; },
 };
 
 function bootstrapMedianCI(diffs, seed = 53, n = 10000) {
