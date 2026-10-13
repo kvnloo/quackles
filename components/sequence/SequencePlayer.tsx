@@ -232,7 +232,7 @@ export function SequencePlayer() {
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
       cache.pin([...assets.map((asset) => asset.url), ...layers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url))]);
-      cache.retain(tasks.map(({ asset }) => asset.url));
+      cache.retain(tasks.map(({ asset, priority }) => [asset.url, priority] as const));
       for (const task of tasks) request(task.asset, task.priority);
       const selectedTheme = THEME_IDS[selected];
       if (selectedTheme) warmTheme(selectedTheme, inspecting, moving);

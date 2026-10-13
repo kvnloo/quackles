@@ -72,7 +72,7 @@ export class FrameCache {
   private decoded = new Map<string, Decoded>();
   private jobs = new Map<string, Job>();
   private pinned = new Set<string>();
-  private wanted = new Set<string>();
+  private wanted = new Map<string, number>(); // url -> current demand priority (higher = sooner useful)
   private disk: CompressedCache;
   private disposed = false;
   private active = 0;
@@ -108,9 +108,15 @@ export class FrameCache {
     return image;
   }
   pin(keys: Iterable<string>) { this.pinned = new Set(keys); this.pump(); }
-  retain(keys: Iterable<string>) {
-    this.wanted = new Set(keys);
+  /** The wanted set with its current priorities (bare URLs count as priority 0). Priorities change as the story moves. */
+  retain(entries: Iterable<string | readonly [string, number]>) {
+    this.wanted = new Map();
+    for (const entry of entries) {
+      const [key, priority] = typeof entry === "string" ? [entry, 0] : entry;
+      this.wanted.set(key, Math.max(priority, this.wanted.get(key) ?? -Infinity));
+    }
     for (const [key, job] of this.jobs) {
+      if (this.wanted.has(key)) job.priority = this.wanted.get(key)!;
       if (this.wanted.has(key) || this.pinned.has(key)) continue;
       job.controller.abort();
       if (!job.active) { this.jobs.delete(key); job.reject(new DOMException("Frame superseded", "AbortError")); }
@@ -157,8 +163,12 @@ export class FrameCache {
       this.disk.write(asset.url, await response.blob());
     } catch { /* a missed warm just means the zoom fetch does the work */ }
   }
-  private room(bytes: number) {
-    const evictable = [...this.decoded.values()].filter((image) => !this.pinned.has(image.key)).sort((a, b) => a.touched - b.touched);
+  /** Current usefulness: pinned (on screen) > wanted by priority > not wanted at all. */
+  private demand(key: string) { return this.pinned.has(key) ? Infinity : this.wanted.get(key) ?? -Infinity; }
+  private room(bytes: number, priority: number) {
+    // A job may evict only images no more useful than itself: unwanted first, then the least useful, then LRU.
+    const evictable = [...this.decoded.values()].filter((image) => this.demand(image.key) <= priority)
+      .sort((a, b) => this.demand(a.key) - this.demand(b.key) || a.touched - b.touched);
     while (this.used + this.reserved + bytes > this.decodedBudgetBytes && evictable.length) {
       const image = evictable.shift()!;
       this.decoded.delete(image.key); this.used -= image.bytes; this.close(image.bitmap);
@@ -171,7 +181,7 @@ export class FrameCache {
     for (const job of pending) {
       if (this.active >= this.maxActiveJobs) break;
       const high = job.bytes >= HIGH_TIER;
-      if ((high && this.highActive) || !this.room(job.bytes)) continue;
+      if ((high && this.highActive) || !this.room(job.bytes, this.pinned.has(job.asset.url) ? Infinity : job.priority)) continue;
       job.active = true; this.active++; if (high) this.highActive++;
       this.maxInflight = Math.max(this.maxInflight, this.active); this.maxHighTierInflight = Math.max(this.maxHighTierInflight, this.highActive);
       job.reserved = true; this.reserved += job.bytes; this.maxBytes = Math.max(this.maxBytes, this.used + this.reserved);
