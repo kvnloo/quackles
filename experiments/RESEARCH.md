@@ -126,35 +126,88 @@ Held-out confirmation of the W1 challenger vs nightly on the same run:
 - it has higher decode churn (Q1);
 - it has no GPU-host or phone evidence (Q3, Q4).
 
+### Q1: bounded admission + priority-aware eviction (on top of W1 v1)
+
+- **Host.** The container moved hosts between W1 and Q1: the CPU is now a 2.10 GHz Xeon x4 (it was 2.80 GHz). Q1 never compares against W1 numbers. v1 was re-measured as the control arm in every Q1 run.
+- **Hypothesis.** Speculative images repeatedly displace useful decoded images because the requested working set exceeds the budget. Controlling admission, not just eviction order, should end the decode churn.
+- **Arms.** Each arm is a single mechanism, and each later arm sits on top of the earlier one. Patches are in [candidates/](candidates/).
+
+| arm | commit | change |
+|---|---|---|
+| A | v1 `6f2ef5d2` | unchanged |
+| B | `99a629f9` | `retain()` carries the player's existing priorities. A job may evict only images *no more useful than itself*: unwanted first, then the least useful, then LRU. Pinned images stay untouchable. Eviction is still greedy, and equals may displace each other. |
+| C | `1b637ed1` (on B) | **Admission.** A job starts only if *strictly less useful* (or unwanted) images free enough room, and it evicts nothing otherwise. A deferred job keeps its asset compressed via the existing idle-warm path. Deferred work is reconsidered only on a demand change (a changed `retain`/`pin`) or a capacity change (a job finishes). Identical per-frame demand does not re-run admission. There are no timers, no pin-all, the 64 MiB budget is unchanged, and scroll prefetch stays. |
+
+**Regression checks** (`scripts/sequence-contracts.mjs` in C; fixtures, no browser). Decoded + reserved bytes are sampled every 1 ms in each check. Evidence: [results/20261013-q1-unit-matrix](results/20261013-q1-unit-matrix/).
+
+| check | A | B | C |
+|---|---|---|---|
+| wanted bytes > budget settle without a cycle | FAIL (2001 decodes / 6 wanted) | FAIL (2001) | pass (4 decodes) |
+| low priority never displaces useful images | FAIL (995 bitmaps closed) | pass | pass |
+| forward/reverse scroll priorities: current frame fed, no churn at rest | FAIL (starved) | pass | pass |
+| deferred: dedupe, stale abort, kept compressed, resolves on capacity | FAIL | FAIL | pass |
+| identical demand does not re-run admission | FAIL | FAIL | pass |
+
+**Intentional behaviour change in C.** The existing "serialize high detail work" check retains 6 × 24 MiB of equal-priority detail against a 96 MiB budget. In C the over-budget remainder now waits (2 deferred) instead of evicting its equals. The check was adjusted to say so.
+
+**Browser runs.** Harness `63ba81d`; Blue 201 MP, assets `4c2c52a3`; desktop 1440×1000 at DPR 2; SwiftShader. 7 paired trials per cell, seeded random order.
+
+| tape | metric | v1 | B | C |
+|---|---|---|---|---|
+| **held-out `q1-story-hold`** (story scroll, reverse, re-inspect, 30 s hold) | frames >50 ms | 462 | 6 (−456) | 6 (−456) |
+| | **30 s hold: decodes / evictions / detail paints** | **918 / 918 / 418** | 0 / 0 / 0 | **0 / 0 / 0** |
+| | 30 s hold: process CPU | 48.9 s | 1.38 s | 1.36 s |
+| | 30 s hold: frames >33 ms | 419 | 1 | 1 |
+| | refinement settles (cap 20 s) | never (20.0 s) | 1.5 s | 1.5 s |
+| | max decodes of one asset per run | 363 | 37 | **6** |
+| | process CPU per run | 102 s | 18.0 s | 16.1 s |
+| | story-scroll rAF p95 / max (fwd, rev) | 18.3/22.8, 17.9/21.4 | n.s. (rev max +1.8 ms, beyond noise) | n.s. |
+| | time to sharp | 2548 ms | n.s. | n.s. |
+| smoke (mode A) | decodes / max per asset | 876 / 252 | 861 / 248 (n.s.) | **381 / 6** |
+| | process CPU per run | 29.6 s | n.s. | −12.8 s |
+| | frames >50 ms, p99 | 7, 24 ms | n.s. | n.s. |
+| | time to sharp | 2494 ms | **+60 ms (beyond noise)** | +19 ms (beyond noise, unbalanced order; see retest) |
+| held-out mid-zoom (mode A) | frames >50 ms | 33 | 13 | 15 |
+| | decodes / max per asset | 845 / 178 | 566 / 120 | **338 / 7** |
+| | time to sharp | 2845 ms | n.s. | n.s. |
+| mid-zoom, mode C (prewarmed under pressure) | decodes | 1026 | 641 | **391** |
+
+**Sharpness retest.** Smoke, mode A, v1 vs C, 12 trials, **balanced order** (every permutation equally often), harness `9d81e00`.
+- C's time to sharp is **−1.1 ms (CI [−37.7, +28.4])**: no delay. The first run's +19 ms coincided with C running last in 4 of 7 trials.
+- The decode, CPU and churn reductions all reproduce: decodes 867 → 374, max per asset 255 → 6, process CPU −12.8 s.
+- The **visual check** covers 1.19×, the 2.5× edge, 8× interior, the 6× corner and a story-scrolled state at 0.12. **B and C are pixel-identical to v1 (maxDiff 0)** in all five. v1 never quiets at the 2.5× edge.
+- Memory: the decoded peak equals the 64 MiB budget in every arm, and decoded + reserved never exceeds the budget in the unit checks. Blank polls: 0. The canvas backing-store estimate is unchanged. GPU memory is not measurable on this host.
+
+**v1's remaining repaint loop, counted separately.**
+- In v1, the zero-slack escape test (W1 residual, Q2b) repainted **418 times in the 30 s hold**.
+- In B and C, **0 paints in the hold**, and detail paints at rest across the run drop 734 → 3 (story) and 30 → 2 (mid-zoom).
+- **This loop was not fixed; it lost its trigger.** Each repaint was a `render()` scheduled by a decode completion from the churn. The escape defect is still there: any render at rest with zero-slack coverage (e.g. a theme change, a resize or a late tile) will still repaint once per render. Q2b is still open.
+
+Verdicts:
+
+- **C `1b637ed1`: KEEP as the new lab candidate** (v1 + Q1). Idle decode/evict cycles stop: 0 in the hold, and at most 6–8 decodes of one asset per run vs 178–363. Foreground work is not starved: time to sharp is n.s. on three tapes plus the balanced retest, frames >50 ms are equal or better, and input → camera is n.s. Story-scroll feel is unchanged, memory is bounded and pixels are identical. Process CPU per run is 13–86 s lower. Not for promotion: no GPU or phone evidence, and Q2b is latent.
+- **B `99a629f9`: REJECT.** It ends the stationary loop on the story tape and protects useful images, but it leaves equal-priority churn (smoke decodes unchanged; 2001 decodes in the unit check). It also delayed time to sharp by +60 ms on smoke in the unbalanced run (not retested). C dominates it.
+- **v1 `6f2ef5d2`** stays the control arm.
+
 ## Queue (highest expected value first)
 
-1. **Q1, at-rest decode/evict loop (`FrameCache.room`).** `room()` evicts any unpinned decoded entry in LRU order, including entries the player still `retain`s, to admit a job of any priority. At rest, the retained set is more than 64 MiB: pinned detail tiles, plus four adjacent-frame and two neighbor-theme 1024×1536 plates at 6 MiB each. The plates evict one another forever.
+Q1 is done; C `1b637ed1` is the incumbent for every item below.
 
-   Probe: at rest at 1.19× with the W1 challenger, there were 660 decodes and 605 closed bitmaps in 20 s, with zero network, zero paints and a cache that never went idle. On nightly, each completion also triggered the W1 repaint.
-
-   - **H2.** Admission that never evicts a still-wanted entry for a job of equal or lower priority ends the loop without slowing time to sharp.
-   - **Reject if:**
-     - at-rest decodes in a 10 s hold drop by less than 90%;
-     - time to sharp regresses beyond noise;
-     - frames >50 ms get worse;
-     - the decoded peak exceeds the budget;
-     - **story-scroll smoothness regresses** (adjacent-frame plates exist for scrolling). Run `npm run test:scroll` / `fps-harness` and add a scroll tape.
-   - **Contenders:**
-     - incumbent: the W1 winner `6f2ef5d2`;
-     - simplest alternative: do not evict wanted entries at all, so the job waits;
-     - challenger: priority-aware eviction.
-2. **Q2b, residual zero-slack repaint loop** (W1 candidate). Trace why W1b moved repaints into motion before trying again. A likely better lever is the budget fallback itself (`sharpPlan` margin 0 at 2.5× on the 201 MP tier), together with Q1, rather than the escape test.
-3. **Q2, remaining long frames.** `maxFrameMs` stays at about 220–330 ms in every build. These are the first sharp-tier paint and tier upgrades: a full 2400×3600 canvas redraw of 48–54 tiles. Candidates, in order:
-   - incremental paint of only the newly exposed or upgraded tiles;
-   - splitting a paint across frames, keeping the old surface visible until it is complete;
-   - avoiding `imageSmoothingQuality: "high"` only where the scale is exactly 1:1. This needs a pixel check and must not reduce quality.
-4. **Q3, a calibrated GPU host.** Re-run W0/W1 with `GPU=1` on a host with a real GPU. The SwiftShader numbers overstate paint cost.
-5. **Q4, physical phone.** Run the W1/W1b finalist plus the Q1 winner on Android Chrome with the same tapes (touch tapes need a CDP touch port of the tape format) and a human blind A/B feel review.
-6. **Q5, collector overhead.** Calibrate the collector (rAF loop, polls, LoAF observer) against an uninstrumented control.
+1. **Q2b, the latent zero-slack repaint loop.** With churn gone, it now fires only when something else schedules `render()` at rest. Steps:
+   - Quantify it with a probe that triggers renders at rest at 2.5× (e.g. a theme mix change, a resize, a late tile).
+   - Then fix it without W1b's motion regressions. The leading idea is to make the *budget fallback* in `sharpPlan` keep some slack (or skip the repaint when the planned coverage equals the painted coverage and the tier is unchanged), rather than shrinking insets.
+   - Measure motion **and** post-stop sharpening on all four tapes, with a balanced order for finalists.
+2. **Q2, remaining long frames.** `maxFrameMs` is about 125–160 ms in C: the first sharp-tier paint and tier upgrades, a full redraw of 48–54 tiles. Candidates: an incremental paint of newly exposed or upgraded tiles, or splitting a paint across frames while the old surface stays visible.
+3. **Q3, a real GPU host.** Replay v1 and C (plus the nightly control) with `GPU=1` on a host with a real GPU. This is required before any claim transfers.
+4. **Q4, physical phone.** Android Chrome, the same tapes (touch tapes need a CDP touch port), and a human blind A/B feel review. Required before promotion.
+5. **Q5, collector overhead.** Calibrate the collector (rAF loop, polls, LoAF, decode counter) against an uninstrumented control.
 
 ## Negative findings
 
 - **Warm caches alone don't help frame pacing.** W0: B and C vs A show no reduction in long frames. Prefetch and warm-up work cannot fix this bottleneck.
 - **The identical-key repaint skip (`d269afba`) is not enough.** It misses the per-frame repaints during edge pans, because the coverage changes slightly every frame while it stays at the image edge.
 - **Slack-capped insets (`93821ef5`, W1b) are rejected.** They fix at-rest repaints but add repaints in motion, worsen the tail (p99 +42–57 ms, max +77 ms), and slow time to sharp (+159 ms in C).
+- **Priority-aware eviction alone (Q1-B `99a629f9`) does not end churn.** Equal-priority speculative work keeps swapping places: smoke decodes are unchanged, and the unit check shows 2001 decodes for 6 wanted assets. Admission is the mechanism that matters.
+- **Unbalanced order can fake a small effect.** C's first-run +19 ms time to sharp (beyond noise) vanished under a balanced 12-trial retest (−1.1 ms). Use `--balanced` for close finalists.
+- **v1's residual repaint loop was fed by cache churn.** Removing the churn hides it. It does not fix it (Q2b).
 - **`2d22784d` (Q1 control) is not runnable** against any `quackles-assets` revision (missing DZI levels). Use `cd62cd66`.

@@ -1,0 +1,419 @@
+{
+  "startedAt": "2026-10-13T20:20:54.934Z",
+  "method": "Actual TypeScript cache/manifest modules, transpiled without edits. Deterministic fetch, CacheStorage and bitmap fixtures; no image allocation or GPU work. Browser and native image evidence are separate.",
+  "checks": [
+    {
+      "name": "deduplicate one URL and cap concurrent network requests at three",
+      "passed": true,
+      "durationMs": 42.67767100000003,
+      "evidence": {
+        "pending": {
+          "decodedBytes": 0,
+          "reservedBytes": 18874368,
+          "totalBytes": 18874368,
+          "budgetBytes": 100663296,
+          "maxBytes": 18874368,
+          "pinnedBytes": 0,
+          "entries": 0,
+          "inflight": 3,
+          "maxInflight": 3,
+          "queued": 5,
+          "highTierInflight": 0,
+          "maxHighTierInflight": 0,
+          "decoding": 0,
+          "maxDecoding": 0,
+          "networkRequests": 3,
+          "completedDecodes": 0,
+          "closedBitmaps": 0,
+          "staleDiscard": 0,
+          "failures": 0,
+          "compressedBytes": 0,
+          "compressedBudgetBytes": 134217728,
+          "maxActiveJobs": 3
+        },
+        "final": {
+          "decodedBytes": 50331648,
+          "reservedBytes": 0,
+          "totalBytes": 50331648,
+          "budgetBytes": 100663296,
+          "maxBytes": 50331648,
+          "pinnedBytes": 0,
+          "entries": 8,
+          "inflight": 0,
+          "maxInflight": 3,
+          "queued": 0,
+          "highTierInflight": 0,
+          "maxHighTierInflight": 0,
+          "decoding": 0,
+          "maxDecoding": 3,
+          "networkRequests": 8,
+          "completedDecodes": 8,
+          "closedBitmaps": 0,
+          "staleDiscard": 0,
+          "failures": 0,
+          "compressedBytes": 9600,
+          "compressedBudgetBytes": 134217728,
+          "maxActiveJobs": 3
+        },
+        "maxNetworkRequests": 3,
+        "created": 8
+      }
+    },
+    {
+      "name": "serialize high detail work and count decode reservations",
+      "passed": false,
+      "durationMs": 7.966931000000045,
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nundefined !== 2\n\n    at file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:116:73\n    at async check (file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:79:26)\n    at async file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:106:1"
+    },
+    {
+      "name": "evict old frames while the currently drawn bitmap remains pinned",
+      "passed": true,
+      "durationMs": 1.318838000000028,
+      "evidence": {
+        "peak": 100663296,
+        "final": {
+          "decodedBytes": 100663296,
+          "reservedBytes": 0,
+          "totalBytes": 100663296,
+          "budgetBytes": 100663296,
+          "maxBytes": 100663296,
+          "pinnedBytes": 6291456,
+          "entries": 16,
+          "inflight": 1,
+          "maxInflight": 2,
+          "queued": 0,
+          "highTierInflight": 0,
+          "maxHighTierInflight": 0,
+          "decoding": 0,
+          "maxDecoding": 1,
+          "networkRequests": 27,
+          "completedDecodes": 27,
+          "closedBitmaps": 11,
+          "staleDiscard": 0,
+          "failures": 0,
+          "compressedBytes": 31200,
+          "compressedBudgetBytes": 134217728,
+          "maxActiveJobs": 3
+        },
+        "bitmapsCreatedAndClosed": 27
+      }
+    },
+    {
+      "name": "cancel a completed obsolete decode and close its bitmap",
+      "passed": true,
+      "durationMs": 8.202076999999974,
+      "evidence": {
+        "decodedBytes": 6291456,
+        "reservedBytes": 0,
+        "totalBytes": 6291456,
+        "budgetBytes": 100663296,
+        "maxBytes": 12582912,
+        "pinnedBytes": 0,
+        "entries": 1,
+        "inflight": 0,
+        "maxInflight": 2,
+        "queued": 0,
+        "highTierInflight": 0,
+        "maxHighTierInflight": 0,
+        "decoding": 0,
+        "maxDecoding": 1,
+        "networkRequests": 2,
+        "completedDecodes": 2,
+        "closedBitmaps": 1,
+        "staleDiscard": 1,
+        "failures": 0,
+        "compressedBytes": 2400,
+        "compressedBudgetBytes": 134217728,
+        "maxActiveJobs": 3
+      }
+    },
+    {
+      "name": "dispose while decode is pending closes every created bitmap",
+      "passed": true,
+      "durationMs": 7.020752000000016,
+      "evidence": {
+        "stats": {
+          "decodedBytes": 0,
+          "reservedBytes": 0,
+          "totalBytes": 0,
+          "budgetBytes": 100663296,
+          "maxBytes": 6291456,
+          "pinnedBytes": 0,
+          "entries": 0,
+          "inflight": 0,
+          "maxInflight": 1,
+          "queued": 0,
+          "highTierInflight": 0,
+          "maxHighTierInflight": 0,
+          "decoding": 0,
+          "maxDecoding": 1,
+          "networkRequests": 1,
+          "completedDecodes": 1,
+          "closedBitmaps": 1,
+          "staleDiscard": 1,
+          "failures": 0,
+          "compressedBytes": 1200,
+          "compressedBudgetBytes": 134217728,
+          "maxActiveJobs": 3
+        },
+        "createdAndClosed": 1
+      }
+    },
+    {
+      "name": "network failure can retry the same frame",
+      "passed": true,
+      "durationMs": 6.002907999999991,
+      "evidence": {
+        "decodedBytes": 6291456,
+        "reservedBytes": 0,
+        "totalBytes": 6291456,
+        "budgetBytes": 100663296,
+        "maxBytes": 6291456,
+        "pinnedBytes": 0,
+        "entries": 1,
+        "inflight": 1,
+        "maxInflight": 1,
+        "queued": 0,
+        "highTierInflight": 0,
+        "maxHighTierInflight": 0,
+        "decoding": 0,
+        "maxDecoding": 1,
+        "networkRequests": 2,
+        "completedDecodes": 1,
+        "closedBitmaps": 0,
+        "staleDiscard": 0,
+        "failures": 1,
+        "compressedBytes": 0,
+        "compressedBudgetBytes": 134217728,
+        "maxActiveJobs": 3
+      }
+    },
+    {
+      "name": "compressed cache evicts to 128 MiB without allocating large test payloads",
+      "passed": true,
+      "durationMs": 13.65782900000005,
+      "evidence": {
+        "decodedBytes": 62914560,
+        "reservedBytes": 0,
+        "totalBytes": 62914560,
+        "budgetBytes": 100663296,
+        "maxBytes": 62914560,
+        "pinnedBytes": 0,
+        "entries": 10,
+        "inflight": 0,
+        "maxInflight": 1,
+        "queued": 0,
+        "highTierInflight": 0,
+        "maxHighTierInflight": 0,
+        "decoding": 0,
+        "maxDecoding": 1,
+        "networkRequests": 10,
+        "completedDecodes": 10,
+        "closedBitmaps": 0,
+        "staleDiscard": 0,
+        "failures": 0,
+        "compressedBytes": 125829120,
+        "compressedBudgetBytes": 134217728,
+        "maxActiveJobs": 3
+      }
+    },
+    {
+      "name": "CacheStorage unavailable retains network playback",
+      "passed": true,
+      "durationMs": 5.982609999999966,
+      "evidence": {
+        "decodedBytes": 6291456,
+        "reservedBytes": 0,
+        "totalBytes": 6291456,
+        "budgetBytes": 100663296,
+        "maxBytes": 6291456,
+        "pinnedBytes": 0,
+        "entries": 1,
+        "inflight": 0,
+        "maxInflight": 1,
+        "queued": 0,
+        "highTierInflight": 0,
+        "maxHighTierInflight": 0,
+        "decoding": 0,
+        "maxDecoding": 1,
+        "networkRequests": 1,
+        "completedDecodes": 1,
+        "closedBitmaps": 0,
+        "staleDiscard": 0,
+        "failures": 0,
+        "compressedBytes": 0,
+        "compressedBudgetBytes": 134217728,
+        "maxActiveJobs": 3
+      }
+    },
+    {
+      "name": "CacheStorage quotaFailure retains network playback",
+      "passed": true,
+      "durationMs": 5.665760000000034,
+      "evidence": {
+        "decodedBytes": 6291456,
+        "reservedBytes": 0,
+        "totalBytes": 6291456,
+        "budgetBytes": 100663296,
+        "maxBytes": 6291456,
+        "pinnedBytes": 0,
+        "entries": 1,
+        "inflight": 0,
+        "maxInflight": 1,
+        "queued": 0,
+        "highTierInflight": 0,
+        "maxHighTierInflight": 0,
+        "decoding": 0,
+        "maxDecoding": 1,
+        "networkRequests": 1,
+        "completedDecodes": 1,
+        "closedBitmaps": 0,
+        "staleDiscard": 0,
+        "failures": 0,
+        "compressedBytes": 0,
+        "compressedBudgetBytes": 134217728,
+        "maxActiveJobs": 3
+      }
+    },
+    {
+      "name": "delete only stale Quackles sequence caches and recover after eviction",
+      "passed": true,
+      "durationMs": 5.958976000000007,
+      "evidence": {
+        "deletedCaches": [
+          "quackles-sequence-old"
+        ],
+        "requests": 2
+      }
+    },
+    {
+      "name": "reject a full master larger than decoded budget",
+      "passed": true,
+      "durationMs": 0.12635599999998703,
+      "evidence": {
+        "budgetBytes": 100663296
+      }
+    },
+    {
+      "name": "Q1: wanted bytes exceeding the decoded budget settle without a decode/evict cycle",
+      "passed": false,
+      "durationMs": 706.024503,
+      "error": "AssertionError [ERR_ASSERTION]: 2001 decodes for 6 wanted assets\n    at file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:225:10\n    at runNextTicks (node:internal/process/task_queues:65:5)\n    at process.processTimers (node:internal/timers:520:9)\n    at async check (file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:79:26)\n    at async file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:216:1"
+    },
+    {
+      "name": "Q1: low-priority work never displaces an immediately useful image",
+      "passed": true,
+      "durationMs": 180.75989700000014,
+      "evidence": {
+        "decodes": 4,
+        "closed": 0,
+        "maxBytes": 25165824
+      }
+    },
+    {
+      "name": "Q1: priorities that change during forward and reverse story scrolling keep the current frame fed without churn",
+      "passed": true,
+      "durationMs": 877.7928320000001,
+      "evidence": {
+        "steps": [
+          {
+            "center": 3,
+            "fedMs": 0,
+            "settled": true,
+            "churnAtRest": 0
+          },
+          {
+            "center": 4,
+            "fedMs": 0,
+            "settled": true,
+            "churnAtRest": 0
+          },
+          {
+            "center": 5,
+            "fedMs": 0,
+            "settled": true,
+            "churnAtRest": 0
+          },
+          {
+            "center": 4,
+            "fedMs": 0,
+            "settled": true,
+            "churnAtRest": 0
+          },
+          {
+            "center": 3,
+            "fedMs": 0,
+            "settled": true,
+            "churnAtRest": 0
+          },
+          {
+            "center": 2,
+            "fedMs": 0,
+            "settled": true,
+            "churnAtRest": 0
+          }
+        ],
+        "decodes": 10,
+        "maxBytes": 25165824
+      }
+    },
+    {
+      "name": "Q1: deferred requests dedupe, abort when stale, stay compressed, and resolve when capacity frees (no timers)",
+      "passed": false,
+      "durationMs": 41.230781000000206,
+      "error": "AssertionError [ERR_ASSERTION]: deferred speculative asset not kept compressed\n    at file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:283:10\n    at runNextTicks (node:internal/process/task_queues:65:5)\n    at process.processTimers (node:internal/timers:520:9)\n    at async check (file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:79:26)\n    at async file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:270:1"
+    },
+    {
+      "name": "Q1: identical demand does not re-run admission (reconsider only on demand or capacity change)",
+      "passed": false,
+      "durationMs": 67.24136200000021,
+      "error": "AssertionError [ERR_ASSERTION]: cache does not count admission passes\n+ actual - expected\n\n+ 'undefined'\n- 'number'\n\n    at file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:302:10\n    at runNextTicks (node:internal/process/task_queues:65:5)\n    at process.processTimers (node:internal/timers:520:9)\n    at async check (file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:79:26)\n    at async file:///root/.cache/quackles-lab/cand/q1b/scripts/q1-matrix.tmp.mjs:297:1"
+    },
+    {
+      "name": "explicit nonuniform frame positions and static reduced motion frames",
+      "passed": true,
+      "durationMs": 1.8929460000003928,
+      "evidence": {
+        "seeks": [
+          {
+            "progress": 1,
+            "actual": "f4"
+          },
+          {
+            "progress": 0.555,
+            "actual": "f2"
+          },
+          {
+            "progress": 0.3,
+            "actual": "f1"
+          },
+          {
+            "progress": 0,
+            "actual": "f0"
+          },
+          {
+            "progress": 0.8,
+            "actual": "f3"
+          },
+          {
+            "progress": 0.56,
+            "actual": "f2"
+          },
+          {
+            "progress": 0.5,
+            "actual": "f1"
+          }
+        ],
+        "reducedMotionBeforeImpact": "f0",
+        "reducedMotionAfterImpact": "f4",
+        "fixtureOnly": true
+      }
+    }
+  ],
+  "sourceSha256": {
+    "cache": "f43e6f719430e2ec51e439a2e777cfd1cdb8e04cf1428c7cb99e262c09d20bc0",
+    "manifest": "ffe455aae0094dc9b8bf9d82c7029538028583062b4a8dc02e8716c4e0f4e7f1"
+  },
+  "finishedAt": "2026-10-13T20:20:56.916Z",
+  "passed": false
+}
