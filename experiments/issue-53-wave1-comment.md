@@ -8,7 +8,7 @@ Harness, receipt summaries and candidate patches are on `claude/deterministic-be
 - **Host:** a 4-vCPU cloud VM, headless Chromium 141, **SwiftShader (no GPU)**.
 - **Fixture:** Blue 201 MP `p0000000` (master `sha256:f8741314…`), assets `4c2c52a3`, served over loopback with external hosts blocked.
 - **Viewport:** desktop 1440×1000 at DPR 2, app profile `balanced`, 64 MiB decoded budget.
-- **Evidence status:** this is **not** phone evidence. Software canvas inflates the cost of each synchronous paint. The direction of a work-removal result should carry over to real hardware; the size in ms will not.
+- **Evidence status:** this is **not** phone or GPU evidence, and hardware transfer is **unverified**. Software canvas inflates the cost of each synchronous paint, and no real-GPU or phone replay has run yet.
 - **Statistics:** trials are paired by trial number, with seeded random order of refs and modes per trial. I report the median paired difference, a bootstrap 95% CI, and the incumbent's MAD. A result is "beyond noise" when the CI excludes 0 and |median diff| > MAD.
 
 ### W0: what makes a frame miss? (nightly `71c9813a`, 7 trials per mode)
@@ -17,7 +17,7 @@ Harness, receipt summaries and candidate patches are on `claude/deterministic-be
 |---|---|---|---|---|
 | A normal, cold | 48 | 150 ms | 601 | 48/48 |
 | B compressed cache warm, asset network blocked | 51 | 152 ms | 603 | 51/51 |
-| C decoded cache warm, same 64 MiB budget | 50 | 156 ms | 594 | 50/50 |
+| C prewarmed under capacity pressure (2nd pass, same 64 MiB budget; **not** decode-free: ~590 decodes in the measured pass) | 50 | 156 ms | 594 | 50/50 |
 | D painted surface, camera-only replay (diagnostic) | **0** | 23 ms | 0 | — |
 
 - **Not the network, cold decode or compositing.** Warm caches don't help frame pacing, and D has no long frames even on SwiftShader.

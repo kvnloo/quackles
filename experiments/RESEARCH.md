@@ -7,7 +7,7 @@ This file is the checkpoint between sessions. Start from **Queue**. Don't repeat
 ## Standing caveats (apply to every number below)
 
 - **Host.** Every run so far used a 4-vCPU cloud VM with headless Chromium 141 and **SwiftShader** (no GPU, `/dev/dri` absent). Canvas 2D and compositing run in software, which inflates the cost of synchronous canvas paints compared with a phone GPU.
-- **Direction vs size.** The *direction* of a work-removal result (fewer paints doing identical work) should carry over to real hardware. The *size* in milliseconds will not.
+- **Hardware transfer is unverified.** These are work-removal results (fewer paints doing identical work), but no GPU host or phone has replayed them yet. Neither the size nor the direction of any timing result is established on real hardware.
 - **No phone evidence.** None of these numbers are physical-phone evidence. Promotion needs a physical Android Chrome run and a human feel review (#53 decision gates).
 - **Fixture.** Blue `p0000000` 201 MP (master `sha256:f8741314…`) from `kvnloo/quackles-assets@4c2c52a3`, served over loopback. Desktop viewport 1440×1000 at DPR 2. App profile `balanced`, decoded budget 64 MiB.
 - **Metric limits.**
@@ -28,12 +28,13 @@ This file is the checkpoint between sessions. Start from **Queue**. Don't repeat
 |---|---|---|---|---|---|
 | A normal, cold | 48 (42–52) | 150 ms | 601 | 48 (26) | 48/48 |
 | B compressed cache warm, asset network blocked | 51 (48–53) | 152 ms | 603 | 52 (27) | 51/51 |
-| C decoded cache warm (2nd pass, same 64 MiB budget) | 50 (49–53) | 156 ms | 594 | 51 (27) | 50/50 |
+| C prewarmed under capacity pressure (2nd pass in the same document, same 64 MiB budget; **not** decode-free) | 50 (49–53) | 156 ms | 594 | 51 (27) | 50/50 |
 | D painted surface, camera-only replay (diagnostic) | 0 (0–1) | 23 ms | 0 | 0 | — |
 
 Preparation cost for B, C and D: about 24.3 s of wall time, about 230 requests, about 45 MB and about 630 decodes per prep pass. This is recorded in each receipt as `extra.prep`.
 
 - **B is only mostly warm.** Each trial had 3–9 tiles that were not in the Cache API and hit the blocked network. They are recorded as a limitation.
+- **Correction (2026-10-13).** Mode C was **prewarmed under capacity pressure**: a second pass in the same document within the same 64 MiB budget. It is **not** a decode-free state. Its measured passes still decoded about 590 images, because the wanted set exceeds the budget (Q1). The earlier wording "decoded cache warm" overstated it.
 - **Finding.** Network and cold decode are **not** the frame bottleneck: B and C do not reduce long frames. Neither is compositing: D has no long frames, even on SwiftShader.
 - **Where the time goes.** Every long frame contains a synchronous `paintDetail`, a full redraw of the buffered detail canvas at about 90–100 ms each. Long Animation Frame entries attribute about 4.7–5.0 s of script per pass to one rAF callback, `SequencePlayer.render`.
 - **Decode churn.** All of A, B and C show about 600 decodes per pass, which is the next bottleneck.
