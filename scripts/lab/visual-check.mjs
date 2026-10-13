@@ -25,6 +25,7 @@ const STATES = [
   { id: "edge-2.5x", zoom: 2.5, x: 0, y: 0.5 },
   { id: "interior-8x", zoom: 8, x: 0.6, y: 0.4 },
   { id: "corner-6x", zoom: 6, x: 0.9, y: 0.95 },
+  { id: "story-0.12", progress: 0.12 },   // story scrolled (plates path): window scroll, no inspection
 ];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const outDir = path.join(path.dirname(OUT), "visual");
@@ -37,7 +38,8 @@ async function shoot(browser, sha, port, state) {
   await page.waitForFunction(() => window.__QUACKLES_SEQUENCE__?.getState?.().drawCount > 0, undefined, { timeout: 60000 });
   await sleep(3000);
   await page.evaluate(() => { window.__vcPaint = performance.now(); addEventListener("quackles:detail-painted", () => { window.__vcPaint = performance.now(); }); });
-  await page.evaluate(({ zoom, x, y }) => window.__QUACKLES_INSPECTION__.setTarget(zoom, x, y), state);
+  if (state.progress != null) await page.evaluate((p) => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * p), state.progress);
+  else await page.evaluate(({ zoom, x, y }) => window.__QUACKLES_INSPECTION__.setTarget(zoom, x, y), state);
   const t0 = Date.now();
   let settled = null;
   while (Date.now() - t0 < 25000) {
@@ -47,6 +49,7 @@ async function shoot(browser, sha, port, state) {
       const frame = document.querySelector(".poster-frame").getBoundingClientRect();
       // Sharp: the painted tier covers the need (frame device px x zoom, capped at the 201MP fixture width), as in run.mjs.
       const need = Math.min(Math.ceil(frame.width * devicePixelRatio * i.zoom), 11584);
+      window.__vcProgress ??= st.current?.progress; if (st.current?.progress !== window.__vcProgress) { window.__vcProgress = st.current?.progress; window.__vcPaint = performance.now(); }
       return { moving: i.cameraMoving, sharp: i.zoom < 1.02 || st.detailWidth >= 0.98 * need, need, busy: (st.cache?.inflight ?? 0) + (st.cache?.queued ?? 0), quietMs: performance.now() - window.__vcPaint, detailWidth: st.detailWidth, zoom: i.zoom };
     });
     // Settled = camera at rest and no detail paint for 1.5 s. Cache activity is reported, not required: nightly's FrameCache

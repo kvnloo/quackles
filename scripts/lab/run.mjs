@@ -34,6 +34,9 @@ const TAPE_PATH = path.resolve(arg("tape", path.join(HERE, "tapes/smoke-inspect.
 const TRIALS = Number(arg("trials", "5"));
 const PROFILE_IDS = arg("profiles", "desktop").split(",");
 const MODE_IDS = arg("modes", "A").split(",");
+// --balanced: cycle through every permutation of the contenders (use trials = a multiple of n!), so each build runs in
+// each position equally often. Default: seeded random order per trial.
+const BALANCED = process.argv.includes("--balanced");
 const REMOTE = process.env.REMOTE || "origin";
 const ASSETS_DIR = path.resolve(process.env.ASSETS_DIR || path.join(REPO, "../quackles-assets"));
 // Outside the checkout: worktrees inside it would be swept up by `npm test` (eslint + tsc over **/*.ts).
@@ -67,6 +70,7 @@ const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8",
 const tryGit = (cwd, ...args) => { try { return git(cwd, ...args); } catch { return null; } };
 const fileHash = (p) => (fs.existsSync(p) ? sha256(fs.readFileSync(p)) : null);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const permutations = (xs) => (xs.length <= 1 ? [xs] : xs.flatMap((x, i) => permutations([...xs.slice(0, i), ...xs.slice(i + 1)]).map((rest) => [x, ...rest])));
 /** Seeded Fisher-Yates (LCG), so a run's mode order is reproducible from its seed. */
 function shuffle(items, seed) {
   const a = [...items];
@@ -625,11 +629,11 @@ async function main() {
     harness: { sha: harnessSha, dirty: harnessDirty, runner: "scripts/lab/run.mjs" },
     environment: { browser: `Chromium ${browser.version()}`, headless: true, gpuFlags: gpuArgs.length ? "GPU=1 (vulkan)" : "default headless (likely SwiftShader)", device: `${os.cpus()[0]?.model ?? "unknown"} x${os.cpus().length}, ${Math.round(os.totalmem() / 2 ** 30)} GiB, ${os.platform()} ${os.release()}`, node: process.version, refreshRate: "unknown (headless); see idleRafMs", thermal: "unknown" },
   };
-  const manifest = { runId, startedAt: new Date().toISOString(), command: `node scripts/lab/run.mjs ${process.argv.slice(2).join(" ")}`, tape: { id: tape.id, path: path.relative(REPO, TAPE_PATH), hash: `sha256:${ctx.tapeHash}` }, trials: TRIALS, profiles: PROFILE_IDS, assets: { repo: "kvnloo/quackles-assets", sha: assetsSha, dirty: assetsDirty }, harness: ctx.harness, environment: ctx.environment, builds: builds.map(({ worktree, log, ...b }) => b), modes: MODE_IDS, order: [], modeOrder: [] };
+  const manifest = { runId, startedAt: new Date().toISOString(), command: `node scripts/lab/run.mjs ${process.argv.slice(2).join(" ")}`, tape: { id: tape.id, path: path.relative(REPO, TAPE_PATH), hash: `sha256:${ctx.tapeHash}` }, trials: TRIALS, profiles: PROFILE_IDS, assets: { repo: "kvnloo/quackles-assets", sha: assetsSha, dirty: assetsDirty }, harness: ctx.harness, environment: ctx.environment, builds: builds.map(({ worktree, log, ...b }) => b), modes: MODE_IDS, orderPolicy: BALANCED ? "balanced permutations" : "seeded random", order: [], modeOrder: [] };
   try {
     for (let trial = 1; trial <= TRIALS; trial++) {
       // Seeded random contender order per trial, so no build systematically runs first (warm host, thermal drift).
-      const order = shuffle(builds, tape.seed * 7919 + trial);
+      const order = BALANCED ? permutations(builds)[(trial - 1) % permutations(builds).length] : shuffle(builds, tape.seed * 7919 + trial);
       manifest.order.push(order.map((b) => b.ref));
       // Paired + randomized: every mode runs in every trial, in a seeded shuffled order.
       const modes = shuffle(MODE_IDS, tape.seed * 1000 + trial);
