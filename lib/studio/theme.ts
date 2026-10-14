@@ -1,6 +1,8 @@
 export const SLOTS = ['shell', 'stone', 'print', 'poster', 'background'] as const;
 export type Slot = (typeof SLOTS)[number];
+export interface PartEdit { color: string; amount: number; tone: number; prompt: string; patchKey?: string; bbox?: [number, number, number, number] }
 export interface StudioTheme {
+  partEdits?: Record<string, PartEdit>;
   version: 1;
   id: string;
   name: string;
@@ -46,7 +48,25 @@ export function parseTheme(raw: string): StudioTheme {
   const {intensity, exposure, warmth} = v.lighting;
   if (typeof intensity !== 'number' || !Number.isFinite(intensity) || intensity < 0 || intensity > 8
     || typeof exposure !== 'number' || !Number.isFinite(exposure) || exposure < 0.1 || exposure > 3 || !color(warmth)) throw new Error('Invalid lighting.');
-  return {version: 1, id: v.id, name: v.name, prompt: v.prompt, colors, textures, lighting:{intensity, exposure, warmth}};
+  let partEdits: Record<string, PartEdit> | undefined;
+  if (v.partEdits !== undefined) {
+    if (!record(v.partEdits) || Object.keys(v.partEdits).length > 14) throw new Error('Invalid part edits.');
+    partEdits = {};
+    for (const [id, edit] of Object.entries(v.partEdits)) {
+      if (!/^(?:[1-9]|1[0-4])$/.test(id) || !record(edit) || !color(edit.color) || !text(edit.prompt, 8000)
+        || typeof edit.amount !== 'number' || !Number.isFinite(edit.amount) || edit.amount < 0 || edit.amount > 1
+        || typeof edit.tone !== 'number' || !Number.isFinite(edit.tone) || edit.tone < -1 || edit.tone > 1) throw new Error('Invalid part edit.');
+      const parsed: PartEdit = {color: edit.color, amount: edit.amount, tone: edit.tone, prompt: edit.prompt};
+      if (edit.patchKey !== undefined) {
+        if (typeof edit.patchKey !== 'string' || !/^(day|white|blue|dark|night):[0-9]+:[a-zA-Z0-9-]+$/.test(edit.patchKey)
+          || !Array.isArray(edit.bbox) || edit.bbox.length !== 4 || edit.bbox.some(n => !Number.isSafeInteger(n) || n < 0 || n > 40000)
+          || edit.bbox[2] < 1 || edit.bbox[3] < 1) throw new Error('Invalid patch reference.');
+        parsed.patchKey = edit.patchKey; parsed.bbox = edit.bbox as PartEdit['bbox'];
+      }
+      partEdits[id] = parsed;
+    }
+  }
+  return {version: 1, id: v.id, name: v.name, prompt: v.prompt, colors, textures, lighting:{intensity, exposure, warmth}, ...(partEdits ? {partEdits} : {})};
 }
 export function serializeTheme(theme: StudioTheme): string {
   return JSON.stringify(parseTheme(JSON.stringify(theme)), null, 2);

@@ -1,5 +1,5 @@
 export type ImageSize = '1024x1024' | '1024x1536' | '1536x1024';
-export interface ImageRequest { prompt: string; refs: Blob[]; size: ImageSize; signal?: AbortSignal }
+export interface ImageRequest { prompt: string; refs: Blob[]; mask?: Blob; size: ImageSize; signal?: AbortSignal }
 export interface ImageResult { blob: Blob; backend: string; promptId?: string; seconds: number }
 export interface Detection { available: boolean; detail: string }
 export interface HarnessAdapter {

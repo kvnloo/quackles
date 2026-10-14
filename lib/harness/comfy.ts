@@ -47,8 +47,14 @@ export class ComfyAdapter implements HarnessAdapter {
     const started = performance.now();
     const signal = request.signal ? AbortSignal.any([request.signal, AbortSignal.timeout(this.timeoutMs)]) : AbortSignal.timeout(this.timeoutMs);
     try {
-      const {backend,checkpoint} = this.choose(await this.info(signal));
-      if (backend === 'sdxl' && request.refs.length > 1) throw new Error('SDXL accepts one reference image.');
+      const info = await this.info(signal);
+      const {backend,checkpoint} = this.choose(info);
+      if (backend === 'sdxl' && request.refs.length > 1 && !request.mask) throw new Error('SDXL accepts one reference image.');
+      const controls = info.ControlNetLoader?.input?.required?.control_net_name?.[0];
+      const control = Array.isArray(controls) ? controls.find((name: unknown) => typeof name === 'string' && /canny/i.test(name) && /xl/i.test(name)) : undefined;
+      if (backend === 'sdxl' && request.mask && (!control || !['VAEEncodeForInpaint','ImageToMask','ControlNetApplyAdvanced','Canny'].every(k => info[k]))) {
+        throw new Error('Masked SDXL editing requires VAEEncodeForInpaint, Canny and a canny SDXL ControlNet model. No unmasked fallback was submitted.');
+      }
       const graph: Graph = structuredClone(backend === 'chatgpt' ? chatgpt : sdxl);
       const seed = Math.floor(Math.random() * 2147483647);
       if (backend === 'chatgpt') Object.assign(graph['1'].inputs,{prompt:request.prompt,size:request.size,seed});
@@ -59,7 +65,8 @@ export class ComfyAdapter implements HarnessAdapter {
         Object.assign(graph['4'].inputs,{width,height});
         graph['5'].inputs.seed = seed;
       }
-      for (const [i,blob] of request.refs.entries()) {
+      const refs = backend === 'sdxl' && request.mask ? request.refs.slice(0,1) : request.refs;
+      for (const [i,blob] of refs.entries()) {
         if (!['image/png','image/jpeg','image/webp'].includes(blob.type) || blob.size > 20_000_000) throw new Error('References must be PNG/JPEG/WebP under 20 MB.');
         const form = new FormData(); form.append('image',blob,`studio-${crypto.randomUUID()}.${blob.type === 'image/jpeg' ? 'jpg' : blob.type.split('/')[1]}`);
         form.append('type','input'); form.append('overwrite','false');
@@ -72,6 +79,19 @@ export class ComfyAdapter implements HarnessAdapter {
           graph['9'] = {class_type:'VAEEncode',inputs:{pixels:[id,0],vae:['1',2]}};
           graph['5'].inputs.latent_image = ['9',0]; graph['5'].inputs.denoise = 0.55;
         }
+      }
+      if (backend === 'sdxl' && request.mask) {
+        if (request.mask.type !== 'image/png' || request.mask.size > 20_000_000) throw new Error('Mask must be a PNG under 20 MB.');
+        const form = new FormData(); form.append('image', request.mask, `part-mask-${crypto.randomUUID()}.png`); form.append('type','input'); form.append('overwrite','false');
+        const uploaded = await (await checked(this.fetcher,`${this.base}/upload/image`,{method:'POST',body:form,signal},30_000)).json();
+        if (typeof uploaded.name !== 'string') throw new Error('Mask upload returned no image name.');
+        graph['10'] = {class_type:'LoadImage',inputs:{image:uploaded.subfolder ? `${uploaded.subfolder}/${uploaded.name}` : uploaded.name}};
+        graph['11'] = {class_type:'ImageToMask',inputs:{image:['10',0],channel:'red'}};
+        graph['9'] = {class_type:'VAEEncodeForInpaint',inputs:{pixels:['8',0],vae:['1',2],mask:['11',0],grow_mask_by:0}};
+        graph['12'] = {class_type:'ControlNetLoader',inputs:{control_net_name:control}};
+        graph['14'] = {class_type:'Canny',inputs:{image:['8',0],low_threshold:0.2,high_threshold:0.6}};
+        graph['13'] = {class_type:'ControlNetApplyAdvanced',inputs:{positive:['2',0],negative:['3',0],control_net:['12',0],image:['14',0],strength:0.7,start_percent:0,end_percent:1}};
+        graph['5'].inputs.positive = ['13',0]; graph['5'].inputs.negative = ['13',1];
       }
       const queued = await (await checked(this.fetcher,`${this.base}/prompt`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:graph,client_id:crypto.randomUUID()}),signal},30_000)).json();
       if (!queued.prompt_id || queued.error || Object.keys(queued.node_errors ?? {}).length) throw new Error(`Workflow rejected: ${JSON.stringify(queued)}`);
