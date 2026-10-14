@@ -1,0 +1,21 @@
+{
+  "1": {
+    "class_type": "CodexChatGPTImage",
+    "inputs": {
+      "prompt": "",
+      "size": "1024x1536",
+      "quality": "medium",
+      "seed": 0
+    }
+  },
+  "2": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "1",
+        0
+      ],
+      "filename_prefix": "studio/chatgpt"
+    }
+  }
+}
