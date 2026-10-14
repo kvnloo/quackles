@@ -1,0 +1,525 @@
+{
+  "source": "day-r101-print.blend",
+  "sourceSha256": "90bd73fe55fc5a62691473b7df09e3a50689bfb350ab1cdf06e141fe8bb11bff",
+  "camera": {
+    "name": "PosterCam",
+    "position": [
+      0.10999999940395355,
+      0.19330379366874695,
+      0.6200000047683716
+    ],
+    "quaternion": [
+      0.06849226355552673,
+      0.05348743498325348,
+      -0.0036774161271750927,
+      0.9962100386619568
+    ],
+    "fov": 49.59098811870795,
+    "aspect": 0.6666666666666666,
+    "near": 0.001,
+    "far": 100,
+    "lensMm": 38.96361541748047,
+    "sensorWidthMm": 24.0,
+    "sensorFit": "HORIZONTAL",
+    "shift": [
+      0.0,
+      0.0
+    ]
+  },
+  "materials": {
+    "studio-DL physical pier r65": "stone",
+    "studio-DL-arch-stone": "stone",
+    "studio-POSTER-wall": "background",
+    "studio-QUALITY-quarried-stone": "stone",
+    "studio-DL plinth wet mottled top r47": "stone",
+    "studio-Hero front stone + Creation print": "print",
+    "studio-DL registered continuous poster": "poster",
+    "studio-Canonical arch": "stone",
+    "studio-PHOTO-pigment-body": "shell",
+    "studio-PHOTO-pigment-thigh-near": "shell",
+    "studio-PHOTO-pigment-foot-near": "shell",
+    "studio-PHOTO-pigment-head": "shell",
+    "studio-PHOTO-pigment-thigh-far": "shell",
+    "studio-PHOTO-pigment-foot-far": "shell"
+  },
+  "meshes": [
+    {
+      "name": "DL arch r02",
+      "vertices": 946,
+      "hasUV": true
+    },
+    {
+      "name": "DL solid cobalt slab",
+      "vertices": 152,
+      "hasUV": true
+    },
+    {
+      "name": "DL front grey block",
+      "vertices": 152,
+      "hasUV": true
+    },
+    {
+      "name": "DL raised rear block",
+      "vertices": 152,
+      "hasUV": true
+    },
+    {
+      "name": "DL pier strip",
+      "vertices": 152,
+      "hasUV": true
+    },
+    {
+      "name": "DL reference foliage blade 0",
+      "vertices": 71,
+      "hasUV": true
+    },
+    {
+      "name": "DL reference foliage blade 1",
+      "vertices": 71,
+      "hasUV": true
+    },
+    {
+      "name": "DL reference foliage blade 2",
+      "vertices": 71,
+      "hasUV": true
+    },
+    {
+      "name": "DL reference foliage blade 3",
+      "vertices": 71,
+      "hasUV": true
+    },
+    {
+      "name": "DL reference foliage blade 4",
+      "vertices": 71,
+      "hasUV": true
+    },
+    {
+      "name": "DL reference foliage blade 5",
+      "vertices": 71,
+      "hasUV": true
+    },
+    {
+      "name": "DL reference foliage attached stems-web",
+      "vertices": 618,
+      "hasUV": true
+    },
+    {
+      "name": "DL left blue architectural edge",
+      "vertices": 4,
+      "hasUV": true
+    },
+    {
+      "name": "DL flat Plinth maker",
+      "vertices": 877,
+      "hasUV": true
+    },
+    {
+      "name": "DL flat Plinth statement",
+      "vertices": 817,
+      "hasUV": true
+    },
+    {
+      "name": "DL flat DL left bar",
+      "vertices": 4,
+      "hasUV": true
+    },
+    {
+      "name": "DL flat DL right dash",
+      "vertices": 4,
+      "hasUV": true
+    },
+    {
+      "name": "Studio back",
+      "vertices": 4,
+      "hasUV": true
+    },
+    {
+      "name": "Studio floor",
+      "vertices": 8,
+      "hasUV": true
+    },
+    {
+      "name": "Hero limestone",
+      "vertices": 981,
+      "hasUV": true
+    },
+    {
+      "name": "Cobalt optical glass",
+      "vertices": 4514,
+      "hasUV": true
+    },
+    {
+      "name": "Orb limestone",
+      "vertices": 1352,
+      "hasUV": true
+    },
+    {
+      "name": "Classical print",
+      "vertices": 1089,
+      "hasUV": true
+    },
+    {
+      "name": "Architectural shadow former",
+      "vertices": 198,
+      "hasUV": true
+    },
+    {
+      "name": "Banner through top edge",
+      "vertices": 1089,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__right_shell.stl",
+      "vertices": 10475,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__banana_pcb_locker.stl",
+      "vertices": 692,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__trunk_base.stl",
+      "vertices": 1837,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__power_support.stl",
+      "vertices": 6383,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__np_f970.stl",
+      "vertices": 10487,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__xl330.stl.001",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__left_shell.stl",
+      "vertices": 10475,
+      "hasUV": true
+    },
+    {
+      "name": "trunk_base__seeed_bearing__configuration__22x16x4.stl.001",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "yaw2roll__yaw2roll.stl",
+      "vertices": 6186,
+      "hasUV": true
+    },
+    {
+      "name": "yaw2roll__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "yaw2roll__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "yaw2roll__bearing_roll.stl",
+      "vertices": 1202,
+      "hasUV": true
+    },
+    {
+      "name": "hip_l__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "hip_l__hip_l.stl",
+      "vertices": 10471,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_left__upper_leg_left.stl",
+      "vertices": 6123,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_left__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_left__upper_leg_rigidity_plate.stl",
+      "vertices": 1784,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_left__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_left__xl330.stl.001",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "leg__leg.stl",
+      "vertices": 7374,
+      "hasUV": true
+    },
+    {
+      "name": "leg__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_left__sole_left.stl",
+      "vertices": 7896,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_left__foot_left.stl",
+      "vertices": 9930,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_left__seeed_bearing__configuration_default.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_left__ankle_left.stl",
+      "vertices": 2477,
+      "hasUV": true
+    },
+    {
+      "name": "neck__neck.stl",
+      "vertices": 728,
+      "hasUV": true
+    },
+    {
+      "name": "neck__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "neck__xl330.stl.001",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "neck__neck.stl.001",
+      "vertices": 728,
+      "hasUV": true
+    },
+    {
+      "name": "neck_pitch__neck_pitch.stl",
+      "vertices": 3532,
+      "hasUV": true
+    },
+    {
+      "name": "neck_pitch__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "yaw_roll_motion__yaw_roll_motion.stl",
+      "vertices": 2887,
+      "hasUV": true
+    },
+    {
+      "name": "yaw_roll_motion__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "yaw_roll_motion__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "yaw_roll_motion__seeed_bearing__configuration__22x16x4.stl.001",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__lens.stl",
+      "vertices": 938,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__face_part.stl",
+      "vertices": 5698,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__jaw_soft.stl",
+      "vertices": 3365,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__motor_support.stl",
+      "vertices": 1800,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__top_head_shell.stl",
+      "vertices": 8062,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__xl330.stl.001",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__seeed_bearing__configuration_default.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__elec_rpi_robot_hat_pcb.stl",
+      "vertices": 9308,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__soft_mouth_top.stl",
+      "vertices": 3937,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__noenoeil.stl",
+      "vertices": 492,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__jaw.stl",
+      "vertices": 4949,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__bottom_head_shell.stl",
+      "vertices": 10477,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__m12_lens_holder.stl",
+      "vertices": 5490,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__pcb__raspberry_pi_zero_2_w.stl",
+      "vertices": 10399,
+      "hasUV": true
+    },
+    {
+      "name": "jaw_soft__speaker.stl",
+      "vertices": 8,
+      "hasUV": true
+    },
+    {
+      "name": "bearing_roll__yaw2roll.stl",
+      "vertices": 6186,
+      "hasUV": true
+    },
+    {
+      "name": "bearing_roll__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "bearing_roll__bearing_roll.stl",
+      "vertices": 1202,
+      "hasUV": true
+    },
+    {
+      "name": "bearing_roll__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "hip_l_2__hip_l.stl",
+      "vertices": 10471,
+      "hasUV": true
+    },
+    {
+      "name": "hip_l_2__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_right__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_right__seeed_bearing__configuration__22x16x4.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_right__upper_leg_rigidity_plate.stl",
+      "vertices": 1784,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_right__upper_leg_right.stl",
+      "vertices": 6123,
+      "hasUV": true
+    },
+    {
+      "name": "upper_leg_right__xl330.stl.001",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "leg_2__xl330.stl",
+      "vertices": 2057,
+      "hasUV": true
+    },
+    {
+      "name": "leg_2__leg.stl",
+      "vertices": 7374,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_right__ankle_right.stl",
+      "vertices": 2476,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_right__sole_right.stl",
+      "vertices": 7946,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_right__seeed_bearing__configuration_default.stl",
+      "vertices": 10441,
+      "hasUV": true
+    },
+    {
+      "name": "ankle_right__foot_right.stl",
+      "vertices": 9925,
+      "hasUV": true
+    }
+  ],
+  "approximation": "Standard PBR materials; procedural Cycles shading and light linking are not baked.",
+  "bytes": 6625556,
+  "sha256": "1c54320174f821a8fff7bf594a0afe28113470486dae99b336307d061e456671"
+}

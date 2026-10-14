@@ -1,0 +1,24 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import info from '../public/studio/scene.json' with {type:'json'};
+test('shipped GLB is Draco compressed, hash bound, below budget and carries all slots plus camera',()=>{
+  const bytes=readFileSync(new URL('../public/studio/day-set.glb',import.meta.url));
+  assert.ok(bytes.length<25_000_000);
+  assert.equal(bytes.length,info.bytes);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),info.sha256);
+  assert.equal(bytes.subarray(0,4).toString(),'glTF');
+  const length=bytes.readUInt32LE(12);
+  const gltf=JSON.parse(bytes.subarray(20,20+length).toString());
+  assert.ok(gltf.extensionsRequired.includes('KHR_draco_mesh_compression'));
+  const slots=new Set(gltf.materials.map(m=>m.extras?.studioSlot).filter(Boolean));
+  assert.deepEqual([...slots].sort(),['background','poster','print','shell','stone']);
+  const camera=gltf.cameras[0].perspective;
+  assert.ok(Math.abs(camera.yfov*180/Math.PI-info.camera.fov)<1e-5);
+  assert.equal(camera.aspectRatio,info.camera.aspect);
+  const print=gltf.materials.find(m=>m.extras?.studioSlot==='print');
+  assert.ok(print.pbrMetallicRoughness.baseColorTexture.texCoord>0,'Creation UV is not the default UVMap');
+  const poster=gltf.materials.find(m=>m.extras?.studioSlot==='poster');
+  assert.ok(poster.pbrMetallicRoughness.baseColorTexture.texCoord>0,'RegisteredPosterUV is explicit');
+});
