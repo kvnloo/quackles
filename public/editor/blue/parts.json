@@ -1,0 +1,324 @@
+{
+  "version": 1,
+  "theme": "blue",
+  "width": 1024,
+  "height": 1536,
+  "mask": "mask.png",
+  "plate": "/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp",
+  "plateSha256": "05dbf7c61873d604016c867172912e9409976c0ed86634f32cfe739e309c3769",
+  "scene": "/mnt/zer0models/project-artifacts/quackles/dreamloop-runs/themes-port-2026-10-13/blue-sync-r101/scene.blend",
+  "sceneSha256": "9032f2c263aaeb7c4aaeb6f1eb765d7685316ce72dcdbdfac26345364037fc4e",
+  "camera": {
+    "matrix": [
+      [
+        0.9942511320114136,
+        0.014653910882771015,
+        0.10606569051742554,
+        0.10999999940395355
+      ],
+      [
+        0.10707318782806396,
+        -0.13607202470302582,
+        -0.9848958253860474,
+        -0.6200000047683716
+      ],
+      [
+        -1.3394174658287739e-09,
+        0.9905905723571777,
+        -0.13685880601406097,
+        0.19330376386642456
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "type": "PERSP",
+    "lens": 38.96361541748047,
+    "sensor_width": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "ortho_scale": 6.0
+  },
+  "method": "Cycles CPU Object Index, one sample, opaque material override; no camera/geometry mutation",
+  "alignment": "Locked r101 camera; shipped cinematic-proof-v2 is an earlier beauty, not a new r101 plate. Geometry/material differences remain documented; no plate replacement.",
+  "parts": [
+    {
+      "id": 1,
+      "label": "Robot head",
+      "objects": [
+        "neck_pitch__neck_pitch.stl",
+        "neck_pitch__seeed_bearing__configuration__22x16x4.stl",
+        "yaw_roll_motion__yaw_roll_motion.stl",
+        "yaw_roll_motion__xl330.stl",
+        "yaw_roll_motion__seeed_bearing__configuration__22x16x4.stl",
+        "yaw_roll_motion__seeed_bearing__configuration__22x16x4.stl.001",
+        "jaw_soft__face_part.stl",
+        "jaw_soft__xl330.stl",
+        "jaw_soft__jaw_soft.stl",
+        "jaw_soft__motor_support.stl",
+        "jaw_soft__top_head_shell.stl",
+        "jaw_soft__xl330.stl.001",
+        "jaw_soft__seeed_bearing__configuration_default.stl",
+        "jaw_soft__elec_rpi_robot_hat_pcb.stl",
+        "jaw_soft__soft_mouth_top.stl",
+        "jaw_soft__jaw.stl",
+        "jaw_soft__bottom_head_shell.stl",
+        "jaw_soft__pcb__raspberry_pi_zero_2_w.stl",
+        "jaw_soft__speaker.stl"
+      ],
+      "pixels": 51146,
+      "bbox": [
+        349,
+        410,
+        365,
+        228
+      ]
+    },
+    {
+      "id": 2,
+      "label": "Robot body",
+      "objects": [
+        "trunk_base__seeed_bearing__configuration__22x16x4.stl",
+        "trunk_base__right_shell.stl",
+        "trunk_base__banana_pcb_locker.stl",
+        "trunk_base__trunk_base.stl",
+        "trunk_base__xl330.stl",
+        "trunk_base__power_support.stl",
+        "trunk_base__np_f970.stl",
+        "trunk_base__xl330.stl.001",
+        "trunk_base__left_shell.stl",
+        "trunk_base__seeed_bearing__configuration__22x16x4.stl.001",
+        "neck__neck.stl",
+        "neck__xl330.stl",
+        "neck__xl330.stl.001",
+        "neck__neck.stl.001"
+      ],
+      "pixels": 37285,
+      "bbox": [
+        549,
+        578,
+        245,
+        376
+      ]
+    },
+    {
+      "id": 3,
+      "label": "Robot legs / feet",
+      "objects": [
+        "yaw2roll__yaw2roll.stl",
+        "yaw2roll__xl330.stl",
+        "yaw2roll__seeed_bearing__configuration__22x16x4.stl",
+        "yaw2roll__bearing_roll.stl",
+        "hip_l__seeed_bearing__configuration__22x16x4.stl",
+        "hip_l__hip_l.stl",
+        "upper_leg_left__upper_leg_left.stl",
+        "upper_leg_left__xl330.stl",
+        "upper_leg_left__upper_leg_rigidity_plate.stl",
+        "upper_leg_left__seeed_bearing__configuration__22x16x4.stl",
+        "upper_leg_left__xl330.stl.001",
+        "leg__leg.stl",
+        "leg__xl330.stl",
+        "ankle_left__sole_left.stl",
+        "ankle_left__foot_left.stl",
+        "ankle_left__seeed_bearing__configuration_default.stl",
+        "ankle_left__ankle_left.stl",
+        "bearing_roll__yaw2roll.stl",
+        "bearing_roll__xl330.stl",
+        "bearing_roll__bearing_roll.stl",
+        "bearing_roll__seeed_bearing__configuration__22x16x4.stl",
+        "hip_l_2__hip_l.stl",
+        "hip_l_2__seeed_bearing__configuration__22x16x4.stl",
+        "upper_leg_right__xl330.stl",
+        "upper_leg_right__seeed_bearing__configuration__22x16x4.stl",
+        "upper_leg_right__upper_leg_rigidity_plate.stl",
+        "upper_leg_right__upper_leg_right.stl",
+        "upper_leg_right__xl330.stl.001",
+        "leg_2__xl330.stl",
+        "leg_2__leg.stl",
+        "ankle_right__ankle_right.stl",
+        "ankle_right__sole_right.stl",
+        "ankle_right__seeed_bearing__configuration_default.stl",
+        "ankle_right__foot_right.stl"
+      ],
+      "pixels": 84432,
+      "bbox": [
+        500,
+        831,
+        366,
+        356
+      ]
+    },
+    {
+      "id": 4,
+      "label": "Eye",
+      "objects": [
+        "jaw_soft__lens.stl",
+        "jaw_soft__noenoeil.stl",
+        "jaw_soft__m12_lens_holder.stl"
+      ],
+      "pixels": 5354,
+      "bbox": [
+        392,
+        465,
+        89,
+        91
+      ]
+    },
+    {
+      "id": 5,
+      "label": "Plinth",
+      "objects": [
+        "Hero limestone"
+      ],
+      "pixels": 345059,
+      "bbox": [
+        0,
+        1146,
+        1024,
+        390
+      ]
+    },
+    {
+      "id": 6,
+      "label": "Step + print",
+      "objects": [
+        "DL solid cobalt slab"
+      ],
+      "pixels": 41001,
+      "bbox": [
+        10,
+        940,
+        430,
+        222
+      ]
+    },
+    {
+      "id": 7,
+      "label": "Labels",
+      "objects": [
+        "DL flat Plinth maker",
+        "DL flat Plinth statement",
+        "DL flat DL left bar",
+        "DL flat DL right dash"
+      ],
+      "pixels": 5869,
+      "bbox": [
+        253,
+        1231,
+        617,
+        152
+      ]
+    },
+    {
+      "id": 8,
+      "label": "Sphere",
+      "objects": [
+        "Cobalt optical glass"
+      ],
+      "pixels": 12872,
+      "bbox": [
+        36,
+        1067,
+        136,
+        127
+      ]
+    },
+    {
+      "id": 9,
+      "label": "Ball ledge",
+      "objects": [
+        "Orb limestone"
+      ],
+      "pixels": 25561,
+      "bbox": [
+        0,
+        1177,
+        222,
+        133
+      ]
+    },
+    {
+      "id": 10,
+      "label": "Grey block",
+      "objects": [
+        "DL front grey block"
+      ],
+      "pixels": 23347,
+      "bbox": [
+        145,
+        1027,
+        186,
+        162
+      ]
+    },
+    {
+      "id": 11,
+      "label": "Rear blocks",
+      "objects": [
+        "DL raised rear block",
+        "DL pier strip"
+      ],
+      "pixels": 28904,
+      "bbox": [
+        0,
+        938,
+        482,
+        237
+      ]
+    },
+    {
+      "id": 12,
+      "label": "Arch",
+      "objects": [
+        "Arched studio insert"
+      ],
+      "pixels": 125228,
+      "bbox": [
+        415,
+        193,
+        285,
+        960
+      ]
+    },
+    {
+      "id": 13,
+      "label": "Poster wall",
+      "objects": [
+        "Classical print",
+        "Banner through top edge"
+      ],
+      "pixels": 239381,
+      "bbox": [
+        700,
+        0,
+        324,
+        746
+      ]
+    },
+    {
+      "id": 14,
+      "label": "Background",
+      "objects": [
+        "Studio back",
+        "Studio floor",
+        "Architectural shadow former",
+        "Studio leaf 0",
+        "Studio leaf 1",
+        "Studio leaf 2",
+        "Studio leaf 3",
+        "Studio leaf 4"
+      ],
+      "pixels": 547425,
+      "bbox": [
+        0,
+        0,
+        1024,
+        1187
+      ]
+    }
+  ],
+  "maskSha256": "6ea644ed0a268c4bb362e923f139cc669964aed3b40c8ae9407b2e007d725ee5"
+}
