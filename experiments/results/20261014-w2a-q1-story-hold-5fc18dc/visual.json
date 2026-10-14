@@ -1,0 +1,365 @@
+{
+ "viewport": "1440x1000@2",
+ "states": [
+  {
+   "id": "low-zoom-1.19",
+   "zoom": 1.19,
+   "x": 0.5,
+   "y": 0.5
+  },
+  {
+   "id": "edge-2.5x",
+   "zoom": 2.5,
+   "x": 0,
+   "y": 0.5
+  },
+  {
+   "id": "interior-8x",
+   "zoom": 8,
+   "x": 0.6,
+   "y": 0.4
+  },
+  {
+   "id": "corner-6x",
+   "zoom": 6,
+   "x": 0.9,
+   "y": 0.95
+  },
+  {
+   "id": "story-0.12",
+   "progress": 0.12
+  }
+ ],
+ "results": [
+  {
+   "state": "low-zoom-1.19",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "18bb1dec055cbb71b17a2a3c53b3314b789f2267",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1587,
+    "busy": 4,
+    "quietMs": 1556.5,
+    "detailWidth": 2896,
+    "zoom": 1.19
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1587,
+    "busy": 4,
+    "quietMs": 1552,
+    "detailWidth": 2896,
+    "zoom": 1.19
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/low-zoom-1.19-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/low-zoom-1.19-18bb1dec.png"
+   ]
+  },
+  {
+   "state": "low-zoom-1.19",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "11d42fd452eeb915eb2cfc6a2fdcb392302735c0",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1587,
+    "busy": 4,
+    "quietMs": 1556.5,
+    "detailWidth": 2896,
+    "zoom": 1.19
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1587,
+    "busy": 4,
+    "quietMs": 1555.6000000005588,
+    "detailWidth": 2896,
+    "zoom": 1.19
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/low-zoom-1.19-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/low-zoom-1.19-11d42fd4.png"
+   ]
+  },
+  {
+   "state": "edge-2.5x",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "18bb1dec055cbb71b17a2a3c53b3314b789f2267",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 3334,
+    "busy": 2,
+    "quietMs": 1608,
+    "detailWidth": 5792,
+    "zoom": 2.5
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 3334,
+    "busy": 2,
+    "quietMs": 1543.2999999998137,
+    "detailWidth": 5792,
+    "zoom": 2.5
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/edge-2.5x-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/edge-2.5x-18bb1dec.png"
+   ]
+  },
+  {
+   "state": "edge-2.5x",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "11d42fd452eeb915eb2cfc6a2fdcb392302735c0",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 3334,
+    "busy": 2,
+    "quietMs": 1608,
+    "detailWidth": 5792,
+    "zoom": 2.5
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 3334,
+    "busy": 5,
+    "quietMs": 1551.4000000003725,
+    "detailWidth": 5792,
+    "zoom": 2.5
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 204,
+    "meanDiff": 1.0856,
+    "pctOver8": 1.5725
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/edge-2.5x-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/edge-2.5x-11d42fd4.png"
+   ]
+  },
+  {
+   "state": "interior-8x",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "18bb1dec055cbb71b17a2a3c53b3314b789f2267",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 10667,
+    "busy": 4,
+    "quietMs": 1584.7999999998137,
+    "detailWidth": 11584,
+    "zoom": 8
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 10667,
+    "busy": 4,
+    "quietMs": 1566.5999999996275,
+    "detailWidth": 11584,
+    "zoom": 8
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/interior-8x-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/interior-8x-18bb1dec.png"
+   ]
+  },
+  {
+   "state": "interior-8x",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "11d42fd452eeb915eb2cfc6a2fdcb392302735c0",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 10667,
+    "busy": 4,
+    "quietMs": 1584.7999999998137,
+    "detailWidth": 11584,
+    "zoom": 8
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 10667,
+    "busy": 4,
+    "quietMs": 1561.3999999994412,
+    "detailWidth": 11584,
+    "zoom": 8
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/interior-8x-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/interior-8x-11d42fd4.png"
+   ]
+  },
+  {
+   "state": "corner-6x",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "18bb1dec055cbb71b17a2a3c53b3314b789f2267",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 8000,
+    "busy": 5,
+    "quietMs": 1557.7000000001863,
+    "detailWidth": 11584,
+    "zoom": 6
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 8000,
+    "busy": 5,
+    "quietMs": 1558.0999999996275,
+    "detailWidth": 11584,
+    "zoom": 6
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/corner-6x-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/corner-6x-18bb1dec.png"
+   ]
+  },
+  {
+   "state": "corner-6x",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "11d42fd452eeb915eb2cfc6a2fdcb392302735c0",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 8000,
+    "busy": 5,
+    "quietMs": 1557.7000000001863,
+    "detailWidth": 11584,
+    "zoom": 6
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 8000,
+    "busy": 5,
+    "quietMs": 1550.3999999994412,
+    "detailWidth": 11584,
+    "zoom": 6
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/corner-6x-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/corner-6x-11d42fd4.png"
+   ]
+  },
+  {
+   "state": "story-0.12",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "18bb1dec055cbb71b17a2a3c53b3314b789f2267",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1334,
+    "busy": 0,
+    "quietMs": 1523.4000000003725,
+    "detailWidth": 0,
+    "zoom": 1
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1334,
+    "busy": 0,
+    "quietMs": 1526.5999999996275,
+    "detailWidth": 0,
+    "zoom": 1
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/story-0.12-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/story-0.12-18bb1dec.png"
+   ]
+  },
+  {
+   "state": "story-0.12",
+   "base": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+   "cand": "11d42fd452eeb915eb2cfc6a2fdcb392302735c0",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1334,
+    "busy": 0,
+    "quietMs": 1523.4000000003725,
+    "detailWidth": 0,
+    "zoom": 1
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1334,
+    "busy": 0,
+    "quietMs": 1525.2999999998137,
+    "detailWidth": 0,
+    "zoom": 1
+   },
+   "diff": {
+    "pixels": 2661336,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "files": [
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/story-0.12-1b637ed1.png",
+    "results/20261014-w2a-q1-story-hold-5fc18dc/visual/story-0.12-11d42fd4.png"
+   ]
+  }
+ ]
+}

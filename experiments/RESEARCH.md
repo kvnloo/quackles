@@ -189,18 +189,67 @@ Verdicts:
 - **B `99a629f9`: REJECT.** It ends the stationary loop on the story tape and protects useful images, but it leaves equal-priority churn (smoke decodes unchanged; 2001 decodes in the unit check). It also delayed time to sharp by +60 ms on smoke in the unbalanced run (not retested). C dominates it.
 - **v1 `6f2ef5d2`** stays the control arm.
 
+### W2A: redundant stationary paints (on top of Q1-C)
+
+- **Reproduction** (`scripts/lab/redraw-probe.mjs`, 3 trials per cell; [results/20261014-w2a-probe](results/20261014-w2a-probe/README.md)).
+  - On C at 2.5× (Blue 201 MP; the budget fallback paints coverage == crop, so there is zero slack), forced redraws repaint identical content: an unchanged render request **2×**, a same-theme request **5×**, a 1 px resize **4×**. Each paint costs a 120–190 ms frame on this host.
+  - A late adjacent plate caused 0 paints.
+  - The 8× interior control, which has slack, repaints **0×** for the same triggers.
+- **Mechanism.** `render()` → `escaping = cropEscapes(crop, paintedCoverage, 12%)`. With zero slack on an interior side this is always true, so every render at rest repaints. `sharpPlan()` reaches zero slack because the 40% and 20% buffers do not fit the decoded budget at the 5792 tier.
+- **Arms** (one mechanism each, on C `1b637ed1`):
+
+| arm | commit | change |
+|---|---|---|
+| C | `1b637ed1` | incumbent |
+| **G** | `18bb1dec` | settled-only content guard. At rest, skip a detail paint whose canvas content would be identical: frame, visible themes, per-layer tier, alpha and tile set, exact coverage, backing size (`detailContentKey`, `scripts/detail-content-contracts.mjs`, written to fail first). Motion rules and the escape inset are unchanged, so the rejected W1b inset strategy is not repeated. |
+| P | `11d42fd4` | buffer planning. `sharpPlan` tries a 13% margin (just above the inset) before the zero-slack fallback. |
+
+**Probe** (2.5× zero slack):
+
+| trigger | C | G | P |
+|---|---|---|---|
+| unchanged | 2/2/2 | **0/0/0** | 2/2/2 |
+| same theme | 5/5/5 | **0/0/0** | 5/5/5 |
+| resize | 4/4/4 | **0/0/0** | 4/4/4 |
+| real theme switch | 2/2/2 | 1/1/1 | 2/2/2 |
+
+- G's end states are **pixel-identical to C (maxDiff 0)** for every trigger and state, including the theme switch where it paints once fewer. The intermediate frames of that transition were not captured.
+
+**Balanced paired trials** (harness `5fc18dc`; 6 trials, all permutations equally often; smoke, unseen edge/wheel, held-out mid-zoom, held-out story+hold; 72 trials, all PASS):
+- **G vs C:** no gate regressed beyond noise on any tape. Motion rAF p99 is n.s. everywhere (story −1.5 ms, beyond noise). Time to sharp, story-scroll tails, decodes, decoded peak (= budget) and blank polls are all n.s.
+- The tapes contain no forced redraws at zero slack, so paint counts are unchanged there. G's gain is the probe's: removed redundant paints.
+- **Visual** (5 settled states incl. story-scrolled): G is **pixel-identical** to C.
+- **P:** the visual check differs at the 2.5× edge (maxDiff 204, 1.6% of pixels). The difference is in the inspection viewfinder inset, not the main scene.
+
+**Verdicts:**
+- **G `18bb1dec`: KEEP** as the new lab incumbent (v1 + Q1-C + W2A-G). Not for promotion.
+- **P `11d42fd4`: REJECT.** No repaint benefit: the budget still forces zero slack. It also changes the viewfinder pixels.
+
+### W2B: hardware validation (NOT RUN)
+
+- **Not run.** No real desktop GPU and no physical Android device were available to the lab session. Both account environments are Anthropic cloud containers, and `/dev/dri` is absent.
+- **Not substituted.** Emulation is not used in place of hardware evidence.
+- **What exists instead:** the runner can replay on real hardware over CDP (`--cdp`, `physical` profile, `--device-note`, repaint duration in `extra.detailPaints.paintFrameMs*`). See the README "Hardware replay" section.
+  - Tested only against a local headless Chromium.
+  - The Android default-context fallback is untested.
+- **Replay set:** `nightly 71c9813a`, v1 `6f2ef5d2`, Q1-C `1b637ed1`, W2A-G `18bb1dec`, on the story+hold, smoke and mid-zoom tapes, 12 trials, `--balanced`.
+
+### W2C: split the remaining synchronous redraw (NOT RUN, gated)
+
+- **Gated on W2B.** It runs only if hardware confirms that the remaining 48–54-tile synchronous redraw is expensive there.
+- **Current lab evidence:** max frames are about 270–340 ms on SwiftShader, and each paint frame is 120–190 ms. Software canvas inflates these.
+
 ## Queue (highest expected value first)
 
-Q1 is done; C `1b637ed1` is the incumbent for every item below.
+The incumbent is **W2A-G `18bb1dec`** (v1 + Q1-C + settled guard).
 
-1. **Q2b, the latent zero-slack repaint loop.** With churn gone, it now fires only when something else schedules `render()` at rest. Steps:
-   - Quantify it with a probe that triggers renders at rest at 2.5× (e.g. a theme mix change, a resize, a late tile).
-   - Then fix it without W1b's motion regressions. The leading idea is to make the *budget fallback* in `sharpPlan` keep some slack (or skip the repaint when the planned coverage equals the painted coverage and the tier is unchanged), rather than shrinking insets.
-   - Measure motion **and** post-stop sharpening on all four tapes, with a balanced order for finalists.
-2. **Q2, remaining long frames.** `maxFrameMs` is about 125–160 ms in C: the first sharp-tier paint and tier upgrades, a full redraw of 48–54 tiles. Candidates: an incremental paint of newly exposed or upgraded tiles, or splitting a paint across frames while the old surface stays visible.
-3. **Q3, a real GPU host.** Replay v1 and C (plus the nightly control) with `GPU=1` on a host with a real GPU. This is required before any claim transfers.
-4. **Q4, physical phone.** Android Chrome, the same tapes (touch tapes need a CDP touch port), and a human blind A/B feel review. Required before promotion.
-5. **Q5, collector overhead.** Calibrate the collector (rAF loop, polls, LoAF, decode counter) against an uninstrumented control.
+1. **W2B, hardware replay (blocked on devices).** Desktop Chrome on a real GPU and physical Android Chrome. Replay nightly, v1, Q1-C and W2A-G with `--cdp`.
+   - **Measure:** frame tails, `paintFrameMs` (repaint duration), visual continuity and input → camera.
+   - **Hypothesis H-W2B:** "Detail-paint frames on a real GPU stay above one display deadline (≥ 16.7 ms at 60 Hz, ≥ 8.3 ms at 120 Hz) for the 48–54-tile sharp paint."
+   - **Reject W2C if** the median `paintFrameMs` of sharp paints is within one deadline on both devices.
+2. **W2C, split the synchronous redraw** (only if W2B confirms). Bounded offscreen staging (a second canvas at the same backing size, drawn incrementally across frames) with atomic publication (one swap). Compare against the incumbent, including canvas backing memory (2× during staging) and the cost of the final publication.
+3. **Touch tapes.** A CDP touch port of the tape format (pinch, 2→1 handoff, held still), so hardware replay covers #50's direct-touch questions.
+4. **Collector overhead.** Calibrate against an uninstrumented control (Q5).
 
 ## Negative findings
 
@@ -210,4 +259,5 @@ Q1 is done; C `1b637ed1` is the incumbent for every item below.
 - **Priority-aware eviction alone (Q1-B `99a629f9`) does not end churn.** Equal-priority speculative work keeps swapping places: smoke decodes are unchanged, and the unit check shows 2001 decodes for 6 wanted assets. Admission is the mechanism that matters.
 - **Unbalanced order can fake a small effect.** C's first-run +19 ms time to sharp (beyond noise) vanished under a balanced 12-trial retest (−1.1 ms). Use `--balanced` for close finalists.
 - **v1's residual repaint loop was fed by cache churn.** Removing the churn hides it. It does not fix it (Q2b).
+- **Buffer planning cannot fix the zero-slack repaint at the 5792 tier (W2A-P `11d42fd4`).** A 13% margin does not fit the 64 MiB budget, so the coverage stays == crop. It also changed the viewfinder pixels.
 - **`2d22784d` (Q1 control) is not runnable** against any `quackles-assets` revision (missing DZI levels). Use `cd62cd66`.
