@@ -1,5 +1,6 @@
 "use client";
 
+import { PlateEditor } from "@/components/editor/PlateEditor";
 import { FeelEngine } from "@/components/feel/FeelEngine";
 import { PosterBeats } from "@/components/poster/PosterBeats";
 import { PosterHeroCopy } from "@/components/poster/PosterHeroCopy";
@@ -32,6 +33,7 @@ export function Landing() {
           <SimFlagGate />
           <InspectionViewfinder />
           <PosterNav />
+          {PREVIEW.id === "home" && <PlateEditor />}
           {STORY && <PosterHeroCopy />}
           {STORY && <PosterBeats />}
 

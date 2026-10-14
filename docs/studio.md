@@ -1,67 +1,63 @@
-# Robot theme studio
+# Home plate editor
 
-`/studio/` is a client-only editor in the static Next export. It does not alter the home preview or run a server-side API.
+The separate `/studio/` WebGL page was retired. Editing lives on the existing home page; the authored Blender plate, current poster chrome and inspection camera remain the renderer. No GLB approximation is mounted. The archived GLB/camera utilities and their unit tests remain available for provenance, not as an editor UI.
 
 ## Use
 
 ```sh
 npm run build
 python3 -m http.server 43217 --bind 127.0.0.1 --directory out
-# http://127.0.0.1:43217/studio/
+# http://127.0.0.1:43217/
 ```
 
-Choose Day, White, Blue, Dark or Night; select a texture slot; upload PNG/JPEG/WebP; adjust tint and lighting. Uploads are downscaled to 2K and embedded in theme JSON. Save/load uses one explicit localStorage slot; export JSON for portable backups (browser storage quotas still apply). Imports are validated and reject expired blob URLs and remote/script URLs. PNG export is 1024 × 1536 from the locked hero camera.
+Click **Edit**, then hover/click a scene part (or use the labelled Part selector). The existing inspection spring frames its rendered mask bounds. Adjust tint/amount/tone instantly, or describe a material and optionally upload a reference before **Generate image edit**. **Apply** commits only the selected part. **Show before / Show after** compares the plate; **Revert part** removes that part's edits. **Done**, **Close** or Escape returns to the unzoomed home. The narrow mobile panel scrolls independently.
 
-The 6.63 MB Draco GLB is a web derivative of `day-r101-print.blend`, with the visible robot and set, explicit Creation/RegisteredPosterUV mappings, and a recorded camera. `public/studio/scene.json` records source and GLB hashes, camera, material slots and mesh inventory. Procedural Cycles materials, light linking and glass optics are approximated with standard PBR; this is not a parity render. Scene geometry/pose and camera are not editable in this MVP.
+Per-theme part edits extend the existing version-1 theme JSON. JSON and generated PNG blobs commit atomically to IndexedDB (`quackles.plate-editor.v1`), with read-back verification. Reload and theme switches restore edits. There is no new account, server API, cloud save or export/import UI. A copied JSON record alone does not include its referenced IndexedDB patch blobs.
 
-## Harnesses
-
-Only **Connect** or **Probe local ports** contacts a harness; nothing is scanned automatically. Uploads remain local until the user explicitly permits transfer and clicks a generation action. No API key or subscription token is collected by this application.
-
-- **ComfyUI**, default `http://127.0.0.1:8188`: prefer installed `CodexChatGPTImage`, otherwise use an installed SDXL checkpoint. Both text-to-image and reference img2img are implemented. The fallback in this MVP is **SDXL**, not Flux. JSON workflows are in `lib/harness/workflows/`.
-- **OpenAI-compatible / Hermes**, default `http://127.0.0.1:8642/v1`: configurable URL and model; `/models`, `/images/generations`, multipart `/images/edits`; base64 and URL outputs. A reachable `/models` does not prove image endpoint/model support. Intended for a user's already-configured harness, not direct authenticated cloud-provider login.
-- **Ollama**, default `http://127.0.0.1:11434`: installed model discovery and prompt rewriting only. It does not generate or edit images.
-
-Start ComfyUI with the exact browser origin when possible:
+## Masks and plate provenance
 
 ```sh
-python main.py --listen 127.0.0.1 --port 8188 \
-  --disable-auto-launch --enable-cors-header 'http://127.0.0.1:43217'
+/usr/bin/python blender/export_part_masks.py
+# Or: --theme day
 ```
 
-For Ollama, configure `OLLAMA_ORIGINS` before `ollama serve`. Browser Local Network Access permission may also be required. HTTPS sites may block non-loopback HTTP servers as mixed content. CORS failure is not proof that a harness is offline. Do not expose these unauthenticated harness ports to the internet. Wildcard CORS is convenient for a local test, not the recommended permanent configuration.
+This launches Blender with a sanitized HOME/PATH, `--background --factory-startup`, Cycles CPU and six threads. Every theme opens, renders and exits without saving the locked blend. The exporter verifies the source SHA before/after, overrides only rendering materials for an opaque Object Index pass, and keeps the camera/geometry untouched. System Python needs OpenImageIO, numpy and Pillow. Blender 5.2 calls the EXR pass `Object Index`; older builds may call it `IndexOB`.
 
-Generation jobs are submitted once, never automatically retried or silently redirected to another provider after submission. **Stop waiting** aborts the client wait, not the server's already-queued job. Inspect the harness before retrying. Image restyling is generative and is not a guarantee of exact geometry preservation. Nothing is applied automatically: inspect the side-by-side result, download it, or apply it to the selected material slot.
+`public/editor/{day,white,blue,dark,night}/mask.png` is an indexed PNG at the **shipped base plate resolution, 1024 × 1536**. Its palette maps index N to RGB(N,N,N) for lossless browser lookup. `parts.json` records object names, visible-pixel bounds/counts, camera parameters, donor hash and plate hash. The fourteen semantic groups include head, body, legs/feet, eye, plinth, step/print, labels, sphere, ball ledge, grey block, rear blocks, arch, poster wall and background. Occluded parts have null bounds and are omitted from the selector (White has no visible arch pixels).
 
-## Verify without spending image allowance
+**Alignment boundary:** the home manifest still loads `cinematic-proof-v2/.../p0000000-1024.webp`. Those are earlier beauty plates, not freshly rendered r101 beauty plates. The owner-specified r101 scenes share an identical camera across all five themes, but later geometry/material edits can differ from the earlier beauty. Masks use that locked camera as requested; no hand-painted correction or replacement beauty was introduced. The indexed silhouette and bounds are exact for the locked scene render, not a claim of pixel identity for changed geometry in the earlier plate.
+
+Existing deep-zoom tile loading remains untouched. Edits are base-plate-resolution patches, not freshly rendered gigapixel pyramids; at extreme zoom an edited part has the patch's resolution while unedited surroundings retain the original detail renderer.
+
+## Local harness
+
+Entering Edit checks the configured loopback ComfyUI endpoint. The small connection status opens endpoint details. Image data is sent only by **Generate image edit**. No password, API key or subscription token is collected.
+
+- Preferred: `CodexChatGPTImage` through the retained `ComfyAdapter`. Input 1 is a plate crop plus margin; input 2 is the corresponding white-on-black mask, with an optional uploaded texture below it. The prompt identifies both. Crops match supported output aspect ratios rather than stretching an arbitrary rectangle.
+- Fallback when ChatGPT is not installed: SDXL `VAEEncodeForInpaint`, the real binary mask, Canny conditioning and an installed canny SDXL ControlNet. Missing prerequisites fail before submission. This fallback graph is unit-tested; the live acceptance run uses ChatGPT.
+- Returned pixels are clipped to the selected rendered ID with a two-pixel **inward-only** feather. No alpha is written outside that ID, including holes and other objects inside the bounding box.
+
+Jobs submit once. There is no automatic retry or provider switch after a submission. **Stop waiting** aborts client waiting, not a server job already queued; inspect ComfyUI before retrying. Generative material editing cannot guarantee perfect silhouette/texture fidelity inside its permitted mask.
+
+ComfyUI must allow the page's origin (CORS and browser Local Network Access rules apply). Do not expose its unauthenticated endpoint to the internet. The acceptance workflow attaches to the owner's existing `127.0.0.1:8188` process and never restarts it.
+
+## Verification
 
 ```sh
 npm test
 npm run typecheck
-npm run lint -- app/studio components/studio lib/harness lib/studio eslint.config.mjs
-npm run lint -- --no-ignore scripts/studio-*.mjs
+npx eslint components/editor components/overlay/Landing.tsx components/sequence/HeroInspection.tsx components/sequence/SequenceFrame.tsx lib/editor lib/harness lib/studio/theme.ts
 npm run build
 PREVIEW_EXPECT=home node --import ./scripts/register-ts-resolve.mjs scripts/preview-config-contracts.mjs
-npm run test:studio:static
+BASELINE_OUT=/absolute/base-build/out npm run test:editor:static
 ```
 
-The static smoke owns an ephemeral loopback server and isolated headless Chromium, cleans both up, and uses **SwiftShader EMULATION**, not real-GPU evidence. It tests all texture slots, live preset pixels, persistence/import/export, and a mocked ComfyUI restyle UI cycle. The default replay image is an exported hero fixture, not an AI output. `STUDIO_REPLAY_IMAGE=/absolute/path/to/real-output.png` replays a saved real output without spending another generation. `STUDIO_LIVE_DETECT=1` additionally checks the real loopback ComfyUI connection (no generation).
+The smoke owns ephemeral loopback servers and isolated headless Chromium, then closes both. Screenshots are explicitly **EMULATION**, not hardware-GPU evidence. It covers real mask hover/click, camera framing, instant tint, comparison, IndexedDB reload, revert/Escape, all five theme masks and mobile layout. Real shipped deep-zoom assets are routed to their existing asset host. Normal-home comparison excludes only the newly requested Edit control.
 
-## Opt-in real receipt
-
-First run the smoke with `ARTIFACTS=<directory>` to export `hero.png`, then **with owner permission**:
+With explicit generation approval:
 
 ```sh
-ARTIFACTS=<directory> node --import ./scripts/register-ts-resolve.mjs scripts/studio-live.mjs --live
+BASELINE_OUT=/absolute/base-build/out node scripts/editor-smoke.mjs --live
 ```
 
-This invokes the same shipped adapter, submits exactly one real ChatGPT image edit, reads back history, and writes prompt, input/output hashes, seconds, job ID and output path. It refuses a directory with an existing `generation-attempt.json` so accidental reruns do not spend again. Do not delete the attempt guard as a retry shortcut.
-
-## Re-export (CPU only)
-
-```sh
-env -i HOME="$HOME" PATH=/usr/bin:/bin blender --background /path/to/day-r101-print.blend \
-  --python scripts/studio-export.py
-```
-
-The exporter never saves the blend and checks its hash before/after. It exports selected visible geometry, explicit UV bindings and camera, applies Draco, bounds image dimensions to 2048, and rejects a GLB over 25 MB. The near/far clipping range in the browser is widened to 0.001–100 to avoid web-preview clipping; optical pose, aspect and field of view remain the source values. Draco decoder binaries are vendored unchanged from Three.js with Apache licensing.
+This additionally submits one real ChatGPT edit **from the actual home editor**, reads ComfyUI history back, applies the patch, then reads the saved theme/blob from IndexedDB. A pre-existing `generation-attempt.json` blocks reruns; do not delete the guard to bypass the two-generation budget. Artifacts default to `/mnt/zer0models/project-artifacts/quackles/process/theme-engine/v2/`; use `ARTIFACTS` to override.

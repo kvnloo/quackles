@@ -188,6 +188,7 @@ export function HeroInspection() {
     let lastProgress = sequenceSnapshot().progress;
     const LATCH_MS = 240;
     const onWheel = (event: WheelEvent) => {
+      if (frame.dataset.editing === "true") return;
       if (
         !finePointer.matches ||
         event.ctrlKey ||
@@ -242,6 +243,7 @@ export function HeroInspection() {
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (frame.dataset.editing === "true") return;
       const current = inspectionSnapshot();
       if (
         !current.active ||
@@ -270,6 +272,7 @@ export function HeroInspection() {
     };
 
     const onClick = (event: MouseEvent) => {
+      if (frame.dataset.editing === "true") return;
       if (
         !finePointer.matches ||
         !atHero() ||
@@ -397,6 +400,7 @@ export function HeroInspection() {
       try { frame.setPointerCapture(pointerId); } catch { /* already released */ }
     };
     const onPinchDown = (event: PointerEvent) => {
+      if (frame.dataset.editing === "true") return;
       if (event.pointerType === "mouse" || !atHero()) return;
       if (
         event.target instanceof Element &&

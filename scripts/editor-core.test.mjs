@@ -3,7 +3,16 @@ import assert from 'node:assert/strict';
 import {partAt, bboxTarget} from '../lib/editor/mask.ts';
 import {inspectionCrop} from '../lib/sequence/render.ts';
 import {featherMask, compositeInside} from '../lib/editor/composite.ts';
+import {cropBox} from '../lib/editor/surface.ts';
 import {PRESETS,parseTheme,serializeTheme} from '../lib/studio/theme.ts';
+test('generation crops match a supported image aspect without distorting the returned patch',()=>{
+ for(const box of [[349,410,365,228],[0,0,1024,1536],[0,0,89,91],[940,1400,84,136]]) {
+  const [x,y,w,h]=cropBox(box,1024,1536);
+  assert.ok(x>=0 && y>=0 && x+w<=1024 && y+h<=1536);
+  assert.ok([1,1.5,2/3].some(r=>Math.abs(w/h-r)<.0001));
+  assert.ok(x<=box[0] && y<=box[1] && x+w>=box[0]+box[2] && y+h>=box[1]+box[3]);
+ }
+});
 test('per-part edits round trip in existing theme JSON; transient URLs and invalid tones fail closed',()=>{
  const theme={...PRESETS[0],partEdits:{'1':{color:'#a0b0c0',amount:0.35,tone:0.1,prompt:'Satin ceramic',patchKey:'day:1:receipt',bbox:[10,20,30,40]}}};
  assert.deepEqual(parseTheme(serializeTheme(theme)).partEdits,theme.partEdits);

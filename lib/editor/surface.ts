@@ -54,7 +54,12 @@ export function highlight(s: Surface, id: number): void {
 export function cropBox(bbox: BBox, width: number, height: number): BBox {
   const [x,y,w,h] = bbox, margin = Math.ceil(Math.max(w,h) * 0.12);
   const left = Math.max(0,x-margin), top = Math.max(0,y-margin);
-  return [left,top,Math.min(width,x+w+margin)-left,Math.min(height,y+h+margin)-top];
+  const wantedW=Math.min(width,x+w+margin)-left, wantedH=Math.min(height,y+h+margin)-top;
+  const options=([[1,1],[3,2],[2,3]] as const).map(([a,b])=>{
+    const unit=Math.ceil(Math.max(wantedW/a,wantedH/b));return {w:unit*a,h:unit*b};
+  }).filter(size=>size.w<=width && size.h<=height).sort((a,b)=>a.w*a.h-b.w*b.h);
+  const size=options[0] ?? {w:width,h:height};
+  return [Math.max(0,Math.min(width-size.w,Math.floor(x+w/2-size.w/2))),Math.max(0,Math.min(height-size.h,Math.floor(y+h/2-size.h/2))),size.w,size.h];
 }
 export async function editInputs(s: Surface, id: number, bbox: BBox, texture?: Blob) {
   const crop = cropBox(bbox, s.manifest.width, s.manifest.height), [x,y,w,h] = crop;

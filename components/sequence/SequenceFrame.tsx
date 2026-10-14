@@ -29,6 +29,7 @@ export function SequenceFrame({ children }: { children: ReactNode }) {
       document.documentElement.style.overscrollBehavior = policy.overscrollBehavior;
     };
     const down = (event: PointerEvent) => {
+      if (node.dataset.editing === "true") return;
       if (inspecting()) return;
       if (!event.isPrimary) { cancel(); return; }
       if (event.button !== 0 || (visualViewport?.scale ?? 1) > 1.01 || (event.target instanceof Element && event.target.closest("a,button"))) return;

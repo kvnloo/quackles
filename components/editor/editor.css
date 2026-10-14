@@ -1,0 +1,63 @@
+/* Editor uses the poster's mono scale, square controls and live palette.
+   Layer order: plate edits/outline inside camera; chrome 12; editor panel 20. */
+.editor-toggle {
+  position:absolute;right:5.4%;bottom:6.6%;z-index:12;
+  min-height:36px;padding:4px 12px;border:1px solid color-mix(in srgb,var(--ink) 38%,transparent);
+  color:var(--ink);background:var(--paper);font:400 clamp(9px,1.55cqw,11px)/1 var(--font-mono),monospace;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  transition:opacity 160ms cubic-bezier(.22,1,.36,1);
+}
+.editor-toggle:hover {opacity:.72}
+.editor-toggle[aria-pressed=true] {background:var(--ink);color:var(--paper)}
+.editor-plate-edits,.editor-part-outline {position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.editor-hint {position:absolute;z-index:12;left:5.4%;top:8%;margin:0;padding:6px 8px;max-width:72%;color:var(--ink);background:var(--paper);font:400 10px/1.4 var(--font-mono),monospace;letter-spacing:.04em;pointer-events:none}
+.poster-frame[data-editing=true] {cursor:default}
+.poster-frame[data-editing=true] .interaction-hints,.poster-frame[data-editing=true] .inspection-viewfinder {display:none}
+.editor-panel {
+  position:fixed;z-index:20;top:12svh;right:max(20px,calc((100vw - 100svh * 2 / 3) / 2 - 276px));
+  width:248px;max-height:78svh;overflow-y:auto;overscroll-behavior:contain;
+  color:var(--ink);background:color-mix(in srgb,var(--paper) 96%,var(--paper-deep));
+  border:1px solid color-mix(in srgb,var(--ink) 26%,transparent);padding:20px;
+  font:400 11px/1.55 var(--font-mono),monospace;letter-spacing:.015em;
+  animation:editor-enter 220ms cubic-bezier(.22,1,.36,1) both;
+}
+.editor-panel header {display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px}
+.editor-panel header>span {font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.editor-panel button {font:inherit;color:inherit;cursor:pointer;white-space:nowrap}
+.editor-panel header button,.editor-actions button,.editor-connection {background:none;border:0;padding:4px 0}
+.editor-panel label {display:block;margin:10px 0 6px}
+.editor-panel .editor-part-label {margin-top:0}
+.editor-panel select,.editor-panel textarea,.editor-panel input[type=url] {display:block;width:100%;border:1px solid color-mix(in srgb,var(--ink) 34%,transparent);border-radius:0;background:var(--paper);color:var(--ink);font:inherit;padding:9px 8px;resize:vertical}
+.editor-panel textarea::placeholder {color:color-mix(in srgb,var(--ink) 70%,var(--paper))}
+.editor-panel fieldset {border:0;border-top:1px solid color-mix(in srgb,var(--ink) 22%,transparent);padding:16px 0 0;margin:24px 0 0;min-width:0}
+.editor-panel legend {padding:0 8px 0 0;font-size:10px;letter-spacing:.06em}
+.editor-color {display:flex!important;align-items:center;justify-content:space-between}
+.editor-color input {width:32px;height:24px;padding:0;border:0;background:none;cursor:pointer}
+.editor-panel input[type=range] {display:block;width:100%;margin:8px 0 14px;accent-color:var(--ink);height:2px}
+.editor-upload {cursor:pointer;text-decoration:underline;text-underline-offset:4px;overflow-wrap:anywhere}
+.editor-upload input {position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.editor-upload:focus-within {outline:2px solid var(--ink);outline-offset:4px}
+.editor-upload input::file-selector-button {background:transparent;color:var(--ink);border:1px solid color-mix(in srgb,var(--ink) 32%,transparent);font:inherit;padding:5px}
+.editor-generate {width:100%;margin-top:12px;background:var(--ink);color:var(--paper)!important;border:1px solid var(--ink);padding:10px 4px}
+.editor-actions {display:flex;justify-content:space-between;margin-top:20px;gap:12px}
+.editor-panel button:disabled,.editor-panel fieldset:disabled {opacity:.45;cursor:not-allowed}
+.editor-panel button:active {transform:translateY(1px)}
+.editor-panel :focus-visible,.editor-toggle:focus-visible {outline:2px solid var(--ink);outline-offset:4px}
+.editor-intro {margin:20px 0 40px;line-height:1.7}
+.editor-message {margin:16px 0;min-height:16px;font-size:10px;overflow-wrap:anywhere}
+.editor-connection {display:flex;align-items:center;gap:8px;font-size:9px!important;border-top:1px solid color-mix(in srgb,var(--ink) 22%,transparent)!important;padding-top:14px!important;width:100%}
+.editor-connection i {width:5px;height:5px;border:1px solid currentColor;border-radius:50%;flex:none}
+.editor-connection i[data-connected=true] {background:currentColor}
+.editor-connection-details p {font-size:10px;overflow-wrap:anywhere}
+.editor-connection-details button {border:1px solid currentColor;background:none;padding:5px 10px;margin-top:8px}
+@keyframes editor-enter {from {opacity:0;transform:translateY(6px)}to {opacity:1;transform:translateY(0)}}
+@media(max-width:1000px) {
+ .editor-panel {top:auto;bottom:16px;right:16px;width:232px;max-height:54svh;padding:16px}
+}
+@media(max-width:699px) {
+ .editor-toggle {right:3.5%;padding:4px 8px}
+ .editor-panel {left:12px;right:12px;bottom:12px;width:auto;max-height:38svh;padding:16px 20px}
+ .editor-panel header {margin-bottom:16px}
+ .editor-panel fieldset {margin-top:20px}
+}
+@media(prefers-reduced-motion:reduce) {.editor-panel {animation:none}.editor-toggle {transition:none}}
