@@ -45,7 +45,8 @@
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",
     "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs",
-    "test:detail-escape": "node --import ./scripts/register-ts-resolve.mjs scripts/detail-escape-contracts.mjs"
+    "test:detail-escape": "node --import ./scripts/register-ts-resolve.mjs scripts/detail-escape-contracts.mjs",
+    "test:detail-content": "node --import ./scripts/register-ts-resolve.mjs scripts/detail-content-contracts.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

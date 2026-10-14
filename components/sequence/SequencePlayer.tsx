@@ -7,7 +7,7 @@ import { FrameCache } from "@/lib/sequence/cache";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
-import { placeDetail, cropEscapes, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+import { placeDetail, cropEscapes, detailBackingSize, detailContentKey, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
 import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
 import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
 import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
@@ -45,13 +45,13 @@ export function SequencePlayer() {
     let inspectionSettleTimer = 0, inspectionSettled = true;
     let intentKey = "", loadIntentKey = "", baseKey = "", detailKey = "", inspectionIntentKey = "";
     let paintedKeys: string[] = [], detailKeys: string[] = [];
-    let paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "";
+    let paintedContent = "", paintedCoverage: Crop | null = null, paintedMix = -1, failCrop = "", detailThemeKey = "";
     let heldTheme = 2;
     let themeRelease: ThemeRelease | null = null;
     const releaseDetail = () => {
       detailCanvas.style.visibility = "hidden";
       if (detailCanvas.width !== 1 || detailCanvas.height !== 1) { detailCanvas.width = 1; detailCanvas.height = 1; }
-      detailKeys = []; detailKey = ""; detailThemeKey = ""; paintedCoverage = null; paintedMix = -1;
+      detailKeys = []; detailKey = ""; detailThemeKey = ""; paintedContent = ""; paintedCoverage = null; paintedMix = -1;
       state.detailWidth = 0; state.detailTiles = 0;
     };
   const waiting = new Set<string>(), failed = new Set<string>(), warmed = new Set<string>();
@@ -273,7 +273,12 @@ export function SequencePlayer() {
         const upgrade = layers[0].plan.variant.width > state.detailWidth;
         const escaping = !paintedCoverage || cropEscapes(crop, paintedCoverage, crop.width * 0.12);
         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
-        if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
+        // Settled only: a repaint whose canvas content would be identical is skipped (a render at rest with zero-slack
+        // coverage otherwise "escapes" and redraws the same tiles). Motion keeps the existing paint rules.
+        const contentKey = paintLayers ? detailContentKey({ frameId: frame.id, themes: visibleThemeKey, coverage, backing: detailBackingSize(rect.width, rect.height, coverage, devicePixelRatio),
+          layers: paintLayers.map((layer) => ({ width: layer.plan.variant.width, alpha: layer.alpha, urls: layer.plan.tasks.map(({ asset }) => asset.url) })) }) : "";
+        const unchanged = !moving && !!detailKey && contentKey === paintedContent;
+        if (paintLayers && !unchanged && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
           // First appearance of the sharp layer (it was hidden/released): dissolve it in. Repaints of a visible layer do not re-fade.
           const freshLock = !detailKey; const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
           if (freshLock) armLockFade(detailCanvas!, reduced);
@@ -286,7 +291,7 @@ export function SequencePlayer() {
           window.dispatchEvent(new Event("quackles:detail-painted"));
           detailKey = `${frame.id}/${paintLayers.map((layer) => `${layer.plan.variant.width}@${layer.alpha.toFixed(2)}`).join("+")}/${coverage.x.toFixed(4)}/${coverage.y.toFixed(4)}`;
           detailKeys = paintLayers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url));
-          paintedCoverage = coverage;
+          paintedCoverage = coverage; paintedContent = contentKey;
           detailThemeKey = visibleThemeKey;
           paintedMix = allReady ? showMix : 0;
           state.detailWidth = paintLayers[0].plan.variant.width;

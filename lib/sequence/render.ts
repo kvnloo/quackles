@@ -141,6 +141,13 @@ export function cropEscapes(inner: Crop, outer: Crop, inset = 0): boolean {
   return inner.x < outer.x + left || inner.y < outer.y + top
     || inner.x + inner.width > outer.x + outer.width - right || inner.y + inner.height > outer.y + outer.height - bottom;
 }
+/** What a detail paint would put on the canvas: frame, visible themes, each layer's tier, alpha and tile set, the exact
+ * coverage and the backing size. Equal keys mean an identical canvas, so a settled repaint can be skipped (#53 W2A). */
+export function detailContentKey(c: { frameId: string; themes: string; layers: { width: number; alpha: number; urls: string[] }[]; coverage: Crop; backing: { width: number; height: number } }) {
+  const r = (v: number) => v.toFixed(6);
+  return [c.frameId, c.themes, ...c.layers.map((l) => `${l.width}@${l.alpha.toFixed(3)}:${[...l.urls].sort().join(",")}`),
+    r(c.coverage.x), r(c.coverage.y), r(c.coverage.width), r(c.coverage.height), `${c.backing.width}x${c.backing.height}`].join("|");
+}
 export function fittedBuffer(cssWidth: number, cssHeight: number, crop: Crop, dpr: number, cap = DETAIL_CANVAS_CAP, margin = 0.4): Crop {
   let pad = margin;
   while (pad > 0.001) {
