@@ -37,6 +37,36 @@ test('Comfy detects unavailable hosts and rejects execution errors without retry
   await assert.rejects(()=>broken.generateImage({prompt:'x',refs:[],size:'1024x1024'}),/node failed/);
   assert.equal(posts,1);
 });
+test('SDXL fallback builds img2img and never silently drops a reference',async()=>{
+  let graph;
+  const nodes={CheckpointLoaderSimple:{input:{required:{ckpt_name:[['sd_xl_base_1.0.safetensors']]}}},KSampler:{},CLIPTextEncode:{},EmptyLatentImage:{},VAEDecode:{},VAEEncode:{},SaveImage:{},LoadImage:{}};
+  const adapter=new ComfyAdapter('http://localhost:8188',{pollMs:0,fetcher:async(url,init={})=>{
+    if(url.endsWith('/object_info')) return reply(nodes);
+    if(url.endsWith('/upload/image')) return reply({name:'source.png'});
+    if(url.endsWith('/prompt')) {graph=JSON.parse(init.body).prompt;return reply({prompt_id:'local'});}
+    if(url.includes('/history/')) return reply({local:{status:{completed:true},outputs:{'7':{images:[{filename:'local.png'}]}}}});
+    return new Response(new Blob(['image'],{type:'image/png'}));
+  }});
+  const result=await adapter.editImage({prompt:'ceramic',refs:[new Blob(['ref'],{type:'image/png'})],size:'1024x1536'});
+  assert.equal(result.backend,'sdxl');
+  assert.equal(graph['1'].inputs.ckpt_name,'sd_xl_base_1.0.safetensors');
+  assert.equal(graph['9'].class_type,'VAEEncode');
+  assert.deepEqual(graph['5'].inputs.latent_image,['9',0]);
+  assert.equal(graph['5'].inputs.denoise,0.55);
+});
+test('missing references, malformed URLs, aborted requests and unsupported nodes fail closed',async()=>{
+  assert.throws(()=>new ComfyAdapter('file:///tmp/server'));
+  let posts=0;
+  const adapter=new ComfyAdapter('http://localhost:8188',{fetcher:async(url,init={})=>{
+    init.signal?.throwIfAborted();
+    if(url.endsWith('/prompt')) posts++;
+    return reply({});
+  }});
+  await assert.rejects(()=>adapter.editImage({refs:[]}),/source image/);
+  assert.equal((await adapter.detect()).available,false);
+  await assert.rejects(()=>adapter.generateImage({prompt:'x',refs:[],size:'1024x1024',signal:AbortSignal.abort()}));
+  assert.equal(posts,0);
+});
 test('OpenAI custom URL supports JSON generation and multipart reference edits',async()=>{
   const calls=[];
   const a=new OpenAIAdapter('http://localhost:8642/v1','image-model',{fetcher:async(url,init={})=>{

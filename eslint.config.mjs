@@ -19,6 +19,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "vendor/**",
     "public/sim/native/**", // Hash-verified generated third-party runtime sidecars.
+    "public/studio/draco/**", // Unmodified Three.js Draco decoder distribution.
     "scripts/**",
   ]),
 ]);
