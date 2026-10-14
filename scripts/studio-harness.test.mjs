@@ -8,7 +8,7 @@ test('Comfy detects ChatGPT first and posts an uploaded reference then reads his
   const calls=[];
   const fetcher=async (url, init={}) => {
     calls.push([String(url),init]);
-    if (String(url).endsWith('/object_info')) return reply(info);
+    if (String(url).includes('/object_info')) return reply(info);
     if (String(url).endsWith('/upload/image')) return reply({name:'hero.png',subfolder:'studio'});
     if (String(url).endsWith('/prompt')) return reply({prompt_id:'one'});
     if (String(url).includes('/history/')) return reply({one:{status:{completed:true},outputs:{'2':{images:[{filename:'out.png',subfolder:'',type:'output'}]}}}});
@@ -16,6 +16,8 @@ test('Comfy detects ChatGPT first and posts an uploaded reference then reads his
   };
   const adapter=new ComfyAdapter('http://127.0.0.1:8188', {fetcher,pollMs:0});
   assert.equal((await adapter.detect()).available,true);
+  assert.ok(calls.some(([url])=>url.endsWith('/object_info/CodexChatGPTImage')),'probe the small ChatGPT schema before the multi-megabyte node inventory');
+  assert.ok(!calls.some(([url])=>url.endsWith('/object_info')));
   const out=await adapter.editImage({prompt:'blue ceramic',refs:[new Blob(['reference'],{type:'image/png'})],size:'1024x1536'});
   assert.equal(out.backend,'chatgpt');
   assert.equal(out.blob.type,'image/png');
@@ -30,7 +32,7 @@ test('Comfy detects unavailable hosts and rejects execution errors without retry
   assert.equal((await offline.detect()).available,false);
   let posts=0;
   const broken=new ComfyAdapter('http://localhost:8188',{pollMs:0,fetcher:async(url)=>{
-    if(url.endsWith('/object_info')) return reply(info);
+    if(url.includes('/object_info')) return reply(info);
     if(url.endsWith('/prompt')) { posts++; return reply({prompt_id:'one'}); }
     return reply({one:{status:{status_str:'error',messages:[['execution_error',{exception_message:'node failed'}]]}}});
   }});
@@ -41,7 +43,7 @@ test('SDXL fallback builds img2img and never silently drops a reference',async()
   let graph;
   const nodes={CheckpointLoaderSimple:{input:{required:{ckpt_name:[['sd_xl_base_1.0.safetensors']]}}},KSampler:{},CLIPTextEncode:{},EmptyLatentImage:{},VAEDecode:{},VAEEncode:{},SaveImage:{},LoadImage:{}};
   const adapter=new ComfyAdapter('http://localhost:8188',{pollMs:0,fetcher:async(url,init={})=>{
-    if(url.endsWith('/object_info')) return reply(nodes);
+    if(url.includes('/object_info')) return reply(nodes);
     if(url.endsWith('/upload/image')) return reply({name:'source.png'});
     if(url.endsWith('/prompt')) {graph=JSON.parse(init.body).prompt;return reply({prompt_id:'local'});}
     if(url.includes('/history/')) return reply({local:{status:{completed:true},outputs:{'7':{images:[{filename:'local.png'}]}}}});

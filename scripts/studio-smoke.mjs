@@ -78,7 +78,7 @@ try {
     const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type'};
     if(request.method()==='OPTIONS') return route.fulfill({status:204,headers});
     let data;
-    if(path==='/object_info') {
+    if(path.startsWith('/object_info')) {
       if(gateFirstDetection) {gateFirstDetection=false;detectionStarted();await detectionGate;}
       data={CodexChatGPTImage:{},SaveImage:{},LoadImage:{}};
     }
@@ -99,7 +99,7 @@ try {
   await page.getByRole('button',{name:'Connect',exact:true}).click();
   await detectionSeen;
   await page.getByLabel('Harness URL').fill('http://127.0.0.1:18189');
-  const staleResponse=page.waitForResponse(r=>r.url().endsWith(':18188/object_info'));
+  const staleResponse=page.waitForResponse(r=>r.url().endsWith(':18188/object_info/CodexChatGPTImage'));
   releaseDetection(); await (await staleResponse).finished();
   // Let the returned body and React commit settle after the explicitly gated response.
   await page.waitForTimeout(300);

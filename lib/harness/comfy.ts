@@ -17,7 +17,12 @@ export class ComfyAdapter implements HarnessAdapter {
     this.pollMs = options.pollMs ?? 1000; this.timeoutMs = options.timeoutMs ?? 600_000;
   }
   private async info(signal?: AbortSignal): Promise<NodeInfo> {
-    return (await checked(this.fetcher, `${this.base}/object_info`, {signal}, 2000)).json();
+    // Large installations have multi-megabyte inventories: probe small node schemas first.
+    const nodes = await Promise.all(['CodexChatGPTImage','SaveImage'].map(async name =>
+      (await checked(this.fetcher, `${this.base}/object_info/${name}`, {signal}, 2000)).json() as Promise<NodeInfo>));
+    const preferred: NodeInfo = Object.assign({}, ...nodes);
+    if (preferred.CodexChatGPTImage && preferred.SaveImage) return preferred;
+    return (await checked(this.fetcher, `${this.base}/object_info`, {signal}, 5000)).json();
   }
   private choose(info: NodeInfo): {backend: 'chatgpt'|'sdxl'; checkpoint?: string} {
     if (info.CodexChatGPTImage && info.SaveImage) return {backend:'chatgpt'};
