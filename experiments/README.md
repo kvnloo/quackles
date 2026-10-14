@@ -129,6 +129,36 @@ The owner's commit audit on #50 names two historical controls. Neither has been 
   - The `cd62cd66` cells are not same-viewport comparable with `nightly`, because maxZoom 4 clamps the 8× steps.
 - These runs are a **harness smoke**: headless Chromium on a shared cloud host with SwiftShader. They show that the collector and controls agree. They are not performance evidence, not a feel verdict, and not a ranking. No physical-device or emulated-mobile conclusion follows from them.
 
+## Hardware replay (#53 Wave 2B)
+
+The same runner can drive a **real** browser over CDP. Nothing is emulated in the `physical` profile: the device's own viewport, DPR and GPU are used. Receipts record the attached endpoint, the device note, the GPU renderer string and the DPR. They also carry two limitations:
+- the loopback network fence is not applied, so external requests are detected by the `no-external-network` gate rather than blocked;
+- an attached browser that cannot open fresh contexts has its cache and storage cleared per trial.
+
+Desktop Chrome on a real GPU:
+
+```bash
+google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/lab-gpu-profile about:blank   # check chrome://gpu first
+node scripts/lab/run.mjs --cdp http://127.0.0.1:9222 --profiles physical,desktop --balanced --trials 12 \
+  --refs nightly,6f2ef5d216e9d24633a6ad62000912ac0c4e7e08,1b637ed1e7128789419a06d46d62a7f044a46a02,<candidate> \
+  --tape scripts/lab/tapes/q1-story-hold.json --device-note "<model, OS, GPU, refresh rate, power/thermal>"
+```
+
+Physical Android Chrome (USB debugging on, Chrome open):
+
+```bash
+adb forward tcp:9222 localabstract:chrome_devtools_remote
+for p in 45940 45941 45942 45943; do adb reverse tcp:$p tcp:$p; done      # one lab server port per ref, from 45940 (LAB_PORT)
+node scripts/lab/run.mjs --cdp http://127.0.0.1:9222 --profiles physical --balanced --trials 12 --refs ... \
+  --tape scripts/lab/tapes/q1-story-hold.json --device-note "<model, Android/Chrome version, refresh rate, battery/thermal>"
+```
+
+Notes:
+- The tapes drive inspection with `setTarget` and desktop-style wheel input. Touch tapes are still to do.
+- The Android path (default-context fallback, `adb reverse` serving) is **implemented but untested**: no device was available to the lab session.
+- The desktop `--cdp` path was tested only against a local headless Chromium (`desktop` and `physical` profiles).
+- Each receipt records repaint cost as `extra.detailPaints.paintFrameMsMedian` and `paintFrameMsMax` (the frame containing each detail paint).
+
 ## Not covered yet (by design)
 
 The following are left for later PRs:

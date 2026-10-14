@@ -37,6 +37,11 @@ const MODE_IDS = arg("modes", "A").split(",");
 // --balanced: cycle through every permutation of the contenders (use trials = a multiple of n!), so each build runs in
 // each position equally often. Default: seeded random order per trial.
 const BALANCED = process.argv.includes("--balanced");
+// --cdp ENDPOINT: attach to a running Chrome instead of launching headless Chromium (real desktop GPU, or Android Chrome
+// via `adb forward tcp:9222 localabstract:chrome_devtools_remote` + `adb reverse tcp:PORT tcp:PORT` for each lab server).
+// --device-note TEXT is recorded in every receipt (model, OS, GPU, refresh rate, power/thermal state).
+const CDP_ENDPOINT = arg("cdp", process.env.LAB_CDP || "");
+const DEVICE_NOTE = arg("device-note", "");
 const REMOTE = process.env.REMOTE || "origin";
 const ASSETS_DIR = path.resolve(process.env.ASSETS_DIR || path.join(REPO, "../quackles-assets"));
 // Outside the checkout: worktrees inside it would be swept up by `npm test` (eslint + tsc over **/*.ts).
@@ -50,6 +55,8 @@ const POLL_MS = 50;
 // Profiles: "emulated" is a desktop Chromium pretending to be a phone. It is never physical-device evidence.
 const PROFILES = {
   desktop: { viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 2, isMobile: false, hasTouch: false, cpuThrottle: 1, label: "desktop viewport" },
+  // Hardware replay (#53 W2B): an attached real browser (--cdp) keeps its own viewport, DPR and GPU; nothing is emulated.
+  physical: { viewport: null, cpuThrottle: 1, label: "attached real browser (desktop GPU Chrome or Android Chrome): its own viewport, DPR and GPU, no emulation" },
   "mobile-emulated": { viewport: { width: 412, height: 915 }, deviceScaleFactor: 3.5, isMobile: true, hasTouch: true, cpuThrottle: 4, label: "emulated mobile viewport + 4x CPU throttle (NOT a physical phone)" },
 };
 
@@ -334,10 +341,24 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     return finish();
   }
 
-  const context = await browser.newContext({ viewport: profile.viewport, deviceScaleFactor: profile.deviceScaleFactor, isMobile: profile.isMobile, hasTouch: profile.hasTouch, serviceWorkers: "block" });
+  // A fresh context per trial (cold cache). An attached browser that cannot create contexts (Android Chrome) uses its
+  // default context; its cache and origin storage are cleared before the trial instead.
+  let ownContext = true, context;
+  try {
+    context = await browser.newContext(profile.viewport === null ? { viewport: null, serviceWorkers: "block" } : { viewport: profile.viewport, deviceScaleFactor: profile.deviceScaleFactor, isMobile: profile.isMobile, hasTouch: profile.hasTouch, serviceWorkers: "block" });
+  } catch {
+    if (!CDP_ENDPOINT) throw new Error("cannot create a browser context");
+    context = browser.contexts()[0]; ownContext = false;
+  }
   await context.addInitScript(DECODE_COUNTER);
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
+  if (!ownContext) {
+    await cdp.send("Network.clearBrowserCache").catch(() => {});
+    await cdp.send("Storage.clearDataForOrigin", { origin: `http://127.0.0.1:${port}`, storageTypes: "all" }).catch(() => {});
+    receipt.limitations.push("attached browser default context: cache/storage cleared per trial instead of a fresh context");
+  }
+  if (CDP_ENDPOINT) receipt.limitations.push("attached browser: the host-resolver network fence is not applied; external requests are detected (no-external-network gate), not blocked");
   const browserCdp = await browser.newBrowserCDPSession().catch(() => null);
   await cdp.send("Performance.enable").catch(() => {});
   const freshNet = () => ({ requests: 0, bytes: 0, aborted: 0, blocked: 0, failed: [], external: [], httpErrors: [], assetPaths: [] });
@@ -378,7 +399,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
       const s = window.__QUACKLES_SEQUENCE__?.getState?.();
       return { gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "unknown", userAgent: navigator.userAgent, dpr: devicePixelRatio, screen: `${screen.width}x${screen.height}`, appProfile: s?.profile?.id ?? null, maxZoom: window.__QUACKLES_INSPECTION__?.getState?.().maxZoom ?? null, hasSetTarget: typeof window.__QUACKLES_INSPECTION__?.setTarget === "function" };
     });
-    Object.assign(receipt.environment, { gpu: facts.gpu, userAgent: facts.userAgent, screen: facts.screen, appProfile: facts.appProfile });
+    Object.assign(receipt.environment, { gpu: facts.gpu, userAgent: facts.userAgent, screen: facts.screen, appProfile: facts.appProfile, dpr: facts.dpr });
     receipt.extra.maxZoom = facts.maxZoom;
     await sleep(tape.warmupMs ?? 0);
     const idle = await page.evaluate(() => new Promise((res) => { const ts = []; const f = (t) => { ts.push(t); if (ts.length < 40) requestAnimationFrame(f); else res(ts); }; requestAnimationFrame(f); }));
@@ -500,6 +521,9 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
       for (let i = 1; i < fr.length; i++) if (fr[i] - fr[i - 1] > 50) { longs++; if (P.some((p) => p[0] > fr[i - 1] - 1 && p[0] <= fr[i] + 1)) withPaint++; }
       const mp = P.map((p) => (p[1] * p[2]) / 1e6).filter(Number.isFinite);
       receipt.extra.detailPaints = { n: P.length, whileMoving: P.filter((p) => p[5]).length, atRest: P.filter((p) => !p[5]).length, backingMPMedian: round(percentile(mp, 50)), backingMPMax: round(mp.length ? Math.max(...mp) : null), tilesMedian: percentile(P.map((p) => p[3]), 50), longFrames: longs, longFramesWithPaint: withPaint };
+      // Repaint duration: the rAF interval of the frame that contains each detail paint.
+      const paintFrames = P.map((p) => { const i = fr.findIndex((t) => t >= p[0]); return i > 0 ? fr[i] - fr[i - 1] : null; }).filter(Number.isFinite);
+      Object.assign(receipt.extra.detailPaints, { paintFrameMsMedian: round(percentile(paintFrames, 50)), paintFrameMsMax: round(paintFrames.length ? Math.max(...paintFrames) : null) });
       const L = data.loaf || [];
       receipt.extra.loaf = data.loaf ? { n: L.length, durationMs: round(L.reduce((a, e) => a + e[1], 0)), blockingMs: round(L.reduce((a, e) => a + e[2], 0)), scriptMs: L.reduce((a, e) => a + e[5].reduce((b, x) => b + x[2], 0), 0), forcedStyleLayoutMs: L.reduce((a, e) => a + e[5].reduce((b, x) => b + x[3], 0), 0) } : null;
     }
@@ -529,7 +553,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     else {
       // Window ends at the next viewport step: after it the camera is somewhere else.
       const windowEnd = targetTimes.find((t) => t > sharpStepAt) ?? Infinity;
-      const hit = data.polls.find(([t, dw, z, moving]) => t >= sharpStepAt && t < windowEnd && dw != null && z != null && !moving && z >= Math.min(sharpStepZoom, facts.maxZoom ?? sharpStepZoom) * 0.98 && dw >= 0.98 * Math.min(Math.ceil(box.width * profile.deviceScaleFactor * z), fixtureWidth));
+      const hit = data.polls.find(([t, dw, z, moving]) => t >= sharpStepAt && t < windowEnd && dw != null && z != null && !moving && z >= Math.min(sharpStepZoom, facts.maxZoom ?? sharpStepZoom) * 0.98 && dw >= 0.98 * Math.min(Math.ceil(box.width * facts.dpr * z), fixtureWidth));
       receipt.metrics.timeToSharpMs = hit ? round(hit[0] - sharpStepAt) : null;
       receipt.metricNotes.timeToSharpMs = hit ? `setTarget(${sharpStepZoom}) -> detailWidth >= min(frame device px x zoom, ${fixtureWidth}) at rest; ${POLL_MS} ms poll` : `sharp state not reached within ${Number.isFinite(windowEnd) ? round(windowEnd - sharpStepAt, 0) : "the rest of the tape"} ms (until the next viewport step)`;
       receipt.extra.timeToSharpTarget = { zoom: Math.min(sharpStepZoom, facts.maxZoom ?? sharpStepZoom), fixtureWidth };
@@ -585,7 +609,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     receipt.validation.notRun.unshift(`harness error: ${String(err.message || err).split("\n")[0]}`);
   } finally {
     await browserCdp?.detach().catch(() => {});
-    await context.close().catch(() => {});
+    if (ownContext) await context.close().catch(() => {}); else await page.close().catch(() => {});
   }
   return finish();
 }
@@ -618,7 +642,7 @@ async function main() {
   }
 
   const gpuArgs = process.env.GPU === "1" ? ["--enable-gpu", "--use-angle=vulkan", "--enable-features=Vulkan", "--ignore-gpu-blocklist"] : [];
-  const browser = await chromium.launch({
+  const browser = CDP_ENDPOINT ? await chromium.connectOverCDP(CDP_ENDPOINT) : await chromium.launch({
     executablePath: CHROME, headless: true,
     // Only loopback resolves: a build that reaches for the live asset origin fails no-external-network instead of
     // silently measuring GitHub Pages.
@@ -627,7 +651,7 @@ async function main() {
   const ctx = {
     tapeHash: tapeHash(tape), assetsSha, assetsDirty,
     harness: { sha: harnessSha, dirty: harnessDirty, runner: "scripts/lab/run.mjs" },
-    environment: { browser: `Chromium ${browser.version()}`, headless: true, gpuFlags: gpuArgs.length ? "GPU=1 (vulkan)" : "default headless (likely SwiftShader)", device: `${os.cpus()[0]?.model ?? "unknown"} x${os.cpus().length}, ${Math.round(os.totalmem() / 2 ** 30)} GiB, ${os.platform()} ${os.release()}`, node: process.version, refreshRate: "unknown (headless); see idleRafMs", thermal: "unknown" },
+    environment: { browser: `Chromium ${browser.version()}`, headless: CDP_ENDPOINT ? "attached (see device)" : true, gpuFlags: CDP_ENDPOINT ? "attached browser's own GPU (see gpu)" : gpuArgs.length ? "GPU=1 (vulkan)" : "default headless (likely SwiftShader)", attached: CDP_ENDPOINT || null, deviceNote: DEVICE_NOTE || null, device: CDP_ENDPOINT ? `attached via CDP; host running the harness: ${os.cpus()[0]?.model ?? "unknown"} x${os.cpus().length}` : `${os.cpus()[0]?.model ?? "unknown"} x${os.cpus().length}, ${Math.round(os.totalmem() / 2 ** 30)} GiB, ${os.platform()} ${os.release()}`, node: process.version, refreshRate: "unknown (headless); see idleRafMs", thermal: "unknown" },
   };
   const manifest = { runId, startedAt: new Date().toISOString(), command: `node scripts/lab/run.mjs ${process.argv.slice(2).join(" ")}`, tape: { id: tape.id, path: path.relative(REPO, TAPE_PATH), hash: `sha256:${ctx.tapeHash}` }, trials: TRIALS, profiles: PROFILE_IDS, assets: { repo: "kvnloo/quackles-assets", sha: assetsSha, dirty: assetsDirty }, harness: ctx.harness, environment: ctx.environment, builds: builds.map(({ worktree, log, ...b }) => b), modes: MODE_IDS, orderPolicy: BALANCED ? "balanced permutations" : "seeded random", order: [], modeOrder: [] };
   try {
@@ -644,13 +668,14 @@ async function main() {
       }
     }
   } finally {
-    await browser.close();
+    if (!CDP_ENDPOINT) await browser.close(); // never close the user's attached browser
     for (const s of servers) s.kill("SIGTERM");
   }
   manifest.finishedAt = new Date().toISOString();
   fs.mkdirSync(path.join(RESULTS_DIR, runId), { recursive: true });
   fs.writeFileSync(path.join(RESULTS_DIR, runId, "run.json"), JSON.stringify(manifest, null, 2) + "\n");
   console.log(path.join(RESULTS_DIR, runId));
+  if (CDP_ENDPOINT) process.exit(0); // the attached browser stays open; its live CDP connection would keep node running
 }
 
 main().catch((err) => { console.error(err); process.exit(2); });
