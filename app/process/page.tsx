@@ -108,7 +108,9 @@ export default function ProcessPage() {
             <p>Unofficial fan study. Not affiliated with Nous Research or Pollen Robotics.</p>
             <a href="#top">Back to top ↑</a>
           </div>
-          <span className="process-wordmark" aria-hidden="true">Quackles</span>
+          <svg className="process-wordmark" aria-hidden="true" focusable="false" width="100%" height="0.85em">
+            <text x="50%" y="0.75em" textAnchor="middle" fill="currentColor">QUACKLES</text>
+          </svg>
         </footer>
         </div>
       </div>
