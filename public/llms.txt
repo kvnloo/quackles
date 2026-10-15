@@ -10,7 +10,6 @@ Snapshot: 2026-10-15 (production record, not a freshness promise)
 
 - [Quackles poster](https://kvnloo.github.io/quackles/): Five rendered worlds and a deep-zoom robot study.
 - [How this was made](https://kvnloo.github.io/quackles/process/): A visual production record of references, trials and decisions.
-- [Artifact lineage](https://kvnloo.github.io/quackles/lineage/): Explore the image history and distinguish current review selections from approvals.
 - [Learning lab](https://kvnloo.github.io/quackles/learn/): Six evidence-backed lessons, a filtered attempt explorer and a static dataset.
 
 ## Machine-readable access

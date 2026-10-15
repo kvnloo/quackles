@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 for (const file of ['llms.txt','llms-full.txt','agents.md','data/manifest.json','openapi.json','sitemap.xml','robots.txt','feed.xml']) assert.ok(existsSync('public/'+file), file+' exists');
 const llms=readFileSync('public/llms.txt','utf8');
-for(const route of ['/process/','/lineage/','/learn/']) assert.ok(llms.includes(route));
+for(const route of ['/process/','/learn/']) assert.ok(llms.includes(route));
+const hasLineage=existsSync('app/lineage/page.tsx');
+for(const file of ['llms.txt','sitemap.xml','feed.xml','data/manifest.json']) assert.equal(readFileSync('public/'+file,'utf8').includes('/lineage/'),hasLineage,`${file}: only advertise built routes`);
+const full=readFileSync('public/llms-full.txt','utf8');
+assert.ok(full.includes('A robot. A poster. A place.'),'full guide includes process prose');
+assert.ok(full.includes(readFileSync('public/learn/llms-full.txt','utf8')),'full learning corpus preserved');
+for(const kind of ['lessons','methods','scenes']) for(const name of readdirSync('public/learn/'+kind)) for(const file of ['sitemap.xml','feed.xml']) assert.ok(readFileSync('public/'+file,'utf8').includes(`learn/${kind}/${name}`),`${file} includes corpus ${name}`);
 assert.ok(llms.includes('not owner acceptance'));
 const api=JSON.parse(readFileSync('public/openapi.json'));assert.equal(api.openapi,'3.1.0');
 for(const path of Object.values(api.paths)) assert.deepEqual(Object.keys(path),['get']);

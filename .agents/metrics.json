@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-10-15T18:57:48.275742+00:00",
+  "scope": "Unique commits reachable from all local refs/tags; no GitHub API or private identities.",
+  "commit_count": 600,
+  "merge_count": 24,
+  "history_span_days": 31.129,
+  "merge_frequency_per_history_day": 0.771,
+  "merges_by_utc_day": {
+    "2026-09-15": 1,
+    "2026-09-21": 13,
+    "2026-09-30": 8,
+    "2026-10-01": 1,
+    "2026-10-15": 1
+  },
+  "lead_time_proxy_hours": {
+    "samples": 24,
+    "median": 1.25,
+    "min": 0.019,
+    "max": 116.605
+  },
+  "lead_time_excluded_merges": 0,
+  "lead_time_definition": "Merge committer time minus earliest second-parent commit time not reachable from first parent. Not issue-to-production lead time; octopus merges use only second parent.",
+  "branch_tip_idle_days": {
+    "samples": 37,
+    "median": 14.78,
+    "min": 0.001,
+    "max": 19.106
+  },
+  "branch_age_limitation": "Git does not retain portable branch creation dates. Tip idle age is not branch age.",
+  "local_branches": 37,
+  "all_branch_refs": 86,
+  "worktrees": 82,
+  "detached_worktrees": 53,
+  "missing_worktrees": 0,
+  "distinct_worktree_heads": 43,
+  "rework_subject_proxy_count": 125,
+  "rework_subject_proxy_percent": 20.833,
+  "rework_limitation": "fix:/fix(scope):/Revert subject count is a naming proxy, not defect rate or wasted effort.",
+  "limitations": [
+    "Local and historical refs overrepresent experiments.",
+    "Clock skew and rewritten history can bias durations.",
+    "No before/after velocity causal claim; no deployment or issue timestamps available."
+  ]
+}

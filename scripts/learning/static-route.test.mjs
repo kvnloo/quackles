@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+assert.ok(existsSync('scripts/learning/static-route.mjs'), 'static-route optimizer exists');
+const { staticRoute } = await import('./static-route.mjs');
+const input = '<head><link rel="preload" href="/x.js" as="script"/><link rel="stylesheet" href="x.css"/></head><body><script src="/_next/a.js" async=""></script><script>self.__next_f.push([1,"payload"])</script><script type="application/ld+json">{"@type":"Dataset"}</script><script src="/learn/explorer.js" defer=""></script></body>';
+const output = staticRoute(input);
+assert.ok(!output.includes('_next'));
+assert.ok(!output.includes('self.__next'));
+assert.ok(!output.includes('x.js'));
+assert.ok(output.includes('application/ld+json'));
+assert.ok(output.includes('/learn/explorer.js'));
+assert.ok(output.includes('x.css'));
+assert.equal(staticRoute(output), output);
+console.log('static route optimizer PASS');

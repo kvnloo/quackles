@@ -32,6 +32,18 @@ ai_assistance:
 
 Tests from another head are not evidence. If mutation is `n/a`, write `n/a` — do not invent a score. The receipt workflow fails the PR if these keys are empty or `head_revision` is not this PR's SHA.
 
+## Acceptance and integration
+
+- Observable acceptance / non-goals:
+- Owner lane, owned paths and conflict owners:
+- Branch/base/dependencies; merge target and order:
+- Contracts, request/memory budgets, runtime perf evidence:
+- Runtime preview ID; reserved slot; verified URL + build SHA (or not deployed):
+- Owner phone / visual acceptance still needed:
+- Publication authorization (local-only work does not imply permission):
+
+Do not include private lease IDs, raw transcripts, secrets or absolute host paths.
+
 ## Related
 
 <!-- Fixes #123 -->

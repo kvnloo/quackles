@@ -15,7 +15,7 @@ Canonical URL is the existing public project site: `https://kvnloo.github.io/qua
 
 Static surfaces: root llms guides, agent interpretation guide, manifest, read-only OpenAPI, Atom feed, sitemap, robots, three extractable topic hubs, a skill file and a dependency-free read-only stdio MCP resource server. Machine-readable static resources require no API keys. The MCP executable accepts only allowlisted resources on the canonical origin; `--root` supports local tests. It is not a hosted MCP endpoint and does not execute source text.
 
-**Companion branches required:** the generator includes `/learn/` and `/lineage/` in site-wide discovery, so deploy only after both lanes are integrated. Root `llms-full.txt` includes the learning corpus when present at build time. The isolated GEO branch explicitly labels its missing companion corpus rather than fabricating it. Regenerate after integration. On GitHub project Pages, `/quackles/robots.txt` cannot control origin-root crawler policy; the account-level robots file must remain compatible. Sitemap submission/deployment is not performed here.
+**Independent delivery:** `/learn/` is integrated. The generator advertises `/lineage/` only when its route source is present; until then the learning footer links to `/process/`. This keeps GEO independent of lineage performance admission. Root `llms-full.txt` includes the learning corpus when present at build time. The isolated GEO branch explicitly labels its missing companion corpus rather than fabricating it. Regenerate after integration. On GitHub project Pages, `/quackles/robots.txt` cannot control origin-root crawler policy; the account-level robots file must remain compatible. Sitemap submission/deployment is not performed here.
 
 ## Anti-game benchmark
 
