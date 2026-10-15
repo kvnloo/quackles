@@ -10,6 +10,8 @@ try {
   assert.equal(await page.locator('.lineage-section').count(),23,'chunk rendering missing');
   assert.equal(await page.locator('.lineage-card').count(),665);
   assert.ok(await page.locator('.lineage-section').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).contain==='strict' && n.children.length<=30)));
+  assert.ok(await page.locator('.lineage-section').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).contentVisibility==='auto')), 'offscreen sections skip rendering');
+  assert.ok(await page.locator('.lineage-card').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).transform==='none' && getComputedStyle(n).willChange==='auto')), 'cards must not own transform/compositing layers');
   for(const width of [390,780,1440]) {
     await page.setViewportSize({width,height:844});await page.waitForTimeout(150);
     const geometry=await page.locator('.lineage-card').evaluateAll(nodes=>nodes.slice(0,35).map(n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));

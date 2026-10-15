@@ -82,9 +82,10 @@ async function start(root) {
       const section=grid.children[s];
       section.style.top=`${s*30/columns*rowHeight}px`;
       section.style.height=`${Math.ceil(section.children.length/columns)*rowHeight}px`;
+      section.style.containIntrinsicSize=`auto ${Math.ceil(section.children.length/columns)*rowHeight}px`;
       for(let i=0;i<section.children.length;i++) {
         const element=section.children[i];
-        element.style.transform=`translateY(${Math.floor(i/columns)*rowHeight}px)`;
+        element.style.top=`${Math.floor(i/columns)*rowHeight}px`;
         element.style.left=`calc(${(i%columns)*100/columns}% + 7px)`;
         element.style.width=`calc(${100/columns}% - 14px)`;
       }
