@@ -4,6 +4,7 @@ import { resolve, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { chromium } from 'playwright-core';
 import { serve } from './lineage-server.mjs';
+if(process.env.SCROLL_GATE) throw new Error('SCROLL_GATE cadence admission is retired. Use scripts/frame-work-browser.mjs; see docs/frame-work-v2.md.');
 const artifacts=resolve(process.env.ARTIFACTS || join(process.env.TMPDIR || '.', 'lineage-evidence'));
 await mkdir(join(artifacts,'screens'),{recursive:true});
 const server=await serve();
@@ -110,5 +111,5 @@ try {
   await page.locator('.process-lineage-callout a').click();await page.waitForSelector('[data-ready="true"]');
   await writeFile(join(artifacts,'browser-results.json'),JSON.stringify(results,null,2));
   console.log(JSON.stringify(results.map(({frameIntervals,loafs,...result})=>({...result,loafCount:loafs.length,frames:frameIntervals.length})),null,2));
-  if(process.env.SCROLL_GATE==='1') for(const result of results) assert.ok(result.scrollRafP95Ms<8.3,`${result.label} scroll cadence p95 ${result.scrollRafP95Ms}ms must be <8.3ms (emulation, not physical 120Hz qualification)`);
+  // Cadence remains informational; trace-based admission is a separate repeated experiment.
 }finally{await browser?.close();await server.close();}
