@@ -1,0 +1,342 @@
+/** Editorial snapshot: 15 October 2026. Keep experiments distinct from releases.
+ * Private primary-source locations and image provenance live in the delivery REPORT,
+ * never in this public data. Update Night only against a new reviewed artifact.
+ */
+export type ProcessDive = {
+  title: string;
+  paragraphs: string[];
+  source: string;
+  images?: string[];
+  quote?: { text: string; attribution: string };
+};
+export type ProcessChapter = {
+  id: string;
+  title: string;
+  intro: string;
+  image: string;
+  status?: string;
+  dives: ProcessDive[];
+};
+
+export const chapters: ProcessChapter[] = [
+  {
+    id: "idea",
+    title: "A robot. A poster. A place.",
+    intro: "Quackles began as an unofficial study of Pollen Robotics’ Microduck, borrowing the typographic confidence of the Nous Research Hermes poster. The ambition was a rendered world that could hold up both as a composition and under close inspection.",
+    image: "references",
+    dives: [
+      {
+        title: "September 14-17: from live stage to rendered plate",
+        paragraphs: [
+          "The first site put the robot in a live WebGL scrollytelling stage. The next day, a Blender first-frame plate replaced the CSS set dressing. The poster typography and the original process page followed on September 17. This was not one clean design handoff: the presentation was repeatedly rebuilt before the still-image approach became the foundation.",
+          "A plate is simply a pre-rendered image. It lets Cycles spend time on materials, reflections and lighting before a visitor opens the page, while HTML keeps the typography and navigation sharp. That division became more useful than making every part of the hero a live 3D object."
+        ],
+        source: "Repository history: 7798fc1, 0dd0986 and 3998d70."
+      },
+      {
+        title: "References are direction, not ground truth",
+        paragraphs: [
+          "Day, White, Blue, Dark and Night established the visual vocabulary: printed robot shells, stone staging, portrait artwork, an orb and very different lighting moods. The image-generated targets were useful art direction, but they did not all obey the real robot’s pose or the locked camera’s perspective.",
+          "We initially treated every mismatch as an error to remove. Over time, the more useful question became: is this something to copy literally, or an intention to translate into our actual geometry? Night eventually made that distinction explicit."
+        ],
+        source: "Scene-reference diagnosis, September 30; Night v2 art-direction brief, October 14-15."
+      }
+    ]
+  },
+  {
+    id: "robot",
+    title: "Keep the robot real",
+    intro: "The official model was the anchor. Surface work could change its appearance, but not silently rewrite its identity. Some of the most convincing repairs came from removing our own texture corrections rather than adding more detail.",
+    image: "warp",
+    dives: [
+      {
+        title: "September 30: the texture warp we created",
+        paragraphs: [
+          "The print appeared rotated and stretched, so the camera and UV projection looked suspicious. Controlled renders showed that the projection itself was correct. Per-part mapping stretches and free-form head warps were distorting text and waves to compensate for a reference head posed differently from the real model.",
+          "Removing the stretches straightened the print, but removing the head warp also exposed the underlying eye and rim mismatch. That was a diagnosis, not a finished fix. A rigid head-pose experiment improved alignment, but adopting it would change the silhouette and needed a separate product decision."
+        ],
+        source: "Texture-warp diagnosis and independent H1-H3 remeasurement, September 30."
+      },
+      {
+        title: "Sharpness, then honest materials",
+        paragraphs: [
+          "The fidelity experiments tested pixel filtering, supersampling, artwork resolution, denoising and raking light separately. A narrower filter, a larger render downsampled to the plate, and higher-resolution print art made the image crisper. The stronger light also exposed the wrong stone pores. Sharper was not automatically better.",
+          "The October 13 eye repair addressed another inherited problem: materials with clean-looking names were still fed by projected photographs. The fix gave the lens, bezel, holder and recess their own image-free materials and checked the effective object slots after reopening the scene. It repaired a mechanism, not the whole five-theme look."
+        ],
+        images: ["fidelity", "eyes"],
+        source: "Fidelity diagnosis, September 30; permanent geometry-owned eye repair report, October 13."
+      }
+    ]
+  },
+  {
+    id: "loop",
+    title: "Teach the loop what matters",
+    intro: "A locked reference, a controlled render, a structural check and a fresh critique became the working loop. But the loop needed debugging too: an early edge metric punished texture changes while missing entire absent objects.",
+    image: "day-loop",
+    dives: [
+      {
+        title: "October 1: test the test before trusting it",
+        paragraphs: [
+          "Adding the missing nested arch improved the scene, yet made the old comparison statistic worse. Fine stone pores and halftone dots dominated its edges. It could reject a harmless re-encode while accepting an image with the orb removed.",
+          "The replacement structure gate used low-frequency silhouettes and long edges rather than every speck. Its known-answer suite contained 85 cases: 40 expected failures, 36 expected passes and 9 informational cases. On that suite it caught all 40 failures and passed all 36 controls. That validated a composition test, not a universal measure of beauty."
+        ],
+        quote: { text: "Fix the gate, but ensure changing it doesn't negatively impact the rule it is actually supposed to catch.", attribution: "Kevin, owner direction recorded October 1" },
+        source: "Day structure-gate validation report, October 1."
+      },
+      {
+        title: "October 12-13: blind comparisons, bounded authority",
+        paragraphs: [
+          "When the judge CLI lost authentication, the round stayed unjudged instead of receiving an invented verdict. The continuation used a fresh Hermes-hosted critic session and rechecked the historical anchor with the same rubric.",
+          "Later keep rules required both side-swapped blind orders to prefer a candidate without a flagged regression. Ties were not promotions. For the owner-scoped stone and hand-print work, the robot was masked out and the gate was revalidated for that narrower job. A scoped pass was never permission to call the entire scene matched."
+        ],
+        source: "Day round ledger: judge continuation, robot-masked validation and round 73 promotion."
+      }
+    ]
+  },
+  {
+    id: "day",
+    title: "Day was built at the edges",
+    intro: "The Day scene became a study in joins: stone meeting stone, ink meeting its receiving face, warm sunlight meeting cool shadow. The owner’s drawn lines and close-up corrections proved more useful than another general instruction to make it closer.",
+    image: "day-stairs",
+    dives: [
+      {
+        title: "October 1: build a material, not a photograph",
+        paragraphs: [
+          "The stone chain separated tasks that a single image-generation prompt could not reliably solve together. SAM2 isolated the visible surfaces; camera-based rectification turned them into flat swatches. ChatGPT image generation produced delit, tileable colour and height candidates, followed by a seamless pass, Real-ESRGAN upscaling, and derived normal and roughness maps at a measured surface scale.",
+          "That did not make the result automatically physical or finished. The generated height missed small voids, and a seamless tile still repeated a pale patch. Material work also left the missing architecture untouched. The next useful move was to rebuild the arch, not keep refining a stone shader under a broken composition."
+        ],
+        source: "Day round 01 material-chain notes and round 02 massing record, October 1."
+      },
+      {
+        title: "October 13: the stairs, the seam, the lock",
+        paragraphs: [
+          "Copying the existing plinth sounded safe. The experiment showed that its front face was hidden in the real camera view. Parallel and thinner step trials introduced different fit and gap problems. The reference outline and the locked perspective could not always be satisfied by a simple translation.",
+          "Round 90 cut a notch and continued the lower step left, flush to the plinth, with continuous stone UVs. That was the geometry the owner locked. The lock deliberately excluded the print placement, orb-stone height and lighting, so later work could not mistake one accepted edge for approval of everything."
+        ],
+        images: ["day-seam"],
+        quote: { text: "the new step is perfect, we can lock that in", attribution: "Kevin, step-geometry lock, October 13" },
+        source: "Day round 87 experiment; round 90 step-geometry lock."
+      },
+      {
+        title: "The finger-paint print had to belong to the stone",
+        paragraphs: [
+          "The hands artwork was not just an image-generation problem. Placement, aspect ratio, the active mapping and the receiving stone face all affected whether it read as ink or a floating panel. A good image on the wrong mapping still washed out or lost registration.",
+          "The print placement was locked at round 101, then widened at the owner’s request. Instead of stretching the hands, the arm was outpainted and the receiving rectangle extended. This preserved the proportions while letting the composition reach the intended right edge."
+        ],
+        images: ["day-print"],
+        source: "Day print-placement lock and widening update, October 13; Day round ledger, rounds 79-81."
+      },
+      {
+        title: "Sunlight was not one orange dial",
+        paragraphs: [
+          "A warmer global sun deepened the background but made the foreground stone brown. The less-orange trial separated the shared sunlight from a plinth-only contribution, keeping warmth where it belonged without tinting every receiver equally.",
+          "The corrected round 107 was narrowly preferred in both blind orders, but reviewers still reported tradeoffs and the inherited structure gate failed. It remained a review candidate. Later review composites reused its lighting; that did not retroactively turn the original trial into an accepted reference match."
+        ],
+        images: ["day-sun"],
+        source: "Day round 107 report; five-scene merge review, October 14."
+      }
+    ]
+  },
+  {
+    id: "themes",
+    title: "Five themes, not five recolours",
+    intro: "Shared fixes helped the scenes travel together. They also exposed the limits of sharing: a pale rim, a printed label or a stone surface could work in Day and fail under another theme’s light. Every port needed its own comparison.",
+    image: "themes",
+    dives: [
+      {
+        title: "October 13: carry quality, preserve identity",
+        paragraphs: [
+          "A reusable set layer carried the hands, labels, plinth mapping and robot-surface adjustments into White, Blue, Dark and Night. Blind reviewers preferred the ported images, but the structure gates still failed and local regressions remained. The report called it an audited port, not shipping approval.",
+          "Blue was a particularly useful correction. The generic port had dulled its cobalt-and-ivory shell. Recovering the frozen photo3 print restored the intended identity without asking an image model to invent it again. A no-layer control also showed that some apparent improvement came from baseline rendering drift, not the new port."
+        ],
+        images: ["blue-recovery"],
+        source: "Themes-port and Blue photo3 recovery reports, October 13."
+      },
+      {
+        title: "October 14: keep the merge, reject the polish",
+        paragraphs: [
+          "The five-scene review tried a further polish pass on each theme. The keep rule was strict: both fresh, side-swapped reviewers had to prefer it, with neither reporting a regression. None of the five polish passes cleared that rule.",
+          "Day’s saturation adjustment did not recover the missing cobalt. Dark’s deeper blacks lost highlight readability. The selected images stayed on the merged review versions, which were themselves review composites rather than release acceptance. The rejected attempts remain part of the record."
+        ],
+        source: "Five-scene merge and one-pass polish review, October 14."
+      }
+    ]
+  },
+  {
+    id: "night",
+    title: "Night changed the method",
+    status: "In progress",
+    intro: "A better blind comparison was no longer enough. Night needed wet stone, convincing glass, living growth and light that actually read as light. The work shifted from literal matching toward an explicit art-direction brief, reviewed component by component.",
+    image: "night-pivot",
+    dives: [
+      {
+        title: "From the early mushroom study to the October brief",
+        paragraphs: [
+          "The earlier mushroom experiment stopped after one requested lighting redistribution. It retained a better checkpoint while explicitly saying reference-fidelity acceptance had not been reached. That is a separate experiment, not a finished origin scene.",
+          "By October 14, the Night v2 brief named a deeper problem: blind A/B rounds rewarded literal copying even when the wall angle or geometry differed. Each element received a COPY or INTENT tag. Labels could preserve the owner’s chosen wording; moss had to exist as convincing growth, not merely a green texture stain."
+        ],
+        images: ["night-early"],
+        source: "Night mushroom experiment final report; Night v2 brief, October 14."
+      },
+      {
+        title: "October 15: what the close-ups changed",
+        paragraphs: [
+          "The owner kept the orb and foliage direction but rejected specific material reads. The stone looked like smooth manufactured slabs rather than wet granular rock. The robot shell needed an oil-painted comic surface under a glossy coat, not brushed-metal streaks. That was a Night-only exception to the earlier matte-print rule.",
+          "The mushroom correction was equally specific: combine the older cap shapes with the newer stem-length and curve variation. Progress on one property had erased another. Separate component sheets made that regression obvious."
+        ],
+        images: ["night-stone", "night-head", "night-mushrooms"],
+        quote: { text: "completely unrelated to the reference", attribution: "Kevin, stone checkpoint, October 15" },
+        source: "Night v2 owner checkpoint and final-pass comparison crops, October 15."
+      },
+      {
+        title: "Research the effect before tuning it again",
+        paragraphs: [
+          "The new instruction was to name the physical mechanism, research how Blender artists build it, prove it on a small test scene, then apply it inside the integrated lighting fixture. Glow needed a hot core and halo hierarchy; glass needed readable optical depth; wetness needed reflections in useful directions, not just a lower roughness value.",
+          "The stone-relief attempt is still an open result. It created real displacement from inferred height maps, but both fresh reviewers called the blocker reduced, not removed. Luminance-derived height is not a measured scan. The report stopped and proposed materially different routes instead of another nearby parameter adjustment."
+        ],
+        images: ["stone-relief"],
+        source: "Night v2 method directive, meta-critic and Stone-25 resume report, October 15."
+      }
+    ]
+  },
+  {
+    id: "walkthroughs",
+    title: "Read the scene through its failures",
+    intro: "The comparison sheets became the most useful way to talk about the work. A full image establishes the mood; paired crops expose the missing contact, wrong pore scale or unreadable light. The critique is a map of questions, not an instruction to change everything.",
+    image: "critic-blue",
+    dives: [
+      {
+        title: "Walkthrough: Blue, reference left / capture right",
+        paragraphs: [
+          "Start with the foliage and orb regions. The critique identified weak environmental separation and an orb that did not occupy the same visual weight. Then look at the feet and ledge: illumination and contact matter as much as the stone texture.",
+          "Across the sheet, the arch and plinth pores are too insistent. The proposed next step was to separate focus and lighting effects before reducing material contrast. The robot print was owner-frozen, so a critic noticing a mismatch did not authorize repainting it. These were review recommendations, not executed fixes."
+        ],
+        source: "Blue tiled critic, October 14: outcome and ranked, adjudicated recommendations."
+      },
+      {
+        title: "Walkthrough: Night, mood versus legibility",
+        paragraphs: [
+          "Compare the dark structural regions before looking at the emitters. A scene can feel nocturnal and still lose the separation between stone, foliage and robot. In the paired crops, local material and illumination problems are much harder to hide behind the atmosphere.",
+          "The later meta-critic added an important limit: some source captures did not contain native detail at the target’s resolution. Enlarging them could not recover it. These web sheets are resized reading aids, not substitutes for the original native-pixel review."
+        ],
+        images: ["critic-night"],
+        source: "Night tiled critic, October 14; Night v2 meta-critic resolution audit, October 15."
+      },
+      {
+        title: "A critic is not a calibrated ruler",
+        paragraphs: [
+          "Fresh sessions and swapped order reduce memory and position bias. They do not make two sessions of the same model independent human experts. The same baseline received different absolute scores when the evidence and framing changed.",
+          "We therefore do not join unlike review batches into a rising score graph. A paired preference within one fixed comparison is useful. The named blocker, its visible evidence, the owner’s brief and the protected scene state are more useful than an isolated number."
+        ],
+        source: "Night v2 meta-critic: judge reliability and review-loop reset, October 15."
+      }
+    ]
+  },
+  {
+    id: "zoom",
+    title: "A still you can enter",
+    intro: "Deep zoom made the small details part of the interface, not just the render. It also revealed that resolution alone was not the hard part. Tiles had to arrive, remain visible and follow the camera without changing the scene underneath it.",
+    image: "zoom",
+    dives: [
+      {
+        title: "September: from master image to visible tiles",
+        paragraphs: [
+          "A tiled pyramid stores the same master at progressively smaller resolutions, split into manageable pieces. The viewer requests detail for the visible region instead of downloading the whole master at once. Blue’s high-resolution inspection path was integrated in September.",
+          "The image family matters as much as the tile size. Mixing different masters in a width-sorted manifest can change the art and colour while pretending to refine only resolution. The accepted control must stay identifiable, and a larger candidate must pass its own registration, colour and performance checks."
+        ],
+        source: "Repository deep-zoom integration history; issue 41 production reconciliation, September 29."
+      },
+      {
+        title: "September 30 to October 13: real fingers changed the priorities",
+        paragraphs: [
+          "The owner’s phone test reported lag, disappearing tiles and slow high-quality detail. The performance stack addressed persistent low-resolution coverage, centre-first progressive painting, motion-aware fetch/decode scheduling, memory budgets and retries. These were responses to a recorded failure, not proof that the failure had disappeared on the phone.",
+          "The October 13 local home integration built successfully but still missed its high-quality-detail performance gate in software-rendered browser testing. That evidence was explicitly not a physical-device pass. Blue retained the detail path; the other four home themes remained plate-only under the current policy."
+        ],
+        source: "Owner phone verdicts, September 30; local home-integration report, October 13."
+      }
+    ]
+  },
+  {
+    id: "agents",
+    title: "Parallel work, shared constraints",
+    intro: "Hermes coordinated focused workers and fresh critics, while Kevin supplied the art direction and acceptance decisions. The useful unit of delegation was not ‘improve the scene.’ It was a bounded question with a baseline, protected state and a comparison to bring back.",
+    image: "identity",
+    dives: [
+      {
+        title: "October: author, verify, critique, integrate",
+        paragraphs: [
+          "Workers built components and wrote repeatable apply scripts. Verification checked saved scenes rather than trusting the in-memory edit. Fresh Claude Opus critic sessions compared rendered evidence; the coordinator reconciled findings with scope and owner locks. Coding and rendering workers used Codex/Astra workflows alongside that review loop.",
+          "Parallel authorship did not mean parallel ownership of the global lighting. Night components eventually developed inside copies of one integrated fixture, with exposure, world, glare and context held in common. Render jobs also had to share the GPU. More concurrent agents were not permission to ignore the resource boundary."
+        ],
+        source: "Five history traces; eye-repair saved-scene verification; Night v2 brief and meta-critic."
+      },
+      {
+        title: "What became reusable",
+        paragraphs: [
+          "The durable outputs included the structure gate, image-free eye repair, shared set layer, preserved canonical textures, owner-trace browser journeys and component importers. The workflow lessons became skills: keep references locked, check the baseline first, make one controlled change, preserve rejected experiments and stop when the same blocker survives.",
+          "The reports were fallible too. A roadmap caught stale summaries that described Day as stopped at an early round even though work had continued. A trace is an index to evidence, not a replacement for opening the actual report or render."
+        ],
+        source: "Day gate validation; October 13 roadmap corrections; Night v2 review-loop reset."
+      }
+    ]
+  },
+  {
+    id: "lessons",
+    title: "The work got smaller. And clearer.",
+    intro: "The largest changes were often decisions to stop doing something: drop the scroll story, stop treating a better score as acceptance, recover an approved asset instead of regenerating it. A clearer boundary made the next experiment more useful.",
+    image: "editor",
+    dives: [
+      {
+        title: "October 12-13: simplify the experience, not the evidence",
+        paragraphs: [
+          "The home page’s interaction model was reduced to zoom and colour change. That removed the scroll story from the main experience rather than continuing to tune every branch of it. The process page can carry the long story; the poster does not need to.",
+          "A separate local theme-editor experiment learned the same lesson. Its standalone WebGL studio was removed in favour of selecting and editing parts on the rendered poster, using Blender object-index masks and the existing inspection camera. That editor is a separate experiment, not a feature claimed for this home build."
+        ],
+        source: "Home scope commit c98a8cd, October 12; theme-engine v2 report, October 13."
+      },
+      {
+        title: "The rules we would keep",
+        paragraphs: [
+          "Reproduce the baseline before crediting a change. Diagnose the representation before tuning the parameter. Make the gate fail on known errors before believing its pass. Separate a preferred candidate, an owner lock and a release: they are different kinds of evidence.",
+          "Preserve the failed attempt when it teaches something. Use a close-up when a full frame hides the problem. Ask for direction when the target and the geometry conflict. And when a material effect will not read correctly, research the actual rendering mechanism before spending another round on guesses."
+        ],
+        source: "Themes-port baseline control; Day gate and step experiments; Night v2 brief and meta-critic."
+      }
+    ]
+  },
+  {
+    id: "credits",
+    title: "Built from other people’s work",
+    intro: "Microduck belongs to Pollen Robotics. The poster inspiration comes from Nous Research. Quackles is an unofficial fan study, not a collaboration or endorsement. The making of it also depends on the artists, tool builders and open-source projects behind the workflow.",
+    image: "blue-recovery",
+    dives: [
+      {
+        title: "Credits, tools and licenses",
+        paragraphs: [
+          "Robot model and product: Pollen Robotics’ Microduck. The upstream repository and the bundled Microduck license identify Apache-2.0; retain upstream notices and check the applicable terms for each redistributed asset. This is not a blanket license for the poster artwork, brands, typefaces or third-party textures.",
+          "Poster structure and voice: Hermes Agent by Nous Research. Art direction and decisions: Kevin. Production tools included Blender Cycles, Python, ComfyUI, ChatGPT image generation, SAM2 and Real-ESRGAN, with scanned texture sources including Poly Haven in Night development. The web layer uses Next.js, React, TypeScript and static export.",
+          "The Airbnb Experiences and Airbnb Surrounded Behance presentations were secondary references for this article’s pacing: let the pictures establish the idea, then show look development, technical problems and credits. Their images and campaign content are not reproduced here."
+        ],
+        source: "Upstream Microduck LICENSE; project attribution; Day material pipeline; Night development records; linked Behance case studies."
+      },
+      {
+        title: "About this record",
+        paragraphs: [
+          "This article is a snapshot through October 15, 2026, assembled from five history traces and checked against the cited production records. Captions distinguish references, candidates, kept experiments and review composites. They do not imply that every pictured scene is shipped on the home page.",
+          "Night remains in progress. Open material and device-performance questions remain open here too. The comparison images have been reduced for the web; the original evidence is preserved separately. A later update should replace a claim only when a new reviewed artifact supports it."
+        ],
+        source: "Editorial source audit, October 15, 2026."
+      }
+    ]
+  }
+];
+
+export const processLinks = [
+  { label: "Microduck model & source", href: "https://github.com/pollen-robotics/microduck" },
+  { label: "Microduck Apache-2.0 license", href: "https://github.com/pollen-robotics/microduck/blob/main/LICENSE" },
+  { label: "Pollen Robotics", href: "https://www.pollen-robotics.com/microduck" },
+  { label: "Hermes Agent / Nous Research", href: "https://hermes-agent.nousresearch.com/" },
+  { label: "Quackles source history", href: "https://github.com/kvnloo/quackles" },
+  { label: "Airbnb Experiences / Behance", href: "https://www.behance.net/gallery/230172941/Airbnb-Experiences" },
+  { label: "Airbnb Surrounded / Behance", href: "https://www.behance.net/gallery/225458951/Airbnb-Surrounded-2025" }
+];
