@@ -72,7 +72,7 @@ const base = arg("base"), cands = arg("cand").split(",");
 const rows = [];
 const groups = new Map();
 for (const r of receipts) {
-  if (r.status === "NOT RUN") continue;
+  if (r.status !== "PASS") continue;
   const k = [r.scenario?.id, r.scenario?.mode ?? "A", r.environment?.profile].join("|");
   if (!groups.has(k)) groups.set(k, []);
   groups.get(k).push(r);

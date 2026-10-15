@@ -36,7 +36,7 @@ export const sha256 = (data) => createHash("sha256").update(data).digest("hex");
 
 export const tapeHash = (tape) => sha256(stableStringify(tape));
 
-const TAPE_ACTIONS = new Set(["wait", "setTarget", "wheel", "mouseMove", "mark", "pageWheel", "settle"]);
+const TAPE_ACTIONS = new Set(["wait", "setTarget", "wheel", "touch", "mouseMove", "mark", "pageWheel", "settle"]);
 
 /** Throws on a malformed tape (steps must already be in time order); returns the tape. */
 export function validateTape(tape) {
@@ -46,6 +46,7 @@ export function validateTape(tape) {
   if (!Number.isInteger(tape?.seed)) errors.push("seed must be an integer");
   if (!Array.isArray(tape?.steps) || !tape.steps.length) errors.push("steps must be a non-empty array");
   let last = -1;
+  let contacts = new Set();
   for (const [i, step] of (tape?.steps ?? []).entries()) {
     if (!TAPE_ACTIONS.has(step.action)) errors.push(`step ${i}: unknown action ${step.action}`);
     if (!Number.isFinite(step.t) || step.t < last) errors.push(`step ${i}: t must be finite and non-decreasing`);
@@ -53,18 +54,46 @@ export function validateTape(tape) {
     for (const k of ["x", "y", "vx", "vy"]) {
       if (k in step && !(step[k] >= 0 && step[k] <= 1)) errors.push(`step ${i}: ${k} must be a frame fraction in [0,1]`);
     }
+    if (step.action === "touch") {
+      const { type, points } = step;
+      if (!["touchStart", "touchMove", "touchEnd", "touchCancel"].includes(type)) errors.push(`step ${i}: invalid touch type`);
+      if (!Array.isArray(points)) { errors.push(`step ${i}: touch points must be an array`); continue; }
+      const ids = new Set();
+      for (const p of points) {
+        if (!p || !Number.isInteger(p.id) || p.id < 0 || ids.has(p.id)) errors.push(`step ${i}: touch IDs must be unique non-negative integers`);
+        ids.add(p?.id);
+        if (!p || !["x", "y"].every((k) => Number.isFinite(p[k]) && p[k] >= 0 && p[k] <= 1)) errors.push(`step ${i}: touch coordinates must be finite frame fractions in [0,1]`);
+      }
+      if (type === "touchStart") {
+        if (contacts.size || !ids.size) errors.push(`step ${i}: touchStart requires no active contacts and non-empty points`);
+        contacts = ids;
+      } else if (type === "touchMove") {
+        if (!contacts.size || ids.size !== contacts.size || [...ids].some((id) => !contacts.has(id))) errors.push(`step ${i}: touchMove must retain all existing IDs; use touchEnd to release contacts`);
+      } else if (type === "touchEnd" || type === "touchCancel") {
+        if (!contacts.size) errors.push(`step ${i}: ${type} requires active contacts`);
+        if (type === "touchCancel" && points.length) errors.push(`step ${i}: touchCancel requires empty points`);
+        if ([...ids].some((id) => !contacts.has(id))) errors.push(`step ${i}: touchEnd can only release existing IDs`);
+        // Legacy Chromium CDP supports nonempty touchEnd as the contacts to release.
+        // The synthetic-pointer path rejects this request rather than preserving a false survivor.
+        if (type === "touchCancel" || !ids.size) contacts.clear();
+        else for (const id of ids) contacts.delete(id);
+      }
+    } else if (contacts.size && !["wait", "mark"].includes(step.action)) {
+      errors.push(`step ${i}: only touch, wait and mark are allowed while contacts are active`);
+    }
   }
+  if (contacts.size) errors.push("tape ends with active touch contacts");
   if (errors.length) throw new Error(`invalid tape ${tape?.id ?? "?"}:\n  ${errors.join("\n  ")}`);
   return tape;
 }
 
-/** Frame-interval statistics from rAF timestamps (ms). Intervals over 2 s are dropped as page-hidden gaps, and counted. */
+/** Frame intervals in ms. Keep long foreground stalls; the runner invalidates hidden-page trials separately. */
 export function frameStats(timestamps) {
   const dts = [];
   let dropped = 0;
   for (let i = 1; i < timestamps.length; i++) {
     const dt = timestamps[i] - timestamps[i - 1];
-    if (dt > 0 && dt < 2000) dts.push(dt);
+    if (dt > 0) dts.push(dt);
     else dropped++;
   }
   return {

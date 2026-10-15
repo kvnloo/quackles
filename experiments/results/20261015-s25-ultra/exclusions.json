@@ -1,0 +1,46 @@
+{
+  "schema": "quackles-lab.exclusions.v1",
+  "policy": "Historical receipts are preserved, not rewritten. Only matched PASS receipts from controlled native-gated runs are eligible for paired performance comparisons. An invalid offline replay is never interpreted as faster rendering.",
+  "diagnostics": [
+    {
+      "runId": "s25-smoke-ad",
+      "eligibleForPairedPerformance": false,
+      "reason": "Interrupted smoke contains only a baseline receipt; no matched challenger receipt. Native window ownership and focus-emulation state were not independently gated."
+    },
+    {
+      "runId": "s25-smoke-ad-resume",
+      "eligibleForPairedPerformance": false,
+      "reason": "Playwright connectOverCDP timed out during browser initialization before trial replay.",
+      "receipt": "recovery-setup-failure.json"
+    },
+    {
+      "runId": "s25-smoke-ad-foreground",
+      "eligibleForPairedPerformance": false,
+      "reason": "One diagnostic A/D pair passed the original smoke gates, but no independent native-window/keyguard/awake checks or explicit focus-emulation disable were recorded. Not used for a winner or confidence interval."
+    },
+    {
+      "runId": "s25-offline-smoke-ad",
+      "eligibleForPairedPerformance": false,
+      "reason": "Playwright browser initialization timed out before offline trials. Eight lab contract tests passed independently of this setup failure."
+    },
+    {
+      "runId": "s25-offline-native-gated-ad",
+      "eligibleForPairedPerformance": false,
+      "reason": "Both arms confirmed native Chrome foreground, unlocked/awake display, native page focus with focus emulation disabled, and thermal status 0 before/after. Both nevertheless attempted requests under explicit page-network offline conditions; cache coverage was incomplete.",
+      "arms": [
+        { "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c", "status": "NOT RUN", "measuredRequestAttempts": 10 },
+        { "sha": "e312e21be58a6a9c92d1667f854ac4c56c74de3a", "status": "NOT RUN", "measuredRequestAttempts": 6 }
+      ]
+    },
+    {
+      "runId": "s25-touch-native-ad",
+      "eligibleForPairedPerformance": false,
+      "reason": "The original generic smoke gates passed, but both arms retained two observed contacts after a reduced touchMove set. The alleged one-finger pan changed target zoom from approximately 4 to 2.5, so this is not accepted two-to-one transition evidence. The replacement transport uses explicit partial touchEnd for released ID 2 and checks observed contact identities."
+    }
+  ],
+  "recovery": {
+    "observed": "Protocol commands were acknowledged during the attachment timeout, but pre-existing blank targets had not completed page initialization. Native Chrome navigation to a lab URL and cleanup of verified abandoned lab blank targets restored a successful 1.10-second attachment probe.",
+    "privacy": "No personal browsing tabs were read or closed. A diagnostic screen capture containing a system overlay was deleted and is not published. Native benchmark proof excludes system status and browser toolbar regions."
+  },
+  "promotionAuthorized": false
+}

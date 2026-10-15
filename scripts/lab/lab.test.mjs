@@ -1,6 +1,9 @@
 // node --test scripts/lab/lab.test.mjs — pure checks for the lab receipt/tape/aggregation contract (#53).
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
 import { test } from "node:test";
 import { checkReceipt, frameStats, METRIC_KEYS, percentile, RECEIPT_SCHEMA, sourceFamilies, stableStringify, summarize, tapeHash, validateTape } from "./lib.mjs";
 
@@ -28,14 +31,44 @@ test("shipped tape is valid; bad tapes are refused", () => {
   assert.throws(() => validateTape({ ...tape, steps: [{ t: 0, action: "wheel", x: 1.5 }] }), /frame fraction/);
 });
 
-test("frame stats drop hidden-page gaps and count tails", () => {
-  const ts = [0, 16, 32, 82, 99, 5000, 5016];
-  const s = frameStats(ts);
-  assert.equal(s.frames, 5);
-  assert.equal(s.droppedIntervals, 1);
-  assert.equal(s.maxFrameMs, 50);
-  assert.equal(s.framesOver33Ms, 1);
-  assert.equal(s.framesOver50Ms, 0);
+test("touch tape retains stable IDs through stationary holds and two-to-one boundaries", () => {
+  const physical = JSON.parse(fs.readFileSync(new URL("./tapes/physical-touch-continuity.json", import.meta.url), "utf8"));
+  assert.equal(validateTape(physical), physical);
+  const p = (id, x = 0.5) => ({ id, x, y: 0.5 });
+  const touch = (type, points) => ({ t: 0, action: "touch", type, points });
+  const start = touch("touchStart", [p(1), p(2, 0.6)]);
+  const releaseSecond = touch("touchEnd", [p(2, 0.6)]);
+  const move = touch("touchMove", [p(1)]);
+  const end = touch("touchEnd", []);
+  const withSteps = (steps) => ({ ...physical, steps });
+  assert.doesNotThrow(() => validateTape(withSteps([start, { t: 0, action: "wait" }, releaseSecond, move, { t: 0, action: "mark", label: "one-remains" }, end])));
+  assert.throws(() => validateTape(withSteps([start, releaseSecond])), /ends with active touch contacts/);
+  assert.throws(() => validateTape(withSteps([move, end])), /retain all existing IDs/);
+  assert.throws(() => validateTape(withSteps([start, touch("touchMove", [p(3)]), end])), /retain all existing IDs/);
+  assert.throws(() => validateTape(withSteps([start, move, end])), /retain all existing IDs/);
+  assert.throws(() => validateTape(withSteps([start, touch("touchEnd", [p(3)]), end])), /only release existing IDs/);
+  assert.throws(() => validateTape(withSteps([start, releaseSecond, touch("touchEnd", [p(2)]), end])), /only release existing IDs/);
+  assert.doesNotThrow(() => validateTape(withSteps([start, touch("touchEnd", [p(1), p(2)])])));
+  assert.doesNotThrow(() => validateTape(withSteps([start, end])));
+  assert.throws(() => validateTape(withSteps([start, end, move])), /retain all existing IDs/);
+  assert.throws(() => validateTape(withSteps([start, touch("touchCancel", [p(1)])])), /empty points/);
+  assert.throws(() => validateTape(withSteps([start, { t: 0, action: "setTarget", zoom: 2 }, end])), /while contacts are active/);
+  assert.throws(() => validateTape(withSteps([touch("touchStart", [p(1), p(1)]), end])), /unique/);
+  assert.throws(() => validateTape(withSteps([touch("touchStart", [p(1, Infinity)]), end])), /finite frame fractions/);
+  assert.throws(() => validateTape(withSteps([touch("touchStart", [p(1, "0.5")]), end])), /finite frame fractions/);
+  assert.throws(() => validateTape(withSteps([touch("touchUnknown", [])])), /invalid touch type/);
+  assert.throws(() => validateTape(withSteps([touch("touchStart", [])])), /non-empty points/);
+  assert.throws(() => validateTape(withSteps([start, start, end])), /no active contacts/);
+  assert.doesNotThrow(() => validateTape(withSteps([start, touch("touchCancel", []), start, end])));
+});
+
+test("long foreground stalls remain in tail metrics", () => {
+  const s = frameStats([0, 8, 16, 3016, 3024]);
+  assert.equal(s.frames, 4);
+  assert.equal(s.droppedIntervals, 0);
+  assert.equal(s.maxFrameMs, 3000);
+  assert.equal(s.rafP99Ms, 3000);
+  assert.equal(s.framesOver50Ms, 1);
   assert.equal(frameStats([1]).rafP95Ms, null);
 });
 
@@ -77,4 +110,24 @@ test("summary never turns NOT RUN into numbers and never merges SHAs", () => {
   assert.deepEqual(summarize([missingAssets])[0].failures, []);
   const failed = summarize([ran, receipt({ status: "FAIL", validation: { passed: [], failed: ["no-blank-polls: 3 polls"], notRun: [] } })]);
   assert.equal(failed[0].status, "FAIL");
+});
+
+test("paired performance comparison excludes failed correctness trials", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "quackles-pairs-"));
+  try {
+    for (const trial of [1, 2]) {
+      const base = receipt({ trial, metrics: { ...receipt().metrics, rafP99Ms: 20 } });
+      const cand = receipt({ trial, sha: "b".repeat(40), branch: "candidate", status: trial === 1 ? "PASS" : "FAIL", metrics: { ...receipt().metrics, rafP99Ms: trial === 1 ? 10 : 0 } });
+      fs.writeFileSync(path.join(dir, `base-${trial}.json`), JSON.stringify(base));
+      fs.writeFileSync(path.join(dir, `cand-${trial}.json`), JSON.stringify(cand));
+    }
+    const out = path.join(dir, "paired.json");
+    execFileSync(process.execPath, [path.join(import.meta.dirname, "compare.mjs"), dir, "--base", "a".repeat(40), "--cand", "b".repeat(40), "--json", out], { stdio: "pipe" });
+    const row = JSON.parse(fs.readFileSync(out, "utf8")).find((r) => r.metric === "rafP99Ms");
+    assert.equal(row.n, 1);
+    assert.equal(row.candMedian, 10);
+    assert.equal(row.medianDiff, -10);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

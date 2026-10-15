@@ -20,8 +20,13 @@ Options:
 
 - `--refs`: remote branch names or commit SHAs. Each one is resolved to a full SHA before anything runs.
 - `--trials`: the number of trials per cell. Default 5.
-- `--profiles`: `desktop`, `mobile-emulated`, or both. Default `desktop`.
+- `--profiles`: `desktop`, `mobile-emulated`, `physical`, or a comma-separated combination. `physical` requires an attached browser and preserves its viewport/DPR. Default `desktop`.
 - `--tape`: the tape file. Default `scripts/lab/tapes/smoke-inspect.json`.
+- `--prepare-only`: build the exact refs and write `builds.json`, without launching a browser.
+- `--prepared-builds FILE`: replay against prebuilt loopback servers from a manifest with matching clean asset revision, full source SHAs, successful build status, and ports. The caller must serve the corresponding pinned outputs.
+- `--serve-only`: keep the selected build servers running, without browser replay.
+- `--android`: capture ADB battery, thermal, native foreground-window, keyguard, and awake-screen metadata outside each measured pass. Requires working ADB and `--cdp`.
+- `--modes A,C,E`: separate cold, budget-limited warm replay, and explicitly offline-prewarmed cells. Mode letters are cache policies, not candidate arm names.
 
 Environment variables:
 
@@ -41,9 +46,9 @@ Other commands:
 1. **Isolates.** Each SHA gets a detached `git worktree` in `LAB_DIR`. The measured refs are never checked out in place, merged, cherry-picked or rewritten. If a ref has the same `package-lock.json` as the harness checkout, it shares `node_modules`. Otherwise it gets a clean `npm ci`.
 2. **Builds** each ref with `npm run build`, using `NEXT_PUBLIC_ASSET_ORIGIN=""` (same-origin assets) and a build SHA/time pinned to the commit. If a build fails, its cells are **NOT RUN**, never losses.
 3. **Serves** `out/` with the existing [`scripts/static-server.mjs`](../scripts/static-server.mjs). The pinned assets checkout is linked in as `out/quackles-assets`.
-4. **Fences the network.** Chromium runs with `--host-resolver-rules=MAP * ~NOTFOUND` (loopback excluded). A build that reaches for GitHub Pages or any other host fails the `no-external-network` gate. It cannot silently measure the CDN.
-5. **Replays the tape.** Each trial opens a fresh browser context, so the cache is cold. Contender order rotates every trial. The collector reads only the app's existing debug hooks: `__QUACKLES_SEQUENCE__`, `__QUACKLES_INSPECTION__` and `quackles:detail-painted`. It uses no `readPixels`, no overlays and no app changes.
-6. **Writes receipts** to `results/<run-id>/<branch>-<scenario>-<profile>-t<k>.json`, plus `traces/`, `screens/` and `run.json`. These stay untracked. Only `summary.md` and `summary.csv` get committed.
+4. **Fences locally launched Chromium.** It runs with `--host-resolver-rules=MAP * ~NOTFOUND` (loopback excluded). External requests fail the `no-external-network` gate. An attached browser is not reconfigured with this fence; its external requests are detected, not blocked.
+5. **Replays the tape.** Each trial opens a fresh browser context where supported. Attached Android falls back to its default context, clears browser cache and the selected lab origin's storage, and opens an owned page. Contender order is seeded or balanced across trials. The collector reads the app's existing debug hooks: `__QUACKLES_SEQUENCE__`, `__QUACKLES_INSPECTION__` and `quackles:detail-painted`. It uses no per-frame GPU readback, overlays or app changes.
+6. **Writes receipts** to `results/<run-id>/<branch>-<scenario>-<mode>-<profile>-t<k>.json`, plus `traces/`, `screens/` and `run.json`. These stay untracked by default. Published experiments select evidence under `experiments/results/`; do not commit personal browser/device data or pairing credentials.
 
 ### The tape (`smoke-inspect`)
 
@@ -80,13 +85,17 @@ What each metric measures:
 | `rafP50/95/99Ms`, `maxFrameMs`, `framesOver33/50Ms` | rAF callback intervals during the tape | GPU completion |
 | `firstCorrectVisualMs` | `null` in PR 1 (no pixel check yet). `extra.firstPaintReportedMs` is navigation → first app-reported paint | a correct-visual proof |
 | `timeToSharpMs` | `setTarget(8)` → the build's own `detailWidth` ≥ min(frame device px × zoom, fixture width), camera at rest, 50 ms poll | pixel-verified sharpness. `detailWidth` semantics can differ between builds |
-| `inputToCameraMs` | wheel `event.timeStamp` → first rAF with a changed camera transform (median) | photon latency |
+| `inputToCameraMs` | injected wheel/touch `event.timeStamp` → first rAF with a changed camera transform (median); touch observations end at the next touch event | physical-finger/native-OS delivery or photon latency |
 | `requests`, `transferredBytes`, `abortCount` | Playwright request events. Bytes are loopback body + headers | CDN wire bytes |
 | `staleWorkCount` | app-reported `cache.staleDiscard + stalePaints` | |
 | `blankFrames` | 50 ms polls with no visible plate/base/detail layer | every frame |
 | `decodedPeakBytes` | app-reported `cache.decodedBytes` peak | |
 | `gpuResidentBytesEstimate` | **estimate**: canvas backing stores w × h × 4 | measured GPU memory |
 | `staleVisibleFrames`, `sourcePops` | `null` until pixel/generation instrumentation exists (PR 2+). Request-level family mixing is gated by `single-source-family` | |
+
+Physical runs disable Playwright's focus emulation, record native page focus/visibility transitions, and retain long foreground rAF stalls in the tail metrics. Hidden or unfocused intervals invalidate the pass; they are not trimmed out. With `--android`, absent/changed thermal status or missing native Chrome foreground/unlocked/awake confirmation before or after measurement also makes the pass **NOT RUN**. Native ADB metadata is filtered before writing receipts.
+
+Mode C replays the same document after preparation; decoded caches remain budget-limited, so it is not a decode-free control. Mode E explicitly disables the page's network through CDP after preparation. Any measured network attempt invalidates offline coverage, even if the remaining cached drawing looks smooth. Neither invalid offline timings nor failed correctness trials enter paired performance comparisons.
 
 The fixture identity comes from the pinned assets checkout. The receipt records:
 
@@ -149,14 +158,16 @@ Physical Android Chrome (USB debugging on, Chrome open):
 ```bash
 adb forward tcp:9222 localabstract:chrome_devtools_remote
 for p in 45940 45941 45942 45943; do adb reverse tcp:$p tcp:$p; done      # one lab server port per ref, from 45940 (LAB_PORT)
-node scripts/lab/run.mjs --cdp http://127.0.0.1:9222 --profiles physical --balanced --trials 12 --refs ... \
+node scripts/lab/run.mjs --android --cdp http://127.0.0.1:9222 --profiles physical --balanced --trials 12 --refs ... \
   --tape scripts/lab/tapes/q1-story-hold.json --device-note "<model, Android/Chrome version, refresh rate, battery/thermal>"
 ```
 
 Notes:
-- The tapes drive inspection with `setTarget` and desktop-style wheel input. Touch tapes are still to do.
-- The Android path (default-context fallback, `adb reverse` serving) is **implemented but untested**: no device was available to the lab session.
-- The desktop `--cdp` path was tested only against a local headless Chromium (`desktop` and `physical` profiles).
+- Keep the screen on/unlocked and native Chrome in front. Foreground recovery must navigate to an actual lab URL, not an uninitialized `about:blank` tab; abandoned blank native targets can stall CDP browser initialization.
+- Attached-browser setup uses `noDefaults: true` to avoid changing existing daily-driver focus/media/download settings. Only pages opened by the diagnostic are closed.
+- `smoke-inspect` and `q1-story-hold` use exact `setTarget` viewports and trusted wheel injection. `physical-touch-continuity` uses explicitly labeled CDP-injected browser touches; it does not measure physical-finger, touchscreen hardware, native-OS delivery, or input-to-photon latency. Expected contact identities must match observed browser contacts before interpreting a two-to-one transition.
+- Galaxy S25 Ultra native foreground/awake/unlocked replay has been exercised against pinned A/D outputs. Explicit offline preparation did **not** cover all subsequent requests; those receipts are exclusions, not offline performance wins. Source mappings and exclusions: [`results/20261015-s25-ultra/`](results/20261015-s25-ultra/).
+- `visual-check.mjs --cdp URL --prepared-builds FILE --base SHA --cand SHA --out FILE` compares separate settled physical screenshots against the incumbent. Matching checkpoints do not prove absolute fidelity or transient blank/stale/tier-pop absence. These captures are not timed performance trials.
 - Each receipt records repaint cost as `extra.detailPaints.paintFrameMsMedian` and `paintFrameMsMax` (the frame containing each detail paint).
 
 ## Not covered yet (by design)
@@ -165,11 +176,10 @@ The following are left for later PRs:
 
 - A collector-overhead calibration against an uninstrumented control.
 - GPU-fence diagnostics.
-- Physical Android Chrome.
-- Constrained network profiles.
-- Touch/pinch tapes (the touch harnesses on these branches need private owner traces).
-- Story-phase and theme-switch tapes.
-- Warm and offline cache passes.
+- Native-OS/physical-finger input latency and input-to-photon measurement.
+- Constrained network profiles beyond explicit offline coverage diagnostics.
+- Proven offline coverage for the complete replay workload.
+- Full theme-switch visual validation.
 - The 1 GP fixture.
 - Pixel fidelity.
 - The OpenSeadragon same-DZI control (PR 3).

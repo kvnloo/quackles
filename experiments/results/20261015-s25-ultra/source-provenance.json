@@ -1,0 +1,63 @@
+{
+  "issue": "https://github.com/kvnloo/quackles/issues/53",
+  "baseline": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+  "assetsRevision": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+  "fixture": {
+    "sourceFamily": "blue/p0000000",
+    "masterSha256": "f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
+    "width": 11584,
+    "height": 17376,
+    "tileSize": 512,
+    "codec": "webp-lossless level 0; webp-q82 mips"
+  },
+  "reconstruction": {
+    "method": "git am --committer-date-is-author-date, original Claude identity, baseline followed by W1, Q1-B dependency, Q1-C, W2A-G",
+    "commitIdentityMatches": false,
+    "limitation": "Declared candidate commit objects were not available from GitHub. Reapplying the supplied patches produced different commit IDs. Do not label these objects with the original SHAs. Every changed-file postimage was independently checked against its patch index hash; full reconstructed source trees and patch hashes are pinned below. Cause of the commit-ID discrepancy is not established.",
+    "candidates": [
+      {
+        "arm": "B",
+        "declaredCommit": "6f2ef5d216e9d24633a6ad62000912ac0c4e7e08",
+        "actualCommit": "3b8b9f495d1bc7a9ef79339d48c0263fca29a255",
+        "tree": "2a9f01cd79056ea7532b08f7fa74e99d1034f02f",
+        "patch": "experiments/candidates/w1-edge-escape-6f2ef5d2.patch",
+        "patchSha256": "18a22e76a2f00faa740671ca72b673c7d7d368eee5a3cc41c9c045c9594585de",
+        "postimagesVerified": 4
+      },
+      {
+        "arm": "C dependency",
+        "declaredCommit": "99a629f9ea43b117208a6b5e04ce15dd8c873d7b",
+        "actualCommit": "2bc237fd3e1dd46002ef3ca130c205bfb5bd9c24",
+        "tree": "ebeaa94afbcef6288d1549731acf59b03562c1b9",
+        "patch": "experiments/candidates/q1b-priority-evict-99a629f9.patch",
+        "patchSha256": "69f56dec7d209d82bf63c512210c3c44aafc816ee79a3e9f0b2aa2e8704e09c1",
+        "postimagesVerified": 2
+      },
+      {
+        "arm": "C",
+        "declaredCommit": "1b637ed1e7128789419a06d46d62a7f044a46a02",
+        "actualCommit": "163180ab319c15edf9e39a12eb49ee2fbdbb770e",
+        "tree": "4d98b236c67c02c89e6cb59364a57ef6caea7226",
+        "patch": "experiments/candidates/q1c-admission-1b637ed1.patch",
+        "patchSha256": "d46203fdb5ead39ffacc140488673b5b31c67d0d5d062949b1d7ae57edaef449",
+        "postimagesVerified": 2
+      },
+      {
+        "arm": "D",
+        "declaredCommit": "18bb1dec055cbb71b17a2a3c53b3314b789f2267",
+        "actualCommit": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+        "tree": "4217a753d9ad2132dd77e3b08b18bb3217e39b0d",
+        "patch": "experiments/candidates/w2a-settled-guard-18bb1dec.patch",
+        "patchSha256": "3105c0ec75211df2e0effcc5e44d71a87b19f36d1d4ea80e6bfae624ec43c4aa",
+        "postimagesVerified": 4
+      }
+    ]
+  },
+  "credit": [
+    "Original Quackles authors and branch findings recorded in experiments/branches.json",
+    "Claude and Claude Opus 5.5: candidate implementations and prior software-renderer research",
+    "Ian Gilman: reusable OpenSeadragon benchmarking and frame uniformity",
+    "dao251: OpenSeadragon tile loading/update/draw analysis and instrumentation-overhead caveats"
+  ],
+  "promotionAuthorized": false
+}
