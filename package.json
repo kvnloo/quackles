@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/prepare-native-sim.mjs --download",
+    "prebuild": "node scripts/geo/build.mjs && node scripts/prepare-native-sim.mjs --download",
     "postbuild": "node scripts/learning/static-route.mjs",
     "test:learning": "python3 -m unittest discover -s scripts/learning -v && node scripts/learning/contracts.mjs && node scripts/learning/static-route.test.mjs",
+    "test:geo": "node scripts/geo/contracts.mjs",
     "test:learning:static": "node scripts/learning/browser.mjs",
     "dev": "next dev --port 43217 --hostname 0.0.0.0",
     "build": "NEXT_PUBLIC_BUILD_SHA=${NEXT_PUBLIC_BUILD_SHA:-local-preview} NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)} next build --webpack",

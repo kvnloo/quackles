@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { JsonLd, SITE_URL } from "@/components/seo/JsonLd";
 import type { CSSProperties, ReactNode } from "react";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -18,6 +19,8 @@ const mono = localFont({
   display: "swap",
 });
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  robots: { index: true, follow: true },
   title: "Quackles · Microduck",
   description:
     "A study of Microduck, the open source biped by Pollen Robotics. Product, exploded view, and jump.",
@@ -36,7 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       style={CHROME}
       className={`${display.variable} ${mono.variable}`}
     >
-      <body>{children}</body>
+      <body><JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", "@id": SITE_URL + "#website", url: SITE_URL, name: "Quackles", description: "An unofficial Microduck rendered-world study and source-backed production record.", inLanguage: "en" }} />{children}</body>
     </html>
   );
 }

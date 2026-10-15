@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { existsSync } from "node:fs";
+import { JsonLd, SITE_URL } from "@/components/seo/JsonLd";
 import responsiveImages from "@/content/process-responsive.json";
 import "./lineage-callout.css";
 import { assetPath } from "@/lib/paths";
@@ -6,6 +8,8 @@ import { chapters, processLinks, lineageCallout } from "@/content/process";
 import { processImages } from "@/content/process-images";
 
 export const metadata: Metadata = {
+  alternates: { canonical: SITE_URL + "process/" },
+  openGraph: { type: "article", url: SITE_URL + "process/", title: "How this was made · Quackles", description: "References, trials and scoped decisions behind five rendered worlds." },
   title: "How this was made · Quackles · Microduck",
   description: "From a robot and a poster to five rendered worlds: references, failed experiments, critique walkthroughs, deep zoom and the lessons behind Quackles.",
 };
@@ -35,12 +39,16 @@ function EvidenceFigure({ id, hero = false }: { id: string; hero?: boolean }) {
 }
 
 export default function ProcessPage() {
+  const hasLineage = existsSync("app/lineage/page.tsx");
+  const availableHref = (href: string) => !hasLineage && href.startsWith("/lineage/") ? "/process/#loop" : href;
   return (
     <main className="process-page" id="top">
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "TechArticle", headline: "How this was made", url: SITE_URL + "process/", description: "A source-backed visual record of references, failed experiments and decisions behind Quackles.", isPartOf: { "@id": SITE_URL + "#website" }, inLanguage: "en" }} />
       <a className="process-skip" href="#chapters">Skip to the story</a>
       <div className="process-wrap">
         <nav className="process-nav" aria-label="Process navigation">
           <a href={assetPath("/")}>← Back to the poster</a>
+          <a href={assetPath("/learn/")}>Learning lab ↗</a>
           <a href="#credits">Sources</a>
         </nav>
 
@@ -76,7 +84,7 @@ export default function ProcessPage() {
                 <p className="process-kicker">A tool from the making</p>
                 <h3 id="lineage-callout-title">{lineageCallout.title}</h3>
                 <p>{lineageCallout.body}</p>
-                <a href={assetPath(lineageCallout.href)}>{lineageCallout.label} ↗</a>
+                <a href={assetPath(availableHref(lineageCallout.href))}>{hasLineage ? lineageCallout.label : "Read the production history"} ↗</a>
               </aside>}
               <div className="process-dives">
                 {chapter.dives.map((dive, index) => (
@@ -106,7 +114,7 @@ export default function ProcessPage() {
 
         <footer className="process-foot">
           <h2>Sources & further reading</h2>
-          <ul>{processLinks.map(link => <li key={link.href}><a href={link.href.startsWith("/") ? assetPath(link.href) : link.href} target={link.href.startsWith("/") ? undefined : "_blank"} rel={link.href.startsWith("/") ? undefined : "noopener noreferrer"}>{link.label} ↗</a></li>)}</ul>
+          <ul>{processLinks.map(link => <li key={link.href}><a href={link.href.startsWith("/") ? assetPath(availableHref(link.href)) : link.href} target={link.href.startsWith("/") ? undefined : "_blank"} rel={link.href.startsWith("/") ? undefined : "noopener noreferrer"}>{link.label} ↗</a></li>)}</ul>
           <div className="process-colophon">
             <p>Unofficial fan study. Not affiliated with Nous Research or Pollen Robotics.</p>
             <a href="#top">Back to top ↑</a>
