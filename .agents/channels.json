@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "program": "site-2026-10-15",
+  "local_only": true,
+  "worker_base": "integ/home-2026-10-13",
+  "integration": "integ/site-2026-10-15",
+  "promotion": ["feature-or-performance", "integ/site-2026-10-15", "dev", "main"],
+  "merge_order": ["feat/process-blog", "perf READY order", "feat/lineage-viewer", "feat/learning-lab", "feat/geo-seo", "chore/agentic-gitops"],
+  "protected": ["main", "dev", "nightly"],
+  "merge_authority": {"integration": "gitops", "dev": "owner", "main": "owner", "nightly": "owner-authorized rollout automation"},
+  "held": ["preview/gp-motion-decode", "preview/gp-all"],
+  "hold_reason": "D6/F7 motion-decode policy needs explicit owner ruling; a union branch is not approval.",
+  "preview_policy": "Unique logical branch slot, exact build SHA, no alias reuse; URL null until verified deployment.",
+  "nightly": "Owner-approved integrated snapshot; no automatic push from a worker working commit."
+}
