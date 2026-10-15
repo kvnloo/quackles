@@ -31,7 +31,8 @@ try {
     await page.waitForSelector('[data-ready="true"]');
     await page.evaluate(()=>document.fonts.ready);
     assert.equal(await page.locator('.lineage-comparison').count(),5);
-    assert.ok(await page.locator('.lineage-card').count()<=35);
+    assert.equal(await page.locator('.lineage-card').count(),665,'native static archive retains all keyboard targets');
+    assert.ok(await page.locator('.lineage-card img').evaluateAll(images=>images.filter(i=>i.complete&&i.naturalWidth).length)<=35,'native lazy loading bounds initial image work');
     assert.match(await page.locator('#lineage-count').innerText(),/^665 of 665/);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     assert.ok(await page.locator('h1').evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);return range.getBoundingClientRect().right<=innerWidth;}),'headline fits without clipped text');
@@ -98,7 +99,7 @@ try {
     const p95=values=>values.slice().sort((a,b)=>a-b)[Math.floor(values.length*.95)]||0;
     const jsBytes=[...scripts.values()].reduce((a,b)=>a+b,0);
     assert.ok(jsBytes<=60_000,`route JS ${jsBytes} gzip`);
-    assert.ok(await page.locator('.lineage-card').count()<=35,'window remains bounded after scroll');
+    assert.equal(await page.locator('.lineage-card').count(),665,'scroll does not recreate archive nodes');
     assert.deepEqual(failures,[]);
     results.push({label,emulation:true,cpuSlowdown:4,...initial,jsGzipBytes:jsBytes,scriptCount:scripts.size,initialRequests,scrollRafP95Ms:p95(frameIntervals),scrollRafMaxMs:Math.max(...frameIntervals),overBudgetFrames:frameIntervals.filter(t=>t>=8.3).length,frameIntervals,loafs,rafCallbackWorkP95Ms:p95(work),traceCallbacks:work.length,failures});
     await context.close();

@@ -40,7 +40,7 @@
 #lineage-count{min-width:260px}
 #lineage-viewport{height:76vh;min-height:480px;max-height:1100px;overflow:auto;position:relative;contain:strict;overscroll-behavior:contain;scrollbar-color:#b1b1ef #0000b4;background:#0000cf;border:1px solid #ffffff60;padding:7px 0;scrollbar-gutter:stable}
 #lineage-grid{position:relative;min-height:1px}
-.lineage-card{position:absolute;height:426px;text-decoration:none;overflow:hidden;contain:layout paint;padding:8px;border-bottom:1px solid #ffffff50}
+.lineage-card{position:absolute;height:426px;text-decoration:none;overflow:hidden;contain:strict;top:0;padding:8px;border-bottom:1px solid #ffffff50}
 .lineage-card img{width:100%;height:274px;object-fit:contain;display:block;background:#080830}
 .lineage-card h3{font-size:27px;margin:10px 0 2px;display:inline-block}
 .lineage-status{font-size:9px;float:right;margin-top:14px;text-transform:uppercase}

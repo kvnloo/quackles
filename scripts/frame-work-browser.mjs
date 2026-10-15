@@ -17,7 +17,9 @@ const pin=execFileSync('taskset',['-pc',String(process.pid)],{encoding:'utf8'}).
 assert.ok(process.env.FRAME_WORK_PIN,'Set FRAME_WORK_PIN to the taskset CPU list used for this run');
 const actualCpus=JSON.parse(execFileSync('python3',['-c','import os,json; print(json.dumps(sorted(os.sched_getaffinity(0))))'],{encoding:'utf8'}));
 assert.deepEqual(actualCpus,process.env.FRAME_WORK_PIN.split(',').map(Number).sort((a,b)=>a-b),'pin must match actual inherited affinity');
-const browser=await chromium.launch({executablePath:process.env.CHROME||'/usr/bin/chromium',headless:true,args});
+const executablePath=process.env.CHROME||'/usr/bin/chromium';
+const traceCategories='devtools.timeline,blink.user_timing,benchmark'+(process.env.TRACE_STACKS==='1'?',disabled-by-default-devtools.timeline.stack':'');
+const browser=await chromium.launch({executablePath,headless:true,args});
 const browserCDP=await browser.newBrowserCDPSession();
 const gpu=await browserCDP.send('SystemInfo.getInfo');
 const runs=[],servers=[];
@@ -26,7 +28,7 @@ try {
     servers.push(await serve({directory:variant.directory}));
     variant.htmlSha256=createHash('sha256').update(await readFile(join(variant.directory,(variant.route||'/lineage/'),'index.html'))).digest('hex');
   }
-  await writeFile(join(out,'environment.json'),JSON.stringify({version:await browser.version(),args,gpu,pin,config,repeats,classification:'headless mobile emulation; not physical 120Hz'},null,2));
+  await writeFile(join(out,'environment.json'),JSON.stringify({version:await browser.version(),executablePath,traceCategories,args,gpu,pin,config,repeats,classification:'headless mobile emulation; not physical 120Hz'},null,2));
   for(let repeat=0;repeat<repeats;repeat++) {
     // AB / BA counterbalance; negative control participates in interleaving.
     const order=config.map((_,i)=>i);if(repeat%2)order.reverse();
@@ -52,7 +54,7 @@ try {
         });
         const cdp=await context.newCDPSession(page);
         await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
-        await cdp.send('Tracing.start',{categories:'devtools.timeline,blink.user_timing,benchmark',transferMode:'ReturnAsStream'});
+        await cdp.send('Tracing.start',{categories:traceCategories,transferMode:'ReturnAsStream'});
         // Native scroll input: setting scrollTop in rAF can itself force layout
         // after asynchronous image loads, falsely blaming the page for the harness.
         const box=await page.locator(selector).boundingBox();

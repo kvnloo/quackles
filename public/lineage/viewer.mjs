@@ -35,7 +35,7 @@ async function start(root) {
     counter.textContent = 'The archive could not load. Reload to try again; references and current picks remain above.';
     return;
   }
-  let filtered = [], newest = false, columns = 5, rowHeight = 440, signature = '', active = null, opener = null;
+  let filtered = [], newest = false, columns = 5, rowHeight = 440, active = null, opener = null;
   const byId = new Map(data.entries.map(e => [`${e.theme}/${e.version}`,e]));
   for (const [theme, entry] of Object.entries(data.current)) byId.set(`${theme}/current`,entry);
   for (const phase of [...new Set(data.entries.map(e=>e.phase))].sort()) $('#lineage-phase').add(new Option(phase,phase));
@@ -65,36 +65,32 @@ async function start(root) {
     card.append(image(e),heading,status,caption,time,provenance);
     return card;
   }
-  function render(force=false) {
-    const range = windowRange(filtered.length,columns,viewport.scrollTop,viewport.clientHeight,rowHeight);
-    const next = `${range.start}:${range.end}:${columns}`;
-    if (!force && next === signature) return;
-    signature = next;
-    const keep = new Set();
-    for (let i=range.start; i<range.end; i++) {
-      const entry = filtered[i], id = `${entry.theme}/${entry.version}`;
-      keep.add(id);
-      let element = grid.querySelector(`[data-id="${id}"]`);
-      if (!element) { element=card(entry,i); grid.append(element); }
-      element.style.top = `${Math.floor(i/columns)*rowHeight}px`;
-      element.style.left = `calc(${(i%columns)*100/columns}% + 7px)`;
-      element.style.width = `calc(${100/columns}% - 14px)`;
-    }
-    for (const element of grid.children) if (!keep.has(element.dataset.id)) element.remove();
+  function render() {
+    grid.replaceChildren(...filtered.map(card));
+    position();
   }
-  function resize() {
-    columns = viewport.clientWidth < 600 ? 2 : viewport.clientWidth < 1000 ? 3 : 5;
-    rowHeight = viewport.clientWidth < 600 ? 380 : 440;
-    grid.style.height = `${Math.ceil(filtered.length/columns)*rowHeight}px`;
-    render(true);
+  function position() {
+    grid.style.height=`${Math.ceil(filtered.length/columns)*rowHeight}px`;
+    for (let i=0;i<grid.children.length;i++) {
+      const element=grid.children[i];
+      element.style.transform=`translateY(${Math.floor(i/columns)*rowHeight}px)`;
+      element.style.left=`calc(${(i%columns)*100/columns}% + 7px)`;
+      element.style.width=`calc(${100/columns}% - 14px)`;
+    }
+  }
+  function resize(entries) {
+    const {width}=entries[0].contentRect;
+    columns=width<600?2:width<1000?3:5;
+    rowHeight=width<600?380:440;
+    position();
   }
   function apply() {
     const form = new FormData(controls);
     filtered = filterEntries(data.entries,{theme:form.get('theme'),phase:form.get('phase'),status:form.get('status'),query:form.get('query'),newest});
-    viewport.scrollTop = 0; grid.replaceChildren(); signature='';
+    viewport.scrollTop = 0;
     counter.textContent = `${filtered.length} of ${data.entries.length} versions · ${newest?'Newest':'Oldest'} first`;
     $('#lineage-empty').hidden = filtered.length !== 0;
-    resize();
+    render();
   }
   function open(entry) {
     active = entry;
@@ -132,8 +128,6 @@ async function start(root) {
     controls.reset();$('#lineage-theme').value=button.dataset.themeJump;apply();$('#timeline').scrollIntoView();viewport.focus();
   }));
   root.querySelectorAll('[data-reference]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();open(data.references[button.dataset.reference]);}));
-  let scheduled=false;
-  viewport.addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;render();});}}, {passive:true});
   new ResizeObserver(resize).observe(viewport);
   viewport.addEventListener('keydown',event=>{
     const current=Number(document.activeElement?.dataset.index ?? 0);
@@ -145,9 +139,7 @@ async function start(root) {
     else return;
     event.preventDefault(); index=Math.max(0,Math.min(filtered.length-1,index));
     if (!filtered.length) return;
-    const top=Math.floor(index/columns)*rowHeight;
-    if(top<viewport.scrollTop || top+rowHeight>viewport.scrollTop+viewport.clientHeight) viewport.scrollTop=top;
-    render(true);grid.querySelector(`[data-index="${index}"]`)?.focus({preventScroll:true});
+    grid.querySelector(`[data-index="${index}"]`)?.focus();
   });
   $('#lineage-close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{
