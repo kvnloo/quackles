@@ -11,6 +11,11 @@
     "geo": {"head": "a98d647ffa4523e202452d518390cea4abd01059", "integration_merge": "b83932a04699c3f64aaad533f40ce0f7766996b8", "admission": "independent; unavailable lineage links omitted or fall back to process"},
     "lineage": {"head": "49ba5c64f8aba267371adfddfbf280df5038fa2d", "admission": "held", "reason": "Trace-work repeatability unqualified and forced synchronous layouts remain. Headless rAF cadence is informational, not admission."}
   },
+  "repair_pass_3": {
+    "process_wordmark": {"head": "d247439", "integration_merge": "9ac0d54445c28077b9316c4e2c231e280e71c20f", "admission": "15 merged-tree gates; decorative SVG; Lighthouse accessibility 100"},
+    "light_browser": {"head": "65501ff", "integration_merge": "ef826535098896c323dc0985d4988c667565c603", "admission": "15 merged-tree gates; actual Lightpanda and headless-shell DOM pilot pass"},
+    "lineage": {"head": "00d3c0146c7da0d8665631692c7d9df2ecda1d5a", "admission": "held", "reason": "Forced layouts eliminated in ten candidate runs, but work p95 median 4.884275ms and worst frame 13.025ms fail unchanged thresholds; one LoAF; baseline IQR 0.5726ms blocks comparative validation."}
+  },
   "protected": ["main", "dev", "nightly"],
   "merge_authority": {"integration": "gitops", "dev": "owner", "main": "owner", "nightly": "owner-authorized rollout automation"},
   "held": ["preview/gp-motion-decode", "preview/gp-all"],
