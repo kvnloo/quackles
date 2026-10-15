@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import responsiveImages from "@/content/process-responsive.json";
 import { assetPath } from "@/lib/paths";
 import { chapters, processLinks } from "@/content/process";
 import { processImages } from "@/content/process-images";
@@ -14,15 +14,18 @@ function EvidenceFigure({ id, hero = false }: { id: string; hero?: boolean }) {
   return (
     <figure className={`process-figure${hero ? " process-hero-figure" : ""}${image.height > image.width * 1.8 ? " process-portrait-figure" : ""}`}>
       <a className="process-image-link" href={assetPath(image.src)} target="_blank" rel="noopener noreferrer" aria-label={`Open larger image: ${image.alt}`}>
-        <Image
+        {/* Static export: prebuilt srcset avoids a runtime optimizer and image hydration. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={assetPath(image.src)}
+          srcSet={(responsiveImages as Record<string, { src: string; width: number }[]>)[image.src]?.map(candidate => `${assetPath(candidate.src)} ${candidate.width}w`).join(", ")}
           alt={image.alt}
           width={image.width}
           height={image.height}
-          unoptimized
+          decoding="async"
           loading={hero ? "eager" : "lazy"}
           fetchPriority={hero ? "high" : "auto"}
-          sizes="(max-width: 767px) 100vw, 1200px"
+          sizes={hero ? "(max-width: 767px) calc(100vw - 40px), 340px" : "(max-width: 767px) calc(100vw - 40px), (max-width: 1296px) calc(100vw - 96px), 1200px"}
         />
       </a>
       <figcaption>{image.caption}</figcaption>
