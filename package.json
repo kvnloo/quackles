@@ -14,6 +14,8 @@
     "test": "npm run lint && npm run typecheck && npm run test:process",
     "test:process": "node --import ./scripts/register-ts-resolve.mjs scripts/process-contracts.mjs",
     "test:process:static": "node scripts/process-browser.mjs",
+    "test:process:responsive": "node scripts/process-responsive-browser.mjs",
+    "generate:process:responsive": "node scripts/generate-process-responsive.mjs",
     "preview": "python3 -m http.server 43217 --bind 0.0.0.0 --directory out",
     "test:mobile": "node scripts/mobile-validation.mjs",
     "test:mobile:timing": "MODE=timing node scripts/mobile-validation.mjs",
