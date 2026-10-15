@@ -21,6 +21,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { checkPlan, checkRuntime, isGigapixelRef, loadTargetLock } from "./target-lock.mjs";
 import { checkReceipt, frameStats, percentile, RECEIPT_SCHEMA, round, sha256, slug, sourceFamilies, tapeHash, validateTape } from "./lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +30,8 @@ const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 };
-const REFS = arg("refs", "nightly").split(",").filter(Boolean);
+const REFS = arg("refs", "").split(",").filter(Boolean);
+const LOCK_PATH = arg("target-lock", "");
 const TAPE_PATH = path.resolve(arg("tape", path.join(HERE, "tapes/smoke-inspect.json")));
 const TRIALS = Number(arg("trials", "5"));
 const PROFILE_IDS = arg("profiles", "desktop").split(",");
@@ -485,7 +487,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
       const gl = document.createElement("canvas").getContext("webgl");
       const dbg = gl?.getExtension("WEBGL_debug_renderer_info");
       const s = window.__QUACKLES_SEQUENCE__?.getState?.();
-      return { gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "unknown", userAgent: navigator.userAgent, dpr: devicePixelRatio, screen: `${screen.width}x${screen.height}`, viewport: { width: innerWidth, height: innerHeight }, appProfile: s?.profile?.id ?? null, maxZoom: window.__QUACKLES_INSPECTION__?.getState?.().maxZoom ?? null, hasSetTarget: typeof window.__QUACKLES_INSPECTION__?.setTarget === "function" };
+      return { gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "unknown", userAgent: navigator.userAgent, dpr: devicePixelRatio, screen: `${screen.width}x${screen.height}`, viewport: { width: innerWidth, height: innerHeight }, preview: s?.preview ?? null, appProfile: s?.profile?.id ?? null, maxZoom: window.__QUACKLES_INSPECTION__?.getState?.().maxZoom ?? null, hasSetTarget: typeof window.__QUACKLES_INSPECTION__?.setTarget === "function" };
     });
     Object.assign(receipt.environment, { gpu: facts.gpu, userAgent: facts.userAgent, screen: facts.screen, viewport: facts.viewport, appProfile: facts.appProfile, dpr: facts.dpr });
     receipt.extra.maxZoom = facts.maxZoom;
@@ -650,6 +652,7 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
     const families = sourceFamilies(net.assetPaths.length ? net.assetPaths : (receipt.extra.prepAssetPaths ?? []));
     receipt.fixture = fixtureFor(families, ctx.assetsSha, ctx.assetsDirty);
     receipt.extra.sourceFamilies = families;
+    receipt.extra.actualPreview = facts.preview;
     receipt.extra.inspectionSources = data.end.inspectionSources;
 
     // Time to sharp: from the "sharp" setTarget until the painted detail tier covers the need (frame device px x zoom,
@@ -713,6 +716,20 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
       receipt.status = "NOT RUN";
       receipt.validation.notRun.unshift(`assets missing at quackles-assets@${ctx.assetsSha.slice(0, 12)}: ${missing.length} x 404 (e.g. ${missing[0].slice(4)})`);
     } else receipt.status = receipt.validation.failed.length ? "FAIL" : "PASS";
+    // Every measured cell must prove that Chrome executed the requested GP preview with actual GP tiles.
+    // Wrong/no tile traffic or a production-preview fallback makes this NOT RUN, never a performance win.
+    if (ctx.targetLock) {
+      const targetErrors = checkRuntime(ctx.targetLock, {
+        branch: build.ref, sha: build.sha, preview: facts.preview,
+        assetPaths: [...(receipt.extra.prepAssetPaths ?? []), ...net.assetPaths],
+        fixture: receipt.fixture, assetsSha: ctx.assetsSha,
+      });
+      receipt.extra.targetLock = { id: ctx.targetLock.id, verdict: targetErrors.length ? "INVALID" : "MATCHED" };
+      if (targetErrors.length) {
+        receipt.status = "NOT RUN";
+        receipt.validation.notRun.unshift(...targetErrors.map((s) => "TARGET_LOCK_INVALID: " + s));
+      } else receipt.validation.passed.push("gp-target-lock:branch+preview+asset+tiles");
+    }
     if (data.visibility.some(([, state]) => state !== "visible")) {
       receipt.status = "NOT RUN";
       receipt.validation.notRun.unshift("INVALID: page was not foreground/visible throughout the measured pass");
@@ -763,7 +780,14 @@ async function main() {
   const assetsSha = git(ASSETS_DIR, "rev-parse", "HEAD");
   const assetsDirty = !!git(ASSETS_DIR, "status", "--porcelain", "--untracked-files=no");
   const runId = process.env.RUN_ID || `${new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "").replace("T", "-")}-${harnessSha.slice(0, 7)}`;
+  if (!process.argv.includes("--refs") || !REFS.length) throw new Error("explicit --refs required; refusing implicit nightly/main fallback");
+  const targetLock = LOCK_PATH ? loadTargetLock(path.resolve(LOCK_PATH)) : null;
+  if (REFS.some(isGigapixelRef) && !targetLock) throw new Error("GP contender requires --target-lock experiments/locks/gigapixel-performance.json");
   const targets = REFS.map(resolveRef);
+  if (targetLock) {
+    const errors = checkPlan(targetLock, { refs: REFS, resolved: targets, assetsSha, assetsDirty, explicitRefs: true });
+    if (errors.length) throw new Error("TARGET_LOCK_INVALID before browser/build:\n- " + errors.join("\n- "));
+  }
   console.error(`[lab] run ${runId}: ${targets.map((t) => `${t.ref}@${t.sha.slice(0, 12)}`).join(", ")} x ${PROFILE_IDS.join(",")} x ${TRIALS} trials`);
 
   const prepared = PREPARED_BUILDS ? JSON.parse(fs.readFileSync(PREPARED_BUILDS, "utf8")) : null;
@@ -813,6 +837,7 @@ async function main() {
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--no-proxy-server", "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost", "--disable-background-networking", "--disable-component-update", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", ...gpuArgs],
   });
   const ctx = {
+    targetLock,
     tapeHash: tapeHash(tape), assetsSha, assetsDirty,
     harness: { sha: harnessSha, dirty: harnessDirty, runner: "scripts/lab/run.mjs", runnerSha256: fileHash(fileURLToPath(import.meta.url)), librarySha256: fileHash(path.join(HERE, "lib.mjs")) },
     environment: { browser: `Chromium ${browser.version()}`, headless: CDP_ENDPOINT ? "attached (see device)" : true, gpuFlags: CDP_ENDPOINT ? "attached browser's own GPU (see gpu)" : gpuArgs.length ? "GPU=1 (vulkan)" : "default headless (likely SwiftShader)", attached: CDP_ENDPOINT || null, deviceNote: DEVICE_NOTE || null, device: CDP_ENDPOINT ? `attached via CDP; host running the harness: ${os.cpus()[0]?.model ?? "unknown"} x${os.cpus().length}` : `${os.cpus()[0]?.model ?? "unknown"} x${os.cpus().length}, ${Math.round(os.totalmem() / 2 ** 30)} GiB, ${os.platform()} ${os.release()}`, node: process.version, refreshRate: "unknown (headless); see idleRafMs", thermal: "unknown" },
