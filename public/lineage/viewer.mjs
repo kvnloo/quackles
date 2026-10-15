@@ -20,10 +20,14 @@ async function start(root) {
   const controls = $('#lineage-filters'), dialog = $('#lineage-lightbox');
   const imageRoot = root.dataset.imageRoot;
   const url = tuple => imageRoot + tuple[0];
-  const date = value => new Intl.DateTimeFormat('en-US', {timeZone:'America/Chicago',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
+  const dateFormatter = new Intl.DateTimeFormat('en-US', {timeZone:'America/Chicago',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+  const date = value => dateFormatter.format(new Date(value));
   let data;
   try {
-    const response = await fetch(root.dataset.dataset);
+    // The archive is below the poster introduction. Do not let its JSON and
+    // thumbnail traffic compete with the preloaded typeface that paints LCP.
+    await document.fonts.ready;
+    const response = await fetch(root.dataset.dataset, {priority:'low'});
     if (!response.ok) throw new Error('Archive unavailable');
     data = await response.json();
     if (data.schema !== 1) throw new Error('Unsupported archive');

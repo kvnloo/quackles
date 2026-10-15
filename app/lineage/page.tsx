@@ -14,7 +14,7 @@ type Thumb = number | string;
 function Preview({ image, label, href, reference }: { image: { caption: string; thumbs: {small: Thumb[]; large: Thumb[]} }; label: string; href: string; reference?: string }) {
   return <a className="lineage-preview" href={href} data-reference={reference} aria-label={`${label}: ${image.caption}`}>
     <span>{label}</span>
-    <img src={imageRoot + image.thumbs.small[0]} srcSet={`${imageRoot + image.thumbs.small[0]} ${image.thumbs.small[1]}w, ${imageRoot + image.thumbs.large[0]} ${image.thumbs.large[1]}w`} sizes="(max-width: 600px) 140px, 110px" width={Number(image.thumbs.small[1])} height={Number(image.thumbs.small[2])} alt={image.caption} loading="lazy" decoding="async" />
+    <img src={imageRoot + image.thumbs.small[0]} srcSet={`${imageRoot + image.thumbs.small[0]} ${image.thumbs.small[1]}w, ${imageRoot + image.thumbs.large[0]} ${image.thumbs.large[1]}w`} sizes="(max-width: 600px) 140px, 110px" width={Number(image.thumbs.small[1])} height={Number(image.thumbs.small[2])} alt={image.caption} loading="lazy" fetchPriority="low" decoding="async" />
   </a>;
 }
 export default function LineagePage() {

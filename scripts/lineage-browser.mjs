@@ -66,6 +66,7 @@ try {
     await page.locator('#lineage-detail-image img').evaluate(img=>img.decode());
     await page.keyboard.press('ArrowRight');
     assert.ok(page.url().endsWith('#/day/v1'));
+    await page.locator('#lineage-detail-image img').evaluate(img=>img.decode());
     await page.screenshot({path:join(artifacts,'screens',`${label}-lightbox.png`)});
     await page.keyboard.press('Escape');
     await page.goto('about:blank');
