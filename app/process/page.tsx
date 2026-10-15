@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { JsonLd, SITE_URL } from "@/components/seo/JsonLd";
 import Image from "next/image";
 import { assetPath } from "@/lib/paths";
 import { chapters, processLinks } from "@/content/process";
 import { processImages } from "@/content/process-images";
 
 export const metadata: Metadata = {
+  alternates: { canonical: SITE_URL + "process/" },
+  openGraph: { type: "article", url: SITE_URL + "process/", title: "How this was made · Quackles", description: "References, trials and scoped decisions behind five rendered worlds." },
   title: "How this was made · Quackles · Microduck",
   description: "From a robot and a poster to five rendered worlds: references, failed experiments, critique walkthroughs, deep zoom and the lessons behind Quackles.",
 };
@@ -33,6 +36,7 @@ function EvidenceFigure({ id, hero = false }: { id: string; hero?: boolean }) {
 export default function ProcessPage() {
   return (
     <main className="process-page" id="top">
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "TechArticle", headline: "How this was made", url: SITE_URL + "process/", description: "A source-backed visual record of references, failed experiments and decisions behind Quackles.", isPartOf: { "@id": SITE_URL + "#website" }, inLanguage: "en" }} />
       <a className="process-skip" href="#chapters">Skip to the story</a>
       <div className="process-wrap">
         <nav className="process-nav" aria-label="Process navigation">

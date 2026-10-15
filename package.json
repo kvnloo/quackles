@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/prepare-native-sim.mjs --download",
+    "prebuild": "node scripts/geo/build.mjs && node scripts/prepare-native-sim.mjs --download",
     "dev": "next dev --port 43217 --hostname 0.0.0.0",
     "build": "NEXT_PUBLIC_BUILD_SHA=${NEXT_PUBLIC_BUILD_SHA:-local-preview} NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)} next build --webpack",
     "start": "next start --port 43217 --hostname 0.0.0.0",

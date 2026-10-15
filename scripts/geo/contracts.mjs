@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+for (const file of ['llms.txt','llms-full.txt','agents.md','data/manifest.json','openapi.json','sitemap.xml','robots.txt','feed.xml']) assert.ok(existsSync('public/'+file), file+' exists');
+const llms=readFileSync('public/llms.txt','utf8');
+for(const route of ['/process/','/lineage/','/learn/']) assert.ok(llms.includes(route));
+assert.ok(llms.includes('not owner acceptance'));
+const api=JSON.parse(readFileSync('public/openapi.json'));assert.equal(api.openapi,'3.1.0');
+for(const path of Object.values(api.paths)) assert.deepEqual(Object.keys(path),['get']);
+const { score, evaluate }=await import('./benchmark.mjs');
+const expected='https://kvnloo.github.io/quackles/learn/';
+assert.equal(score({suite:'discovery',urls:[expected]},'Quackles is nice').hit,false);
+assert.equal(score({suite:'discovery',urls:[expected]},expected+'wrong').hit,false);
+assert.equal(score({suite:'discovery',urls:[expected]},'See '+expected).hit,true);
+assert.equal(score({suite:'negative',urls:[]},'Quackles').pass,false);
+const fixture=[{id:'discovery-critique',engine:'fixture-one',text:expected},{id:'discovery-critique',engine:'fixture-two',text:expected},{id:'negative-weather',engine:'fixture-one',text:'Refraction and dispersion.'}];
+const report=evaluate(fixture);assert.equal(report.multiEngineDiscovery,true);assert.equal(report.suites.branded.rate,null);assert.equal(report.suites.negative.pass,1);assert.throws(()=>evaluate([...fixture,fixture[0]]),/duplicate/);
+console.log('GEO artifacts and anti-game scoring PASS (fixtures, not live model results)');

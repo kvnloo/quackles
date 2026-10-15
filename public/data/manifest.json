@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "canonical": "https://kvnloo.github.io/quackles/",
+  "snapshot": "2026-10-15",
+  "collections": {
+    "learning": "learning/manifest.json"
+  },
+  "pages": [
+    {
+      "url": "https://kvnloo.github.io/quackles/",
+      "title": "Quackles poster"
+    },
+    {
+      "url": "https://kvnloo.github.io/quackles/process/",
+      "title": "How this was made"
+    },
+    {
+      "url": "https://kvnloo.github.io/quackles/lineage/",
+      "title": "Artifact lineage"
+    },
+    {
+      "url": "https://kvnloo.github.io/quackles/learn/",
+      "title": "Learning lab"
+    }
+  ],
+  "interpretation": "Read agents.md. Null is unknown. Current is not acceptance."
+}
