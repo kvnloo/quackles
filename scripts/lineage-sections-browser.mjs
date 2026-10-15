@@ -7,7 +7,7 @@ try {
   const page=await browser.newPage({viewport:{width:390,height:844}});
   await page.goto(server.url+'/lineage/',{waitUntil:'networkidle'});
   await page.waitForSelector('[data-ready="true"]');
-  assert.equal(await page.locator('.lineage-section').count(),23,'chunk rendering missing');
+  assert.equal(await page.locator('.lineage-section').count(),Math.ceil(665/4),'two-row chunks bound reveal work');
   assert.equal(await page.locator('.lineage-card').count(),665);
   assert.ok(await page.locator('.lineage-section').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).contain==='strict' && n.children.length<=30)));
   assert.ok(await page.locator('.lineage-section').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).contentVisibility==='auto')), 'offscreen sections skip rendering');
