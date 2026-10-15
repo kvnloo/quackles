@@ -1,3 +1,5 @@
+import {mountTimeline} from './timeline.mjs';
+
 export function filterEntries(entries, {theme='', phase='', status='', query='', newest=false} = {}) {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   return entries.filter(e => (!theme || e.theme === theme) && (!phase || e.phase === phase) &&
@@ -35,6 +37,14 @@ async function start(root) {
     counter.textContent = 'The archive could not load. Reload to try again; references and current picks remain above.';
     return;
   }
+  let timeline=null;
+  try {
+    const response=await fetch(root.dataset.timeline,{priority:'low'});
+    if(!response.ok)throw new Error('Timeline unavailable');
+    const index=await response.json();
+    if(index.schema!==1 || index.order.length!==data.entries.length)throw new Error('Timeline mismatch');
+    timeline=mountTimeline({host:$('#lineage-time-instrument'),entries:data.entries,index,source:e=>url(e.thumbs.small),link:e=>`#/${e.theme}/${e.version}`});
+  } catch { $('#lineage-time-instrument').textContent='Timeline unavailable. The full archive and filters remain below.'; }
   let filtered = [], newest = false, columns = 5, rowHeight = 440, active = null, opener = null;
   const byId = new Map(data.entries.map(e => [`${e.theme}/${e.version}`,e]));
   for (const [theme, entry] of Object.entries(data.current)) byId.set(`${theme}/current`,entry);
@@ -103,6 +113,7 @@ async function start(root) {
     counter.textContent = `${filtered.length} of ${data.entries.length} versions · ${newest?'Newest':'Oldest'} first`;
     $('#lineage-empty').hidden = filtered.length !== 0;
     render();
+    if(timeline) timeline.setArtifacts([...grid.querySelectorAll('.lineage-card')].map((node,i)=>({node,key:node.dataset.id,time:Date.parse(filtered[i].date)})));
   }
   function open(entry) {
     active = entry;

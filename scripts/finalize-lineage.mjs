@@ -23,12 +23,18 @@ export async function inlineStyles(html, load) {
   }
   return html;
 }
+export function fingerprintTimeline(viewer,timeline) {
+  const digest=bytes=>createHash('sha256').update(bytes).digest('hex').slice(0,16);
+  const dependency=`timeline.${digest(timeline)}.mjs`;
+  const source=viewer.replaceAll('./timeline.mjs',`./${dependency}`);
+  return {dependency,source,name:`viewer.${digest(source)}.mjs`};
+}
 async function main() {
   const root=resolve(process.env.OUT_DIR || 'out');
   const target=resolve(root,'lineage/index.html');
-  const source=await readFile(resolve(root,'lineage/viewer.mjs'));
-  const digest=createHash('sha256').update(source).digest('hex').slice(0,16);
-  const name=`viewer.${digest}.mjs`;
+  const timeline=await readFile(resolve(root,'lineage/timeline.mjs'));
+  const {source,name,dependency}=fingerprintTimeline(await readFile(resolve(root,'lineage/viewer.mjs'),'utf8'),timeline);
+  await writeFile(resolve(root,'lineage',dependency),timeline);
   await writeFile(resolve(root,'lineage',name),source);
   const original=await readFile(target,'utf8');
   const stripped=await inlineStyles(stripRuntime(original).replaceAll('/lineage/viewer.mjs',`/lineage/${name}`),path=>readFile(resolve(root,'.'+path),'utf8'));
