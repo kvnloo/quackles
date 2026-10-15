@@ -9,6 +9,12 @@ const full=readFileSync('public/llms-full.txt','utf8');
 assert.ok(full.includes('A robot. A poster. A place.'),'full guide includes process prose');
 assert.ok(full.includes(readFileSync('public/learn/llms-full.txt','utf8')),'full learning corpus preserved');
 for(const kind of ['lessons','methods','scenes']) for(const name of readdirSync('public/learn/'+kind)) for(const file of ['sitemap.xml','feed.xml']) assert.ok(readFileSync('public/'+file,'utf8').includes(`learn/${kind}/${name}`),`${file} includes corpus ${name}`);
+const exportRoot=process.env.OUT_DIR||'out';
+for(const page of ['process','learn']) if(existsSync(`${exportRoot}/${page}/index.html`)&&!hasLineage) {
+  const html=readFileSync(`${exportRoot}/${page}/index.html`,'utf8');
+  const links=[...html.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(m=>m[1]);
+  assert.ok(!links.some(h=>h.includes('/lineage/')),`${page} must not link an absent lineage route`);
+}
 assert.ok(llms.includes('not owner acceptance'));
 const api=JSON.parse(readFileSync('public/openapi.json'));assert.equal(api.openapi,'3.1.0');
 for(const path of Object.values(api.paths)) assert.deepEqual(Object.keys(path),['get']);

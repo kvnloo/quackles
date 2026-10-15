@@ -1,0 +1,19 @@
+.process-lineage-callout {
+  grid-column: 1 / -1;
+  margin-block: 1.5rem 2rem;
+  padding-block: clamp(1.25rem, 3vw, 2.5rem);
+  border-block: 1px solid currentColor;
+  color: var(--ink);
+  background: var(--paper);
+  max-width: 76rem;
+}
+.process-lineage-callout h3 {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+  font-weight: 300;
+  margin-bottom: 1.2rem;
+}
+.process-lineage-callout > p:not(.process-kicker) { max-width: 75ch; line-height: 1.8; }
+.process-lineage-callout a { display: inline-block; padding-block: .5rem; text-decoration: underline; }

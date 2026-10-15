@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { existsSync } from "node:fs";
 import { JsonLd, SITE_URL } from "@/components/seo/JsonLd";
 import responsiveImages from "@/content/process-responsive.json";
+import "./lineage-callout.css";
 import { assetPath } from "@/lib/paths";
-import { chapters, processLinks } from "@/content/process";
+import { chapters, processLinks, lineageCallout } from "@/content/process";
 import { processImages } from "@/content/process-images";
 
 export const metadata: Metadata = {
@@ -37,6 +39,8 @@ function EvidenceFigure({ id, hero = false }: { id: string; hero?: boolean }) {
 }
 
 export default function ProcessPage() {
+  const hasLineage = existsSync("app/lineage/page.tsx");
+  const availableHref = (href: string) => !hasLineage && href.startsWith("/lineage/") ? "/process/#loop" : href;
   return (
     <main className="process-page" id="top">
       <JsonLd data={{ "@context": "https://schema.org", "@type": "TechArticle", headline: "How this was made", url: SITE_URL + "process/", description: "A source-backed visual record of references, failed experiments and decisions behind Quackles.", isPartOf: { "@id": SITE_URL + "#website" }, inLanguage: "en" }} />
@@ -58,6 +62,7 @@ export default function ProcessPage() {
           <EvidenceFigure id="hero" hero />
         </header>
 
+        <div className="process-paper">
         <div className="process-introduction">
           <p>Not a straight line from prompt to finished image. A record of references, renders, rejected fixes and decisions that changed the work.</p>
           <p className="process-note">September 14 - October 15, 2026. Night is still in progress. Read the short story, or open any chapter for the working notes and comparisons.</p>
@@ -75,6 +80,12 @@ export default function ProcessPage() {
                 <p>{chapter.intro}</p>
               </div>
               <EvidenceFigure id={chapter.image} />
+              {chapter.id === "loop" && <aside className="process-lineage-callout" aria-labelledby="lineage-callout-title">
+                <p className="process-kicker">A tool from the making</p>
+                <h3 id="lineage-callout-title">{lineageCallout.title}</h3>
+                <p>{lineageCallout.body}</p>
+                <a href={assetPath(availableHref(lineageCallout.href))}>{hasLineage ? lineageCallout.label : "Read the production history"} ↗</a>
+              </aside>}
               <div className="process-dives">
                 {chapter.dives.map((dive, index) => (
                   <details key={dive.title} id={`${chapter.id}-detail-${index + 1}`}>
@@ -103,12 +114,14 @@ export default function ProcessPage() {
 
         <footer className="process-foot">
           <h2>Sources & further reading</h2>
-          <ul>{processLinks.map(link => <li key={link.href}><a href={link.href} target="_blank" rel="noopener noreferrer">{link.label} ↗</a></li>)}</ul>
+          <ul>{processLinks.map(link => <li key={link.href}><a href={link.href.startsWith("/") ? assetPath(availableHref(link.href)) : link.href} target={link.href.startsWith("/") ? undefined : "_blank"} rel={link.href.startsWith("/") ? undefined : "noopener noreferrer"}>{link.label} ↗</a></li>)}</ul>
           <div className="process-colophon">
             <p>Unofficial fan study. Not affiliated with Nous Research or Pollen Robotics.</p>
             <a href="#top">Back to top ↑</a>
           </div>
+          <span className="process-wordmark" aria-hidden="true">Quackles</span>
         </footer>
+        </div>
       </div>
     </main>
   );
