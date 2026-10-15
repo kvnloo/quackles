@@ -79,9 +79,13 @@ try {
     const cdp=await context.newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
     await cdp.send('Tracing.start',{categories:'devtools.timeline,blink.user_timing,benchmark',transferMode:'ReturnAsStream'});
-    const frameIntervals=await page.evaluate(async()=>{
-      const viewport=document.querySelector('#lineage-viewport');const times=[];let prior;
-      await new Promise(resolve=>{let n=0;function tick(t){if(prior!==undefined)times.push(t-prior);prior=t;viewport.scrollTop+=24;if(++n<240)requestAnimationFrame(tick);else resolve();}requestAnimationFrame(tick);});return times;
+    const {frameIntervals,loafs}=await page.evaluate(async()=>{
+      const viewport=document.querySelector('#lineage-viewport');const times=[],loafs=[];let prior;
+      const observer=new PerformanceObserver(list=>loafs.push(...list.getEntries().map(e=>e.toJSON())));
+      observer.observe({type:'long-animation-frame',buffered:false});
+      await new Promise(resolve=>{let n=0;function tick(t){if(prior!==undefined)times.push(t-prior);prior=t;viewport.scrollTop+=24;if(++n<240)requestAnimationFrame(tick);else resolve();}requestAnimationFrame(tick);});
+      loafs.push(...observer.takeRecords().map(e=>e.toJSON()));observer.disconnect();
+      return {frameIntervals:times,loafs};
     });
     const traceDone=new Promise(resolve=>cdp.once('Tracing.tracingComplete',resolve));
     await cdp.send('Tracing.end');const {stream}=await traceDone;let trace='';
@@ -95,7 +99,7 @@ try {
     assert.ok(jsBytes<=60_000,`route JS ${jsBytes} gzip`);
     assert.ok(await page.locator('.lineage-card').count()<=35,'window remains bounded after scroll');
     assert.deepEqual(failures,[]);
-    results.push({label,emulation:true,cpuSlowdown:4,...initial,jsGzipBytes:jsBytes,scriptCount:scripts.size,initialRequests,scrollRafP95Ms:p95(frameIntervals),rafCallbackWorkP95Ms:p95(work),traceCallbacks:work.length,failures});
+    results.push({label,emulation:true,cpuSlowdown:4,...initial,jsGzipBytes:jsBytes,scriptCount:scripts.size,initialRequests,scrollRafP95Ms:p95(frameIntervals),scrollRafMaxMs:Math.max(...frameIntervals),overBudgetFrames:frameIntervals.filter(t=>t>=8.3).length,frameIntervals,loafs,rafCallbackWorkP95Ms:p95(work),traceCallbacks:work.length,failures});
     await context.close();
   }
   // Process callout is part of the exported page and navigates to the actual route.
@@ -105,5 +109,6 @@ try {
   await page.screenshot({path:join(artifacts,'screens','process-callout.png')});
   await page.locator('.process-lineage-callout a').click();await page.waitForSelector('[data-ready="true"]');
   await writeFile(join(artifacts,'browser-results.json'),JSON.stringify(results,null,2));
-  console.log(JSON.stringify(results,null,2));
+  console.log(JSON.stringify(results.map(({frameIntervals,loafs,...result})=>({...result,loafCount:loafs.length,frames:frameIntervals.length})),null,2));
+  if(process.env.SCROLL_GATE==='1') for(const result of results) assert.ok(result.scrollRafP95Ms<8.3,`${result.label} scroll cadence p95 ${result.scrollRafP95Ms}ms must be <8.3ms (emulation, not physical 120Hz qualification)`);
 }finally{await browser?.close();await server.close();}

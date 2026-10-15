@@ -44,6 +44,8 @@ The mandatory npm `postbuild` finalizer removes the Next runtime **only from `ou
 ```sh
 LINEAGE_ASSETS="$ASSET_CHECKOUT" npm run test:lineage
 LINEAGE_ASSETS="$ASSET_CHECKOUT" ARTIFACTS="$EVIDENCE" npm run test:lineage:static
+# Strict cadence admission (fails rather than substituting callback work):
+SCROLL_GATE=1 LINEAGE_ASSETS="$ASSET_CHECKOUT" ARTIFACTS="$EVIDENCE" npm run test:lineage:static
 # Install Lighthouse outside the project; do not alter the lockfile for audit tooling.
 npm install --prefix "$TMPDIR/lineage-audit" lighthouse
 LINEAGE_ASSETS="$ASSET_CHECKOUT" ARTIFACTS="$EVIDENCE" \
