@@ -26,6 +26,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Replay experiment target-lock contracts
+        run: npm run test:lab
       - run: npm run build
       - name: Start static preview
         run: |

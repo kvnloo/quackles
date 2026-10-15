@@ -4,6 +4,16 @@ A reproducible branch tournament harness for [#53](https://github.com/kvnloo/qua
 
 This is **PR 1**: the registry, one deterministic tape, the receipt schema, aggregation and a baseline smoke run. The branch matrix (PR 2) and the OpenSeadragon control (PR 3) are not here.
 
+## Gigapixel objective lock (fail-closed)
+
+The existing GP scheduling tournament has its own machine-verified objective in [locks/gigapixel-performance.json](locks/gigapixel-performance.json) and an OMP handoff in [locks/OMP_HANDOFF.md](locks/OMP_HANDOFF.md).
+
+Every GP run MUST supply an explicit `--target-lock` and an explicit `--refs preview/gigapixel-single,preview/gp-...` pair. Before building, the runner checks the full pinned branch SHAs and `quackles-assets` revision. It then checks **every trial** for the real `gigapixel-single` preview, White `p0000000/gp` tile request paths, and 25,820×38,730 source dimensions. Wrong or absent evidence becomes `NOT RUN`; there is no automatic fallback to `main`, `nightly`, or a 201MP lab candidate.
+
+The harness now requires explicit `--refs` even outside GP mode. `main` is an infrastructure branch, not a valid #53 product control. The lock's `preview/scenes-gigapixel` and Blue 201MP work live in separate source/visual lanes rather than this same-master scheduling comparison.
+
+**Regression replay:** `npm run test:lab` includes `target-lock.test.mjs`. It rejects the original assistant-to-OMP handoff, the superficially corrected handoff with no executable guard, main-only and W2-only runs, wrong Chrome preview, and wrong/absent asset requests; it passes only the repaired locked handoff/fixture. These are unit/contract results; no new physical-phone latency result is claimed.
+
 ## One-command repro
 
 You need a clone of `kvnloo/quackles` with the remote refs fetched. You also need a sibling checkout of `kvnloo/quackles-assets`, about 5.3 GB with no LFS. Pin it to the SHA in the run you want to reproduce.
