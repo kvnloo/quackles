@@ -1,51 +1,71 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-10-15T19:38:30.943439+00:00",
+  "captured_at": "2026-10-15T21:04:41.751948+00:00",
   "base": "integ/home-2026-10-13",
   "base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
   "target": "integ/site-2026-10-15",
-  "target_sha": "2e77a6316323218647d5a0b600948390f8eeb514",
+  "target_sha": "b83932a04699c3f64aaad533f40ce0f7766996b8",
   "classification_policy": "Ancestry first; active family is not READY. Archive/stale are proposals only.",
   "branches": [
     {
       "ref": "refs/heads/chore/agentic-gitops",
       "branch": "chore/agentic-gitops",
-      "head": "70c234d1cc061d470f2153cb489ed85ab8b0634a",
+      "head": "a336d48e87485d8294a4ab5d5ad2e9db6cbace4f",
       "symbolic_target": "",
-      "purpose": "Tip intent: chore(gitops): inventory agent lanes and gate local integration",
+      "purpose": "Tip intent: docs(gitops): refresh registry after verified lane integrations",
       "owner_lane": "gitops",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "promotion_hold": null,
-      "status": "active",
+      "status": "integrated",
       "channel": "preview",
       "preview_slot": "branch-d2bf7fd33f2e",
       "preview_url": null,
-      "merge_target": "integ/site-2026-10-15",
+      "merge_target": null,
       "evidence_links": [
-        "git:70c234d1cc061d470f2153cb489ed85ab8b0634a"
+        "git:a336d48e87485d8294a4ab5d5ad2e9db6cbace4f"
       ],
-      "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
+      "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
+    },
+    {
+      "ref": "refs/heads/chore/light-browser-tests",
+      "branch": "chore/light-browser-tests",
+      "head": "65501ffdf51f8534d6ba58086daa7b6556329d8a",
+      "symbolic_target": "",
+      "purpose": "Tip intent: test(learning): pilot Lightpanda DOM-only explorer checks",
+      "owner_lane": "owner-review",
+      "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "promotion_hold": null,
+      "status": "stale",
+      "channel": "preview",
+      "preview_slot": "branch-0cfce27dbf70",
+      "preview_url": null,
+      "merge_target": null,
+      "evidence_links": [
+        "git:65501ffdf51f8534d6ba58086daa7b6556329d8a"
+      ],
+      "reason": "Unassigned or historical experiment; review proposal only, not permission to delete."
     },
     {
       "ref": "refs/heads/feat/geo-seo",
       "branch": "feat/geo-seo",
-      "head": "b5cd3a4455da2c97641b4366760fb4c724306e27",
+      "head": "a98d647ffa4523e202452d518390cea4abd01059",
       "symbolic_target": "",
-      "purpose": "Tip intent: feat(geo): link the learning lab from the making-of story",
+      "purpose": "Tip intent: merge(geo): preserve process restyle and safe lineage fallbacks",
       "owner_lane": "learning-lab",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "promotion_hold": null,
-      "status": "active",
+      "status": "integrated",
       "channel": "preview",
       "preview_slot": "branch-8380fda69896",
       "preview_url": null,
-      "merge_target": "integ/site-2026-10-15",
+      "merge_target": null,
       "evidence_links": [
-        "git:b5cd3a4455da2c97641b4366760fb4c724306e27"
+        "git:a98d647ffa4523e202452d518390cea4abd01059"
       ],
-      "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
+      "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
     },
     {
       "ref": "refs/heads/feat/home-zoom-color-only",
@@ -90,9 +110,9 @@
     {
       "ref": "refs/heads/feat/lineage-viewer",
       "branch": "feat/lineage-viewer",
-      "head": "ade50b93834a5713fe0930b5b261e67a278e7f18",
+      "head": "49ba5c64f8aba267371adfddfbf280df5038fa2d",
       "symbolic_target": "",
-      "purpose": "Tip intent: perf(lineage): prioritize poster typography before archive traffic",
+      "purpose": "Tip intent: test(perf): replace cadence admission with repeated trace frame work",
       "owner_lane": "lineage",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -103,29 +123,29 @@
       "preview_url": null,
       "merge_target": "integ/site-2026-10-15",
       "evidence_links": [
-        "git:ade50b93834a5713fe0930b5b261e67a278e7f18"
+        "git:49ba5c64f8aba267371adfddfbf280df5038fa2d"
       ],
       "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
     {
       "ref": "refs/heads/feat/process-blog",
       "branch": "feat/process-blog",
-      "head": "e94822df94921200466618f1331dd03bde6395ad",
+      "head": "afbf3cf66068b2292bfc487b2cf082305067f089",
       "symbolic_target": "",
-      "purpose": "Tip intent: fix(process): preserve editorial punctuation in lineage credit",
+      "purpose": "Tip intent: style(process): frame the cobalt hero above a paper article",
       "owner_lane": "process-blog",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "promotion_hold": null,
-      "status": "active",
+      "status": "integrated",
       "channel": "preview",
       "preview_slot": "branch-4e5578d35266",
       "preview_url": null,
-      "merge_target": "integ/site-2026-10-15",
+      "merge_target": null,
       "evidence_links": [
-        "git:e94822df94921200466618f1331dd03bde6395ad"
+        "git:afbf3cf66068b2292bfc487b2cf082305067f089"
       ],
-      "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
+      "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
     },
     {
       "ref": "refs/heads/feat/theme-engine",
@@ -250,9 +270,9 @@
     {
       "ref": "refs/heads/integ/site-2026-10-15",
       "branch": "integ/site-2026-10-15",
-      "head": "2e77a6316323218647d5a0b600948390f8eeb514",
+      "head": "b83932a04699c3f64aaad533f40ce0f7766996b8",
       "symbolic_target": "",
-      "purpose": "Tip intent: merge(learning): integrate measured static learning lab",
+      "purpose": "Tip intent: merge(geo): admit discovery independently of blocked lineage",
       "owner_lane": "gitops",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -263,7 +283,7 @@
       "preview_url": null,
       "merge_target": null,
       "evidence_links": [
-        "git:2e77a6316323218647d5a0b600948390f8eeb514"
+        "git:b83932a04699c3f64aaad533f40ce0f7766996b8"
       ],
       "reason": "Promotion/control channel; not an automatic merge authorization."
     },
@@ -2142,12 +2162,12 @@
     {
       "id": "603d4f2608e7fdcb",
       "label": "wt-blog",
-      "head": "e94822df94921200466618f1331dd03bde6395ad",
+      "head": "afbf3cf66068b2292bfc487b2cf082305067f089",
       "ref": "refs/heads/feat/process-blog",
       "present": true,
       "locked": false,
       "prunable": false,
-      "status": "active",
+      "status": "integrated",
       "owner_lane": "process-blog",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
@@ -2155,7 +2175,7 @@
     {
       "id": "637b3970b2f375c1",
       "label": "wt-site-integ",
-      "head": "2e77a6316323218647d5a0b600948390f8eeb514",
+      "head": "b83932a04699c3f64aaad533f40ce0f7766996b8",
       "ref": "refs/heads/integ/site-2026-10-15",
       "present": true,
       "locked": false,
@@ -2233,12 +2253,12 @@
     {
       "id": "7bec102984fbd3fb",
       "label": "wt-geo",
-      "head": "b5cd3a4455da2c97641b4366760fb4c724306e27",
+      "head": "a98d647ffa4523e202452d518390cea4abd01059",
       "ref": "refs/heads/feat/geo-seo",
       "present": true,
       "locked": false,
       "prunable": false,
-      "status": "active",
+      "status": "integrated",
       "owner_lane": "learning-lab",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
@@ -2402,12 +2422,12 @@
     {
       "id": "aa6eb4435aa53a21",
       "label": "wt-gitops",
-      "head": "70c234d1cc061d470f2153cb489ed85ab8b0634a",
+      "head": "a336d48e87485d8294a4ab5d5ad2e9db6cbace4f",
       "ref": "refs/heads/chore/agentic-gitops",
       "present": true,
       "locked": false,
       "prunable": false,
-      "status": "active",
+      "status": "integrated",
       "owner_lane": "gitops",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
@@ -2486,6 +2506,19 @@
       "locked": false,
       "prunable": false,
       "status": "integrated",
+      "owner_lane": "owner-review",
+      "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
+      "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
+    },
+    {
+      "id": "c4aed3e8b0219f0b",
+      "label": "wt-light-browser",
+      "head": "65501ffdf51f8534d6ba58086daa7b6556329d8a",
+      "ref": "refs/heads/chore/light-browser-tests",
+      "present": true,
+      "locked": false,
+      "prunable": false,
+      "status": "stale",
       "owner_lane": "owner-review",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
@@ -2740,7 +2773,7 @@
     {
       "id": "f39da2298a0577d4",
       "label": "wt-lineage",
-      "head": "ade50b93834a5713fe0930b5b261e67a278e7f18",
+      "head": "49ba5c64f8aba267371adfddfbf280df5038fa2d",
       "ref": "refs/heads/feat/lineage-viewer",
       "present": true,
       "locked": false,

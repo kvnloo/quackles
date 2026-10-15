@@ -6,6 +6,11 @@
   "integration": "integ/site-2026-10-15",
   "promotion": ["feature-or-performance", "integ/site-2026-10-15", "dev", "main"],
   "merge_order": ["feat/process-blog", "perf READY order", "feat/lineage-viewer", "feat/learning-lab", "feat/geo-seo", "chore/agentic-gitops"],
+  "repair_pass_2": {
+    "process_restyle": {"head": "afbf3cf66068b2292bfc487b2cf082305067f089", "integration_merge": "97936f968c116865aed95339a28f681d42d46fbc", "admission": "first; independent of lineage"},
+    "geo": {"head": "a98d647ffa4523e202452d518390cea4abd01059", "integration_merge": "b83932a04699c3f64aaad533f40ce0f7766996b8", "admission": "independent; unavailable lineage links omitted or fall back to process"},
+    "lineage": {"head": "49ba5c64f8aba267371adfddfbf280df5038fa2d", "admission": "held", "reason": "Trace-work repeatability unqualified and forced synchronous layouts remain. Headless rAF cadence is informational, not admission."}
+  },
   "protected": ["main", "dev", "nightly"],
   "merge_authority": {"integration": "gitops", "dev": "owner", "main": "owner", "nightly": "owner-authorized rollout automation"},
   "held": ["preview/gp-motion-decode", "preview/gp-all"],
