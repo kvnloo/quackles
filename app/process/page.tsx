@@ -51,6 +51,7 @@ export default function ProcessPage() {
           <EvidenceFigure id="hero" hero />
         </header>
 
+        <div className="process-paper">
         <div className="process-introduction">
           <p>Not a straight line from prompt to finished image. A record of references, renders, rejected fixes and decisions that changed the work.</p>
           <p className="process-note">September 14 - October 15, 2026. Night is still in progress. Read the short story, or open any chapter for the working notes and comparisons.</p>
@@ -107,7 +108,9 @@ export default function ProcessPage() {
             <p>Unofficial fan study. Not affiliated with Nous Research or Pollen Robotics.</p>
             <a href="#top">Back to top ↑</a>
           </div>
+          <span className="process-wordmark" aria-hidden="true">Quackles</span>
         </footer>
+        </div>
       </div>
     </main>
   );

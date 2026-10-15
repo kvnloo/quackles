@@ -1,9 +1,10 @@
 .process-lineage-callout {
   grid-column: 1 / -1;
   margin-block: 1.5rem 2rem;
-  padding: clamp(1.25rem, 3vw, 2.5rem);
-  border: 1px solid currentColor;
-  border-left-width: 5px;
+  padding-block: clamp(1.25rem, 3vw, 2.5rem);
+  border-block: 1px solid currentColor;
+  color: var(--ink);
+  background: var(--paper);
   max-width: 76rem;
 }
 .process-lineage-callout h3 {
