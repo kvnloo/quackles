@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "dataset": "history-v1.7caa37042011fc09.json",
+  "sha256": "7caa37042011fc09e1f25ca29b2e6ab8ba655d0f028a02212296f0b23b0a1087",
+  "versions": 665,
+  "counts": {
+    "day": 331,
+    "white": 67,
+    "blue": 84,
+    "dark": 64,
+    "night": 119
+  },
+  "datasetBytes": 269269,
+  "thumbnailBytes": 15859482,
+  "mediumBytes": 43761394,
+  "imageFiles": 2019
+}

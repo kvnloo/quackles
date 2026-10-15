@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "prebuild": "node scripts/prepare-native-sim.mjs --download",
+    "postbuild": "node scripts/finalize-lineage.mjs",
+    "test:lineage": "python3 scripts/test_lineage_build.py && node scripts/lineage-contracts.mjs && node scripts/lineage-export-contracts.mjs && node scripts/lineage-data-contracts.mjs",
+    "test:lineage:static": "node scripts/lineage-browser.mjs",
     "dev": "next dev --port 43217 --hostname 0.0.0.0",
     "build": "NEXT_PUBLIC_BUILD_SHA=${NEXT_PUBLIC_BUILD_SHA:-local-preview} NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)} next build --webpack",
     "start": "next start --port 43217 --hostname 0.0.0.0",
@@ -11,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "fps": "node scripts/fps-harness.mjs",
     "test:scroll": "node scripts/scroll-perf.mjs",
-    "test": "npm run lint && npm run typecheck && npm run test:process",
+    "test": "npm run lint && npm run typecheck && npm run test:process && npm run test:lineage && node --import ./scripts/register-ts-resolve.mjs scripts/process-lineage-contracts.mjs",
     "test:process": "node --import ./scripts/register-ts-resolve.mjs scripts/process-contracts.mjs",
     "test:process:static": "node scripts/process-browser.mjs",
     "preview": "python3 -m http.server 43217 --bind 0.0.0.0 --directory out",
