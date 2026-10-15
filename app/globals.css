@@ -456,7 +456,13 @@ a:focus-visible {
   padding-block: 1rem 2rem;
 }
 .process-contents a { padding-block: 0.4rem; font-size: 0.8rem; }
-.process-chapter { padding-top: 7rem; scroll-margin-top: 2rem; }
+.process-chapter {
+  padding-top: 7rem;
+  scroll-margin-top: 2rem;
+  /* Keep native document navigation/search, but skip offscreen layout and paint. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1200px;
+}
 .process-chapter-copy { max-width: 760px; }
 .process-chapter-copy > p { max-width: 67ch; }
 .process-status { font-size: 0.75rem; color: var(--process-muted); }
@@ -551,7 +557,7 @@ a:focus-visible {
   .process-page { --paper: white; --ink: #151515; --process-muted: #404040; }
   .process-wrap { width: 100%; }
   .process-skip, .process-contents { display: none; }
-  .process-chapter { break-inside: avoid; padding-top: 2rem; }
+  .process-chapter { break-inside: avoid; padding-top: 2rem; content-visibility: visible; contain-intrinsic-size: none; }
 }
 .story-overlays {
   position: absolute;
