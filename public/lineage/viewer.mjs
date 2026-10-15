@@ -80,11 +80,11 @@ async function start(root) {
   }
   function render() {
     const sections=[];
-    // 30 is divisible by every responsive column count. Cull whole sections,
-    // not hundreds of independently observed cards, without a scroll callback.
-    for(let start=0;start<filtered.length;start+=30) {
+    // Two responsive rows bound native content-visibility reveal work.
+    const chunk=columns*2;
+    for(let start=0;start<filtered.length;start+=chunk) {
       const section=document.createElement('div');section.className='lineage-section';section.setAttribute('role','presentation');
-      section.append(...filtered.slice(start,start+30).map((entry,i)=>card(entry,start+i)));sections.push(section);
+      section.append(...filtered.slice(start,start+chunk).map((entry,i)=>card(entry,start+i)));sections.push(section);
     }
     grid.replaceChildren(...sections);
     position();
@@ -93,7 +93,7 @@ async function start(root) {
     grid.style.height=`${Math.ceil(filtered.length/columns)*rowHeight}px`;
     for (let s=0;s<grid.children.length;s++) {
       const section=grid.children[s];
-      section.style.top=`${s*30/columns*rowHeight}px`;
+      section.style.top=`${s*2*rowHeight}px`;
       section.style.height=`${Math.ceil(section.children.length/columns)*rowHeight}px`;
       section.style.containIntrinsicSize=`auto ${Math.ceil(section.children.length/columns)*rowHeight}px`;
       for(let i=0;i<section.children.length;i++) {
@@ -106,9 +106,10 @@ async function start(root) {
   }
   function resize(entries) {
     const {width}=entries[0].contentRect;
-    columns=width<600?2:width<1000?3:5;
+    const nextColumns=width<600?2:width<1000?3:5;
+    const changed=nextColumns!==columns;columns=nextColumns;
     rowHeight=width<600?380:440;
-    position();
+    if(changed)render();else position();
   }
   function apply() {
     const form = new FormData(controls);
