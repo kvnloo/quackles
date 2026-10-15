@@ -6,7 +6,7 @@
     "prebuild": "python3 scripts/build_lineage_timeline.py && node scripts/prepare-native-sim.mjs --download",
     "postbuild": "node scripts/finalize-lineage.mjs",
     "test:lineage": "python3 scripts/test_lineage_build.py && node scripts/lineage-contracts.mjs && node scripts/lineage-export-contracts.mjs && node scripts/lineage-data-contracts.mjs",
-    "test:timeline": "node scripts/timeline-core-contracts.mjs && python3 scripts/test_timeline_index.py",
+    "test:timeline": "node scripts/timeline-core-contracts.mjs && python3 scripts/test_timeline_index.py && python3 scripts/test_lineage_atlas.py",
     "test:timeline:static": "node scripts/timeline-browser.mjs && node scripts/timeline-ties-browser.mjs",
     "test:timeline:work": "python3 scripts/timeline-frame-pin.py",
     "test:lineage:static": "node scripts/lineage-browser.mjs",

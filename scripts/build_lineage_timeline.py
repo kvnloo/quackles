@@ -11,7 +11,8 @@ def main():
     archive = json.loads((ROOT / 'content/lineage.json').read_text())
     raw = (ROOT / 'public/lineage' / archive['dataset']).read_bytes()
     data = json.loads(raw)
-    index = {**build_index(data['entries']), 'datasetSha256': hashlib.sha256(raw).hexdigest()}
+    atlas = json.loads((ROOT / 'content/lineage-atlas.json').read_text())
+    index = {**build_index(data['entries']), 'datasetSha256': hashlib.sha256(raw).hexdigest(), 'atlas': atlas['dataset']}
     encoded = (json.dumps(index, separators=(',', ':')) + '\n').encode()
     name = 'timeline.' + hashlib.sha256(encoded).hexdigest()[:16] + '.json'
     (ROOT / 'public/lineage' / name).write_bytes(encoded)

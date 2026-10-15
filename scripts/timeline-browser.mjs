@@ -15,7 +15,7 @@ try {
     assert.equal(await page.locator('[data-timeline-range]').count(),1,'timeline scrubber missing');
     const range=page.locator('[data-timeline-range]');await range.press('Home');await page.waitForTimeout(250);
     assert.match(await page.locator('[data-timeline-caption]').innerText(),/blue.*v0/i);
-    assert.equal(await page.locator('.tl-lane').count(),5);assert.equal(await page.locator('.tl-tick').count(),665);
+    assert.equal(await page.locator('.tl-lane').count(),5);assert.equal(await page.locator('.tl-instrument canvas').count(),1);assert.equal(await page.locator('.tl-tick').count(),0);
     const first=await page.locator('[data-timeline-count]').innerText();
     await range.press('End');await page.waitForTimeout(250);
     assert.match(await page.locator('[data-timeline-count]').innerText(),/665 \/ 665/);
@@ -41,7 +41,7 @@ try {
     await page.locator('.tl-details').evaluate(n=>n.open=true);
     const night=page.locator('.tl-milestone').filter({hasText:'Night v2 begins'});await night.click();await page.waitForTimeout(150);
     assert.match(await page.locator('[data-timeline-caption]').innerText(),/Night v2/i);
-    const tick=page.locator('.tl-tick').first();await tick.focus();await tick.press('ArrowRight');assert.match(await page.locator('.tl-preview').innerText(),/v\d/);
+    const tick=page.locator('.tl-lane').first();await tick.focus();await tick.press('ArrowRight');assert.match(await page.locator('.tl-preview').innerText(),/v\d/);
     await range.scrollIntoViewIfNeeded();
     const box=await range.boundingBox();
     if(profile==='mobile') {

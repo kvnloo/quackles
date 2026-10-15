@@ -43,8 +43,11 @@ async function start(root) {
     if(!response.ok)throw new Error('Timeline unavailable');
     const index=await response.json();
     if(index.schema!==1 || index.order.length!==data.entries.length)throw new Error('Timeline mismatch');
-    timeline=mountTimeline({host:$('#lineage-time-instrument'),entries:data.entries,index,source:e=>url(e.thumbs.small),link:e=>`#/${e.theme}/${e.version}`});
-  } catch { $('#lineage-time-instrument').textContent='Timeline unavailable. The full archive and filters remain below.'; }
+    const atlasBase=new URL(index.atlas,new URL(root.dataset.timeline,location.href));
+    const atlasResponse=await fetch(atlasBase);if(!atlasResponse.ok)throw new Error('Atlas unavailable');
+    const atlas=await atlasResponse.json();if(atlas.datasetSha256!==index.datasetSha256)throw new Error('Atlas mismatch');
+    timeline=await mountTimeline({host:$('#lineage-time-instrument'),entries:data.entries,index,atlas,atlasBase,source:e=>url(e.thumbs.medium),link:e=>`#/${e.theme}/${e.version}`});
+  } catch (error) { console.warn('Timeline unavailable:',error); $('#lineage-time-instrument').textContent='Timeline unavailable. The full archive and filters remain below.'; }
   let filtered = [], newest = false, columns = 5, rowHeight = 440, active = null, opener = null;
   const byId = new Map(data.entries.map(e => [`${e.theme}/${e.version}`,e]));
   for (const [theme, entry] of Object.entries(data.current)) byId.set(`${theme}/current`,entry);

@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright-core';
+import {serve} from './lineage-server.mjs';
+const server=await serve({directory:process.env.OUT_DIR||'out'});
+const browser=await chromium.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--enable-gpu-rasterization','--use-angle=gl']});
+try {
+  for(const backend of ['webgl2','canvas2d']) {
+  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
+  if(backend==='canvas2d')await page.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return type==='webgl2'?null:original.call(this,type,...args);};});
+  page.on('console',message=>console.log(message.type(),message.text()));
+  page.on('pageerror',error=>console.error(error));
+  await page.goto(server.url+'/lineage/',{waitUntil:'networkidle'});await page.waitForSelector('[data-ready=true]');
+  assert.equal(await page.locator('.tl-instrument canvas').count(),1,'one sprite canvas replaces DOM ticks and animated thumbnails');
+  assert.equal(await page.locator('.tl-tick').count(),0);
+  assert.equal(await page.locator('.tl-instrument img').count(),5);
+  assert.ok(await page.locator('.tl-instrument *').count()<160,'bounded timeline DOM');
+  await page.waitForFunction(()=>document.querySelector('canvas[data-renderer]')?.dataset.ready==='true');
+  const receipt=await page.locator('canvas').evaluate(n=>({renderer:n.dataset.renderer,gl:n.dataset.gl,instances:n.dataset.instances,width:n.width,height:n.height}));
+  assert.equal(Number(receipt.instances),665);
+  assert.equal(receipt.renderer,backend);
+  assert.equal(receipt.width,656,'DPR2 backing surface');
+  assert.ok(receipt.width>0 && receipt.height>0);
+  await page.locator('[data-timeline-range]').press('Home');await page.waitForTimeout(250);
+  assert.match(await page.locator('[data-timeline-caption]').innerText(),/blue.*v0/i);
+  await page.locator('[data-timeline-range]').press('End');await page.waitForTimeout(250);
+  assert.match(await page.locator('[data-timeline-count]').innerText(),/665 \/ 665/);
+  console.log(JSON.stringify(receipt));
+  await page.close();
+  }
+} finally {await browser.close();await server.close();}
