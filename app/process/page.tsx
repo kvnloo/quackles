@@ -41,6 +41,7 @@ export default function ProcessPage() {
       <div className="process-wrap">
         <nav className="process-nav" aria-label="Process navigation">
           <a href={assetPath("/")}>← Back to the poster</a>
+          <a href={assetPath("/learn/")}>Learning lab ↗</a>
           <a href="#credits">Sources</a>
         </nav>
 
