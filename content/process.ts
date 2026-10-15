@@ -333,13 +333,13 @@ export const chapters: ProcessChapter[] = [
 
 export const lineageCallout = {
   title: "The tool that kept us looking",
-  body: "The artifact viewer was our human-in-the-loop (HITL) tool during creation. Kevin could click through every scene’s versions, compare the references with the current picks, and spot what a summary missed—for example, that White r102’s arch had been dropped. This public edition traces the full preserved lineage since v0, with earlier production tests, rejected experiments and review selections kept visible. Current is a working selection, not release approval.",
+  body: "The artifact viewer was our human-in-the-loop (HITL) tool during creation. Kevin could click through every scene’s versions, compare the references with the current picks, and spot what a summary missed: for example, that White r102’s arch had been dropped. This public edition traces the full preserved lineage since v0, with earlier production tests, rejected experiments and review selections kept visible. Current is a working selection, not release approval.",
   href: "/lineage/",
   label: "Explore the full lineage",
 };
 
 export const processLinks = [
-  { label: "Artifact viewer / full lineage — the HITL creation tool", href: "/lineage/" },
+  { label: "Artifact viewer / full lineage - the HITL creation tool", href: "/lineage/" },
   { label: "Microduck model & source", href: "https://github.com/pollen-robotics/microduck" },
   { label: "Microduck Apache-2.0 license", href: "https://github.com/pollen-robotics/microduck/blob/main/LICENSE" },
   { label: "Pollen Robotics", href: "https://www.pollen-robotics.com/microduck" },

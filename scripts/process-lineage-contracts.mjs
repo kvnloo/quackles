@@ -5,5 +5,6 @@ assert.ok(lineageCallout?.href==='/lineage/', 'viewer has an editorial callout')
 assert.match(lineageCallout.body,/human-in-the-loop/i);
 assert.match(lineageCallout.body,/White r102/);
 assert.match(lineageCallout.body,/v0/);
+assert.doesNotMatch(JSON.stringify(lineageCallout),/[—–]/, 'preserve the process editorial punctuation contract');
 assert.ok(chapters.find(c=>c.id==='loop'), 'callout belongs to the review-loop chapter');
 console.log('PASS: HITL lineage reference and grounded callout');
