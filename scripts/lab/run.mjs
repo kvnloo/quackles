@@ -770,6 +770,8 @@ async function runTrial({ browser, build, port, tape, profileId, mode = "A", tri
 }
 
 async function main() {
+  if (!process.argv.includes("--refs") || !REFS.length) throw new Error("explicit --refs required; no fallback to nightly/main");
+  if (REFS.includes("main")) throw new Error("main is infrastructure, not a Quackles #53 benchmark target");
   if (!PREPARE_ONLY && !SERVE_ONLY && !CDP_ENDPOINT && !CHROME) throw new Error("Chromium not found; set CHROME");
   if (!fs.existsSync(path.join(ASSETS_DIR, ".git"))) throw new Error(`ASSETS_DIR ${ASSETS_DIR} is not a git checkout of kvnloo/quackles-assets`);
   for (const m of MODE_IDS) if (!MODES[m]) throw new Error(`unknown mode ${m}; known: ${Object.keys(MODES).join(", ")}`);
@@ -780,7 +782,6 @@ async function main() {
   const assetsSha = git(ASSETS_DIR, "rev-parse", "HEAD");
   const assetsDirty = !!git(ASSETS_DIR, "status", "--porcelain", "--untracked-files=no");
   const runId = process.env.RUN_ID || `${new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "").replace("T", "-")}-${harnessSha.slice(0, 7)}`;
-  if (!process.argv.includes("--refs") || !REFS.length) throw new Error("explicit --refs required; refusing implicit nightly/main fallback");
   const targetLock = LOCK_PATH ? loadTargetLock(path.resolve(LOCK_PATH)) : null;
   if (REFS.some(isGigapixelRef) && !targetLock) throw new Error("GP contender requires --target-lock experiments/locks/gigapixel-performance.json");
   const targets = REFS.map(resolveRef);
