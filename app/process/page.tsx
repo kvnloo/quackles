@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import "./lineage-callout.css";
 import Image from "next/image";
 import { assetPath } from "@/lib/paths";
-import { chapters, processLinks } from "@/content/process";
+import { chapters, processLinks, lineageCallout } from "@/content/process";
 import { processImages } from "@/content/process-images";
 
 export const metadata: Metadata = {
@@ -67,6 +68,12 @@ export default function ProcessPage() {
                 <p>{chapter.intro}</p>
               </div>
               <EvidenceFigure id={chapter.image} />
+              {chapter.id === "loop" && <aside className="process-lineage-callout" aria-labelledby="lineage-callout-title">
+                <p className="process-kicker">A tool from the making</p>
+                <h3 id="lineage-callout-title">{lineageCallout.title}</h3>
+                <p>{lineageCallout.body}</p>
+                <a href={assetPath(lineageCallout.href)}>{lineageCallout.label} ↗</a>
+              </aside>}
               <div className="process-dives">
                 {chapter.dives.map((dive, index) => (
                   <details key={dive.title} id={`${chapter.id}-detail-${index + 1}`}>
@@ -95,7 +102,7 @@ export default function ProcessPage() {
 
         <footer className="process-foot">
           <h2>Sources & further reading</h2>
-          <ul>{processLinks.map(link => <li key={link.href}><a href={link.href} target="_blank" rel="noopener noreferrer">{link.label} ↗</a></li>)}</ul>
+          <ul>{processLinks.map(link => <li key={link.href}><a href={link.href.startsWith("/") ? assetPath(link.href) : link.href} target={link.href.startsWith("/") ? undefined : "_blank"} rel={link.href.startsWith("/") ? undefined : "noopener noreferrer"}>{link.label} ↗</a></li>)}</ul>
           <div className="process-colophon">
             <p>Unofficial fan study. Not affiliated with Nous Research or Pollen Robotics.</p>
             <a href="#top">Back to top ↑</a>

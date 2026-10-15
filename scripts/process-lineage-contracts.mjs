@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+import { chapters, processLinks, lineageCallout } from '../content/process.ts';
+assert.ok(processLinks.some(link=>link.href==='/lineage/'), 'link the artifact viewer as a reference');
+assert.ok(lineageCallout?.href==='/lineage/', 'viewer has an editorial callout');
+assert.match(lineageCallout.body,/human-in-the-loop/i);
+assert.match(lineageCallout.body,/White r102/);
+assert.match(lineageCallout.body,/v0/);
+assert.ok(chapters.find(c=>c.id==='loop'), 'callout belongs to the review-loop chapter');
+console.log('PASS: HITL lineage reference and grounded callout');
