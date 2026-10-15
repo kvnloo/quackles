@@ -66,16 +66,28 @@ async function start(root) {
     return card;
   }
   function render() {
-    grid.replaceChildren(...filtered.map(card));
+    const sections=[];
+    // 30 is divisible by every responsive column count. Cull whole sections,
+    // not hundreds of independently observed cards, without a scroll callback.
+    for(let start=0;start<filtered.length;start+=30) {
+      const section=document.createElement('div');section.className='lineage-section';section.setAttribute('role','presentation');
+      section.append(...filtered.slice(start,start+30).map((entry,i)=>card(entry,start+i)));sections.push(section);
+    }
+    grid.replaceChildren(...sections);
     position();
   }
   function position() {
     grid.style.height=`${Math.ceil(filtered.length/columns)*rowHeight}px`;
-    for (let i=0;i<grid.children.length;i++) {
-      const element=grid.children[i];
-      element.style.transform=`translateY(${Math.floor(i/columns)*rowHeight}px)`;
-      element.style.left=`calc(${(i%columns)*100/columns}% + 7px)`;
-      element.style.width=`calc(${100/columns}% - 14px)`;
+    for (let s=0;s<grid.children.length;s++) {
+      const section=grid.children[s];
+      section.style.top=`${s*30/columns*rowHeight}px`;
+      section.style.height=`${Math.ceil(section.children.length/columns)*rowHeight}px`;
+      for(let i=0;i<section.children.length;i++) {
+        const element=section.children[i];
+        element.style.transform=`translateY(${Math.floor(i/columns)*rowHeight}px)`;
+        element.style.left=`calc(${(i%columns)*100/columns}% + 7px)`;
+        element.style.width=`calc(${100/columns}% - 14px)`;
+      }
     }
   }
   function resize(entries) {
