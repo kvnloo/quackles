@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {upperBound,timelineTime} from '../public/lineage/timeline.mjs';
+assert.equal(upperBound(new Float64Array([1,2,2,5]),2),2);
+assert.equal(upperBound(new Float64Array([1,2,2,5]),0),-1);
+assert.equal(upperBound(new Float64Array([1,2,2,5]),99),3);
+assert.equal(upperBound(new Float64Array(),99),-1);
+assert.equal(timelineTime({search:'?t=2026-10-15T10%3A00%3A00Z',hash:''}),Date.parse('2026-10-15T10:00:00Z'));
+assert.equal(timelineTime({search:'',hash:'#/t/2026-10-15T10:00:00Z'}),Date.parse('2026-10-15T10:00:00Z'));
+assert.equal(timelineTime({search:'?t=bad',hash:''}),null);
+assert.equal(timelineTime({search:'',hash:'#/t/%broken'}),null);
+assert.equal(timelineTime({search:'?t=2026-09-15T00:00:00Z',hash:'#/t/2026-10-15T10:00:00Z'}),Date.parse('2026-10-15T10:00:00Z'));
+console.log('Binary search boundaries and resilient deep links PASS');

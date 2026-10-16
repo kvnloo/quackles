@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "program": "site-2026-10-15",
+  "local_only": true,
+  "worker_base": "integ/home-2026-10-13",
+  "integration": "integ/site-2026-10-15",
+  "promotion": ["feature-or-performance", "integ/site-2026-10-15", "dev", "main"],
+  "merge_order": ["feat/process-blog", "perf READY order", "feat/lineage-viewer", "feat/learning-lab", "feat/geo-seo", "chore/agentic-gitops"],
+  "repair_pass_2": {
+    "process_restyle": {"head": "afbf3cf66068b2292bfc487b2cf082305067f089", "integration_merge": "97936f968c116865aed95339a28f681d42d46fbc", "admission": "first; independent of lineage"},
+    "geo": {"head": "a98d647ffa4523e202452d518390cea4abd01059", "integration_merge": "b83932a04699c3f64aaad533f40ce0f7766996b8", "admission": "independent; unavailable lineage links omitted or fall back to process"},
+    "lineage": {"head": "49ba5c64f8aba267371adfddfbf280df5038fa2d", "admission": "held", "reason": "Trace-work repeatability unqualified and forced synchronous layouts remain. Headless rAF cadence is informational, not admission."}
+  },
+  "repair_pass_3": {
+    "process_wordmark": {"head": "d247439", "integration_merge": "9ac0d54445c28077b9316c4e2c231e280e71c20f", "admission": "15 merged-tree gates; decorative SVG; Lighthouse accessibility 100"},
+    "light_browser": {"head": "65501ff", "integration_merge": "ef826535098896c323dc0985d4988c667565c603", "admission": "15 merged-tree gates; actual Lightpanda and headless-shell DOM pilot pass"},
+    "lineage": {"head": "00d3c0146c7da0d8665631692c7d9df2ecda1d5a", "admission": "held", "reason": "Forced layouts eliminated in ten candidate runs, but work p95 median 4.884275ms and worst frame 13.025ms fail unchanged thresholds; one LoAF; baseline IQR 0.5726ms blocks comparative validation."}
+  },
+  "repair_pass_7": {
+    "authority": "Owner-delegated overnight D-L1 option A; local preview only",
+    "viewer": {"head": "ec3bbc1", "integration_merge": "5fb1233", "admission": "functional local admission; 15 merged-tree commands plus browser and Lighthouse"},
+    "timeline": {"head": "4762477", "integration_merge": "72794b6", "admission": "functional local admission; 15 merged-tree commands plus functional, AX, no-JS, renderer, startup, design-lock and Lighthouse"},
+    "frame_tail_gate": "OPEN on feat/lineage-timeline; unchanged v2 thresholds; no physical 120 Hz claim",
+    "discovery": "lineage links, llms.txt, llms-full.txt, manifest, feed and sitemap restored"
+  },
+  "protected": ["main", "dev", "nightly"],
+  "merge_authority": {"integration": "gitops", "dev": "owner", "main": "owner", "nightly": "owner-authorized rollout automation"},
+  "held": ["preview/gp-motion-decode", "preview/gp-all"],
+  "hold_reason": "D6/F7 motion-decode policy needs explicit owner ruling; a union branch is not approval.",
+  "preview_policy": "Unique logical branch slot, exact build SHA, no alias reuse; URL null until verified deployment.",
+  "nightly": "Owner-approved integrated snapshot; no automatic push from a worker working commit."
+}

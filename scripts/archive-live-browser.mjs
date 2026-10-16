@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright-core';
+import {serve} from './lineage-server.mjs';
+const server=await serve({directory:process.env.OUT_DIR||'out'}),browser=await chromium.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--enable-gpu-rasterization','--use-angle=gl']});
+try{const page=await browser.newPage({viewport:{width:390,height:844}});await page.goto(server.url+'/lineage/',{waitUntil:'networkidle'});await page.waitForSelector('[data-ready="true"]');await page.locator('#lineage-viewport').scrollIntoViewIfNeeded();await page.waitForTimeout(1500);
+await page.evaluate(()=>{window.__mutations=[];window.__lastScroll=0;const viewport=document.querySelector('#lineage-viewport');viewport.addEventListener('scroll',()=>window.__lastScroll=performance.now(),{passive:true});const o=new MutationObserver(r=>window.__mutations.push({time:performance.now(),count:r.length}));o.observe(document.querySelector('#lineage-grid'),{subtree:true,childList:true,attributes:true,characterData:true});window.__gridObserver=o;});
+const cdp=await page.context().newCDPSession(page),box=await page.locator('#lineage-viewport').boundingBox();await cdp.send('Input.synthesizeScrollGesture',{x:box.x+box.width/2,y:Math.max(0,box.y)+250,yDistance:-1440,speed:1440,gestureSourceType:'mouse'});
+const changes=await page.evaluate(()=>{window.__gridObserver.disconnect();return {during:window.__mutations.filter(r=>r.time<=window.__lastScroll).reduce((s,r)=>s+r.count,0),after:window.__mutations.filter(r=>r.time>window.__lastScroll).reduce((s,r)=>s+r.count,0)};});assert.equal(changes.during,0,'scroll hot path performs no layout-affecting native card writes');console.log('PASS live canvas leaves semantic/native card publication until settle',changes);
+}finally{await browser.close();await server.close();}

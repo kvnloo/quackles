@@ -1,0 +1,400 @@
+{
+  "/process/images/hero.webp": [
+    {
+      "src": "/process/images/hero-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/hero-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/hero.webp",
+      "width": 1024
+    }
+  ],
+  "/process/images/references.webp": [
+    {
+      "src": "/process/images/references-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/references-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/references-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/references.webp",
+      "width": 1500
+    }
+  ],
+  "/process/images/fidelity.webp": [
+    {
+      "src": "/process/images/fidelity-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/fidelity-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/fidelity-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/fidelity.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/warp.webp": [
+    {
+      "src": "/process/images/warp-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/warp-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/warp-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/warp.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/eyes.webp": [
+    {
+      "src": "/process/images/eyes-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/eyes-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/eyes-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/eyes.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/day-loop.webp": [
+    {
+      "src": "/process/images/day-loop-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/day-loop-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/day-loop-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/day-loop.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/day-stairs.webp": [
+    {
+      "src": "/process/images/day-stairs-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/day-stairs-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/day-stairs-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/day-stairs.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/day-seam.webp": [
+    {
+      "src": "/process/images/day-seam-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/day-seam-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/day-seam-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/day-seam.webp",
+      "width": 1420
+    }
+  ],
+  "/process/images/day-print.webp": [
+    {
+      "src": "/process/images/day-print-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/day-print-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/day-print.webp",
+      "width": 1024
+    }
+  ],
+  "/process/images/day-sun.webp": [
+    {
+      "src": "/process/images/day-sun-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/day-sun-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/day-sun-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/day-sun.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/themes.webp": [
+    {
+      "src": "/process/images/themes-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/themes-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/themes-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/themes.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/blue-recovery.webp": [
+    {
+      "src": "/process/images/blue-recovery-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/blue-recovery-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/blue-recovery-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/blue-recovery.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/night-pivot.webp": [
+    {
+      "src": "/process/images/night-pivot-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/night-pivot-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/night-pivot-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/night-pivot.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/night-stone.webp": [
+    {
+      "src": "/process/images/night-stone-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/night-stone-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/night-stone.webp",
+      "width": 1020
+    }
+  ],
+  "/process/images/night-head.webp": [
+    {
+      "src": "/process/images/night-head-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/night-head-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/night-head-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/night-head.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/night-mushrooms.webp": [
+    {
+      "src": "/process/images/night-mushrooms-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/night-mushrooms-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/night-mushrooms-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/night-mushrooms.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/night-early.webp": [
+    {
+      "src": "/process/images/night-early-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/night-early-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/night-early-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/night-early.webp",
+      "width": 1536
+    }
+  ],
+  "/process/images/critic-blue.webp": [
+    {
+      "src": "/process/images/critic-blue-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/critic-blue-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/critic-blue-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/critic-blue.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/critic-night.webp": [
+    {
+      "src": "/process/images/critic-night-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/critic-night-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/critic-night-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/critic-night.webp",
+      "width": 1536
+    }
+  ],
+  "/process/images/stone-relief.webp": [
+    {
+      "src": "/process/images/stone-relief-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/stone-relief-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/stone-relief-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/stone-relief.webp",
+      "width": 1600
+    }
+  ],
+  "/process/images/zoom.webp": [
+    {
+      "src": "/process/images/zoom-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/zoom-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/zoom.webp",
+      "width": 1071
+    }
+  ],
+  "/process/images/editor.webp": [
+    {
+      "src": "/process/images/editor-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/editor-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/editor-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/editor.webp",
+      "width": 1440
+    }
+  ],
+  "/process/images/identity.webp": [
+    {
+      "src": "/process/images/identity-480w.webp",
+      "width": 480
+    },
+    {
+      "src": "/process/images/identity-800w.webp",
+      "width": 800
+    },
+    {
+      "src": "/process/images/identity-1200w.webp",
+      "width": 1200
+    },
+    {
+      "src": "/process/images/identity.webp",
+      "width": 1600
+    }
+  ]
+}

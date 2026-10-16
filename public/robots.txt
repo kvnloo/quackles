@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Sitemap: https://kvnloo.github.io/quackles/sitemap.xml
+
+# On GitHub project Pages, origin-root robots.txt is controlled by the account site.
