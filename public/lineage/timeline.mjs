@@ -89,7 +89,7 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   canvas.addEventListener('pointermove',event=>{const sample=event.getCoalescedEvents?.().at(-1)||event;hoverX=sample.offsetX;hoverY=sample.offsetY;if(!hoverRaf)hoverRaf=requestAnimationFrame(()=>{hoverRaf=0;previewAt(renderer.hit(hoverX,hoverY));});},{passive:true});
   canvas.addEventListener('pointerleave',()=>{cancelAnimationFrame(hoverRaf);hoverRaf=0;preview.hidden=true;},{passive:true});
   canvas.addEventListener('click',event=>{const i=renderer.hit(event.offsetX,event.offsetY);if(i>=0){pause();seek(times[i],i);}});
-  let current=-1, raf=0, pending=max, pendingPosition=null, playing=false,lastStep=0, playRaf=0, prefetchTimer=0, urlTimer=0,detailTimer=0;
+  let current=-1, raf=0, pending=max, pendingPosition=null, playing=false,lastStep=0, playRaf=0, prefetchTimer=0, urlTimer=0,detailTimer=0,lastCaption=0;
   let stream=[], streamPositions=new Uint32Array(), streamEnd=-1, selectedStates=states, pageOffset=0;
   const positions=new Map(rows.map((e,i)=>[`${e.theme}/${e.version}`,i])),loaded=new Map();
   function prepare(i) {
@@ -126,7 +126,7 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
     range.value=pending;
     if(next!==current){
       current=next;host.dataset.time=String(times[current]);host.dataset.position=String(current);
-      caption.textContent=`${formatted[current]} CDT · ${label(rows[current])}`;
+      if(performance.now()-lastCaption>=120)publishCaption();
       streamEnd=upperBound(streamPositions,current);pageOffset=0;
     }
     renderer.draw(pending,streamEnd+1);
@@ -135,7 +135,9 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
     clearTimeout(detailTimer);detailTimer=setTimeout(publishDetails,90);
     onTime(times[current],current);clearTimeout(urlTimer);urlTimer=setTimeout(writeURL,180);
   }
+  function publishCaption(){lastCaption=performance.now();caption.textContent=`${formatted[current]} CDT · ${label(rows[current])}`;}
   function publishDetails(){
+    publishCaption();
     date.dateTime=new Date(times[current]).toISOString();date.textContent=formatted[current]+' CDT';
     range.setAttribute('aria-valuenow',String(times[current]));
     range.setAttribute('aria-valuetext',`${date.textContent}, ${label(rows[current])}`);
