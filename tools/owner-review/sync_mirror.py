@@ -6,7 +6,8 @@ import shutil
 
 FILES = (
     'owner_rating.py', 'owner-rating.js', 'owner-rating.css', 'owner-rating.html',
-    'meta_loop.py', 'live_rating.py', 'catalog.py', 'trial_schema.py', 'synthetic_fixture.py',
+    'meta_loop.py', 'dream_step.py', 'dream_step.test.py',
+    'live_rating.py', 'catalog.py', 'trial_schema.py', 'synthetic_fixture.py',
     'chat_backfill.test.py', 'chat_ui.test.py', 'runtime_port.test.py',
     'launch_owner_review.test.py', 'owner-review.browser.mjs', 'meta_loop.test.py', 'live_rating.test.py',
 )

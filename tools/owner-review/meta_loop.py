@@ -245,6 +245,16 @@ def plateaus(rows, calibrations):
             for k, v in sorted(streaks.items()) if v >= 2]
 
 
+def stuck(rows, calibrations):
+    from dream_step import stuck as detect
+    return detect(rows, calibrations)
+
+
+def dream(rows, element, calibrations, defect=None):
+    from dream_step import portfolio
+    return portfolio(rows, element, calibrations, defect)
+
+
 def eligible_recipe(row, calibrations):
     metrics = row['metrics']
     winner = owner_outcome(row) == 1 or (owner_outcome(row) is None and judge_outcome(row, calibrations) == 1)
@@ -310,6 +320,8 @@ def plan(rows, element, calibrations, exploration_slots=2):
                               reason='Recombination withheld: fewer than two max-zoom-gated winners. Capture native target/baseline/candidate and stable defect evidence.'))
     return dict(element=element, batch=batch, exploration_slots=exploration_slots,
                 batch_size=4, stop=False, plateaus=plateau,
+                dream=dream(rows, element, calibrations) if any(
+                    s['element']==element or element in s['source_elements'] for s in stuck(rows, calibrations)) else None,
                 pending_trial_ids=[r['trial_id'] for r in pending], allowed_mechanisms=candidates,
                 evidence_trial_ids=[r['trial_id'] for r in scoped],
                 policy='breadth-depth-v1', learned_best=best if winners else None,
@@ -685,8 +697,10 @@ def apply_owner_labels(rows, labels, receipt_path):
     return rows, errors
 
 
-def ingest(data, evals=None):
+def ingest(data, evals=None, *, persist=True):
     data = Path(data)
+    if not persist and evals is not None:
+        raise ValueError("Read-only ingestion cannot import history")
     if evals is not None:
         events, anchors = import_history(evals)
         additions, reports = import_reports(Path(evals).parents[1], events)
@@ -734,16 +748,19 @@ def ingest(data, evals=None):
     trials, issues = materialize(events)
     errors.extend(issues)
     trials, issues = apply_owner_labels(trials, labels, data/'events/owner.jsonl')
-    write_json(data/'owner-evidence.json', owner_evidence_summary(trials, labels))
-    write_json(data/'superseded-intake.json', superseded)
+    if persist:
+        write_json(data/'owner-evidence.json', owner_evidence_summary(trials, labels))
+        write_json(data/'superseded-intake.json', superseded)
     errors.extend(issues)
     artifact_receipts = verify_artifacts(trials)
-    write_json(data/'artifact-verification.json', artifact_receipts)
+    if persist:
+        write_json(data/'artifact-verification.json', artifact_receipts)
     known = {r['trial_id'] for r in trials}
     missing = sorted({parent for r in trials for parent in r['parents'] if parent not in known})
-    write_json(data/'ledger.json', trials)
-    write_json(data/'ingest.json', dict(timestamp=now(), events=len(events), trials=len(trials),
-                                       errors=errors, unresolved_parents=missing))
+    if persist:
+        write_json(data/'ledger.json', trials)
+        write_json(data/'ingest.json', dict(timestamp=now(), events=len(events), trials=len(trials),
+                                           errors=errors, unresolved_parents=missing))
     return trials, errors
 
 
@@ -793,7 +810,7 @@ def publish_materialized(data, rows, errors):
     plans = {element: plan(rows, element, calibrations) for element in elements}
     if errors:
         for value in plans.values():
-            value.update(batch=[], blocked='Ledger incomplete/invalid; repair before dispatch', errors=errors)
+            value.update(batch=[], dream=None, blocked='Ledger incomplete/invalid; repair before dispatch', errors=errors)
     for element, value in plans.items():
         safe = ''.join(c if c.isalnum() or c in '-_' else '_' for c in element)
         write_json(data/('next-'+safe+'.json'), value)
@@ -941,6 +958,10 @@ def main():
     cal.add_argument('--evals', type=Path, required=True)
     cal.add_argument('--prepare-ab', type=Path)
     cal.add_argument('--execute', action='store_true')
+    dr = commands.add_parser('dream')
+    dr.add_argument('--element', required=True)
+    dr.add_argument('--defect')
+    commands.add_parser('stuck')
     nxt = commands.add_parser('next')
     nxt.add_argument('--element', required=True)
     nxt.add_argument('--exploration-slots', type=int, default=2)
@@ -959,15 +980,29 @@ def main():
         if args.prepare_ab:
             result['ab_packets'] = prepare_anchor_judges(args.evals, args.prepare_ab, args.execute)
         print(json.dumps(result, indent=2))
-    elif args.command == 'next':
-        rows, errors = ingest(args.data)
+    elif args.command in ('next', 'dream', 'stuck'):
+        from dream_step import archive_snapshot, publish_portfolio
+        before = archive_snapshot(args.data)
+        rows, errors = ingest(args.data, persist=False)
+        if before != archive_snapshot(args.data):
+            errors.append('Archive changed during read; retry for a coherent snapshot')
         if errors:
             parser.exit(2, 'Ledger incomplete/invalid; repair before dispatch: '+json.dumps(errors)+'\n')
         path = args.data/'calibration.json'
         registry = json.loads(path.read_text()).get('registry', {}) if path.exists() else {}
-        print(json.dumps(plan(rows, args.element, registry, args.exploration_slots), indent=2))
-        if errors:
-            print(json.dumps(errors), file=sys.stderr)
+        try:
+            if args.command == 'stuck':
+                result = dict(stuck=stuck(rows, registry), archive=before)
+            elif args.command == 'dream':
+                result = dream(rows, args.element, registry, args.defect)
+                result['archive'] = before
+                result['generated_at'] = now()
+                publish_portfolio(args.data, result)
+            else:
+                result = plan(rows, args.element, registry, args.exploration_slots)
+            print(json.dumps(result, indent=2))
+        except ValueError as exc:
+            parser.exit(2, str(exc)+'\n')
     elif args.command == 'watch':
         if not (0 < args.interval <= 900 and 1 <= args.polls <= 17):
             parser.error('watch is bounded: interval (0,900], polls 1..17')

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-10-16T05:46:53.526244+00:00",
+  "captured_at": "2026-10-16T06:31:04.629441+00:00",
   "base": "integ/site-2026-10-15",
   "base_sha": "14bb4e44d40dded965bc8c0613c083465b6b4957",
   "target": "integ/site-2026-10-15",
@@ -110,9 +110,9 @@
     {
       "ref": "refs/heads/feat/lineage-timeline",
       "branch": "feat/lineage-timeline",
-      "head": "840d9ee01502b94312da0078c37de658c38c1c1f",
+      "head": "efbc1631e724b821a4c16cf2652ad76e0ab1baa1",
       "symbolic_target": "",
-      "purpose": "Tip intent: perf(timeline): defer atlas preparation and avoid live text layer churn",
+      "purpose": "Tip intent: perf(lineage): window archive and rasterize live scrolling",
       "owner_lane": "lineage",
       "base": "14bb4e44d40dded965bc8c0613c083465b6b4957",
       "merge_base_sha": "cb1196dcbfb05e4061b1eb30a1b6891a79372107",
@@ -123,7 +123,7 @@
       "preview_url": null,
       "merge_target": "integ/site-2026-10-15",
       "evidence_links": [
-        "git:840d9ee01502b94312da0078c37de658c38c1c1f"
+        "git:efbc1631e724b821a4c16cf2652ad76e0ab1baa1"
       ],
       "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
@@ -150,22 +150,22 @@
     {
       "ref": "refs/heads/feat/owner-review",
       "branch": "feat/owner-review",
-      "head": "14bb4e44d40dded965bc8c0613c083465b6b4957",
+      "head": "5a242b6b262f9fa546ced587f85fb43e2b424b93",
       "symbolic_target": "",
-      "purpose": "Tip intent: docs(gitops): record independent repair admissions and lineage timing hold",
+      "purpose": "Tip intent: feat: add public local owner review and chat backfill support",
       "owner_lane": "owner-review",
       "base": "14bb4e44d40dded965bc8c0613c083465b6b4957",
       "merge_base_sha": "14bb4e44d40dded965bc8c0613c083465b6b4957",
       "promotion_hold": null,
-      "status": "integrated",
+      "status": "active",
       "channel": "preview",
       "preview_slot": "branch-ca832946ef78",
       "preview_url": null,
-      "merge_target": null,
+      "merge_target": "integ/site-2026-10-15",
       "evidence_links": [
-        "git:14bb4e44d40dded965bc8c0613c083465b6b4957"
+        "git:5a242b6b262f9fa546ced587f85fb43e2b424b93"
       ],
-      "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
+      "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
     {
       "ref": "refs/heads/feat/process-blog",
@@ -2046,7 +2046,7 @@
     {
       "id": "3d5392f7d9f8a47b",
       "label": "wt-timeline",
-      "head": "840d9ee01502b94312da0078c37de658c38c1c1f",
+      "head": "efbc1631e724b821a4c16cf2652ad76e0ab1baa1",
       "ref": "refs/heads/feat/lineage-timeline",
       "present": true,
       "locked": false,
@@ -2787,12 +2787,12 @@
     {
       "id": "e9f6cae2fd0d42da",
       "label": "wt-owner-review",
-      "head": "14bb4e44d40dded965bc8c0613c083465b6b4957",
+      "head": "5a242b6b262f9fa546ced587f85fb43e2b424b93",
       "ref": "refs/heads/feat/owner-review",
       "present": true,
       "locked": false,
       "prunable": false,
-      "status": "integrated",
+      "status": "active",
       "owner_lane": "owner-review",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."

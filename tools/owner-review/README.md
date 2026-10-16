@@ -1,8 +1,9 @@
 # Local owner review
 
-This directory is the source of truth for the owner-review runtime. Dream-loop's
-`scripts/` copy is a synchronized mirror. The code was ported from dream-loop
-by Anshu Chimala under the MIT license, reproduced in [LICENSE](LICENSE).
+This HITL owner-review tool feeds the Blender meta-learning loop. This directory
+is the source of truth for its runtime; dream-loop's `scripts/` copy is a
+synchronized mirror. Portions derive from dream-loop, with the original MIT
+license and attribution reproduced in [LICENSE](LICENSE).
 
 Requires Python 3.10+ and a browser. The server, catalog, validation and synthetic
 fixture use the Python standard library. It binds only to loopback and never
@@ -70,5 +71,7 @@ python3 tools/owner-review/sync_mirror.py --mirror "$DREAM_LOOP_TREE" --write
 python3 tools/owner-review/sync_mirror.py --mirror "$DREAM_LOOP_TREE" --check
 ```
 
-Integration with the latest dream-loop `feat/blender-meta-loop` is still required.
-This tool does not perform a historical backfill or restart existing services.
+The mirror includes the archive-grounded `dream` planner and read-only ingestion
+contract. Preserve concurrent dream-loop changes when synchronizing; run both
+suites after merging. This tool does not search chat history or automatically
+restart existing services.
