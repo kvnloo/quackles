@@ -1,0 +1,31 @@
+name: Agent task with evidence
+description: Bounded owner-assigned work with acceptance and proof
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome and acceptance
+      description: Observable assertions, non-goals, and held owner decisions.
+    validations:
+      required: true
+  - type: textarea
+    id: ownership
+    attributes:
+      label: Ownership and dependencies
+      description: Lane, branch, base SHA, owned/protected paths, dependencies and merge target. Do not publish private lease IDs.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Verification plan and evidence
+      description: Red/green commands, unit/contracts/runtime/perf budgets, expected receipts and public-safe links.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Publication and stop conditions
+      description: Local-only unless authorized; owner merges dev/main. Name blockers and conflict owners.
+    validations:
+      required: true

@@ -1,0 +1,105 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Quackles static evidence API",
+    "version": "1.0.0",
+    "description": "Read-only static files. No inference, write operations, authentication or remote MCP endpoint."
+  },
+  "servers": [
+    {
+      "url": "https://kvnloo.github.io/quackles"
+    }
+  ],
+  "paths": {
+    "/data/manifest.json": {
+      "get": {
+        "operationId": "_data_manifest_json",
+        "summary": "Read /data/manifest.json",
+        "responses": {
+          "200": {
+            "description": "Static public artifact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/learning/manifest.json": {
+      "get": {
+        "operationId": "_data_learning_manifest_json",
+        "summary": "Read /data/learning/manifest.json",
+        "responses": {
+          "200": {
+            "description": "Static public artifact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/llms.txt": {
+      "get": {
+        "operationId": "_llms_txt",
+        "summary": "Read /llms.txt",
+        "responses": {
+          "200": {
+            "description": "Static public artifact",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/llms-full.txt": {
+      "get": {
+        "operationId": "_llms_full_txt",
+        "summary": "Read /llms-full.txt",
+        "responses": {
+          "200": {
+            "description": "Static public artifact",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents.md": {
+      "get": {
+        "operationId": "_agents_md",
+        "summary": "Read /agents.md",
+        "responses": {
+          "200": {
+            "description": "Static public artifact",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
