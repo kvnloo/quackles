@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "fps": "node scripts/fps-harness.mjs",
     "test:scroll": "node scripts/scroll-perf.mjs",
-    "test": "npm run lint && npm run typecheck && npm run test:process && npm run test:lineage && node --import ./scripts/register-ts-resolve.mjs scripts/process-lineage-contracts.mjs && npm run test:frame-work && npm run test:timeline",
+    "test": "npm run lint && npm run typecheck && npm run test:process && npm run test:lineage && node --import ./scripts/register-ts-resolve.mjs scripts/process-lineage-contracts.mjs && npm run test:frame-work && npm run test:timeline && node --import ./scripts/register-ts-resolve.mjs scripts/frame-drain-contracts.mjs",
     "test:process": "node --import ./scripts/register-ts-resolve.mjs scripts/process-contracts.mjs",
     "test:process:static": "node scripts/process-browser.mjs",
     "test:process:responsive": "node scripts/process-responsive-browser.mjs",
