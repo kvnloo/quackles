@@ -11,7 +11,7 @@
     "test:timeline:work": "python3 scripts/timeline-frame-pin.py",
     "test:lineage:static": "node scripts/lineage-browser.mjs",
     "test:archive:static": "node scripts/archive-window-browser.mjs && node scripts/archive-live-browser.mjs && node scripts/archive-worker-browser.mjs && node scripts/archive-nojs-browser.mjs && node scripts/archive-settle-browser.mjs",
-    "test:frame-work": "node --test scripts/frame-work-contracts.mjs && python3 scripts/test_frame_work_pin.py",
+    "test:frame-work": "node --test scripts/frame-work-contracts.mjs && node scripts/loaf-capture-contracts.mjs && python3 scripts/test_frame_work_pin.py",
     "test:learning": "python3 -m unittest discover -s scripts/learning -v && node scripts/learning/contracts.mjs && node scripts/learning/static-route.test.mjs",
     "test:geo": "node scripts/geo/contracts.mjs",
     "test:learning:static": "node scripts/learning/browser.mjs",

@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {chromium} from 'playwright-core';
 import {serve} from './lineage-server.mjs';
 import {analyzeTrace,distribution,WORK_NAMES} from './frame-work.mjs';
+import {captureLoafs} from './loaf-capture.mjs';
 WORK_NAMES.add('EventDispatch'); // Input work is also part of the scrub budget.
 function gateScrub(result) {
   const checks={frames:result.frameCount>=240,traceCallbacks:result.counts?.FireAnimationFrame>=240,p95:Number.isFinite(result.work?.p95)&&result.work.p95<=4,max:Number.isFinite(result.work?.max)&&result.work.max<=8.3,noForcedLayout:result.forcedLayouts?.length===0,noLoAF:result.loafs?.length===0,noErrors:result.errors?.length===0,scrubbed:result.inputs===360&&result.extents[0]===0&&result.extents[1]===1};
@@ -33,7 +34,7 @@ try {
     servers.push(await serve({directory:variant.directory}));
     variant.htmlSha256=createHash('sha256').update(await readFile(join(variant.directory,(variant.route||'/lineage/'),'index.html'))).digest('hex');
   }
-  await writeFile(join(out,'environment.json'),JSON.stringify({version:await browser.version(),executablePath,traceCategories,args,gpu,pin,config,repeats,classification:'headless mobile emulation; not physical 120Hz'},null,2));
+  await writeFile(join(out,'environment.json'),JSON.stringify({observerMethod:'deferred-json-v1',version:await browser.version(),executablePath,traceCategories,args,gpu,pin,config,repeats,classification:'headless mobile emulation; not physical 120Hz'},null,2));
   for(let repeat=0;repeat<repeats;repeat++) {
     // AB / BA counterbalance; negative control participates in interleaving.
     const order=config.map((_,i)=>i);if(repeat%2)order.reverse();
@@ -45,6 +46,7 @@ try {
         const page=await context.newPage(), errors=[];
         page.on('pageerror',e=>errors.push(e.message));
         page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
+        await page.addInitScript({content:`window.__captureLoafs=${captureLoafs.toString()};`});
         await page.goto(servers[index].url+(v.route||'/lineage/'),{waitUntil:'networkidle'});
         await page.waitForSelector(v.ready||'[data-ready="true"]');
         const selector=v.selector||'[data-timeline-range]';
@@ -64,9 +66,8 @@ try {
         // Deterministic range input tape; native hit-testing is separately tested.
         const sample=await page.evaluate(async({selector,bad})=>{
           if(!PerformanceObserver.supportedEntryTypes.includes('long-animation-frame'))throw new Error('LoAF unsupported');
-          const el=document.querySelector(selector),times=[],loafs=[],extents=[1,0];let prev,inputs=0;
-          const observer=new PerformanceObserver(l=>loafs.push(...l.getEntries().map(e=>e.toJSON())));
-          observer.observe({type:'long-animation-frame'});
+          const el=document.querySelector(selector),times=[],extents=[1,0];let prev,inputs=0;
+          const capture=window.__captureLoafs();
           performance.mark('fw:start');
           await new Promise(resolve=>{
             function tick(t) {
@@ -81,9 +82,8 @@ try {
             requestAnimationFrame(tick);
           });
           performance.mark('fw:end');await new Promise(r=>setTimeout(r,100));
-          loafs.push(...observer.takeRecords().map(e=>e.toJSON()));observer.disconnect();
           const start=performance.getEntriesByName('fw:start').at(-1).startTime,end=performance.getEntriesByName('fw:end').at(-1).startTime;
-          return {times,inputs,extents,loafs:loafs.filter(e=>e.startTime<end&&e.startTime+e.duration>start)};
+          return {times,inputs,extents,loafs:capture.finish(start,end)};
         },{selector,bad:!!v.bad});
         const done=new Promise(r=>cdp.once('Tracing.tracingComplete',r));await cdp.send('Tracing.end');
         const {stream}=await done;let trace='';

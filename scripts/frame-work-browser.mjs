@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {chromium} from 'playwright-core';
 import {serve} from './lineage-server.mjs';
 import {analyzeTrace,distribution,gateRun} from './frame-work.mjs';
+import {captureLoafs} from './loaf-capture.mjs';
 // Config is private input: [{name,directory,route,selector,ready,bad?}].
 const config=JSON.parse(await readFile(process.argv[2],'utf8'));
 const out=resolve(process.env.ARTIFACTS||join(process.env.TMPDIR||'.','frame-work-v2'));
@@ -28,7 +29,7 @@ try {
     servers.push(await serve({directory:variant.directory}));
     variant.htmlSha256=createHash('sha256').update(await readFile(join(variant.directory,(variant.route||'/lineage/'),'index.html'))).digest('hex');
   }
-  await writeFile(join(out,'environment.json'),JSON.stringify({version:await browser.version(),executablePath,traceCategories,args,gpu,pin,config,repeats,classification:'headless mobile emulation; not physical 120Hz'},null,2));
+  await writeFile(join(out,'environment.json'),JSON.stringify({observerMethod:'deferred-json-v1',version:await browser.version(),executablePath,traceCategories,args,gpu,pin,config,repeats,classification:'headless mobile emulation; not physical 120Hz'},null,2));
   for(let repeat=0;repeat<repeats;repeat++) {
     // AB / BA counterbalance; negative control participates in interleaving.
     const order=config.map((_,i)=>i);if(repeat%2)order.reverse();
@@ -40,6 +41,7 @@ try {
         const page=await context.newPage(), errors=[];
         page.on('pageerror',e=>errors.push(e.message));
         page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
+        await page.addInitScript({content:`window.__captureLoafs=${captureLoafs.toString()};`});
         await page.goto(servers[index].url+(v.route||'/lineage/'),{waitUntil:'networkidle'});
         await page.waitForSelector(v.ready||'[data-ready="true"]');
         const selector=v.selector||'#lineage-viewport';
@@ -60,9 +62,8 @@ try {
         const box=await page.locator(selector).boundingBox();
         await page.evaluate(({selector,bad})=>{
           if(!PerformanceObserver.supportedEntryTypes.includes('long-animation-frame'))throw new Error('LoAF unsupported');
-          const el=document.querySelector(selector),times=[],loafs=[];let prev,raf;
-          const observer=new PerformanceObserver(l=>loafs.push(...l.getEntries().map(e=>e.toJSON())));
-          observer.observe({type:'long-animation-frame'});
+          const el=document.querySelector(selector),times=[];let prev,raf;
+          const capture=window.__captureLoafs();
           const begin=el.scrollTop;
           function tick(t) {
             if(prev!==undefined)times.push(t-prev);prev=t;
@@ -73,9 +74,8 @@ try {
           window.__fwStop=async()=>{
             await new Promise(r=>requestAnimationFrame(r));cancelAnimationFrame(raf);performance.mark('fw:end');
             await new Promise(r=>setTimeout(r,100));
-            loafs.push(...observer.takeRecords().map(e=>e.toJSON()));observer.disconnect();
             const start=performance.getEntriesByName('fw:start').at(-1).startTime,end=performance.getEntriesByName('fw:end').at(-1).startTime;
-            return {times,loafs:loafs.filter(e=>e.startTime<end&&e.startTime+e.duration>start),scrollDistance:el.scrollTop-begin};
+            return {times,loafs:capture.finish(start,end),scrollDistance:el.scrollTop-begin};
           };
         },{selector,bad:!!v.bad});
         await cdp.send('Input.synthesizeScrollGesture',{x:box.x+box.width/2,y:Math.max(0,box.y)+Math.min(box.height,600)/2,yDistance:-5760,speed:1440,gestureSourceType:'mouse'});
