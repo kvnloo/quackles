@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { assetPath, getAssetOrigin } from "@/lib/paths";
 import archive from "@/content/lineage.json";
 import "./lineage.css";
+import timeline from "@/content/lineage-timeline.json";
+import "./timeline.css";
 
 export const metadata: Metadata = {
   title: "The full lineage · Quackles",
@@ -18,7 +20,7 @@ function Preview({ image, label, href, reference }: { image: { caption: string; 
   </a>;
 }
 export default function LineagePage() {
-  return <main className="lineage-page" data-lineage="true" data-dataset={assetPath(`/lineage/${archive.dataset}`)} data-image-root={imageRoot}>
+  return <main className="lineage-page" data-lineage="true" data-timeline={assetPath(`/lineage/${timeline.dataset}`)} data-dataset={assetPath(`/lineage/${archive.dataset}`)} data-image-root={imageRoot}>
     <a className="lineage-skip" href="#timeline">Skip to the archive</a>
     <div className="lineage-wrap">
       <nav className="lineage-nav" aria-label="Lineage navigation"><a href={assetPath("/")}>← The poster</a><a href={assetPath("/process/")}>How it was made ↗</a></nav>
@@ -38,6 +40,8 @@ export default function LineagePage() {
       <section id="timeline" aria-labelledby="timeline-title">
         <div className="lineage-heading"><h2 id="timeline-title">Project timeline</h2><p>September 14 — October 15, 2026</p></div>
         <p className="lineage-origin">Project v0 was <a href="#/blue/v0">Blue, September 14 at 22:33 CDT</a>. Earlier White production tests remain in date order. Version numbers are per-scene archive indices, not render rounds or releases.</p>
+        <div id="lineage-time-instrument" />
+        <div className="lineage-heading"><h2>Every preserved artifact</h2><p>Full archive · independent of playback time</p></div>
         <form id="lineage-filters" className="lineage-filters" aria-label="Filter versions">
           <label>Scene<select id="lineage-theme" name="theme"><option value="">All five scenes</option>{themes.map(t=><option key={t} value={t}>{t}</option>)}</select></label>
           <label>Phase<select id="lineage-phase" name="phase"><option value="">All phases</option></select></label>

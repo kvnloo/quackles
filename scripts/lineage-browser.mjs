@@ -31,8 +31,9 @@ try {
     await page.waitForSelector('[data-ready="true"]');
     await page.evaluate(()=>document.fonts.ready);
     assert.equal(await page.locator('.lineage-comparison').count(),5);
-    assert.equal(await page.locator('.lineage-card').count(),665,'native static archive retains all keyboard targets');
-    assert.ok(await page.locator('.lineage-card img').evaluateAll(images=>images.filter(i=>i.complete&&i.naturalWidth).length)<=35,'native lazy loading bounds initial image work');
+    assert.equal(await page.locator('.lineage-accessible a').count(),665,'complete semantic archive retains every version');
+    assert.ok(await page.locator('.lineage-card').count()<=40,'paint tree bounded to viewport and overscan');
+    assert.ok(await page.locator('.lineage-card-image').count()<=40,'bounded atlas-backed image slots');
     assert.match(await page.locator('#lineage-count').innerText(),/^665 of 665/);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     assert.ok(await page.locator('h1').evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);return range.getBoundingClientRect().right<=innerWidth;}),'headline fits without clipped text');
@@ -42,7 +43,9 @@ try {
     assert.ok(!requests.some(r=>r.includes('/_next/')&&r.endsWith('.js')),'no framework runtime on static island');
     const dataset=JSON.parse(await readFile('public/lineage/'+JSON.parse(await readFile('public/lineage/manifest.json')).dataset));
     const medium=new Set([...dataset.entries,...Object.values(dataset.current)].map(e=>e.thumbs.medium[0]));
-    assert.ok(!requests.some(r=>medium.has(r.split('/').at(-1))),'medium images are on demand');
+    const initialMedium=new Set(requests.filter(r=>medium.has(r.split('/').at(-1))));
+    assert.ok(initialMedium.size<=16,'medium images are bounded to five hero states and nearby prefetch');
+    assert.ok(await page.locator('.tl-state-artifact img').evaluateAll(nodes=>nodes.every(i=>i.decoding==='async')));
     await page.locator('a[href="#/day/current"]').click();
     await page.waitForSelector('dialog[open]');
     await page.locator('#lineage-detail-image img').evaluate(img=>img.decode());
@@ -99,7 +102,8 @@ try {
     const p95=values=>values.slice().sort((a,b)=>a-b)[Math.floor(values.length*.95)]||0;
     const jsBytes=[...scripts.values()].reduce((a,b)=>a+b,0);
     assert.ok(jsBytes<=60_000,`route JS ${jsBytes} gzip`);
-    assert.equal(await page.locator('.lineage-card').count(),665,'scroll does not recreate archive nodes');
+    assert.ok(await page.locator('.lineage-card').count()<=40,'scroll retains a bounded ring of cards');
+    assert.equal(await page.locator('.lineage-accessible a').count(),665,'scroll retains the entire semantic archive');
     assert.deepEqual(failures,[]);
     results.push({label,emulation:true,cpuSlowdown:4,...initial,jsGzipBytes:jsBytes,scriptCount:scripts.size,initialRequests,scrollRafP95Ms:p95(frameIntervals),scrollRafMaxMs:Math.max(...frameIntervals),overBudgetFrames:frameIntervals.filter(t=>t>=8.3).length,frameIntervals,loafs,rafCallbackWorkP95Ms:p95(work),traceCallbacks:work.length,failures});
     await context.close();

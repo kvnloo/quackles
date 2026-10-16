@@ -1,3 +1,6 @@
+import {mountTimeline} from './timeline.mjs';
+import {mountArchive} from './archive-window.mjs';
+
 export function filterEntries(entries, {theme='', phase='', status='', query='', newest=false} = {}) {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   return entries.filter(e => (!theme || e.theme === theme) && (!phase || e.phase === phase) &&
@@ -35,7 +38,20 @@ async function start(root) {
     counter.textContent = 'The archive could not load. Reload to try again; references and current picks remain above.';
     return;
   }
-  let filtered = [], newest = false, columns = 5, rowHeight = 440, active = null, opener = null;
+  let timeline=null, archiveAtlas=null, archiveBase=null;
+  try {
+    const response=await fetch(root.dataset.timeline,{priority:'low'});
+    if(!response.ok)throw new Error('Timeline unavailable');
+    const index=await response.json();
+    if(index.schema!==1 || index.order.length!==data.entries.length)throw new Error('Timeline mismatch');
+    const atlasBase=new URL(index.atlas,new URL(root.dataset.timeline,location.href));
+    const atlasResponse=await fetch(atlasBase);if(!atlasResponse.ok)throw new Error('Atlas unavailable');
+    const atlas=await atlasResponse.json();if(atlas.datasetSha256!==index.datasetSha256)throw new Error('Atlas mismatch');
+    archiveAtlas=atlas;archiveBase=atlasBase;
+    timeline=await mountTimeline({host:$('#lineage-time-instrument'),entries:data.entries,index,atlas,atlasBase,source:e=>url(e.thumbs.medium),link:e=>`#/${e.theme}/${e.version}`});
+  } catch (error) { console.warn('Timeline unavailable:',error); $('#lineage-time-instrument').textContent='Timeline unavailable. The full archive and filters remain below.'; }
+  let filtered = [], newest = false, active = null, opener = null;
+  const archive=mountArchive({viewport,grid,atlas:archiveAtlas,atlasBase:archiveBase,date,imageURL:e=>url(e.thumbs.small),mode:'canvas'});
   const byId = new Map(data.entries.map(e => [`${e.theme}/${e.version}`,e]));
   for (const [theme, entry] of Object.entries(data.current)) byId.set(`${theme}/current`,entry);
   for (const phase of [...new Set(data.entries.map(e=>e.phase))].sort()) $('#lineage-phase').add(new Option(phase,phase));
@@ -51,59 +67,14 @@ async function start(root) {
     }
     return img;
   }
-  function card(e, index) {
-    const card = document.createElement('a');
-    card.className = 'lineage-card'; card.href = `#/${e.theme}/${e.version}`;
-    card.dataset.index = index; card.dataset.id = `${e.theme}/${e.version}`;
-    card.setAttribute('role','listitem'); card.setAttribute('aria-posinset',index+1); card.setAttribute('aria-setsize',filtered.length);
-    card.setAttribute('aria-label',`${e.theme} ${e.version}, ${e.caption}, ${e.status}. Open image and provenance`);
-    const heading = document.createElement('h3'); heading.textContent = `${e.theme} / ${e.version}`;
-    const status = document.createElement('span'); status.className = 'lineage-status'; status.textContent = e.status;
-    const caption = document.createElement('p'); caption.textContent = e.caption;
-    const time = document.createElement('time'); time.dateTime = e.date; time.textContent = date(e.date);
-    const provenance = document.createElement('small'); provenance.textContent = `${e.dateSource} · ${e.hash}`;
-    card.append(image(e),heading,status,caption,time,provenance);
-    return card;
-  }
-  function render() {
-    const sections=[];
-    // Native paint culling avoids synchronous content-visibility reveals.
-    const chunk=30;
-    for(let start=0;start<filtered.length;start+=chunk) {
-      const section=document.createElement('div');section.className='lineage-section';section.setAttribute('role','presentation');
-      section.append(...filtered.slice(start,start+chunk).map((entry,i)=>card(entry,start+i)));sections.push(section);
-    }
-    grid.replaceChildren(...sections);
-    position();
-  }
-  function position() {
-    grid.style.height=`${Math.ceil(filtered.length/columns)*rowHeight}px`;
-    for (let s=0;s<grid.children.length;s++) {
-      const section=grid.children[s];
-      section.style.top=`${s*30/columns*rowHeight}px`;
-      section.style.height=`${Math.ceil(section.children.length/columns)*rowHeight}px`;
-      section.style.containIntrinsicSize=`auto ${Math.ceil(section.children.length/columns)*rowHeight}px`;
-      for(let i=0;i<section.children.length;i++) {
-        const element=section.children[i];
-        element.style.top=`${Math.floor(i/columns)*rowHeight}px`;
-        element.style.left=`calc(${(i%columns)*100/columns}% + 7px)`;
-        element.style.width=`calc(${100/columns}% - 14px)`;
-      }
-    }
-  }
-  function resize(entries) {
-    const {width}=entries[0].contentRect;
-    columns=width<600?2:width<1000?3:5;
-    rowHeight=width<600?380:440;
-    position();
-  }
   function apply() {
     const form = new FormData(controls);
     filtered = filterEntries(data.entries,{theme:form.get('theme'),phase:form.get('phase'),status:form.get('status'),query:form.get('query'),newest});
     viewport.scrollTop = 0;
     counter.textContent = `${filtered.length} of ${data.entries.length} versions · ${newest?'Newest':'Oldest'} first`;
     $('#lineage-empty').hidden = filtered.length !== 0;
-    render();
+    archive.setEntries(filtered);
+    if(timeline) timeline.setArtifacts(filtered.map(e=>({key:`${e.theme}/${e.version}`,time:Date.parse(e.date)})));
   }
   function open(entry) {
     active = entry;
@@ -141,19 +112,6 @@ async function start(root) {
     controls.reset();$('#lineage-theme').value=button.dataset.themeJump;apply();$('#timeline').scrollIntoView();viewport.focus();
   }));
   root.querySelectorAll('[data-reference]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();open(data.references[button.dataset.reference]);}));
-  new ResizeObserver(resize).observe(viewport);
-  viewport.addEventListener('keydown',event=>{
-    const current=Number(document.activeElement?.dataset.index ?? 0);
-    const moves={ArrowRight:1,ArrowLeft:-1,ArrowDown:columns,ArrowUp:-columns,PageDown:columns*2,PageUp:-columns*2};
-    let index;
-    if (event.key in moves) index=current+moves[event.key];
-    else if(event.key==='Home') index=0;
-    else if(event.key==='End') index=filtered.length-1;
-    else return;
-    event.preventDefault(); index=Math.max(0,Math.min(filtered.length-1,index));
-    if (!filtered.length) return;
-    grid.querySelector(`[data-index="${index}"]`)?.focus();
-  });
   $('#lineage-close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{
     if(parseHash(location.hash)) history.replaceState(null,'',location.pathname+location.search+'#timeline');
