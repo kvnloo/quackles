@@ -11,7 +11,8 @@ try{
   await page.goto(pathToFileURL(join(process.env.LOCAL_REVIEW_DIR,'index.html')).href,{waitUntil:'load'});
   await page.waitForSelector('[data-timeline-range]');
   assert.equal(await page.locator('.tl-instrument canvas').count(),1,'local HITL must use the shared atlas renderer');
-  await page.waitForSelector('canvas[data-ready=true]',{timeout:60000});
+  await page.locator('[data-timeline-range]').scrollIntoViewIfNeeded();
+  await page.waitForSelector('canvas[data-assets-ready=true]',{timeout:60000});
   assert.equal(await page.locator('canvas').getAttribute('data-renderer'),backend);
   await page.waitForFunction(()=>/665 \/ 665/.test(document.querySelector('[data-timeline-count]').textContent));
   await page.getByRole('slider',{name:'Project time'}).press('Home');

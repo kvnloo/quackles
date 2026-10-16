@@ -8,6 +8,8 @@ try {
   const page=await browser.newPage();
   await page.goto(server.url+'/lineage/',{waitUntil:'networkidle'});await page.waitForSelector('[data-ready=true]');
   await page.waitForSelector('.tl-instrument[data-position]');
+  await page.locator('[data-timeline-range]').scrollIntoViewIfNeeded();
+  await page.waitForFunction(()=>document.querySelector('.tl-canvas').dataset.assetsReady==='true',null,{timeout:60000});
   const slider=page.getByRole('slider',{name:'Project time'});await slider.scrollIntoViewIfNeeded();const box=await slider.boundingBox();await page.mouse.move(box.x+box.width-8,box.y+16);await page.mouse.down();
   const result=await page.evaluate(()=>{
     const range=document.querySelector('[data-timeline-range]'),before=[...document.querySelectorAll('.tl-state-artifact img')].map(i=>i.src);

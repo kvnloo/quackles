@@ -49,6 +49,7 @@ try {
         await page.waitForSelector(v.ready||'[data-ready="true"]');
         const selector=v.selector||'[data-timeline-range]';
         await page.locator(selector).scrollIntoViewIfNeeded();
+        await page.waitForFunction(()=>{const c=document.querySelector('.tl-canvas');return !c||c.dataset.assetsReady===undefined||c.dataset.assetsReady==='true';},null,{timeout:60000});
         await page.evaluate(async(selector)=>{
           await document.fonts.ready;const el=document.querySelector(selector);el.scrollTop=0;
           await Promise.all([...document.images].filter(i=>i.complete&&i.naturalWidth).map(i=>i.decode().catch(()=>{})));

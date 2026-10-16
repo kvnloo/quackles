@@ -20,7 +20,7 @@
 
 /* Rendering replacement only: preserve the locked native control and card geometry. */
 .tl-instrument{will-change:transform}
-.tl-instrument[data-canvas-live=true] .tl-readout time,.tl-instrument[data-canvas-live=true] .tl-readout p,.tl-instrument[data-canvas-live=true] [data-timeline-count]{opacity:0}
+/* The live canvas covers native labels; no first-drag opacity/layer transition. */
 .tl-instrument .tl-range{touch-action:none;background:transparent}
 .tl-surface{position:relative}
 .tl-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}

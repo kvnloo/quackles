@@ -1,4 +1,4 @@
-// Browser-font label atlases are rebuilt only when observed geometry/fonts change.
+// Font pages are prepared off-thread only after the instrument approaches view.
 // The live scrub path performs no text shaping, texture upload or DOM card writes.
 export function buildLabelAtlas({entries,themes,formatted,stateWidth,streamWidth,emptyWidth,captionWidth,captionCentered,total,styles,dpr}){
  const result=[];
@@ -14,9 +14,9 @@ export function buildLabelAtlas({entries,themes,formatted,stateWidth,streamWidth
   const output=[];let line='';for(const token of text.match(/[^\s/-]+(?:[/-]+)?|[/-]+|\s+/g)||[]){const next=line+token;if(line&&context.measureText(next.trimEnd()).width>width){output.push(line.trimEnd());line=token.trimStart();}else line=next;}if(line)output.push(line.trimEnd());return output;
  }
  for(const group of groups){
-  const w=Math.ceil(group.width*dpr),h=Math.ceil((group.height||64)*dpr),cw=w+4,ch=h+4,cols=Math.max(1,Math.floor(2048/cw)),capacity=cols*Math.max(1,Math.floor(2048/ch));
+  const w=Math.ceil(group.width*dpr),h=Math.ceil((group.height||64)*dpr),cw=w+4,ch=h+4,cols=Math.max(1,Math.floor(2048/cw)),capacity=cols*Math.max(1,Math.floor(512/ch));
   for(let start=0;start<group.items.length;start+=capacity){
-   const subset=group.items.slice(start,start+capacity),image=document.createElement('canvas');image.width=cols*cw;image.height=Math.ceil(subset.length/cols)*ch;
+   const subset=group.items.slice(start,start+capacity),image=typeof document==='undefined'?new OffscreenCanvas(cols*cw,Math.ceil(subset.length/cols)*ch):document.createElement('canvas');image.width=cols*cw;image.height=Math.ceil(subset.length/cols)*ch;
    const ctx=image.getContext('2d'),items=[];
    subset.forEach((entry,i)=>{
     const x=i%cols*cw+2,y=Math.floor(i/cols)*ch+2;
@@ -35,7 +35,7 @@ export function buildLabelAtlas({entries,themes,formatted,stateWidth,streamWidth
     }
     ctx.restore();items.push({...entry,origin:entry,sprite:{uv:[x/image.width,y/image.height,w/image.width,h/image.height]}});
    });
-   result.push({kind:group.kind,image,items,first:subset[0].position,last:subset.at(-1).position});
+   result.push({kind:group.kind,image:typeof image.transferToImageBitmap==='function'?image.transferToImageBitmap():image,items,first:subset[0].position,last:subset.at(-1).position});
   }
  }
  return result;

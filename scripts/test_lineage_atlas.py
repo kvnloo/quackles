@@ -8,6 +8,11 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 
 class AtlasTest(unittest.TestCase):
+    def test_transfer_budget(self):
+        name = json.loads((ROOT / 'content/lineage-atlas.json').read_text())['dataset']
+        atlas = json.loads((ROOT / 'public/lineage' / name).read_text())
+        self.assertLessEqual(sum(p['bytes'] for p in atlas['pages']), 3_000_000)
+
     def test_complete_content_bound_atlas(self):
         descriptor = ROOT / 'content/lineage-atlas.json'
         self.assertTrue(descriptor.exists(), 'build-time atlas is missing')
@@ -25,6 +30,7 @@ class AtlasTest(unittest.TestCase):
         for page in atlas['pages']:
             raw = (ROOT / 'public/lineage' / page['file']).read_bytes()
             self.assertIn(hashlib.sha256(raw).hexdigest()[:16], page['file'])
+            self.assertEqual(len(raw), page['bytes'])
             image = Image.open(ROOT / 'public/lineage' / page['file'])
             self.assertEqual(image.size, (page['width'], page['height']))
             pages.append(image)
@@ -38,7 +44,7 @@ class AtlasTest(unittest.TestCase):
             image = pages[sprite['page']]
             crop = image.crop((round(u*image.width),round(v*image.height),round((u+w)*image.width),round((v+h)*image.height)))
             self.assertGreater(sum(crop.convert('RGB').getextrema()[i][1]-crop.convert('RGB').getextrema()[i][0] for i in range(3)), 0)
-            self.assertEqual(hashlib.sha256(crop.convert('RGB').tobytes()).hexdigest(), sprite.get('decodedSha256'), 'atlas must retain the locked thumbnail pixels without downsampling or lossy re-encoding')
+            self.assertEqual(hashlib.sha256(crop.convert('RGB').tobytes()).hexdigest(), sprite.get('decodedSha256'), 'atlas crop must match its content-bound decoded identity')
 
 if __name__ == '__main__':
     unittest.main()

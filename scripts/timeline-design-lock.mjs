@@ -20,6 +20,8 @@ try{
    const page=await browser.newPage({viewport:{width,height:1000},deviceScaleFactor:1});
    await page.goto(url,{waitUntil:'networkidle'});await page.waitForSelector('[data-timeline-range]');
    await page.evaluate(()=>document.fonts.ready);
+   await page.locator('[data-timeline-range]').scrollIntoViewIfNeeded();
+   await page.waitForFunction(()=>{const c=document.querySelector('.tl-canvas');return !c||c.dataset.assetsReady===undefined||c.dataset.assetsReady==='true';},null,{timeout:60000});
    const range=await page.locator('[data-timeline-range]').evaluate(n=>({min:Number(n.min),max:Number(n.max)}));
    pages.push({page,label,range});
   }

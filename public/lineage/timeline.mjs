@@ -93,21 +93,9 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   host.append(top,readout,range,endpoints,surface,streamNote,details,canvas);
   const renderer=await createSpriteRenderer(canvas,{atlas,base:atlasBase,rows,themes,min,max,reducedMotion,surface:host,lanes,previewImage,streamRow,range,readout,stateRow,formatted});
   streamRow.addEventListener('scroll',()=>renderer.scroll(streamRow.scrollLeft),{passive:true});
-  let current=-1, raf=0, pending=max, pendingPosition=null, playing=false,lastStep=0, playRaf=0, prefetchTimer=0, urlTimer=0,detailTimer=0,lastCaption=0,published=-1,generation=0;
+  let current=-1, raf=0, pending=max, pendingPosition=null, playing=false,lastStep=0, playRaf=0, urlTimer=0,detailTimer=0,lastCaption=0,published=-1,generation=0;
   let stream=[], streamPositions=new Uint32Array(), streamEnd=-1, selectedStates=states, pageOffset=0;
-  const positions=new Map(rows.map((e,i)=>[`${e.theme}/${e.version}`,i])),loaded=new Map();
-  function prepare(i) {
-    if(i<0 || loaded.has(i))return;const img=new Image();img.decoding='async';img.src=source(rows[i]);loaded.set(i,img);img.decode().catch(()=>{});
-    if(loaded.size>64)loaded.delete(loaded.keys().next().value);
-  }
-  function prefetch() {
-    if(prefetchTimer)return;
-    prefetchTimer=setTimeout(()=>{
-      prefetchTimer=0;
-      for(let lane=0;lane<5;lane++)prepare(selectedStates[current*5+lane]);
-      for(let i=Math.max(0,current-2);i<=Math.min(rows.length-1,current+8);i++)prepare(i);
-    },60);
-  }
+  const positions=new Map(rows.map((e,i)=>[`${e.theme}/${e.version}`,i])),frameStates=new Int32Array(5);
   function paintStream(images=true) {
     const end=Math.max(0,streamEnd+1-pageOffset),start=Math.max(0,end-streamCards.length);
     streamCards.forEach((card,i)=>fillCard(card,start+i<end?stream[start+i].position:-1,images));
@@ -129,7 +117,9 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
       streamEnd=upperBound(streamPositions,current);pageOffset=0;
     }
     if(published!==current&&performance.now()-lastCaption>=120)publishCaption();
-    renderer.draw(times[current],streamEnd+1,selectedStates.subarray(current*5,current*5+5),current);
+    if(!renderer.liveReady){caption.textContent=label(rows[current]);date.textContent=formatted[current]+' CDT';count.textContent=`${streamEnd+1} / ${stream.length} matching artifacts`;for(let lane=0;lane<5;lane++){const id=selectedStates[current*5+lane];empty[lane].style.visibility=id<0?'visible':'hidden';fillCard(cards[lane],id,false);}}
+    for(let lane=0;lane<5;lane++)frameStates[lane]=selectedStates[current*5+lane];
+    renderer.draw(times[current],streamEnd+1,frameStates,current);
     // Medium-image decoding and semantic detail publication settle after direct
     // manipulation; canvas/time feedback never waits for image or DOM work.
     clearTimeout(detailTimer);detailTimer=setTimeout(publishDetails,90);
@@ -146,10 +136,10 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
     range.setAttribute('aria-valuenow',String(times[current]));
     range.setAttribute('aria-valuetext',`${date.textContent}, ${label(rows[current])}`);
     paintStream();count.textContent=`${streamEnd+1} / ${stream.length} matching artifacts`;
-    for(let lane=0;lane<5;lane++) {const nextState=selectedStates[current*5+lane];empty[lane].style.visibility=nextState<0?'visible':'hidden';fillCard(cards[lane],nextState);}
-    prefetch();
+    for(let lane=0;lane<5;lane++) {const nextState=selectedStates[current*5+lane];empty[lane].style.visibility=nextState<0?'visible':'hidden';fillCard(cards[lane],nextState,false);}
     const stamp=generation;
-    Promise.all(cards.filter(c=>c.index>=0).map(c=>c.img.decode().catch(()=>{}))).then(()=>{if(stamp===generation)renderer.settle();});
+    // Serialize medium decodes; never start another swap after new input.
+    (async()=>{for(const card of cards){if(card.index<0||card.imageIndex===card.index)continue;await new Promise(resolve=>setTimeout(resolve,32));if(stamp!==generation||dragging)return;fillCard(card,card.index);await card.img.decode().catch(()=>{});}if(stamp===generation)renderer.settle();})();
   }
   function seek(time,position=null) {pending=Math.max(min,Math.min(max,time));pendingPosition=position;if(!raf){raf=1;renderer.schedule(render);}}
   function pause() {if(!playing)return;playing=false;cancelAnimationFrame(playRaf);play.textContent='Play →';play.setAttribute('aria-pressed','false');}

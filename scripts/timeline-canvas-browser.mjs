@@ -19,7 +19,9 @@ try {
   assert.equal(await page.locator('.tl-tick').count(),0);
   assert.equal(await page.locator('.tl-instrument img').count(),5);
   assert.ok(await page.locator('.tl-instrument *').count()<160,'bounded timeline DOM');
-  await page.waitForFunction(()=>document.querySelector('canvas[data-renderer]')?.dataset.ready==='true');
+
+  await page.locator('[data-timeline-range]').scrollIntoViewIfNeeded();
+  await page.waitForFunction(()=>document.querySelector('.tl-canvas').dataset.assetsReady==='true',null,{timeout:60000});
   const receipt=await page.locator('canvas').evaluate(n=>({renderer:n.dataset.renderer,gl:n.dataset.gl,instances:n.dataset.instances,width:n.width,height:n.height}));
   assert.equal(Number(receipt.instances),665);
   assert.equal(receipt.renderer,backend);
@@ -32,6 +34,7 @@ try {
   assert.ok(await accessible.getAttribute('aria-valuetext'));
   await page.locator('[data-timeline-range]').press('End');await page.waitForTimeout(250);
   assert.match(await page.locator('[data-timeline-count]').innerText(),/665 \/ 665/);
+  assert.deepEqual(glErrors,[],'no GL errors before context loss');
   if(backend==='webgl2'){
     await page.locator('canvas').evaluate(n=>{window.__lose=n.getContext('webgl2').getExtension('WEBGL_lose_context');window.__lose.loseContext();});
     await page.waitForFunction(()=>document.querySelector('canvas').dataset.ready==='false');

@@ -1,4 +1,4 @@
-"""Pack approved thumbnails losslessly; never change the locked source pixels.
+"""Pack approved thumbnails at display scale using bounded lossy WebP.
 Ordinary builds consume committed pages. LINEAGE_ASSETS is build-time only.
 The same packer can consume local review thumbnails without publishing paths.
 """
@@ -20,15 +20,23 @@ def pack(entries, paths, destination, dataset_sha):
 
     def save_page():
         out = io.BytesIO()
-        page.save(out, format='WEBP', lossless=True, method=6)
+        page.save(out, format='WEBP', quality=74, method=6)
         encoded = out.getvalue()
         name = 'atlas.'+hashlib.sha256(encoded).hexdigest()[:16]+'.webp'
         (destination/name).write_bytes(encoded)
         pages.append(dict(file=name,width=size,height=size,bytes=len(encoded)))
+        decoded = Image.open(io.BytesIO(encoded)).convert('RGB')
+        for sprite in sprites:
+            if sprite['page'] != len(pages)-1:
+                continue
+            u,v,w,h = sprite['uv']
+            crop = decoded.crop((round(u*size),round(v*size),round((u+w)*size),round((v+h)*size)))
+            sprite['decodedSha256'] = hashlib.sha256(crop.tobytes()).hexdigest()
 
     for entry, path in zip(entries, paths, strict=True):
         with Image.open(path) as source:
             image = source.convert('RGB')
+            image.thumbnail((180,240), Image.Resampling.LANCZOS)
         w, h = image.size
         if max(w,h)+2*gutter > size:
             raise ValueError('Thumbnail exceeds atlas page')
@@ -47,7 +55,7 @@ def pack(entries, paths, destination, dataset_sha):
         page.paste(image.crop((0,h-1,w,h)).resize((w,gutter)),(px,py+h))
         sprites.append(dict(key=entry['theme']+'/'+entry['version'],page=len(pages),
                             uv=[px/size,py/size,w/size,h/size],
-                            decodedSha256=hashlib.sha256(image.tobytes()).hexdigest(),
+                            sourceRgbSha256=hashlib.sha256(image.tobytes()).hexdigest(),
                             date=entry['date'],theme=entry['theme'],status=entry['status']))
         x += w+2*gutter
         shelf = max(shelf,h+2*gutter)
