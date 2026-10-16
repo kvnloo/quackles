@@ -123,10 +123,12 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   }
   function render() {
     raf=0;const next=Math.max(index.start,Math.min(rows.length-1,pendingPosition??(pending<=min?index.start:upperBound(times,pending))));pendingPosition=null;
-    if(next===current){renderer.draw(pending,Math.max(0,streamEnd+1-pageOffset));return;}
-    current=next;range.value=times[current];host.dataset.time=String(times[current]);host.dataset.position=String(current);
-    caption.textContent=`${formatted[current]} CDT · ${label(rows[current])}`;
-    streamEnd=upperBound(streamPositions,current);pageOffset=0;
+    range.value=pending;
+    if(next!==current){
+      current=next;host.dataset.time=String(times[current]);host.dataset.position=String(current);
+      caption.textContent=`${formatted[current]} CDT · ${label(rows[current])}`;
+      streamEnd=upperBound(streamPositions,current);pageOffset=0;
+    }
     renderer.draw(pending,streamEnd+1);
     // Medium-image decoding and semantic detail publication settle after direct
     // manipulation; canvas/time feedback never waits for image or DOM work.

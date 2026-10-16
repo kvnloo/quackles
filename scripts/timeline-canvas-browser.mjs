@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
 import {chromium} from 'playwright-core';
 import {serve} from './lineage-server.mjs';
+const artifacts=resolve(process.env.ARTIFACTS||join(process.env.TMPDIR,'timeline-canvas'));await mkdir(artifacts,{recursive:true});
+const receipts=[];
 const server=await serve({directory:process.env.OUT_DIR||'out'});
 const browser=await chromium.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--enable-gpu-rasterization','--use-angle=gl']});
 try {
@@ -24,7 +28,16 @@ try {
   assert.match(await page.locator('[data-timeline-caption]').innerText(),/blue.*v0/i);
   await page.locator('[data-timeline-range]').press('End');await page.waitForTimeout(250);
   assert.match(await page.locator('[data-timeline-count]').innerText(),/665 \/ 665/);
+  if(backend==='webgl2'){
+    await page.locator('canvas').evaluate(n=>{window.__lose=n.getContext('webgl2').getExtension('WEBGL_lose_context');window.__lose.loseContext();});
+    await page.waitForFunction(()=>document.querySelector('canvas').dataset.ready==='false');
+    await page.evaluate(()=>window.__lose.restoreContext());
+    await page.waitForFunction(()=>document.querySelector('canvas').dataset.ready==='true');
+  }
+  await page.locator('canvas').screenshot({path:join(artifacts,backend+'.png')});
+  receipts.push({...receipt,contextRestored:backend==='webgl2'});
   console.log(JSON.stringify(receipt));
   await page.close();
   }
+  await writeFile(join(artifacts,'renderers.json'),JSON.stringify(receipts,null,2));
 } finally {await browser.close();await server.close();}

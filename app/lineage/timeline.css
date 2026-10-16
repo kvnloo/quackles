@@ -25,6 +25,7 @@
 .tl-stream-links{display:flex;flex-wrap:wrap;gap:8px;min-height:52px;contain:layout paint style}
 .tl-stream-links .tl-stream-artifact{display:block;flex:none;height:auto;padding:6px;contain:none;font:11px ui-monospace,monospace}
 .tl-stream-links .tl-stream-artifact[hidden]{display:none}
+.tl-readout{transform:translateZ(0)}.tl-instrument .tl-range{transform:translateZ(0)}
 .tl-readout time{display:none}.tl-readout p{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:700px){.tl-lanes{height:400px}}
 

@@ -42,7 +42,9 @@ try {
     assert.ok(!requests.some(r=>r.includes('/_next/')&&r.endsWith('.js')),'no framework runtime on static island');
     const dataset=JSON.parse(await readFile('public/lineage/'+JSON.parse(await readFile('public/lineage/manifest.json')).dataset));
     const medium=new Set([...dataset.entries,...Object.values(dataset.current)].map(e=>e.thumbs.medium[0]));
-    assert.ok(!requests.some(r=>medium.has(r.split('/').at(-1))),'medium images are on demand');
+    const initialMedium=new Set(requests.filter(r=>medium.has(r.split('/').at(-1))));
+    assert.ok(initialMedium.size<=16,'medium images are bounded to five hero states and nearby prefetch');
+    assert.ok(await page.locator('.tl-state-artifact img').evaluateAll(nodes=>nodes.every(i=>i.decoding==='async')));
     await page.locator('a[href="#/day/current"]').click();
     await page.waitForSelector('dialog[open]');
     await page.locator('#lineage-detail-image img').evaluate(img=>img.decode());
