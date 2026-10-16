@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-10-15T21:41:15.368367+00:00",
+  "captured_at": "2026-10-16T08:27:21.433897+00:00",
   "base": "integ/home-2026-10-13",
   "base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
   "target": "integ/site-2026-10-15",
-  "target_sha": "ef826535098896c323dc0985d4988c667565c603",
+  "target_sha": "72794b6e953f3deda82b12cafb3c1d0ecf5472e8",
   "classification_policy": "Ancestry first; active family is not READY. Archive/stale are proposals only.",
   "branches": [
     {
@@ -108,22 +108,62 @@
       "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
     },
     {
+      "ref": "refs/heads/feat/lineage-timeline",
+      "branch": "feat/lineage-timeline",
+      "head": "47624772176df1a88750c4733be1361953230f45",
+      "symbolic_target": "",
+      "purpose": "Tip intent: merge(lineage): preserve timeline with current site build and discovery",
+      "owner_lane": "lineage",
+      "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "promotion_hold": null,
+      "status": "integrated",
+      "channel": "preview",
+      "preview_slot": "branch-fce4a6741658",
+      "preview_url": null,
+      "merge_target": null,
+      "evidence_links": [
+        "git:47624772176df1a88750c4733be1361953230f45"
+      ],
+      "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
+    },
+    {
       "ref": "refs/heads/feat/lineage-viewer",
       "branch": "feat/lineage-viewer",
-      "head": "00d3c0146c7da0d8665631692c7d9df2ecda1d5a",
+      "head": "ec3bbc1212d2a80b46fc5d184a32bc5508871553",
       "symbolic_target": "",
-      "purpose": "Tip intent: fix(lineage): remove synchronous scroll reads with static native cards",
+      "purpose": "Tip intent: merge(site): reconcile lineage with responsive process and GEO discovery",
       "owner_lane": "lineage",
+      "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "promotion_hold": null,
+      "status": "integrated",
+      "channel": "preview",
+      "preview_slot": "branch-e513f65d00bf",
+      "preview_url": null,
+      "merge_target": null,
+      "evidence_links": [
+        "git:ec3bbc1212d2a80b46fc5d184a32bc5508871553"
+      ],
+      "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
+    },
+    {
+      "ref": "refs/heads/feat/owner-review",
+      "branch": "feat/owner-review",
+      "head": "cfc58df5b68527f0746e2ce5a4c475d5af5f6144",
+      "symbolic_target": "",
+      "purpose": "Tip intent: feat: retain merged dream planning in owner review tool",
+      "owner_lane": "owner-review",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "promotion_hold": null,
       "status": "active",
       "channel": "preview",
-      "preview_slot": "branch-e513f65d00bf",
+      "preview_slot": "branch-ca832946ef78",
       "preview_url": null,
       "merge_target": "integ/site-2026-10-15",
       "evidence_links": [
-        "git:00d3c0146c7da0d8665631692c7d9df2ecda1d5a"
+        "git:cfc58df5b68527f0746e2ce5a4c475d5af5f6144"
       ],
       "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
@@ -270,9 +310,9 @@
     {
       "ref": "refs/heads/integ/site-2026-10-15",
       "branch": "integ/site-2026-10-15",
-      "head": "ef826535098896c323dc0985d4988c667565c603",
+      "head": "72794b6e953f3deda82b12cafb3c1d0ecf5472e8",
       "symbolic_target": "",
-      "purpose": "Tip intent: merge: admit lightweight learning browser pilot",
+      "purpose": "Tip intent: merge(timeline): owner-delegated option A; frame-tail gate open",
       "owner_lane": "gitops",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -283,7 +323,7 @@
       "preview_url": null,
       "merge_target": null,
       "evidence_links": [
-        "git:ef826535098896c323dc0985d4988c667565c603"
+        "git:72794b6e953f3deda82b12cafb3c1d0ecf5472e8"
       ],
       "reason": "Promotion/control channel; not an automatic merge authorization."
     },
@@ -2004,6 +2044,19 @@
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
     },
     {
+      "id": "3d5392f7d9f8a47b",
+      "label": "wt-timeline",
+      "head": "47624772176df1a88750c4733be1361953230f45",
+      "ref": "refs/heads/feat/lineage-timeline",
+      "present": true,
+      "locked": false,
+      "prunable": false,
+      "status": "integrated",
+      "owner_lane": "lineage",
+      "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
+      "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
+    },
+    {
       "id": "3f059837259920ef",
       "label": "b3s-i5-jobs",
       "head": "84fe3ee1d86d066906e0e524a6477aeca9c98784",
@@ -2175,7 +2228,7 @@
     {
       "id": "637b3970b2f375c1",
       "label": "wt-site-integ",
-      "head": "ef826535098896c323dc0985d4988c667565c603",
+      "head": "72794b6e953f3deda82b12cafb3c1d0ecf5472e8",
       "ref": "refs/heads/integ/site-2026-10-15",
       "present": true,
       "locked": false,
@@ -2732,6 +2785,19 @@
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
     },
     {
+      "id": "e9f6cae2fd0d42da",
+      "label": "wt-owner-review",
+      "head": "cfc58df5b68527f0746e2ce5a4c475d5af5f6144",
+      "ref": "refs/heads/feat/owner-review",
+      "present": true,
+      "locked": false,
+      "prunable": false,
+      "status": "active",
+      "owner_lane": "owner-review",
+      "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
+      "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
+    },
+    {
       "id": "ec59e7cdbe441de7",
       "label": "b3s-i5-base",
       "head": "84fe3ee1d86d066906e0e524a6477aeca9c98784",
@@ -2773,12 +2839,12 @@
     {
       "id": "f39da2298a0577d4",
       "label": "wt-lineage",
-      "head": "00d3c0146c7da0d8665631692c7d9df2ecda1d5a",
+      "head": "ec3bbc1212d2a80b46fc5d184a32bc5508871553",
       "ref": "refs/heads/feat/lineage-viewer",
       "present": true,
       "locked": false,
       "prunable": false,
-      "status": "active",
+      "status": "integrated",
       "owner_lane": "lineage",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
