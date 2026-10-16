@@ -15,7 +15,7 @@ void main(){
  status=meta.z;
  alpha=1.;
  if(mode<.5){
-   p=vec2(58.+clamp(meta.x/duration,0.,1.)*(size.x-64.),meta.y*28.+5.);
+   p=vec2(58.+clamp(meta.x/duration,0.,1.)*(size.x-64.),meta.y*28.+45.);
    extent=vec2(2.,19.);
    alpha=meta.x<=time?1.:.28;
  }else{
@@ -25,9 +25,9 @@ void main(){
    alpha=motion>.5?1.:.4+.6*smoothstep(0.,10800.,age);
    float scale=motion>.5?1.:.85+.15*alpha;
    float cell=size.x/columns;
-   float h=(size.y-152.)/ceil(6./columns);
+   float h=(size.y-192.)/ceil(6./columns);
    extent=vec2(min(cell-10.,h*.75),h-8.)*scale;
-   p=vec2(mod(slot,columns)*cell+(cell-extent.x)*.5,152.+floor(slot/columns)*h+(h-extent.y)*.5);
+   p=vec2(mod(slot,columns)*cell+(cell-extent.x)*.5,192.+floor(slot/columns)*h+(h-extent.y)*.5);
    if(meta.w<start || meta.w>=end || meta.w<0. || meta.x>time){p=vec2(-10000.);alpha=0.;}
  }
  vec2 pixel=p+c*extent;
@@ -79,20 +79,24 @@ export async function createSpriteRenderer(canvas,{atlas,base,rows,themes,min,ma
   }
   function upload(){if(!gl||lost)return;for(const b of batches){gl.bindBuffer(gl.ARRAY_BUFFER,b.buffer);gl.bufferData(gl.ARRAY_BUFFER,Float32Array.from(b.items.flatMap(e=>[...e.sprite.uv,e.time,e.lane,e.status,e.ordinal])),gl.STATIC_DRAW);}}
   function draw(){
-    raf=0;if(lost)return;
+    raf=0;if(lost||width<=16||height<=192)return;
     const columns=width<600?3:6;
     if(gl){
       gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(242/255,241/255,236/255,1);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(program);
+      gl.enable(gl.SCISSOR_TEST);
+      gl.scissor(Math.round(8*dpr),Math.round((height-19)*dpr),Math.round((width-16)*dpr),Math.round(6*dpr));gl.clearColor(.72,.74,.78,1);gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.scissor(Math.round(Math.max(0,Math.min(1,now/((max-min)/1000)))*(width-16)*dpr),Math.round((height-24)*dpr),Math.round(16*dpr),Math.round(16*dpr));gl.clearColor(.09,.23,.86,1);gl.clear(gl.COLOR_BUFFER_BIT);gl.disable(gl.SCISSOR_TEST);
       gl.uniform2f(uniforms.size,width,height);gl.uniform1f(uniforms.time,now);gl.uniform1f(uniforms.duration,(max-min)/1000);gl.uniform1f(uniforms.end,end);gl.uniform1f(uniforms.columns,columns);gl.uniform1f(uniforms.motion,reducedMotion?1:0);gl.uniform1i(uniforms.atlas,0);
       for(const mode of [0,1]){gl.uniform1f(uniforms.mode,mode);for(const b of batches){gl.bindTexture(gl.TEXTURE_2D,b.texture);gl.bindVertexArray(b.vao);gl.drawArraysInstanced(gl.TRIANGLES,0,6,b.items.length);}}
     }else{
       ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=1;ctx.fillStyle='#f2f1ec';ctx.fillRect(0,0,width,height);
-      const start=Math.max(0,end-6),cell=width/columns,h=(height-152)/Math.ceil(6/columns);
-      for(const e of entries){ctx.globalAlpha=e.time<=now?1:.28;ctx.fillStyle=colors[e.status];ctx.fillRect(58+Math.max(0,Math.min(1,e.time/((max-min)/1000)))*(width-64),e.lane*28+5,2,19);
+      ctx.fillStyle='#b8bdc8';ctx.fillRect(8,13,width-16,6);ctx.fillStyle='#173bdc';ctx.fillRect(Math.max(0,Math.min(1,now/((max-min)/1000)))*(width-16),8,16,16);
+      const start=Math.max(0,end-6),cell=width/columns,h=(height-192)/Math.ceil(6/columns);
+      for(const e of entries){ctx.globalAlpha=e.time<=now?1:.28;ctx.fillStyle=colors[e.status];ctx.fillRect(58+Math.max(0,Math.min(1,e.time/((max-min)/1000)))*(width-64),e.lane*28+45,2,19);
         if(e.ordinal<start||e.ordinal>=end||e.ordinal<0||e.time>now)continue;
         const t=Math.min(1,Math.max(0,(now-e.time)/10800)),alpha=reducedMotion?1:.4+.6*t*t*(3-2*t),scale=reducedMotion?1:.85+.15*alpha;
         const w=Math.min(cell-10,h*.75)*scale,sh=(h-8)*scale,slot=e.ordinal-start,image=images[e.sprite.page],uv=e.sprite.uv;
-        ctx.globalAlpha=alpha;ctx.drawImage(image,uv[0]*image.width,uv[1]*image.height,uv[2]*image.width,uv[3]*image.height,(slot%columns)*cell+(cell-w)/2,152+Math.floor(slot/columns)*h+(h-sh)/2,w,sh);
+        ctx.globalAlpha=alpha;ctx.drawImage(image,uv[0]*image.width,uv[1]*image.height,uv[2]*image.width,uv[3]*image.height,(slot%columns)*cell+(cell-w)/2,192+Math.floor(slot/columns)*h+(h-sh)/2,w,sh);
       }
       ctx.globalAlpha=1;
     }
@@ -107,9 +111,9 @@ export async function createSpriteRenderer(canvas,{atlas,base,rows,themes,min,ma
     draw(time,streamEnd){now=(time-min)/1000;end=streamEnd;cancelAnimationFrame(raf);draw();},
     filter(positions){const ordinals=new Map(positions.map((p,i)=>[p,i]));for(const e of entries)e.ordinal=ordinals.get(e.position)??-1;upload();},
     hit(x,y){
-      if(y<140){const lane=Math.min(4,Math.floor(y/28)),time=min+Math.max(0,Math.min(1,(x-58)/(width-64)))*(max-min);let closest=-1,distance=Infinity;for(const e of entries){const delta=Math.abs(e.time*1000+min-time);if(e.lane===lane&&delta<distance){distance=delta;closest=e.position;}}return closest;}
-      if(y<152)return -1;
-      const columns=width<600?3:6,slot=Math.floor(x/(width/columns))+Math.floor((y-152)/((height-152)/Math.ceil(6/columns)))*columns;
+      if(y>=40&&y<180){const lane=Math.min(4,Math.floor((y-40)/28)),time=min+Math.max(0,Math.min(1,(x-58)/(width-64)))*(max-min);let closest=-1,distance=Infinity;for(const e of entries){const delta=Math.abs(e.time*1000+min-time);if(e.lane===lane&&delta<distance){distance=delta;closest=e.position;}}return closest;}
+      if(y<192)return -1;
+      const columns=width<600?3:6,slot=Math.floor(x/(width/columns))+Math.floor((y-192)/((height-192)/Math.ceil(6/columns)))*columns;
       const e=entries.find(e=>e.ordinal===Math.max(0,end-6)+slot&&e.ordinal<end&&e.time<=now);return e?.position??-1;
     }
   };

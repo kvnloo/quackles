@@ -11,7 +11,8 @@ try {
   for(const backend of ['webgl2','canvas2d']) {
   const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
   if(backend==='canvas2d')await page.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return type==='webgl2'?null:original.call(this,type,...args);};});
-  page.on('console',message=>console.log(message.type(),message.text()));
+  const glErrors=[];
+  page.on('console',message=>{if(/GL_INVALID|GL_OUT_OF_MEMORY/.test(message.text()))glErrors.push(message.text());});
   page.on('pageerror',error=>console.error(error));
   await page.goto(server.url+'/lineage/',{waitUntil:'networkidle'});await page.waitForSelector('[data-ready=true]');
   assert.equal(await page.locator('.tl-instrument canvas').count(),1,'one sprite canvas replaces DOM ticks and animated thumbnails');
@@ -26,6 +27,9 @@ try {
   assert.ok(receipt.width>0 && receipt.height>0);
   await page.locator('[data-timeline-range]').press('Home');await page.waitForTimeout(250);
   assert.match(await page.locator('[data-timeline-caption]').innerText(),/blue.*v0/i);
+  const accessible=page.getByRole('slider',{name:'Project time'});
+  assert.equal(await accessible.getAttribute('aria-valuenow'),await page.locator('.tl-instrument').getAttribute('data-time'));
+  assert.ok(await accessible.getAttribute('aria-valuetext'));
   await page.locator('[data-timeline-range]').press('End');await page.waitForTimeout(250);
   assert.match(await page.locator('[data-timeline-count]').innerText(),/665 \/ 665/);
   if(backend==='webgl2'){
@@ -35,6 +39,7 @@ try {
     await page.waitForFunction(()=>document.querySelector('canvas').dataset.ready==='true');
   }
   await page.locator('canvas').screenshot({path:join(artifacts,backend+'.png')});
+  assert.deepEqual(glErrors,[]);
   receipts.push({...receipt,contextRestored:backend==='webgl2'});
   console.log(JSON.stringify(receipt));
   await page.close();

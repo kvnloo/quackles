@@ -29,11 +29,11 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   transport.append(play,speedLabel);top.append(heading,transport);
   const readout=el('div','tl-readout'), date=el('time'),caption=el('p');caption.dataset.timelineCaption='';
   readout.append(date,caption);
-  const range=el('input','tl-range');range.type='range';range.min=min;range.max=max;range.step='1';range.value=max;range.dataset.timelineRange='';range.setAttribute('aria-label','Project time');range.setAttribute('aria-describedby','tl-help');
+  const range=el('div','tl-range');range.tabIndex=0;range.setAttribute('role','slider');range.setAttribute('aria-orientation','horizontal');range.min=min;range.max=max;range.value=max;range.dataset.timelineRange='';range.setAttribute('aria-valuemin',String(min));range.setAttribute('aria-valuemax',String(max));range.setAttribute('aria-valuenow',String(max));range.setAttribute('aria-label','Project time');range.setAttribute('aria-describedby','tl-help');
   const endpoints=el('div','tl-endpoints');endpoints.append(el('span','','BLUE / V0 · SEP 14'),el('span','',format.format(max)+' CDT'));
   const lanes=el('div','tl-lanes'),canvas=el('canvas','tl-canvas');
   canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Five scene swimlanes and six chronological artifact thumbnails through project time. Use the time slider, scene buttons and full accessible archive below.');
-  lanes.append(canvas);
+  lanes.append(canvas,range);
   const preview=el('div','tl-preview');preview.hidden=true;preview.setAttribute('aria-live','polite');
   const previewText=el('span','','Hover a tick, or focus a scene and use the arrow keys.');preview.append(previewText);
   function previewAt(i) {if(i<0)return;preview.hidden=false;const e=rows[i];previewText.textContent=`${label(e)} · ${e.status} · ${formatted[i]} CDT`;}
@@ -83,7 +83,7 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   const streamNote=el('p','tl-help','A recycled window of the chronological stream. Earlier / Later explores every matching artifact through T. The complete archive below remains available.');
   const details=el('details','tl-details'),summary=el('summary','','Milestones & reading key');details.append(summary,legend,milestones,help,caveat);
   details.open=matchMedia('(min-width: 701px)').matches;
-  host.append(top,readout,range,endpoints,lanes,preview,stateHeading,stateRow,streamHeading,streamRow,streamNote,details);
+  host.append(top,readout,endpoints,lanes,preview,stateHeading,stateRow,streamHeading,streamRow,streamNote,details);
   const renderer=await createSpriteRenderer(canvas,{atlas,base:atlasBase,rows,themes,min,max,reducedMotion});
   let hoverRaf=0,hoverX=0,hoverY=0;
   canvas.addEventListener('pointermove',event=>{const sample=event.getCoalescedEvents?.().at(-1)||event;hoverX=sample.offsetX;hoverY=sample.offsetY;if(!hoverRaf)hoverRaf=requestAnimationFrame(()=>{hoverRaf=0;previewAt(renderer.hit(hoverX,hoverY));});},{passive:true});
@@ -137,6 +137,7 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   }
   function publishDetails(){
     date.dateTime=new Date(times[current]).toISOString();date.textContent=formatted[current]+' CDT';
+    range.setAttribute('aria-valuenow',String(times[current]));
     range.setAttribute('aria-valuetext',`${date.textContent}, ${label(rows[current])}`);
     paintStream();count.textContent=`${streamEnd+1} / ${stream.length} matching artifacts`;
     for(let lane=0;lane<5;lane++) {const nextState=selectedStates[current*5+lane];empty[lane].style.visibility=nextState<0?'visible':'hidden';fillCard(cards[lane],nextState);}

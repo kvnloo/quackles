@@ -10,7 +10,7 @@
 .tl-paging{display:flex;gap:8px}.tl-instrument .tl-tick{min-height:0}
 @media(max-width:700px){.tl-top h3{max-width:11ch;font-size:24px}.tl-state-heading{margin-top:12px}.tl-state-slot{height:230px}.tl-state-artifact img{height:172px}.tl-stream-artifact{height:222px;flex-basis:142px}.tl-stream-artifact img{height:160px}.tl-paging{margin-top:8px}}
 .tl-instrument .tl-range{border:0;padding:0;min-height:32px;color-scheme:light}.tl-instrument select option{background:#f2f1ec;color:#111a38}.tl-instrument h3{font-size:clamp(24px,3vw,40px);line-height:1.1}.tl-instrument p{margin-bottom:10px}
-.tl-instrument{contain:layout paint style}
+.tl-instrument{contain:layout paint style;will-change:transform}
 .tl-preview{height:64px;margin:8px 0}.tl-preview img{height:60px}.tl-preview[hidden]{display:flex;visibility:hidden}
 .tl-state-heading{height:64px;contain:strict}
 .tl-state-row{height:320px;contain:strict}
@@ -18,14 +18,14 @@
 @media(max-width:700px){.tl-state-row{height:230px}.tl-stream-row{height:222px}.tl-state-heading{height:72px}}
 @media(prefers-reduced-motion:reduce){.tl-stream-artifact{transition:none}}
 /* One atlas surface: lane controls are the only DOM over the swimlane ticks. */
-.tl-lanes{position:relative;height:340px;contain:strict}
+.tl-lanes{position:relative;height:380px;contain:strict}
 .tl-canvas{display:block;width:100%;height:100%;touch-action:pan-y}
 .tl-instrument .tl-lane{position:absolute;left:0;width:54px;height:28px;min-height:28px;padding:0;border:0;display:block;font:10px ui-monospace,monospace;text-align:left;text-transform:uppercase}
-.tl-lane:nth-of-type(1){top:0}.tl-lane:nth-of-type(2){top:28px}.tl-lane:nth-of-type(3){top:56px}.tl-lane:nth-of-type(4){top:84px}.tl-lane:nth-of-type(5){top:112px}
+.tl-lane:nth-of-type(1){top:40px}.tl-lane:nth-of-type(2){top:68px}.tl-lane:nth-of-type(3){top:96px}.tl-lane:nth-of-type(4){top:124px}.tl-lane:nth-of-type(5){top:152px}
 .tl-stream-links{display:flex;flex-wrap:wrap;gap:8px;min-height:52px;contain:layout paint style}
 .tl-stream-links .tl-stream-artifact{display:block;flex:none;height:auto;padding:6px;contain:none;font:11px ui-monospace,monospace}
 .tl-stream-links .tl-stream-artifact[hidden]{display:none}
-.tl-readout{transform:translateZ(0)}.tl-instrument .tl-range{transform:translateZ(0)}
+.tl-readout{transform:translateZ(0)}.tl-instrument .tl-range{position:absolute;left:0;top:0;margin:0;contain:strict;height:32px;background:transparent}
 .tl-readout time{display:none}.tl-readout p{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:700px){.tl-lanes{height:400px}}
+@media(max-width:700px){.tl-lanes{height:440px}}
 
