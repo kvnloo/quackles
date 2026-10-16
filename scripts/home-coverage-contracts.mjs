@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {paintedCoverage} from './home-coverage.mjs';
+const frame=[0,0,100,100],base=[0,0,100,100];
+const layer=(rects,opacity=1)=>({rects,opacity,visible:true});
+const partial=layer([[0,0,.5,1,2048]]),full=layer([[0,0,1,1,1365]]);
+const measure=layers=>paintedCoverage({frame,base,layers});
+assert.equal(measure({detail:partial}).plateFraction,.5,'detail bounds cannot stand for painted coverage');
+assert.equal(measure({detail:partial,floor:full}).plateFraction,0,'painted floor fills detail holes');
+assert.equal(measure({detail:partial,floor:{...full,visible:false}}).plateFraction,.5,'hidden floor does not count');
+assert.equal(measure({detail:partial,underlay:layer([[.5,0,1,1,2048]])}).plateFraction,0,'union across complementary layers');
+assert.equal(measure({detail:layer([[0,0,1,1,4096]],.1)}).plateFraction,1,'transparent lock-fade does not conceal the plate');
+assert.equal(measure({floor:layer([[0,0,.49,1,1365],[.51,0,1,1,1365]])}).plateFraction,.02,'interior gaps are not lost to a sparse point grid');
+assert.equal(paintedCoverage({frame:[0,0,100,100],base:[-100,-100,300,300],layers:{floor:layer([[1/3,1/3,2/3,2/3,1365]])}}).plateFraction,0,'source rectangles follow the transformed image');
+assert.equal(measure({floor:full}).edgeGap,false);
+assert.equal(measure({detail:partial}).edgeGap,true);
+console.log('PASS 9 painted-coverage contracts');
