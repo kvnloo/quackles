@@ -41,7 +41,7 @@ try {
     await page.locator('.tl-details').evaluate(n=>n.open=true);
     const night=page.locator('.tl-milestone').filter({hasText:'Night v2 begins'});await night.click();await page.waitForTimeout(150);
     assert.match(await page.locator('[data-timeline-caption]').innerText(),/Night v2/i);
-    const tick=page.locator('.tl-lane').first();await tick.focus();await tick.press('ArrowRight');assert.match(await page.locator('.tl-preview').innerText(),/v\d/);
+    const tick=page.locator('.tl-lane-control').first();await tick.focus();await tick.press('ArrowRight');assert.match(await page.locator('.tl-preview').innerText(),/v\d/);
     await range.scrollIntoViewIfNeeded();
     const box=await range.boundingBox();
     if(profile==='mobile') {

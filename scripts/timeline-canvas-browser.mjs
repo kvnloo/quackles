@@ -23,7 +23,7 @@ try {
   const receipt=await page.locator('canvas').evaluate(n=>({renderer:n.dataset.renderer,gl:n.dataset.gl,instances:n.dataset.instances,width:n.width,height:n.height}));
   assert.equal(Number(receipt.instances),665);
   assert.equal(receipt.renderer,backend);
-  assert.equal(receipt.width,656,'DPR2 backing surface');
+  assert.equal(receipt.width,await page.locator('canvas').evaluate(n=>Math.round(n.getBoundingClientRect().width*2)),'DPR2 backing surface');
   assert.ok(receipt.width>0 && receipt.height>0);
   await page.locator('[data-timeline-range]').press('Home');await page.waitForTimeout(250);
   assert.match(await page.locator('[data-timeline-caption]').innerText(),/blue.*v0/i);

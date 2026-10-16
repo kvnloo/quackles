@@ -38,6 +38,7 @@ class AtlasTest(unittest.TestCase):
             image = pages[sprite['page']]
             crop = image.crop((round(u*image.width),round(v*image.height),round((u+w)*image.width),round((v+h)*image.height)))
             self.assertGreater(sum(crop.convert('RGB').getextrema()[i][1]-crop.convert('RGB').getextrema()[i][0] for i in range(3)), 0)
+            self.assertEqual(hashlib.sha256(crop.convert('RGB').tobytes()).hexdigest(), sprite.get('decodedSha256'), 'atlas must retain the locked thumbnail pixels without downsampling or lossy re-encoding')
 
 if __name__ == '__main__':
     unittest.main()

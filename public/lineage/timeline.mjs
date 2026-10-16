@@ -33,18 +33,25 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   const endpoints=el('div','tl-endpoints');endpoints.append(el('span','','BLUE / V0 · SEP 14'),el('span','',format.format(max)+' CDT'));
   const lanes=el('div','tl-lanes'),canvas=el('canvas','tl-canvas');
   canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Five scene swimlanes and six chronological artifact thumbnails through project time. Use the time slider, scene buttons and full accessible archive below.');
-  lanes.append(canvas,range);
+  const surface=el('div','tl-surface');
   const preview=el('div','tl-preview');preview.hidden=true;preview.setAttribute('aria-live','polite');
-  const previewText=el('span','','Hover a tick, or focus a scene and use the arrow keys.');preview.append(previewText);
-  function previewAt(i) {if(i<0)return;preview.hidden=false;const e=rows[i];previewText.textContent=`${label(e)} · ${e.status} · ${formatted[i]} CDT`;}
+  const previewImage=el('span','tl-preview-image');previewImage.setAttribute('aria-hidden','true');
+  const previewText=el('span','','Hover a tick, or focus a scene lane and use the arrow keys.');preview.append(previewImage,previewText);
+  function previewAt(i) {if(i<0)return;preview.hidden=false;const e=rows[i];previewText.textContent=`${label(e)} · ${e.status} · ${formatted[i]} CDT`;renderer.preview(i);}
   for(const theme of themes) {
-    const lane=el('button','tl-lane',theme);lane.type='button';lane.setAttribute('aria-label',`${theme} versions: arrow keys to explore, Enter to select`);
+    const lane=el('div','tl-lane'),name=el('span','tl-lane-name',theme),track=el('div','tl-track'),control=el('button','tl-lane-control');control.type='button';
+    lane.append(name,track);track.append(control);
     const positions=rows.flatMap((e,i)=>e.theme===theme?[i]:[]);let selected=0;
-    lane.addEventListener('focus',()=>previewAt(positions[selected]));
-    lane.addEventListener('click',()=>{pause();seek(times[positions[selected]],positions[selected]);});
-    lane.addEventListener('keydown',event=>{
+    function focusTick(){const i=positions[selected];control.style.left=`${Math.max(0,(times[i]-min)/(max-min))*100}%`;control.setAttribute('aria-label',`${label(rows[i])} · ${rows[i].status}`);}
+    focusTick();control.addEventListener('focus',()=>previewAt(positions[selected]));
+    control.addEventListener('blur',()=>{preview.hidden=true;renderer.preview(-1);});
+    control.addEventListener('click',()=>{pause();seek(times[positions[selected]],positions[selected]);});
+    track.addEventListener('pointermove',event=>{const i=renderer.hitLane(themes.indexOf(theme),event.offsetX);if(i>=0)previewAt(i);else{preview.hidden=true;renderer.preview(-1);}},{passive:true});
+    track.addEventListener('pointerleave',()=>{preview.hidden=true;renderer.preview(-1);},{passive:true});
+    track.addEventListener('click',event=>{if(event.target===control)return;const i=renderer.hitLane(themes.indexOf(theme),event.offsetX);if(i>=0){pause();seek(times[i],i);}});
+    control.addEventListener('keydown',event=>{
       let next;if(event.key==='ArrowRight')next=selected+1;else if(event.key==='ArrowLeft')next=selected-1;else if(event.key==='Home')next=0;else if(event.key==='End')next=positions.length-1;else return;
-      event.preventDefault();event.stopPropagation();selected=Math.max(0,Math.min(positions.length-1,next));previewAt(positions[selected]);
+      event.preventDefault();event.stopPropagation();selected=Math.max(0,Math.min(positions.length-1,next));focusTick();previewAt(positions[selected]);
     });lanes.append(lane);
   }
   const legend=el('p','tl-legend');
@@ -63,14 +70,13 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
     img.width=240;img.height=320;img.decoding='async';node.append(img,title,detail);
     return {node,img,title,detail,index:-1};
   }
-  function fillCard(card,i) {
-    if(card.index===i)return;card.index=i;const visible=i>=0;
-    card.node.style.visibility=visible?'visible':'hidden';card.node.tabIndex=visible?0:-1;card.node.dataset.active=String(visible);card.node.setAttribute('aria-hidden',String(!visible));
-    if(!visible)return;
-    const e=rows[i];card.node.dataset.position=i;card.node.dataset.date=e.date;card.node.href=link(e);
-    card.title.textContent=`${e.theme} / ${e.version}`;card.detail.textContent=`${e.status} · ${formatted[i]}`;
-    card.img.alt=label(e);card.img.src=source(e);
-
+  function fillCard(card,i,images=true) {
+    if(card.index!==i){
+      card.index=i;const visible=i>=0;
+      card.node.style.visibility=visible?'visible':'hidden';card.node.tabIndex=visible?0:-1;card.node.dataset.active=String(visible);card.node.setAttribute('aria-hidden',String(!visible));
+      if(visible){const e=rows[i];card.node.dataset.position=i;card.node.dataset.date=e.date;card.node.href=link(e);card.title.textContent=`${e.theme} / ${e.version}`;card.detail.textContent=`${e.status} · ${formatted[i]}`;}
+    }
+    if(images&&i>=0&&card.img&&card.imageIndex!==i){const e=rows[i];card.imageIndex=i;card.img.alt=label(e);card.img.src=source(e);}
   }
   for(const theme of themes) {
     const slot=el('div','tl-state-slot');slot.dataset.scene=theme;
@@ -79,17 +85,15 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   }
   const streamHeading=el('div','tl-state-heading'),streamTitle=el('h4','','Artifacts through this time'),paging=el('div','tl-paging');
   const earlier=el('button','','← Earlier'),later=el('button','','Later →');earlier.type=later.type='button';earlier.dataset.timelineEarlier='';later.dataset.timelineLater='';paging.append(earlier,later);streamHeading.append(streamTitle,paging);
-  const streamRow=el('div','tl-stream-links'),streamCards=Array.from({length:6},()=>{const node=el('a','tl-stream-artifact');streamRow.append(node);return {node,index:-1};});
+  const streamRow=el('div','tl-stream-row'),streamCards=Array.from({length:6},()=>{const node=el('a','tl-stream-artifact'),image=el('span','tl-stream-image'),title=el('strong'),detail=el('span');image.setAttribute('aria-hidden','true');node.append(image,title,detail);node.style.visibility='hidden';streamRow.append(node);return {node,title,detail,index:-1};});
   const streamNote=el('p','tl-help','A recycled window of the chronological stream. Earlier / Later explores every matching artifact through T. The complete archive below remains available.');
   const details=el('details','tl-details'),summary=el('summary','','Milestones & reading key');details.append(summary,legend,milestones,help,caveat);
   details.open=matchMedia('(min-width: 701px)').matches;
-  host.append(top,readout,endpoints,lanes,preview,stateHeading,stateRow,streamHeading,streamRow,streamNote,details);
-  const renderer=await createSpriteRenderer(canvas,{atlas,base:atlasBase,rows,themes,min,max,reducedMotion});
-  let hoverRaf=0,hoverX=0,hoverY=0;
-  canvas.addEventListener('pointermove',event=>{const sample=event.getCoalescedEvents?.().at(-1)||event;hoverX=sample.offsetX;hoverY=sample.offsetY;if(!hoverRaf)hoverRaf=requestAnimationFrame(()=>{hoverRaf=0;previewAt(renderer.hit(hoverX,hoverY));});},{passive:true});
-  canvas.addEventListener('pointerleave',()=>{cancelAnimationFrame(hoverRaf);hoverRaf=0;preview.hidden=true;},{passive:true});
-  canvas.addEventListener('click',event=>{const i=renderer.hit(event.offsetX,event.offsetY);if(i>=0){pause();seek(times[i],i);}});
-  let current=-1, raf=0, pending=max, pendingPosition=null, playing=false,lastStep=0, playRaf=0, prefetchTimer=0, urlTimer=0,detailTimer=0,lastCaption=0;
+  surface.append(lanes,preview,stateHeading,stateRow,streamHeading,streamRow);
+  host.append(top,readout,range,endpoints,surface,streamNote,details,canvas);
+  const renderer=await createSpriteRenderer(canvas,{atlas,base:atlasBase,rows,themes,min,max,reducedMotion,surface:host,lanes,previewImage,streamRow,range,readout,stateRow,formatted});
+  streamRow.addEventListener('scroll',()=>renderer.scroll(streamRow.scrollLeft),{passive:true});
+  let current=-1, raf=0, pending=max, pendingPosition=null, playing=false,lastStep=0, playRaf=0, prefetchTimer=0, urlTimer=0,detailTimer=0,lastCaption=0,published=-1,generation=0;
   let stream=[], streamPositions=new Uint32Array(), streamEnd=-1, selectedStates=states, pageOffset=0;
   const positions=new Map(rows.map((e,i)=>[`${e.theme}/${e.version}`,i])),loaded=new Map();
   function prepare(i) {
@@ -104,14 +108,10 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
       for(let i=Math.max(0,current-2);i<=Math.min(rows.length-1,current+8);i++)prepare(i);
     },60);
   }
-  function paintStream() {
+  function paintStream(images=true) {
     const end=Math.max(0,streamEnd+1-pageOffset),start=Math.max(0,end-streamCards.length);
-    streamCards.forEach((card,i)=>{
-      const position=start+i<end?stream[start+i].position:-1;if(card.index===position)return;card.index=position;
-      card.node.hidden=position<0;card.node.dataset.active=String(position>=0);
-      if(position>=0){const e=rows[position];card.node.href=link(e);card.node.dataset.position=position;card.node.dataset.date=e.date;card.node.textContent=`${e.theme} / ${e.version}`;}
-    });
-    renderer.draw(pending,end);
+    streamCards.forEach((card,i)=>fillCard(card,start+i<end?stream[start+i].position:-1,images));
+    if(images)renderer.draw(times[current],end);
     earlier.disabled=start===0;later.disabled=pageOffset===0;
   }
   earlier.addEventListener('click',()=>{pageOffset=Math.min(Math.max(0,streamEnd+1-streamCards.length),pageOffset+streamCards.length);paintStream();});
@@ -122,30 +122,36 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
     history.replaceState(null,'',u.href);
   }
   function render() {
-    raf=0;const next=Math.max(index.start,Math.min(rows.length-1,pendingPosition??(pending<=min?index.start:upperBound(times,pending))));pendingPosition=null;
-    range.value=pending;
+    raf=0;generation++;const next=Math.max(index.start,Math.min(rows.length-1,pendingPosition??(pending<=min?index.start:upperBound(times,pending))));pendingPosition=null;
+    if(Number(range.value)!==times[next])range.value=times[next];
     if(next!==current){
       current=next;host.dataset.time=String(times[current]);host.dataset.position=String(current);
-      if(performance.now()-lastCaption>=120)publishCaption();
       streamEnd=upperBound(streamPositions,current);pageOffset=0;
     }
-    renderer.draw(pending,streamEnd+1);
+    if(published!==current&&performance.now()-lastCaption>=120)publishCaption();
+    renderer.draw(times[current],streamEnd+1,selectedStates.subarray(current*5,current*5+5),current);
     // Medium-image decoding and semantic detail publication settle after direct
     // manipulation; canvas/time feedback never waits for image or DOM work.
     clearTimeout(detailTimer);detailTimer=setTimeout(publishDetails,90);
     onTime(times[current],current);clearTimeout(urlTimer);urlTimer=setTimeout(writeURL,180);
   }
-  function publishCaption(){lastCaption=performance.now();caption.textContent=`${formatted[current]} CDT · ${label(rows[current])}`;}
+  function publishCaption(){
+    lastCaption=performance.now();published=current;renderer.caption(current);
+    range.setAttribute('aria-valuenow',String(times[current]));range.setAttribute('aria-valuetext',`${formatted[current]} CDT, ${label(rows[current])}`);
+  }
   function publishDetails(){
-    publishCaption();
+    if(dragging)return;
+    publishCaption();caption.textContent=label(rows[current]);
     date.dateTime=new Date(times[current]).toISOString();date.textContent=formatted[current]+' CDT';
     range.setAttribute('aria-valuenow',String(times[current]));
     range.setAttribute('aria-valuetext',`${date.textContent}, ${label(rows[current])}`);
     paintStream();count.textContent=`${streamEnd+1} / ${stream.length} matching artifacts`;
     for(let lane=0;lane<5;lane++) {const nextState=selectedStates[current*5+lane];empty[lane].style.visibility=nextState<0?'visible':'hidden';fillCard(cards[lane],nextState);}
     prefetch();
+    const stamp=generation;
+    Promise.all(cards.filter(c=>c.index>=0).map(c=>c.img.decode().catch(()=>{}))).then(()=>{if(stamp===generation)renderer.settle();});
   }
-  function seek(time,position=null) {pending=Math.max(min,Math.min(max,time));pendingPosition=position;if(!raf)raf=requestAnimationFrame(render);}
+  function seek(time,position=null) {pending=Math.max(min,Math.min(max,time));pendingPosition=position;if(!raf){raf=1;renderer.schedule(render);}}
   function pause() {if(!playing)return;playing=false;cancelAnimationFrame(playRaf);play.textContent='Play →';play.setAttribute('aria-pressed','false');}
   function advance(now) {
     if(!playing)return;
@@ -160,7 +166,7 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
   function pointerSeek(event){const sample=event.getCoalescedEvents?.().at(-1)||event;pause();seek(min+Math.max(0,Math.min(1,(sample.offsetX-8)/Math.max(1,rangeWidth-16)))*(max-min));}
   range.addEventListener('pointerdown',event=>{event.preventDefault();range.focus({preventScroll:true});dragging=true;range.setPointerCapture(event.pointerId);pointerSeek(event);});
   range.addEventListener('pointermove',event=>{if(dragging)pointerSeek(event);},{passive:true});
-  range.addEventListener('pointerup',()=>{dragging=false;},{passive:true});
+  range.addEventListener('pointerup',()=>{dragging=false;if(current>=0)publishDetails();},{passive:true});
   range.addEventListener('pointercancel',()=>{dragging=false;},{passive:true});
   range.addEventListener('input',()=>{pause();seek(Number(range.value));});
   range.addEventListener('change',()=>{if(current>=0)writeURL();});

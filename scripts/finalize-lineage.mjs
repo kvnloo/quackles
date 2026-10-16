@@ -32,7 +32,10 @@ export function fingerprintTimeline(viewer,timeline) {
 async function main() {
   const root=resolve(process.env.OUT_DIR || 'out');
   const target=resolve(root,'lineage/index.html');
-  const canvas=await readFile(resolve(root,'lineage/canvas.mjs'));
+  const labels=await readFile(resolve(root,'lineage/labels.mjs'));
+  const labelsName=`labels.${createHash('sha256').update(labels).digest('hex').slice(0,16)}.mjs`;
+  await writeFile(resolve(root,'lineage',labelsName),labels);
+  const canvas=(await readFile(resolve(root,'lineage/canvas.mjs'),'utf8')).replaceAll('./labels.mjs',`./${labelsName}`);
   const canvasName=`canvas.${createHash('sha256').update(canvas).digest('hex').slice(0,16)}.mjs`;
   await writeFile(resolve(root,'lineage',canvasName),canvas);
   const timeline=(await readFile(resolve(root,'lineage/timeline.mjs'),'utf8')).replaceAll('./canvas.mjs',`./${canvasName}`);

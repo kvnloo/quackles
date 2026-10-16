@@ -1,47 +1,75 @@
-"""Generate public, content-addressed 96x128 sprite pages from public thumbnails.
-Run with LINEAGE_ASSETS pointing at the approved asset checkout. No source paths
-are emitted. Ordinary builds consume the checked-in pages without Pillow/I/O.
+"""Pack approved thumbnails losslessly; never change the locked source pixels.
+Ordinary builds consume committed pages. LINEAGE_ASSETS is build-time only.
+The same packer can consume local review thumbnails without publishing paths.
 """
 import hashlib
 import io
 import json
 import os
 from pathlib import Path
-from PIL import Image, ImageOps
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def main():
-    destination = ROOT / 'public/lineage'
-    archive = json.loads((ROOT / 'content/lineage.json').read_text())
-    raw = (destination / archive['dataset']).read_bytes()
-    entries = json.loads(raw)['entries']
-    source = Path(os.environ['LINEAGE_ASSETS']) / 'lineage/v1'
-    width, height, cols, rows, gutter = 96, 128, 16, 16, 2
-    cellw, cellh = width+2*gutter, height+2*gutter
+
+def pack(entries, paths, destination, dataset_sha):
+    size, gutter = 2048, 2
     pages, sprites = [], []
-    for start in range(0, len(entries), cols*rows):
-        page = Image.new('RGB', (cols*cellw, rows*cellh), '#e3e3de')
-        for n, entry in enumerate(entries[start:start+cols*rows]):
-            x, y = (n % cols)*cellw+gutter, (n//cols)*cellh+gutter
-            with Image.open(source / entry['thumbs']['small'][0]) as image:
-                thumb = ImageOps.contain(image.convert('RGB'), (width, height), Image.Resampling.LANCZOS)
-                page.paste(thumb, (x+(width-thumb.width)//2, y+(height-thumb.height)//2))
-            sprites.append(dict(key=entry['theme']+'/'+entry['version'], page=len(pages),
-                                uv=[x/page.width,y/page.height,width/page.width,height/page.height],
-                                date=entry['date'], theme=entry['theme'], status=entry['status']))
+    page = Image.new('RGB', (size, size), '#e3e3de')
+    x = y = shelf = 0
+
+    def save_page():
         out = io.BytesIO()
-        page.save(out, format='WEBP', quality=78, method=6)
+        page.save(out, format='WEBP', lossless=True, method=6)
         encoded = out.getvalue()
         name = 'atlas.'+hashlib.sha256(encoded).hexdigest()[:16]+'.webp'
         (destination/name).write_bytes(encoded)
-        pages.append(dict(file=name,width=page.width,height=page.height,bytes=len(encoded)))
-    atlas = dict(schema=1,datasetSha256=hashlib.sha256(raw).hexdigest(),pages=pages,sprites=sprites)
-    encoded = (json.dumps(atlas,separators=(',',':'))+'\n').encode()
-    name = 'atlas.'+hashlib.sha256(encoded).hexdigest()[:16]+'.json'
-    (destination/name).write_bytes(encoded)
-    (ROOT/'content/lineage-atlas.json').write_text(json.dumps(dict(dataset=name))+'\n')
-    print(json.dumps(dict(dataset=name,sprites=len(sprites),pages=len(pages),bytes=sum(p['bytes'] for p in pages))))
+        pages.append(dict(file=name,width=size,height=size,bytes=len(encoded)))
 
-if __name__ == '__main__':
+    for entry, path in zip(entries, paths, strict=True):
+        with Image.open(path) as source:
+            image = source.convert('RGB')
+        w, h = image.size
+        if max(w,h)+2*gutter > size:
+            raise ValueError('Thumbnail exceeds atlas page')
+        if x+w+2*gutter > size:
+            x, y, shelf = 0, y+shelf, 0
+        if y+h+2*gutter > size:
+            save_page()
+            page = Image.new('RGB', (size,size), '#e3e3de')
+            x = y = shelf = 0
+        px, py = x+gutter, y+gutter
+        # Duplicate edge texels: bilinear filtering must never sample neighbors.
+        page.paste(image, (px,py))
+        page.paste(image.crop((0,0,1,h)).resize((gutter,h)),(x,py))
+        page.paste(image.crop((w-1,0,w,h)).resize((gutter,h)),(px+w,py))
+        page.paste(image.crop((0,0,w,1)).resize((w,gutter)),(px,y))
+        page.paste(image.crop((0,h-1,w,h)).resize((w,gutter)),(px,py+h))
+        sprites.append(dict(key=entry['theme']+'/'+entry['version'],page=len(pages),
+                            uv=[px/size,py/size,w/size,h/size],
+                            decodedSha256=hashlib.sha256(image.tobytes()).hexdigest(),
+                            date=entry['date'],theme=entry['theme'],status=entry['status']))
+        x += w+2*gutter
+        shelf = max(shelf,h+2*gutter)
+    if sprites:
+        save_page()
+    atlas=dict(schema=1,datasetSha256=dataset_sha,pages=pages,sprites=sprites)
+    encoded=(json.dumps(atlas,separators=(',',':'))+'\n').encode()
+    name='atlas.'+hashlib.sha256(encoded).hexdigest()[:16]+'.json'
+    (destination/name).write_bytes(encoded)
+    return name,atlas
+
+
+def main():
+    destination=ROOT/'public/lineage'
+    archive=json.loads((ROOT/'content/lineage.json').read_text())
+    raw=(destination/archive['dataset']).read_bytes()
+    entries=json.loads(raw)['entries']
+    source=Path(os.environ['LINEAGE_ASSETS'])/'lineage/v1'
+    name,atlas=pack(entries,[source/e['thumbs']['small'][0] for e in entries],destination,hashlib.sha256(raw).hexdigest())
+    (ROOT/'content/lineage-atlas.json').write_text(json.dumps(dict(dataset=name))+'\n')
+    print(json.dumps(dict(dataset=name,sprites=len(atlas['sprites']),pages=len(atlas['pages']),bytes=sum(p['bytes'] for p in atlas['pages']))))
+
+
+if __name__=='__main__':
     main()
