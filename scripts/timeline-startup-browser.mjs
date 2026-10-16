@@ -11,7 +11,7 @@ try{
  await page.addInitScript(()=>{window.startupTasks=[];new PerformanceObserver(list=>window.startupTasks.push(...list.getEntries().map(e=>({start:e.startTime,duration:e.duration})))).observe({type:'longtask',buffered:true});});
  await page.goto(server.url+'/lineage/',{waitUntil:'networkidle'});
  await page.waitForSelector('[data-ready="true"]');
- const before=await page.evaluate(()=>({tasks:window.startupTasks,atlas:performance.getEntriesByType('resource').filter(e=>/atlas\..*webp/.test(e.name)).map(e=>({name:e.name,bytes:e.transferSize})),cards:document.querySelectorAll('.lineage-card').length}));
+ const before=await page.evaluate(()=>({tasks:window.startupTasks,atlas:performance.getEntriesByType('resource').filter(e=>/atlas\..*webp/.test(e.name)).map(e=>({name:e.name,bytes:e.transferSize})),cards:document.querySelectorAll('.lineage-accessible a').length}));
  await mkdir(process.env.ARTIFACTS,{recursive:true});await writeFile(process.env.ARTIFACTS+'/startup.json',JSON.stringify(before,null,2));
  assert.equal(before.cards,665);
  assert.equal(before.atlas.length,0,'offscreen timeline must not fetch atlas pages during initial archive startup');

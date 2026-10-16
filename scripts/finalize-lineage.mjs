@@ -39,7 +39,11 @@ async function main() {
   const canvasName=`canvas.${createHash('sha256').update(canvas).digest('hex').slice(0,16)}.mjs`;
   await writeFile(resolve(root,'lineage',canvasName),canvas);
   const timeline=(await readFile(resolve(root,'lineage/timeline.mjs'),'utf8')).replaceAll('./canvas.mjs',`./${canvasName}`);
-  const {source,name,dependency}=fingerprintTimeline(await readFile(resolve(root,'lineage/viewer.mjs'),'utf8'),timeline);
+  const archive=await readFile(resolve(root,'lineage/archive-window.mjs'));
+  const archiveName=`archive-window.${createHash('sha256').update(archive).digest('hex').slice(0,16)}.mjs`;
+  await writeFile(resolve(root,'lineage',archiveName),archive);
+  const viewer=(await readFile(resolve(root,'lineage/viewer.mjs'),'utf8')).replaceAll('./archive-window.mjs',`./${archiveName}`);
+  const {source,name,dependency}=fingerprintTimeline(viewer,timeline);
   await writeFile(resolve(root,'lineage',dependency),timeline);
   await writeFile(resolve(root,'lineage',name),source);
   const original=await readFile(target,'utf8');

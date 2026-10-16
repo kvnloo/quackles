@@ -122,8 +122,11 @@ export async function mountTimeline({host,entries,index,source,link,atlas,atlasB
     renderer.draw(times[current],streamEnd+1,frameStates,current);
     // Medium-image decoding and semantic detail publication settle after direct
     // manipulation; canvas/time feedback never waits for image or DOM work.
-    clearTimeout(detailTimer);detailTimer=setTimeout(publishDetails,90);
-    onTime(times[current],current);clearTimeout(urlTimer);urlTimer=setTimeout(writeURL,180);
+    clearTimeout(detailTimer);detailTimer=setTimeout(()=>afterQuietFrames(publishDetails),90);
+    onTime(times[current],current);clearTimeout(urlTimer);urlTimer=setTimeout(()=>afterQuietFrames(writeURL),180);
+  }
+  function afterQuietFrames(work){
+    const stamp=generation;requestAnimationFrame(()=>requestAnimationFrame(()=>{if(stamp===generation&&!dragging)work();}));
   }
   function publishCaption(){
     lastCaption=performance.now();published=current;renderer.caption(current);

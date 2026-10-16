@@ -22,10 +22,10 @@ try {
 
   await page.locator('[data-timeline-range]').scrollIntoViewIfNeeded();
   await page.waitForFunction(()=>document.querySelector('.tl-canvas').dataset.assetsReady==='true',null,{timeout:60000});
-  const receipt=await page.locator('canvas').evaluate(n=>({renderer:n.dataset.renderer,gl:n.dataset.gl,instances:n.dataset.instances,width:n.width,height:n.height}));
+  const receipt=await page.locator('.tl-canvas').evaluate(n=>({renderer:n.dataset.renderer,gl:n.dataset.gl,instances:n.dataset.instances,width:n.width,height:n.height}));
   assert.equal(Number(receipt.instances),665);
   assert.equal(receipt.renderer,backend);
-  assert.equal(receipt.width,await page.locator('canvas').evaluate(n=>Math.round(n.getBoundingClientRect().width*2)),'DPR2 backing surface');
+  assert.equal(receipt.width,await page.locator('.tl-canvas').evaluate(n=>Math.round(n.getBoundingClientRect().width*2)),'DPR2 backing surface');
   assert.ok(receipt.width>0 && receipt.height>0);
   await page.locator('[data-timeline-range]').press('Home');await page.waitForTimeout(250);
   assert.match(await page.locator('[data-timeline-caption]').innerText(),/blue.*v0/i);
@@ -36,12 +36,12 @@ try {
   assert.match(await page.locator('[data-timeline-count]').innerText(),/665 \/ 665/);
   assert.deepEqual(glErrors,[],'no GL errors before context loss');
   if(backend==='webgl2'){
-    await page.locator('canvas').evaluate(n=>{window.__lose=n.getContext('webgl2').getExtension('WEBGL_lose_context');window.__lose.loseContext();});
-    await page.waitForFunction(()=>document.querySelector('canvas').dataset.ready==='false');
+    await page.locator('.tl-canvas').evaluate(n=>{window.__lose=n.getContext('webgl2').getExtension('WEBGL_lose_context');window.__lose.loseContext();});
+    await page.waitForFunction(()=>document.querySelector('.tl-canvas').dataset.ready==='false');
     await page.evaluate(()=>window.__lose.restoreContext());
-    await page.waitForFunction(()=>document.querySelector('canvas').dataset.ready==='true');
+    await page.waitForFunction(()=>document.querySelector('.tl-canvas').dataset.ready==='true');
   }
-  await page.locator('canvas').screenshot({path:join(artifacts,backend+'.png')});
+  await page.locator('.tl-canvas').screenshot({path:join(artifacts,backend+'.png')});
   assert.deepEqual(glErrors,[]);
   receipts.push({...receipt,contextRestored:backend==='webgl2'});
   console.log(JSON.stringify(receipt));
