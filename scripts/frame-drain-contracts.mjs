@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {createFrameDrain} from '../lib/sequence/frame-drain.ts';
+let clock=0,calls=[];
+const drain=createFrameDrain(4,()=>clock);
+const slow={pending:3,drain(deadline){calls.push(deadline);clock=6;return 1;}};
+assert.equal(drain(slow),1);
+assert.equal(drain(slow),0,'floor/underlay cannot each spend another budget after detail overran');
+assert.deepEqual(calls,[4]);
+clock=12;calls=[];
+const late=createFrameDrain(4,()=>clock);
+assert.equal(late(slow),1,'one upload still makes progress if pre-paint work consumed the budget');
+assert.equal(late(slow),0);
+clock=0;calls=[];
+const empty={pending:0,drain(){throw new Error('empty surface must not drain');}};
+const fresh=createFrameDrain(4,()=>clock);assert.equal(fresh(empty),0);clock=8;assert.equal(fresh(slow),1);
+console.log('PASS shared frame deadline, bounded overrun and non-starvation');

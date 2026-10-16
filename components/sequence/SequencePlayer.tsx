@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { assetPath } from "@/lib/paths";
 import { BUILD_SHA } from "@/lib/build-info";
 import { FrameCache } from "@/lib/sequence/cache";
+import { createFrameDrain } from "@/lib/sequence/frame-drain";
 import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
 import { applyHiddenPolicy, describeInspectionSources, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
 import { PREVIEW } from "@/lib/preview";
@@ -128,7 +129,8 @@ export function SequencePlayer() {
     }
     function render() {
       pendingFrame = 0;
-      const frameStart = performance.now(); // tile draws are time-sliced against this: detail by +6 ms, underlay +9, floor +11
+      const frameStart = performance.now();
+      const drainFrame = createFrameDrain(frameStart + 4);
       if (!manifest || !cache || cancelled) return;
       const current = snapshot(), span = spanAt(manifest, current.progress, current.reducedMotion);
       const frame = span.mix < 0.5 ? span.before : span.after;
@@ -359,7 +361,7 @@ export function SequencePlayer() {
             // First appearance of the sharp layer (it was hidden/released): dissolve it in. Later tiles do not re-fade.
             const freshLock = !detailKey; const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
             if (freshLock) armLockFade(detailCanvas!, reduced);
-            detailSurface.drain(frameStart + 6);
+            drainFrame(detailSurface);
             detailCanvas!.dataset.smoothing = "high";
             detailCanvas!.style.visibility = "visible";
             if (freshLock) startLockFade(detailCanvas!, reduced);
@@ -422,7 +424,7 @@ export function SequencePlayer() {
         floorSurface.place(rect.width, rect.height, { x: 0, y: 0, width: 1, height: 1, scale: 1 }, { width: Math.round(long * f.variant.width / f.variant.height), height: long });
         paint.floor.rects = floorSurface.rects();
         floorSurface.setQueue(floorTodo.filter((task) => cache!.peek(task.asset.url)).map((task) => ({ key: task.asset.url, bitmap: () => cache!.peek(task.asset.url)?.bitmap, variantWidth: f.variant.width, variantHeight: f.variant.height, sourceX: task.sourceX, sourceY: task.sourceY, width: task.asset.width, height: task.asset.height })));
-        if (floorSurface.drain(frameStart + 11)) paint.floor.rects = floorSurface.rects();
+        if (drainFrame(floorSurface)) paint.floor.rects = floorSurface.rects();
         if (floorSurface.pending) schedule();
       }
       if (underlayCurrent && !moving && baseKey === nextBase) {
@@ -431,7 +433,7 @@ export function SequencePlayer() {
         underlay.place(rect.width, rect.height, u.coverage, { width: Math.round(long * (u.coverage.width * u.variant.width) / (u.coverage.height * u.variant.height)), height: long });
         paint.underlay.rects = underlay.rects();
         underlay.setQueue(u.tasks.filter((task) => cache!.peek(task.asset.url)).map((task) => ({ key: task.asset.url, bitmap: () => cache!.peek(task.asset.url)?.bitmap, variantWidth: u.variant.width, variantHeight: u.variant.height, sourceX: task.sourceX, sourceY: task.sourceY, width: task.asset.width, height: task.asset.height })));
-        if (underlay.drain(frameStart + 9)) paint.underlay.rects = underlay.rects();
+        if (drainFrame(underlay)) paint.underlay.rects = underlay.rects();
         if (underlay.pending) schedule();
       }
       // The pyramid underlay shows only while inspecting (at 1x it is decoded and painted, but hidden: the hero stays the plate).
