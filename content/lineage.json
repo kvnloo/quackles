@@ -1,0 +1,296 @@
+{
+  "schema": 1,
+  "dataset": "history-v1.7caa37042011fc09.json",
+  "sha256": "7caa37042011fc09e1f25ca29b2e6ab8ba655d0f028a02212296f0b23b0a1087",
+  "versions": 665,
+  "counts": {
+    "day": 331,
+    "white": 67,
+    "blue": 84,
+    "dark": 64,
+    "night": 119
+  },
+  "datasetBytes": 269269,
+  "thumbnailBytes": 15859482,
+  "mediumBytes": 43761394,
+  "imageFiles": 2019,
+  "current": {
+    "day": {
+      "theme": "day",
+      "version": "v328",
+      "date": "2026-10-14T19:33:44+00:00",
+      "dateSource": "file mtime (not a creation receipt)",
+      "phase": "Day dream-loop",
+      "status": "current",
+      "hash": "1126a36682dde31d",
+      "caption": "Day · r115",
+      "thumbs": {
+        "small": [
+          "b422b84a35b148697eb97c27.webp",
+          192,
+          288,
+          5938
+        ],
+        "large": [
+          "4711089a1d28c0ed4851b6c7.webp",
+          384,
+          576,
+          19868
+        ],
+        "medium": [
+          "03a9c82c9bef20d4bdf30338.webp",
+          683,
+          1024,
+          68710
+        ]
+      }
+    },
+    "white": {
+      "theme": "white",
+      "version": "v62",
+      "date": "2026-10-14T19:44:40+00:00",
+      "dateSource": "file mtime (not a creation receipt)",
+      "phase": "Theme port",
+      "status": "current",
+      "hash": "fe3b803c4cf04d42",
+      "caption": "White · r108",
+      "thumbs": {
+        "small": [
+          "bc2d8bdc297b8928d8c1d98a.webp",
+          192,
+          288,
+          6550
+        ],
+        "large": [
+          "8fe361701d21205de622032a.webp",
+          384,
+          576,
+          20072
+        ],
+        "medium": [
+          "53f3c54479d21549257ee87f.webp",
+          683,
+          1024,
+          63896
+        ]
+      }
+    },
+    "blue": {
+      "theme": "blue",
+      "version": "v83",
+      "date": "2026-10-14T19:47:17+00:00",
+      "dateSource": "file mtime (not a creation receipt)",
+      "phase": "Theme port",
+      "status": "current",
+      "hash": "9036aa548adfd3df",
+      "caption": "Blue · r111",
+      "thumbs": {
+        "small": [
+          "7c9c123af6b6d3a946e73695.webp",
+          192,
+          288,
+          6914
+        ],
+        "large": [
+          "06454c1d0d0bc2ad70fd0b96.webp",
+          384,
+          576,
+          23262
+        ],
+        "medium": [
+          "cbd3722e39d9b775b3d2659a.webp",
+          683,
+          1024,
+          83170
+        ]
+      }
+    },
+    "dark": {
+      "theme": "dark",
+      "version": "v61",
+      "date": "2026-10-14T19:51:19+00:00",
+      "dateSource": "file mtime (not a creation receipt)",
+      "phase": "Theme port",
+      "status": "current",
+      "hash": "93945778352eac2d",
+      "caption": "Dark · r111",
+      "thumbs": {
+        "small": [
+          "8dec0dc4b7326eb81aca7bd8.webp",
+          192,
+          288,
+          5678
+        ],
+        "large": [
+          "37d32b351d03f19d2bf16560.webp",
+          384,
+          576,
+          19590
+        ],
+        "medium": [
+          "67cc4ce81274dde5bb13f45c.webp",
+          683,
+          1024,
+          67036
+        ]
+      }
+    },
+    "night": {
+      "theme": "night",
+      "version": "v118",
+      "date": "2026-10-15T10:08:16+00:00",
+      "dateSource": "file mtime (not a creation receipt)",
+      "phase": "Night v2",
+      "status": "current",
+      "hash": "2f4ed36f5aa1fb1c",
+      "caption": "Night · it12",
+      "thumbs": {
+        "small": [
+          "1d9981721dee5752eb79efc3.webp",
+          192,
+          288,
+          4716
+        ],
+        "large": [
+          "9c9aa0a2a486638b345b4fe4.webp",
+          384,
+          576,
+          15238
+        ],
+        "medium": [
+          "37baf76ce7761f2055865dbf.webp",
+          683,
+          1024,
+          50402
+        ]
+      }
+    }
+  },
+  "references": {
+    "day": {
+      "theme": "day",
+      "version": "reference",
+      "caption": "Day · locked reference",
+      "thumbs": {
+        "small": [
+          "f0e9b5163fc05fa91a2fad2f.webp",
+          192,
+          288,
+          8954
+        ],
+        "large": [
+          "b4c4bc88e6d7089655603d83.webp",
+          384,
+          576,
+          30000
+        ],
+        "medium": [
+          "a4c70597075df9fe90bb5028.webp",
+          683,
+          1024,
+          106614
+        ]
+      }
+    },
+    "white": {
+      "theme": "white",
+      "version": "reference",
+      "caption": "White · locked reference",
+      "thumbs": {
+        "small": [
+          "7868581385b42947e7b27db7.webp",
+          192,
+          288,
+          9140
+        ],
+        "large": [
+          "eda1463c9058f64957a795f3.webp",
+          384,
+          576,
+          29812
+        ],
+        "medium": [
+          "3607f1ebd924dc27b026ff19.webp",
+          683,
+          1024,
+          102796
+        ]
+      }
+    },
+    "blue": {
+      "theme": "blue",
+      "version": "reference",
+      "caption": "Blue · locked reference",
+      "thumbs": {
+        "small": [
+          "d4489c756627029d5da65ecf.webp",
+          192,
+          288,
+          10618
+        ],
+        "large": [
+          "7012f872171946559832e994.webp",
+          384,
+          576,
+          34512
+        ],
+        "medium": [
+          "777ead7b885cbfa88f3184e0.webp",
+          683,
+          1024,
+          117820
+        ]
+      }
+    },
+    "dark": {
+      "theme": "dark",
+      "version": "reference",
+      "caption": "Dark · locked reference",
+      "thumbs": {
+        "small": [
+          "a9d77e005cb8f09304f16fd4.webp",
+          192,
+          288,
+          8678
+        ],
+        "large": [
+          "b29b6a6ceb2ea68516a2776d.webp",
+          384,
+          576,
+          30814
+        ],
+        "medium": [
+          "40eb64e0be84f661b1598490.webp",
+          683,
+          1024,
+          111360
+        ]
+      }
+    },
+    "night": {
+      "theme": "night",
+      "version": "reference",
+      "caption": "Night · locked reference",
+      "thumbs": {
+        "small": [
+          "2d001cad0f4a10c00179bb27.webp",
+          192,
+          288,
+          6940
+        ],
+        "large": [
+          "917617d2cacd6d2a3c7b1d03.webp",
+          384,
+          576,
+          23328
+        ],
+        "medium": [
+          "81eaa006ea06adec0e7b0728.webp",
+          683,
+          1024,
+          79904
+        ]
+      }
+    }
+  }
+}

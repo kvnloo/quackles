@@ -10,6 +10,7 @@ Snapshot: 2026-10-15 (production record, not a freshness promise)
 
 - [Quackles poster](https://kvnloo.github.io/quackles/): Five rendered worlds and a deep-zoom robot study.
 - [How this was made](https://kvnloo.github.io/quackles/process/): A visual production record of references, trials and decisions.
+- [Artifact lineage](https://kvnloo.github.io/quackles/lineage/): Explore the image history and distinguish current review selections from approvals.
 - [Learning lab](https://kvnloo.github.io/quackles/learn/): Six evidence-backed lessons, a filtered attempt explorer and a static dataset.
 
 ## Machine-readable access
@@ -304,6 +305,11 @@ This article is a snapshot through October 15, 2026, assembled from five history
 Night remains in progress. Open material and device-performance questions remain open here too. The comparison images have been reduced for the web; the original evidence is preserved separately. A later update should replace a claim only when a new reviewed artifact supports it.
 
 Source: Editorial source audit, October 15, 2026.
+
+## Artifact lineage
+
+The lineage viewer distinguishes current review selections from approvals. Filter the bounded version archive, inspect provenance, or open a version deep link. Dates labelled file mtime are not verified creation dates.
+
 
 # Quackles learning corpus
 
