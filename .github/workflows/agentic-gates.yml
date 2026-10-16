@@ -1,0 +1,60 @@
+name: agentic-gates
+on:
+  pull_request:
+    branches: [main, dev, nightly, 'integ/site-*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: agentic-gates-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        revision: [head, merge]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.revision == 'head' && github.event.pull_request.head.sha || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: GitOps schema and disposable-fixture tests
+        run: |
+          python3 -m unittest discover -s scripts -p test_agent_gitops.py -v
+          python3 scripts/agent_gitops.py check
+      - name: Unit, home contracts, budgets and static export
+        shell: bash
+        env:
+          NEXT_PUBLIC_BASE_PATH: ''
+          NEXT_PUBLIC_ASSET_ORIGIN: https://kvnloo.github.io/quackles-assets
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/agentic-gates
+          export NEXT_PUBLIC_BUILD_SHA="$(git rev-parse HEAD)"
+          {
+            git rev-parse HEAD
+            npm test
+            npm run typecheck
+            PREVIEW_EXPECT=home node --import ./scripts/register-ts-resolve.mjs scripts/preview-config-contracts.mjs
+            npm run test:request-budget
+            node --import ./scripts/register-ts-resolve.mjs scripts/gigapixel-engine-contracts.mjs
+            npm run test:cleanup
+            npm run build
+          } 2>&1 | tee artifacts/agentic-gates/gates.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agentic-gates-${{ matrix.revision }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/agentic-gates
+          if-no-files-found: warn

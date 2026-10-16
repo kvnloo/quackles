@@ -1,0 +1,423 @@
+{
+  "records": [
+    {
+      "id": "eval-4110ad3761879822dc87",
+      "scene": "day",
+      "title": "Day one-pass polish",
+      "method": "conservative-review",
+      "outcome": "rejected",
+      "date": "2026-10-14",
+      "source": {
+        "id": "e565117baaf21040",
+        "label": "Five-scene merge and polish review, October 14",
+        "hash": "ceb9a16ee20f7a2d93c3a7ae51c9253ccfdbc713e9a42c01b9e0f80daf34d2e2",
+        "kind": "primary-report"
+      },
+      "judgments": [
+        {
+          "setup": "Two fresh side-swapped blind Opus reviews; strict non-regression",
+          "outcome": "not-promoted",
+          "excerpt": "tie / tie"
+        }
+      ],
+      "prompts": [
+        {
+          "kind": "review-rule",
+          "excerpt": "Strict keep rule: both judges must prefer the polish and neither may report a regression."
+        },
+        {
+          "kind": "blind-judge-excerpt",
+          "excerpt": "Three columns are REFERENCE, A, B. Compare A and B to REFERENCE for Day scene. Ignore website UI/text overlays that are absent in both. Camera/robot pose/geometry are locked; evaluate image fidelity, materials, illumination, readability and any regressions. Look closely, do not assume B is newer. Choose A, B, or TIE overall. List specific improvements and regressions of your winner, and the biggest remaining reference gaps.",
+          "hash": "1cdf438540f2a1697b9f54d1aac28f11d8b183c2c08537be5a38deb81dc82119",
+          "source": {
+            "id": "prompt-1cdf438540f2a169",
+            "label": "Day polish blind review prompt, order 1",
+            "hash": "1cdf438540f2a1697b9f54d1aac28f11d8b183c2c08537be5a38deb81dc82119",
+            "kind": "judge-prompt"
+          }
+        }
+      ],
+      "image": "themes"
+    },
+    {
+      "id": "eval-9dd27752f8a219c33177",
+      "scene": "white",
+      "title": "White one-pass polish",
+      "method": "conservative-review",
+      "outcome": "rejected",
+      "date": "2026-10-14",
+      "source": {
+        "id": "e565117baaf21040",
+        "label": "Five-scene merge and polish review, October 14",
+        "hash": "ceb9a16ee20f7a2d93c3a7ae51c9253ccfdbc713e9a42c01b9e0f80daf34d2e2",
+        "kind": "primary-report"
+      },
+      "judgments": [
+        {
+          "setup": "Two fresh side-swapped blind Opus reviews; strict non-regression",
+          "outcome": "not-promoted",
+          "excerpt": "tie / polish"
+        }
+      ],
+      "prompts": [
+        {
+          "kind": "review-rule",
+          "excerpt": "Strict keep rule: both judges must prefer the polish and neither may report a regression."
+        },
+        {
+          "kind": "blind-judge-excerpt",
+          "excerpt": "Three columns are REFERENCE, A, B. Compare A and B to REFERENCE for White scene. Ignore website UI/text overlays that are absent in both. Camera/robot pose/geometry are locked; evaluate image fidelity, materials, illumination, readability and any regressions. Look closely, do not assume B is newer. Choose A, B, or TIE overall. List specific improvements and regressions of your winner, and the biggest remaining reference gaps.",
+          "hash": "e6d8267d723bd5fde637e571223788796d910a9e87c350025b0d286ba893ffd6",
+          "source": {
+            "id": "prompt-e6d8267d723bd5fd",
+            "label": "White polish blind review prompt, order 1",
+            "hash": "e6d8267d723bd5fde637e571223788796d910a9e87c350025b0d286ba893ffd6",
+            "kind": "judge-prompt"
+          }
+        }
+      ],
+      "image": "themes"
+    },
+    {
+      "id": "eval-efee49ebc209ab903795",
+      "scene": "blue",
+      "title": "Blue one-pass polish",
+      "method": "conservative-review",
+      "outcome": "rejected",
+      "date": "2026-10-14",
+      "source": {
+        "id": "e565117baaf21040",
+        "label": "Five-scene merge and polish review, October 14",
+        "hash": "ceb9a16ee20f7a2d93c3a7ae51c9253ccfdbc713e9a42c01b9e0f80daf34d2e2",
+        "kind": "primary-report"
+      },
+      "judgments": [
+        {
+          "setup": "Two fresh side-swapped blind Opus reviews; strict non-regression",
+          "outcome": "not-promoted",
+          "excerpt": "tie / tie"
+        }
+      ],
+      "prompts": [
+        {
+          "kind": "review-rule",
+          "excerpt": "Strict keep rule: both judges must prefer the polish and neither may report a regression."
+        },
+        {
+          "kind": "blind-judge-excerpt",
+          "excerpt": "Three columns are REFERENCE, A, B. Compare A and B to REFERENCE for Blue scene. Ignore website UI/text overlays that are absent in both. Camera/robot pose/geometry are locked; evaluate image fidelity, materials, illumination, readability and any regressions. Look closely, do not assume B is newer. Choose A, B, or TIE overall. List specific improvements and regressions of your winner, and the biggest remaining reference gaps.",
+          "hash": "3c35fe0e2a8c71b8e041c5f1a022bcc0295893aab79a2a2a1e6e500d8d0a582d",
+          "source": {
+            "id": "prompt-3c35fe0e2a8c71b8",
+            "label": "Blue polish blind review prompt, order 1",
+            "hash": "3c35fe0e2a8c71b8e041c5f1a022bcc0295893aab79a2a2a1e6e500d8d0a582d",
+            "kind": "judge-prompt"
+          }
+        }
+      ],
+      "image": "themes"
+    },
+    {
+      "id": "eval-fe65777585421bc4cc07",
+      "scene": "dark",
+      "title": "Dark one-pass polish",
+      "method": "conservative-review",
+      "outcome": "rejected",
+      "date": "2026-10-14",
+      "source": {
+        "id": "e565117baaf21040",
+        "label": "Five-scene merge and polish review, October 14",
+        "hash": "ceb9a16ee20f7a2d93c3a7ae51c9253ccfdbc713e9a42c01b9e0f80daf34d2e2",
+        "kind": "primary-report"
+      },
+      "judgments": [
+        {
+          "setup": "Two fresh side-swapped blind Opus reviews; strict non-regression",
+          "outcome": "not-promoted",
+          "excerpt": "polish with regression / merge with regression"
+        }
+      ],
+      "prompts": [
+        {
+          "kind": "review-rule",
+          "excerpt": "Strict keep rule: both judges must prefer the polish and neither may report a regression."
+        },
+        {
+          "kind": "blind-judge-excerpt",
+          "excerpt": "Three columns are REFERENCE, A, B. Compare A and B to REFERENCE for Dark scene. Ignore website UI/text overlays that are absent in both. Camera/robot pose/geometry are locked; evaluate image fidelity, materials, illumination, readability and any regressions. Look closely, do not assume B is newer. Choose A, B, or TIE overall. List specific improvements and regressions of your winner, and the biggest remaining reference gaps.",
+          "hash": "43da095e52974f0b7bd39c494172e4d8aa36291a67da772a568c64d394702224",
+          "source": {
+            "id": "prompt-43da095e52974f0b",
+            "label": "Dark polish blind review prompt, order 1",
+            "hash": "43da095e52974f0b7bd39c494172e4d8aa36291a67da772a568c64d394702224",
+            "kind": "judge-prompt"
+          }
+        }
+      ],
+      "image": "themes"
+    },
+    {
+      "id": "eval-4cb792b52859f84957fd",
+      "scene": "night",
+      "title": "Night one-pass polish",
+      "method": "conservative-review",
+      "outcome": "rejected",
+      "date": "2026-10-14",
+      "source": {
+        "id": "e565117baaf21040",
+        "label": "Five-scene merge and polish review, October 14",
+        "hash": "ceb9a16ee20f7a2d93c3a7ae51c9253ccfdbc713e9a42c01b9e0f80daf34d2e2",
+        "kind": "primary-report"
+      },
+      "judgments": [
+        {
+          "setup": "Two fresh side-swapped blind Opus reviews; strict non-regression",
+          "outcome": "not-promoted",
+          "excerpt": "polish with regression / polish"
+        }
+      ],
+      "prompts": [
+        {
+          "kind": "review-rule",
+          "excerpt": "Strict keep rule: both judges must prefer the polish and neither may report a regression."
+        },
+        {
+          "kind": "blind-judge-excerpt",
+          "excerpt": "Three columns are REFERENCE, A, B. Compare A and B to REFERENCE for Night scene. Ignore website UI/text overlays that are absent in both. Camera/robot pose/geometry are locked; evaluate image fidelity, materials, illumination, readability and any regressions. Look closely, do not assume B is newer. Choose A, B, or TIE overall. List specific improvements and regressions of your winner, and the biggest remaining reference gaps.",
+          "hash": "08f1fd5b30ff1354af55f74ee153d9d4f7be40711a296b1534fa2bcd8f898fbe",
+          "source": {
+            "id": "prompt-08f1fd5b30ff1354",
+            "label": "Night polish blind review prompt, order 1",
+            "hash": "08f1fd5b30ff1354af55f74ee153d9d4f7be40711a296b1534fa2bcd8f898fbe",
+            "kind": "judge-prompt"
+          }
+        }
+      ],
+      "image": "themes"
+    },
+    {
+      "id": "eval-613be0638bb26157bf90",
+      "scene": "day",
+      "title": "A new step, not another translated copy",
+      "method": "geometry-fit",
+      "outcome": "kept",
+      "date": "2026-10-13",
+      "source": {
+        "id": "dbdf321b14e89efd",
+        "label": "Day step geometry lock, r90",
+        "hash": "168cb124d687e9d623174ccc7aa0915add95556bab0c4f99bbaef5168b853c73",
+        "kind": "primary-report"
+      },
+      "owner_labels": [
+        {
+          "element": "stair geometry only",
+          "outcome": "accepted",
+          "excerpt": "the new step is perfect, we can lock that in"
+        }
+      ],
+      "prompts": [
+        {
+          "kind": "lock-constraint",
+          "excerpt": "Not locked: print placement, Orb limestone height, lighting."
+        }
+      ],
+      "image": "day-stairs"
+    },
+    {
+      "id": "case-intent-before-pixels",
+      "scene": "night",
+      "title": "Match intent before pixels.",
+      "method": "brief-first",
+      "outcome": "documented",
+      "date": "2026-10-15",
+      "source": {
+        "id": "4e9a0c8107b0d31f",
+        "label": "Night v2 art-direction brief",
+        "hash": "9ee99ae630afd1fe7dae7dc2f6191503712c439583e67cfd3987a832b08a63f2",
+        "kind": "primary-report"
+      },
+      "kind": "case-study",
+      "prompts": [
+        {
+          "kind": "editorial-method-summary",
+          "excerpt": "Judge the brief and the owner locks, not resemblance alone."
+        }
+      ],
+      "image": "night-pivot"
+    },
+    {
+      "id": "case-mechanism-before-tuning",
+      "scene": "night",
+      "title": "Change the mechanism, not one more dial.",
+      "method": "research-coupon",
+      "outcome": "documented",
+      "date": "2026-10-15",
+      "source": {
+        "id": "5014aab1be30cb46",
+        "label": "Night v2 meta review",
+        "hash": "d7eaad0268446666c186d3509f0730d4108780ce00b7d50faaa89bf614f9a810",
+        "kind": "primary-report"
+      },
+      "kind": "case-study",
+      "prompts": [
+        {
+          "kind": "editorial-method-summary",
+          "excerpt": "Research the mechanism, prove a small coupon, then test on the frozen integrated fixture."
+        }
+      ],
+      "image": "night-stone"
+    },
+    {
+      "id": "case-effective-state",
+      "scene": "blue",
+      "title": "Names are not evidence.",
+      "method": "material-audit",
+      "outcome": "documented",
+      "date": "2026-10-13",
+      "source": {
+        "id": "2a829f46a60d93e1",
+        "label": "Permanent geometry-owned eye repair",
+        "hash": "3a1517a29b79da4bfcde1afa44334cf2dd6955a94d88630945955503d07a4952",
+        "kind": "primary-report"
+      },
+      "kind": "case-study",
+      "prompts": [
+        {
+          "kind": "editorial-method-summary",
+          "excerpt": "Audit the rendered dependency graph and the saved scene, not only the script."
+        }
+      ],
+      "image": "eyes"
+    },
+    {
+      "id": "case-reproduce-before-credit",
+      "scene": "blue",
+      "title": "Reproduce before taking credit.",
+      "method": "baseline-control",
+      "outcome": "documented",
+      "date": "2026-10-13",
+      "source": {
+        "id": "8e71bf58a21caaad",
+        "label": "Day carry-over layer report",
+        "hash": "aa714f37cf384fd613efba405dbf3e4e17aa2c10af772dc433b075232dc04d83",
+        "kind": "primary-report"
+      },
+      "kind": "case-study",
+      "prompts": [
+        {
+          "kind": "editorial-method-summary",
+          "excerpt": "Use the same capture standard and a no-change control. Keep unlike judge contexts separate."
+        }
+      ],
+      "image": "blue-recovery"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "votes-are-not-approval",
+      "title": "A better vote is not an approval.",
+      "claim": "None of five one-pass polish candidates cleared the two-reviewer non-regression rule. A current review composite is not a release.",
+      "tension": "Small improvements can hide a new regression.",
+      "turn": "Keep the merge when a vote ties or a regression appears.",
+      "image": "themes",
+      "evidence": [
+        "eval-4110ad3761879822dc87",
+        "eval-9dd27752f8a219c33177",
+        "eval-efee49ebc209ab903795",
+        "eval-fe65777585421bc4cc07",
+        "eval-4cb792b52859f84957fd"
+      ],
+      "source": {
+        "id": "e565117baaf21040",
+        "label": "Five-scene merge and polish review, October 14",
+        "hash": "ceb9a16ee20f7a2d93c3a7ae51c9253ccfdbc713e9a42c01b9e0f80daf34d2e2",
+        "kind": "primary-report"
+      }
+    },
+    {
+      "id": "lock-the-element",
+      "title": "Lock the element. Not the whole world.",
+      "claim": "Day r90 locked the stair geometry while print placement, orb height and lighting remained open.",
+      "tension": "A local success can become a false whole-scene sign-off.",
+      "turn": "Name the exact object and properties that the owner accepted.",
+      "image": "day-stairs",
+      "evidence": [
+        "eval-613be0638bb26157bf90"
+      ],
+      "source": {
+        "id": "dbdf321b14e89efd",
+        "label": "Day step geometry lock, r90",
+        "hash": "168cb124d687e9d623174ccc7aa0915add95556bab0c4f99bbaef5168b853c73",
+        "kind": "primary-report"
+      }
+    },
+    {
+      "id": "intent-before-pixels",
+      "title": "Match intent before pixels.",
+      "claim": "Night changed from literal reference matching to per-element COPY and INTENT constraints, with component review before integration.",
+      "tension": "A reference label copied onto different geometry can look wrong.",
+      "turn": "Judge the brief and the owner locks, not resemblance alone.",
+      "image": "night-pivot",
+      "evidence": [
+        "case-intent-before-pixels"
+      ],
+      "source": {
+        "id": "4e9a0c8107b0d31f",
+        "label": "Night v2 art-direction brief",
+        "hash": "9ee99ae630afd1fe7dae7dc2f6191503712c439583e67cfd3987a832b08a63f2",
+        "kind": "primary-report"
+      }
+    },
+    {
+      "id": "mechanism-before-tuning",
+      "title": "Change the mechanism, not one more dial.",
+      "claim": "The Night meta review identified repeated variants retaining the same blocker; its stop rule calls for two genuinely different directions after two focused failures.",
+      "tension": "More hair curves or another brightness value need not change the visible form.",
+      "turn": "Research the mechanism, prove a small coupon, then test on the frozen integrated fixture.",
+      "image": "night-stone",
+      "evidence": [
+        "case-mechanism-before-tuning"
+      ],
+      "source": {
+        "id": "5014aab1be30cb46",
+        "label": "Night v2 meta review",
+        "hash": "d7eaad0268446666c186d3509f0730d4108780ce00b7d50faaa89bf614f9a810",
+        "kind": "primary-report"
+      }
+    },
+    {
+      "id": "effective-state",
+      "title": "Names are not evidence.",
+      "claim": "Eye materials with clean-looking names still used photo-projection branches. Blue also had object-linked overrides. Verification inspected effective slots after reopening.",
+      "tension": "A correct material name can conceal the wrong shader.",
+      "turn": "Audit the rendered dependency graph and the saved scene, not only the script.",
+      "image": "eyes",
+      "evidence": [
+        "case-effective-state"
+      ],
+      "source": {
+        "id": "2a829f46a60d93e1",
+        "label": "Permanent geometry-owned eye repair",
+        "hash": "3a1517a29b79da4bfcde1afa44334cf2dd6955a94d88630945955503d07a4952",
+        "kind": "primary-report"
+      }
+    },
+    {
+      "id": "reproduce-before-credit",
+      "title": "Reproduce before taking credit.",
+      "claim": "Blue changed strongly even in the fresh no-layer baseline. The carry-over report refuses to credit the layer for that baseline drift.",
+      "tension": "A striking before/after can measure a renderer change rather than the intended edit.",
+      "turn": "Use the same capture standard and a no-change control. Keep unlike judge contexts separate.",
+      "image": "blue-recovery",
+      "evidence": [
+        "case-reproduce-before-credit"
+      ],
+      "source": {
+        "id": "8e71bf58a21caaad",
+        "label": "Day carry-over layer report",
+        "hash": "aa714f37cf384fd613efba405dbf3e4e17aa2c10af772dc433b075232dc04d83",
+        "kind": "primary-report"
+      }
+    }
+  ]
+}

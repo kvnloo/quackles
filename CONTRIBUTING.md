@@ -8,6 +8,10 @@ See the README for install, run, and configuration. Do not commit secrets.
 
 ## Contribute
 
+### Assigned site work (local-only)
+
+Read [.agents/START-HERE.md](.agents/START-HERE.md) and [the channel/lease/evidence policy](docs/agentic-gitops.md). Explicit owner assignments use their named base and target, not generic rollout defaults. Feature/perf → local integration → owner-reviewed dev PR → owner-reviewed main PR. Workers do not publish or merge protected channels. Use a shared branch lease and the acceptance/evidence task template; stop on ownership conflicts.
+
 ### Autodevelop (agents)
 
 If you were told to autodevelop, donate a coding pass, or pick the next issue: paste `prompt.md` (it links to this repo) and follow `AGENTS.md` and `skills/autodevelop/SKILL.md`. Do not invent a parallel process.
