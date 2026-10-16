@@ -82,7 +82,7 @@ export function mountArchive({viewport,grid,atlas,atlasBase,date,imageURL,mode='
     prepare();
   }
   function schedule(){if(!frame)frame=requestAnimationFrame(paint);}
-  function settle(){clearTimeout(settleTimer);live=false;nativeWindow();schedule();}
+  function settle(){clearTimeout(settleTimer);live=false;schedule();}
   function measureProfile(){
     const c=pool.find(c=>!c.node.hidden);if(!c||!ctx||width<=1)return;
     const r=c.node.getBoundingClientRect(),fields=[c.heading,c.status,c.caption,c.time,c.provenance].map((n,i)=>{const s=getComputedStyle(n),b=n.getBoundingClientRect();return {x:mobile||i!==1?(mobile?5:8):8,y:b.y-r.y,width:r.width-(mobile?10:16),height:i===4?52:b.height,font:s.font,color:s.color,opacity:Number(s.opacity),spacing:s.letterSpacing==='normal'?'0px':s.letterSpacing,lineHeight:parseFloat(s.lineHeight)||0,upper:s.textTransform==='uppercase',right:!mobile&&i===1};});
@@ -100,7 +100,7 @@ export function mountArchive({viewport,grid,atlas,atlasBase,date,imageURL,mode='
   viewport.addEventListener('scroll',()=>{top=viewport.scrollTop;live=Boolean(ctx&&profile);clearTimeout(settleTimer);settleTimer=setTimeout(settle,150);schedule();},{passive:true});
   viewport.addEventListener('click',event=>{if(!live||!ctx||event.button!==0)return;const r=viewport.getBoundingClientRect(),col=Math.floor((event.clientX-r.x-1)/(width/columns)),row=Math.floor((event.clientY-r.y-8+top)/rowHeight),e=entries[row*columns+col];if(e){event.preventDefault();event.stopPropagation();location.hash=`/${e.theme}/${e.version}`;}},true);
   function focus(index){
-    if(!entries.length)return;index=Math.max(0,Math.min(entries.length-1,index));top=Math.min(Math.floor(index/columns)*rowHeight,Math.max(0,Math.ceil(entries.length/columns)*rowHeight-height));viewport.scrollTop=top;settle();
+    if(!entries.length)return;index=Math.max(0,Math.min(entries.length-1,index));top=Math.min(Math.floor(index/columns)*rowHeight,Math.max(0,Math.ceil(entries.length/columns)*rowHeight-height));viewport.scrollTop=top;nativeWindow();settle();
     for(const card of pool)card.node.tabIndex=card.index===index?0:-1;pool.find(card=>card.index===index)?.node.focus({preventScroll:true});
   }
   accessible.addEventListener('focusin',event=>{const index=Number(event.target.dataset.index);if(Number.isInteger(index))focus(index);});
