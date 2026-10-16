@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-10-16T09:27:31.029870+00:00",
+  "captured_at": "2026-10-16T14:04:34.970480+00:00",
   "base": "integ/home-2026-10-13",
   "base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
   "target": "integ/site-2026-10-15",
-  "target_sha": "a5b661c51ff2a5354ad9778f38c22a2e30e17fa4",
+  "target_sha": "e71be4fe1992a9b9cbff870db0be5bd7147e66cd",
   "classification_policy": "Ancestry first; active family is not READY. Archive/stale are proposals only.",
   "branches": [
     {
@@ -110,9 +110,9 @@
     {
       "ref": "refs/heads/feat/lineage-timeline",
       "branch": "feat/lineage-timeline",
-      "head": "670f81b76de4bedfd82b33a63d36e73e0de2d355",
+      "head": "332d2f4b1e9f91cb43448199fe2aa8116535916b",
       "symbolic_target": "",
-      "purpose": "Tip intent: perf(lineage): defer native archive settlement to paint (evaluation)",
+      "purpose": "Tip intent: test(timeline): defer LoAF serialization outside measured gestures",
       "owner_lane": "lineage",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -123,7 +123,7 @@
       "preview_url": null,
       "merge_target": "integ/site-2026-10-15",
       "evidence_links": [
-        "git:670f81b76de4bedfd82b33a63d36e73e0de2d355"
+        "git:332d2f4b1e9f91cb43448199fe2aa8116535916b"
       ],
       "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
@@ -310,9 +310,9 @@
     {
       "ref": "refs/heads/integ/site-2026-10-15",
       "branch": "integ/site-2026-10-15",
-      "head": "a5b661c51ff2a5354ad9778f38c22a2e30e17fa4",
+      "head": "e71be4fe1992a9b9cbff870db0be5bd7147e66cd",
       "symbolic_target": "",
-      "purpose": "Tip intent: chore(gitops): record delegated lineage admission and open tail gate",
+      "purpose": "Tip intent: merge: admit archive rAF settlement under local option A",
       "owner_lane": "gitops",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -323,7 +323,7 @@
       "preview_url": null,
       "merge_target": null,
       "evidence_links": [
-        "git:a5b661c51ff2a5354ad9778f38c22a2e30e17fa4"
+        "git:e71be4fe1992a9b9cbff870db0be5bd7147e66cd"
       ],
       "reason": "Promotion/control channel; not an automatic merge authorization."
     },
@@ -530,9 +530,9 @@
     {
       "ref": "refs/heads/perf/home-frame-budget",
       "branch": "perf/home-frame-budget",
-      "head": "c803b802dc86b352fed2c21891b036944b0841ed",
+      "head": "ad6183cc1efe73b596c3e37b627548b0c558fe45",
       "symbolic_target": "",
-      "purpose": "Tip intent: test(home): wire shared-frame budget contracts and record hold",
+      "purpose": "Tip intent: test(home): compare painted I16 coverage on identical verifier journeys",
       "owner_lane": "perf",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -543,7 +543,7 @@
       "preview_url": null,
       "merge_target": "integ/site-2026-10-15",
       "evidence_links": [
-        "git:c803b802dc86b352fed2c21891b036944b0841ed"
+        "git:ad6183cc1efe73b596c3e37b627548b0c558fe45"
       ],
       "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
@@ -2066,7 +2066,7 @@
     {
       "id": "3d5392f7d9f8a47b",
       "label": "wt-timeline",
-      "head": "670f81b76de4bedfd82b33a63d36e73e0de2d355",
+      "head": "332d2f4b1e9f91cb43448199fe2aa8116535916b",
       "ref": "refs/heads/feat/lineage-timeline",
       "present": true,
       "locked": false,
@@ -2248,7 +2248,7 @@
     {
       "id": "637b3970b2f375c1",
       "label": "wt-site-integ",
-      "head": "a5b661c51ff2a5354ad9778f38c22a2e30e17fa4",
+      "head": "e71be4fe1992a9b9cbff870db0be5bd7147e66cd",
       "ref": "refs/heads/integ/site-2026-10-15",
       "present": true,
       "locked": false,
@@ -2508,7 +2508,7 @@
     {
       "id": "ab6c1e64079c0320",
       "label": "wt-perf-home-budget",
-      "head": "c803b802dc86b352fed2c21891b036944b0841ed",
+      "head": "ad6183cc1efe73b596c3e37b627548b0c558fe45",
       "ref": "refs/heads/perf/home-frame-budget",
       "present": true,
       "locked": false,

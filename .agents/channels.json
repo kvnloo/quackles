@@ -28,6 +28,14 @@
       {"branch": "perf/home-frame-budget", "head": "c803b802dc86b352fed2c21891b036944b0841ed", "admission": "held: shared upload budget improves some I18 counts but not all home metrics; I16 remains open"}
     ]
   },
+  "repair_pass_8": {
+    "authority": "Explicit overnight follow-up: admit 670f81b under local option A",
+    "timeline_runtime": {"head": "670f81b76de4bedfd82b33a63d36e73e0de2d355", "integration_merge": "e71be4fe1992a9b9cbff870db0be5bd7147e66cd", "admission": "16 merged-tree commands plus functional, AX, no-JS, design-lock and Lighthouse; local only"},
+    "scroll_v2": "N10 candidate passes 10/10; p95 median 1.2516ms, worst 4.559ms, zero forced layouts/LoAF; repeatability passes",
+    "scrub_v2": "Original observer: candidate 8/10, three LoAF. Deferred-JSON diagnostic: 10/10, zero LoAF; both arms repeatable. Sequential observer cohorts do not prove a causal cure; broader tail gate remains open.",
+    "home_i16": "Same-journey legacy flags 0/171/8, actual painted union gaps 0/0/0; real pixel readback and missing-layer negative control agree. No reproduced plate-exposure defect to justify a renderer change.",
+    "home_admission": "none; measurement tools only on perf/home-frame-budget; prior renderer candidates remain held"
+  },
   "protected": ["main", "dev", "nightly"],
   "merge_authority": {"integration": "gitops", "dev": "owner", "main": "owner", "nightly": "owner-authorized rollout automation"},
   "held": ["preview/gp-motion-decode", "preview/gp-all", "perf/motion-decode-eval", "perf/home-frame-budget"],
