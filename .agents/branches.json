@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-10-16T08:27:21.433897+00:00",
+  "captured_at": "2026-10-16T09:27:31.029870+00:00",
   "base": "integ/home-2026-10-13",
   "base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
   "target": "integ/site-2026-10-15",
-  "target_sha": "72794b6e953f3deda82b12cafb3c1d0ecf5472e8",
+  "target_sha": "a5b661c51ff2a5354ad9778f38c22a2e30e17fa4",
   "classification_policy": "Ancestry first; active family is not READY. Archive/stale are proposals only.",
   "branches": [
     {
@@ -110,22 +110,22 @@
     {
       "ref": "refs/heads/feat/lineage-timeline",
       "branch": "feat/lineage-timeline",
-      "head": "47624772176df1a88750c4733be1361953230f45",
+      "head": "670f81b76de4bedfd82b33a63d36e73e0de2d355",
       "symbolic_target": "",
-      "purpose": "Tip intent: merge(lineage): preserve timeline with current site build and discovery",
+      "purpose": "Tip intent: perf(lineage): defer native archive settlement to paint (evaluation)",
       "owner_lane": "lineage",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "promotion_hold": null,
-      "status": "integrated",
+      "status": "active",
       "channel": "preview",
       "preview_slot": "branch-fce4a6741658",
       "preview_url": null,
-      "merge_target": null,
+      "merge_target": "integ/site-2026-10-15",
       "evidence_links": [
-        "git:47624772176df1a88750c4733be1361953230f45"
+        "git:670f81b76de4bedfd82b33a63d36e73e0de2d355"
       ],
-      "reason": "Tip is an ancestor of the recorded integration target; dirty worktrees still need preservation."
+      "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
     {
       "ref": "refs/heads/feat/lineage-viewer",
@@ -310,9 +310,9 @@
     {
       "ref": "refs/heads/integ/site-2026-10-15",
       "branch": "integ/site-2026-10-15",
-      "head": "72794b6e953f3deda82b12cafb3c1d0ecf5472e8",
+      "head": "a5b661c51ff2a5354ad9778f38c22a2e30e17fa4",
       "symbolic_target": "",
-      "purpose": "Tip intent: merge(timeline): owner-delegated option A; frame-tail gate open",
+      "purpose": "Tip intent: chore(gitops): record delegated lineage admission and open tail gate",
       "owner_lane": "gitops",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -323,7 +323,7 @@
       "preview_url": null,
       "merge_target": null,
       "evidence_links": [
-        "git:72794b6e953f3deda82b12cafb3c1d0ecf5472e8"
+        "git:a5b661c51ff2a5354ad9778f38c22a2e30e17fa4"
       ],
       "reason": "Promotion/control channel; not an automatic merge authorization."
     },
@@ -528,6 +528,26 @@
       "reason": "Promotion/control channel; not an automatic merge authorization."
     },
     {
+      "ref": "refs/heads/perf/home-frame-budget",
+      "branch": "perf/home-frame-budget",
+      "head": "c803b802dc86b352fed2c21891b036944b0841ed",
+      "symbolic_target": "",
+      "purpose": "Tip intent: test(home): wire shared-frame budget contracts and record hold",
+      "owner_lane": "perf",
+      "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
+      "promotion_hold": null,
+      "status": "active",
+      "channel": "preview",
+      "preview_slot": "branch-63912f3ad531",
+      "preview_url": null,
+      "merge_target": "integ/site-2026-10-15",
+      "evidence_links": [
+        "git:c803b802dc86b352fed2c21891b036944b0841ed"
+      ],
+      "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
+    },
+    {
       "ref": "refs/heads/perf/images-responsive",
       "branch": "perf/images-responsive",
       "head": "0f45838b88ebdeb83b6199593bd8a1fc887ef9af",
@@ -550,9 +570,9 @@
     {
       "ref": "refs/heads/perf/motion-decode-eval",
       "branch": "perf/motion-decode-eval",
-      "head": "94e3068de1caf19143e14d8b4cb5a13786ca2803",
+      "head": "fff480b2bafa7ea2a234f1d10d8da5b1b255c577",
       "symbolic_target": "",
-      "purpose": "Tip intent: feat(gigapixel): PROPOSED RULE - a bounded decode budget while the camera moves",
+      "purpose": "Tip intent: perf(cache): prevent motion decodes from evicting resident tiles (evaluation)",
       "owner_lane": "perf",
       "base": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
       "merge_base_sha": "8dd41ad12940df5eecf7f91ddb6d76121d6368e9",
@@ -563,7 +583,7 @@
       "preview_url": null,
       "merge_target": null,
       "evidence_links": [
-        "git:94e3068de1caf19143e14d8b4cb5a13786ca2803"
+        "git:fff480b2bafa7ea2a234f1d10d8da5b1b255c577"
       ],
       "reason": "Retained feature/performance lane; readiness and owner acceptance are separate."
     },
@@ -1890,7 +1910,7 @@
     {
       "id": "19100aaf3fe424e2",
       "label": "wt-perf-motion",
-      "head": "94e3068de1caf19143e14d8b4cb5a13786ca2803",
+      "head": "fff480b2bafa7ea2a234f1d10d8da5b1b255c577",
       "ref": "refs/heads/perf/motion-decode-eval",
       "present": true,
       "locked": false,
@@ -2046,12 +2066,12 @@
     {
       "id": "3d5392f7d9f8a47b",
       "label": "wt-timeline",
-      "head": "47624772176df1a88750c4733be1361953230f45",
+      "head": "670f81b76de4bedfd82b33a63d36e73e0de2d355",
       "ref": "refs/heads/feat/lineage-timeline",
       "present": true,
       "locked": false,
       "prunable": false,
-      "status": "integrated",
+      "status": "active",
       "owner_lane": "lineage",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
@@ -2228,7 +2248,7 @@
     {
       "id": "637b3970b2f375c1",
       "label": "wt-site-integ",
-      "head": "72794b6e953f3deda82b12cafb3c1d0ecf5472e8",
+      "head": "a5b661c51ff2a5354ad9778f38c22a2e30e17fa4",
       "ref": "refs/heads/integ/site-2026-10-15",
       "present": true,
       "locked": false,
@@ -2482,6 +2502,19 @@
       "prunable": false,
       "status": "integrated",
       "owner_lane": "gitops",
+      "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
+      "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
+    },
+    {
+      "id": "ab6c1e64079c0320",
+      "label": "wt-perf-home-budget",
+      "head": "c803b802dc86b352fed2c21891b036944b0841ed",
+      "ref": "refs/heads/perf/home-frame-budget",
+      "present": true,
+      "locked": false,
+      "prunable": false,
+      "status": "active",
+      "owner_lane": "perf",
       "reason": "Registered checkout, not deletion approval. Detached controls remain evidence.",
       "preservation": "Inspect staged/unstaged/untracked/ignored material before any removal; no cleanup performed."
     },

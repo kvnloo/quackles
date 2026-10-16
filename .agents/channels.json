@@ -21,12 +21,17 @@
     "viewer": {"head": "ec3bbc1", "integration_merge": "5fb1233", "admission": "functional local admission; 15 merged-tree commands plus browser and Lighthouse"},
     "timeline": {"head": "4762477", "integration_merge": "72794b6", "admission": "functional local admission; 15 merged-tree commands plus functional, AX, no-JS, renderer, startup, design-lock and Lighthouse"},
     "frame_tail_gate": "OPEN on feat/lineage-timeline; unchanged v2 thresholds; no physical 120 Hz claim",
-    "discovery": "lineage links, llms.txt, llms-full.txt, manifest, feed and sitemap restored"
+    "discovery": "lineage links, llms.txt, llms-full.txt, manifest, feed and sitemap restored",
+    "tail_candidate": {"head": "670f81b76de4bedfd82b33a63d36e73e0de2d355", "admission": "held: zero forced layouts in ten runs; full 9/10, repeatability and LoAF still fail"},
+    "home_candidates": [
+      {"branch": "perf/motion-decode-eval", "head": "fff480b2bafa7ea2a234f1d10d8da5b1b255c577", "admission": "held: residency guard loses HQ p90 win; not better on all home metrics"},
+      {"branch": "perf/home-frame-budget", "head": "c803b802dc86b352fed2c21891b036944b0841ed", "admission": "held: shared upload budget improves some I18 counts but not all home metrics; I16 remains open"}
+    ]
   },
   "protected": ["main", "dev", "nightly"],
   "merge_authority": {"integration": "gitops", "dev": "owner", "main": "owner", "nightly": "owner-authorized rollout automation"},
-  "held": ["preview/gp-motion-decode", "preview/gp-all"],
-  "hold_reason": "D6/F7 motion-decode policy needs explicit owner ruling; a union branch is not approval.",
+  "held": ["preview/gp-motion-decode", "preview/gp-all", "perf/motion-decode-eval", "perf/home-frame-budget"],
+  "hold_reason": "D-D6 authorizes local experiments and only all-home-metric wins. Evaluated candidates do not meet that condition; original preview refs remain unchanged.",
   "preview_policy": "Unique logical branch slot, exact build SHA, no alias reuse; URL null until verified deployment.",
   "nightly": "Owner-approved integrated snapshot; no automatic push from a worker working commit."
 }
