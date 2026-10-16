@@ -1,0 +1,530 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dream-loop v2 observation SIDE-CAR; not legacy rounds.jsonl",
+  "type": "object",
+  "properties": {
+    "meta_trial": {
+      "$ref": "meta-trial.schema.json",
+      "description": "Optional cross-trial learning payload linked by trial_id=node_id. Does not relax any v2 evidence requirement."
+    },
+    "event": {
+      "const": "discovery_observation"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "observation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "node_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "primary_parent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "dependency_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "cohort": {
+      "type": "object",
+      "properties": {
+        "target_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "brief_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "preferences_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "fixture_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "capture_contract_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "judge_protocol_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "gate_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "target_sha256",
+        "brief_revision",
+        "preferences_sha256",
+        "fixture_sha256",
+        "capture_contract_sha256",
+        "judge_protocol_sha256",
+        "gate_version"
+      ],
+      "additionalProperties": false
+    },
+    "predecision": {
+      "type": "object",
+      "properties": {
+        "observed_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "eligible_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "policy_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "context_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "observed_ids",
+        "eligible_actions",
+        "policy_sha256",
+        "context_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "hypothesis": {
+      "type": "object",
+      "properties": {
+        "defect_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "family_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prediction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "change_class": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "defect_id",
+        "family_id",
+        "prediction",
+        "change_class"
+      ],
+      "additionalProperties": false
+    },
+    "intervention": {
+      "type": "object",
+      "properties": {
+        "intended": {
+          "type": "string",
+          "minLength": 1
+        },
+        "realized": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exercised": {
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "intended",
+        "realized",
+        "exercised",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "outcomes": {
+      "type": "object",
+      "properties": {
+        "technical": {
+          "enum": [
+            "pass",
+            "fail",
+            "blocked",
+            "unknown"
+          ]
+        },
+        "evidence_complete": {
+          "type": "boolean"
+        },
+        "brief": {
+          "enum": [
+            "pass",
+            "conditional",
+            "fail",
+            "blocked",
+            "unknown"
+          ]
+        },
+        "pairwise_preference": {
+          "enum": [
+            "candidate",
+            "parent",
+            "tie",
+            "unknown"
+          ]
+        },
+        "owner": {
+          "enum": [
+            "approved",
+            "rejected",
+            "not_reviewed",
+            "uncertain"
+          ]
+        },
+        "selection": {
+          "enum": [
+            "kept",
+            "rejected",
+            "parked",
+            "working_preview",
+            "unknown"
+          ]
+        },
+        "failure_class": {
+          "enum": [
+            "none",
+            "implementation",
+            "mechanism",
+            "scope",
+            "evidence",
+            "resource",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "technical",
+        "evidence_complete",
+        "brief",
+        "pairwise_preference",
+        "owner",
+        "selection",
+        "failure_class"
+      ],
+      "additionalProperties": false
+    },
+    "directives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "LANDED",
+              "PARTIAL",
+              "NOT_DONE",
+              "SUPERSEDED_BY_OWNER",
+              "INVALID_DIAGNOSIS"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "owner_labels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pair_hashes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "decision_receipt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "preference": {
+            "enum": [
+              "first",
+              "second",
+              "tie",
+              "uncertain"
+            ]
+          },
+          "acceptance": {
+            "enum": [
+              "approved",
+              "rejected",
+              "uncertain"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+          }
+        },
+        "required": [
+          "pair_hashes",
+          "decision_receipt",
+          "preference",
+          "acceptance",
+          "scope",
+          "timestamp"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "api_usd": {
+          "$ref": "#/$defs/measure"
+        },
+        "gpu_seconds": {
+          "$ref": "#/$defs/measure"
+        },
+        "cpu_seconds": {
+          "$ref": "#/$defs/measure"
+        },
+        "elapsed_seconds": {
+          "$ref": "#/$defs/measure"
+        },
+        "queue_seconds": {
+          "$ref": "#/$defs/measure"
+        },
+        "owner_seconds": {
+          "$ref": "#/$defs/measure"
+        },
+        "builder_calls": {
+          "$ref": "#/$defs/measure"
+        },
+        "critic_calls": {
+          "$ref": "#/$defs/measure"
+        },
+        "policy_calls": {
+          "$ref": "#/$defs/measure"
+        },
+        "input_tokens": {
+          "$ref": "#/$defs/measure"
+        },
+        "output_tokens": {
+          "$ref": "#/$defs/measure"
+        },
+        "cached_tokens": {
+          "$ref": "#/$defs/measure"
+        }
+      },
+      "required": [
+        "api_usd",
+        "gpu_seconds",
+        "cpu_seconds",
+        "elapsed_seconds",
+        "queue_seconds",
+        "owner_seconds",
+        "builder_calls",
+        "critic_calls",
+        "policy_calls",
+        "input_tokens",
+        "output_tokens",
+        "cached_tokens"
+      ],
+      "additionalProperties": false
+    },
+    "replay": {
+      "type": "object",
+      "properties": {
+        "support": {
+          "enum": [
+            "recorded",
+            "unsupported",
+            "censored"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependencies_verified": {
+          "type": "boolean"
+        },
+        "reveal_after": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "support",
+        "reason",
+        "dependencies_verified",
+        "reveal_after"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "event",
+    "schema_version",
+    "observation_id",
+    "run_id",
+    "node_id",
+    "timestamp",
+    "primary_parent",
+    "dependency_ids",
+    "cohort",
+    "predecision",
+    "hypothesis",
+    "intervention",
+    "artifacts",
+    "outcomes",
+    "directives",
+    "owner_labels",
+    "cost",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "measure": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "measured",
+            "estimated",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "value",
+        "status"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unknown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

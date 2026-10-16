@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Owner review | Quackles</title><link rel="stylesheet" href="/app.css"><script src="/app.js" defer></script></head>
+<body>
+<header class="brand"><strong>QUACKLES <span>/ Owner review</span></strong><span id="connection" role="status">Loading local evidence…</span><button id="theme" aria-label="Switch color theme">Light / dark</button></header>
+<div class="shell"><aside>
+<p class="nav-label">Review queues</p><nav id="queues" aria-label="Review queues"></nav>
+<div class="aside-bottom"><p>Only you decide.</p><small>Stars describe quality. Accept / reject describes this trial. A pairwise pick is a preference, not approval.</small><hr><small>Labels stay local. Corrections append a new event; nothing is erased.</small></div>
+</aside><main>
+<div class="heading"><div><p id="eyebrow">Visual checkpoint</p><h1 id="title">Preparing your queue</h1></div><div class="progress"><strong id="position">…</strong><span id="reviewed"></span></div></div>
+<p id="hypothesis" class="hypothesis">Reading source-bound candidates.</p>
+<section id="history" hidden aria-label="Historical receipt"><span id="history-status"></span><blockquote id="quote"></blockquote><details><summary>Mapping evidence and scope</summary><pre id="evidence"></pre></details><label id="binding-label" for="binding">Confirm or correct the trial binding</label><select id="binding"></select></section>
+<div class="toolbar"><div class="density" id="densities" aria-label="Image density"></div><label class="compact">Region<select id="region"></select></label><button id="zoom">Z <span>Native pixels</span></button><button id="flip">Space <span>Target flip</span></button><button id="look-toggle" title="Cycle both, LOOK, CLEAR">L <span>LOOK / CLEAR</span></button><label class="compact">Judged on<select id="judge-mode"></select></label><label class="pair-check"><input type="checkbox" id="pair"> Compare</label></div>
+<div class="compare-select" id="compare-control" hidden><label for="other">Left candidate</label><select id="other"></select><button id="prefer-left">← Prefer left</button><button id="prefer-right">Prefer right →</button><button id="tie">Tie</button><span id="preference"></span></div>
+<section id="stage" class="stage" aria-label="Image comparison">
+<figure><figcaption><strong>TARGET</strong><span id="target-size"></span></figcaption><div class="image-wrap" id="target-wrap"><img id="target-image" alt="Target reference crop"><p class="missing" id="target-missing" hidden>No target is bound to this receipt.</p></div></figure>
+<figure id="other-figure" hidden><figcaption><strong id="other-title">LEFT</strong><span id="other-size"></span></figcaption><div class="image-wrap"><img id="other-image" alt="Left comparison candidate"></div></figure>
+<figure><figcaption><strong id="candidate-caption">CANDIDATE</strong><span id="candidate-size"></span></figcaption><div class="image-wrap" id="candidate-wrap"><img id="candidate-image" alt="Current candidate crop"></div></figure>
+<figure id="clear-figure" hidden><figcaption><strong>CLEAR / no DOF</strong><span id="clear-size"></span></figcaption><div class="image-wrap"><img id="clear-image" alt="Current candidate CLEAR render without depth of field"></div></figure>
+</section>
+<p id="optics-note" role="status"></p><p id="poll-state"></p>
+<div class="image-foot"><span id="image-note"></span><span id="view-state">Fit view</span></div>
+<details id="source-details"><summary>Source images and comparison sheets</summary><div id="sources"></div></details>
+<section class="rating" aria-label="Rate candidate">
+<div><span class="field-label">Quality <small>1–5</small></span><div id="stars" class="stars" role="group" aria-label="Quality stars"></div></div>
+<div><span class="field-label">Decision <small>A / R / M</small></span><div class="verdicts"><button data-verdict="accept">Accept</button><button data-verdict="reject">Reject</button><button data-verdict="maybe">Maybe</button><button data-verdict="lock">Lock</button><button data-verdict="direction">Direction</button></div></div>
+<label class="compact" for="aspect">Aspect<input id="aspect" value="overall" maxlength="200"></label>
+<label class="note-label" for="note">Note <small>optional</small><input id="note" maxlength="12000" placeholder="What works? What needs to change?"></label>
+<button id="save" class="primary">Save & next <kbd>↵</kbd></button>
+</section>
+<div class="status-row"><span id="status" role="status" aria-live="polite">Choose stars and a decision, then press Enter.</span><div><button id="prev">P Previous</button><button id="next">N Next</button></div></div>
+<section class="recommendation" id="recommendation" hidden><h2>Next batch <span id="next-element"></span></h2><p id="next-best"></p><div id="next-batch"></div><small>Experimental recommendations, not automatic scene promotion. Native-density gates still apply.</small></section>
+<footer><span><kbd>1–5</kbd> stars <kbd>A R M</kbd> decision <kbd>↵</kbd> save</span><span><kbd>← →</kbd> preference <kbd>L</kbd> LOOK / CLEAR <kbd>Z</kbd> zoom <kbd>Space</kbd> target <kbd>N P</kbd> navigate</span></footer>
+</main></div></body></html>

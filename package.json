@@ -56,7 +56,10 @@
     "test:inspection": "node scripts/inspection-browser.mjs",
     "test:inspection:static": "node scripts/run-inspection-static.mjs",
     "verify:deployed": "node scripts/hosting/verify.mjs",
-    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs"
+    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs",
+    "owner-review": "python3 tools/owner-review/owner_rating.py",
+    "owner-review:fixture": "python3 tools/owner-review/synthetic_fixture.py",
+    "test:owner-review": "python3 tools/owner-review/test.py"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

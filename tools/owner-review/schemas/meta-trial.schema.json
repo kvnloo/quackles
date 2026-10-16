@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dream-loop.local/meta-trial.schema.json",
+  "title": "Dream-loop discovery-tree meta-learning intake extension",
+  "description": "Partial intake is not a complete discovery_observation. node_id=trial_id, primary_parent=parents[0], dependency_ids=parents[1:]. Existing artifact and cohort definitions are reused, not forked.",
+  "type": "object",
+  "required": ["event", "schema_version", "event_id", "trial_id", "run_id", "timestamp", "lane", "parents", "element", "defect_id", "hypothesis", "mechanism_class", "parameters", "cost", "artifacts", "metrics", "self_review", "judge_verdicts", "owner_reaction", "status", "failure_class"],
+  "properties": {
+    "event": {"const":"meta_trial"},
+    "schema_version": {"const":1},
+    "event_id": {"type":"string","minLength":1},
+    "trial_id": {"$ref":"rounds.schema.json#/properties/node_id"},
+    "run_id": {"$ref":"rounds.schema.json#/properties/run_id"},
+    "timestamp": {"anyOf":[{"$ref":"rounds.schema.json#/properties/timestamp"},{"type":"null"}]},
+    "lane": {"type":"string","minLength":1},
+    "parents": {"$ref":"rounds.schema.json#/properties/dependency_ids"},
+    "element": {"type":"string","minLength":1},
+    "defect_id": {"$ref":"rounds.schema.json#/properties/hypothesis/properties/defect_id"},
+    "hypothesis": {"type":"string","minLength":1},
+    "mechanism_class": {"enum":["geometry","procedural_shader","traced_vector","generated_vector","projection_paint","ai_udim","layer_stack","lighting","post","unknown"]},
+    "parameters": {"type":"object"},
+    "cost": {"type":"object","required":["gpu_seconds","wall_seconds"],"properties":{"gpu_seconds":{"type":["number","null"],"minimum":0},"wall_seconds":{"type":["number","null"],"minimum":0}}},
+    "artifacts": {"$ref":"rounds.schema.json#/properties/artifacts"},
+    "cohort": {"$ref":"rounds.schema.json#/properties/cohort"},
+    "metrics": {"type":"object","required":["max_zoom_texel_density","crop_gate","sharpness"],"properties":{"max_zoom_texel_density":{"type":["number","null"],"minimum":0},"crop_gate":{"enum":["pass","fail",null]},"sharpness":{"type":["number","null"]},"max_zoom_gate":{"enum":["pass","fail",null]}}},
+    "self_review": {"type":"object","required":["status","notes"],"properties":{"status":{"type":"string"},"notes":{"type":"string"}}},
+    "judge_verdicts": {"type":"array","items":{"type":"object","required":["preference","protocol_id","calibration_id","receipt"],"properties":{"preference":{"enum":["candidate","parent","tie","abstain"]},"protocol_id":{"type":"string"},"calibration_id":{"type":["string","null"]},"receipt":{"type":"string"}}}},
+    "owner_reaction": {"type":"object","required":["status","receipt"],"properties":{"status":{"enum":["approved","rejected","preferred","not_reviewed","uncertain"]},"receipt":{"type":["string","null"]}}},
+    "status": {"enum":["pending","completed","failed","blocked"]},
+    "failure_class": {"enum":["none","implementation","mechanism","scope","evidence","resource","unknown"]}
+  }
+}
