@@ -209,6 +209,8 @@ export class FrameCache {
     for (const job of [...this.jobs.values()].filter((job) => job.stage === "fetched" && (!paused || this.movingAllowed.has(job.asset.url))).sort(byPriority)) {
       if (this.active >= this.maxActiveJobs || (paused && this.active >= MOTION_DECODES)) break;
       const high = job.bytes >= HIGH_TIER;
+      // Motion work may use spare capacity, but must not churn resident tiles.
+      if (paused && this.used + this.reserved + job.bytes > this.decodedBudgetBytes) continue;
       if ((high && this.highActive) || !this.room(job.bytes)) continue;
       job.stage = "decoding"; job.active = true; this.active++; if (high) this.highActive++; this.startedDecodes++;
       if (paused) { this.motionDecodes++; this.maxDecodingWhilePaused = Math.max(this.maxDecodingWhilePaused, this.active); }

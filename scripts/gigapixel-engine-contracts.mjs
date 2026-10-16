@@ -256,6 +256,17 @@ await atest("PROPOSED RULE (motion-decode): paused, only allowed tiles decode, o
     assert.equal(net.decodes.length, 5);
   } finally { globalThis.createImageBitmap = real; }
 });
+await atest("motion decode never evicts resident tiles to admit speculative moving work", async () => {
+  reset(); const cache = new FrameCache("motion-no-evict", { decodedBudgetBytes: 2 * MIB, maxActiveJobs: 1 });
+  await cache.load(asset(0), 100); await cache.load(asset(1), 100);
+  cache.setPaused(true); cache.allowWhileMoving([asset(2).url]);
+  const pending = cache.load(asset(2), 90);
+  await tick(30);
+  assert.equal(cache.stats().evictions, 0, "moving decode must wait for free capacity, not churn resident tiles");
+  assert.ok(cache.peek(asset(0).url)); assert.ok(cache.peek(asset(1).url));
+  cache.setPaused(false); await pending;
+  assert.equal(cache.stats().evictions, 1, "normal settled eviction still makes progress"); cache.dispose();
+});
 test("PROPOSED RULE (motion-decode): the allowed set is the visible crop at the painted tier or lower, never a higher tier, never the margin", () => {
   assert.equal(typeof render.motionDecodeKeys, "function", "render.motionDecodeKeys missing");
   const crop = inspectionCrop(7.4, 0.37, 0.41), current = planTier(7.4), lower = tiers[tiers.indexOf(current) - 2], higher = tiers[tiers.indexOf(current) + 1];
