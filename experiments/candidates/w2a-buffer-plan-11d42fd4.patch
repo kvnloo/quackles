@@ -1,0 +1,36 @@
+From 11d42fd452eeb915eb2cfc6a2fdcb392302735c0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 14 Oct 2026 12:00:00 +0000
+Subject: [PATCH] lab(#53 W2A-P): plan a 13% buffer before the zero-slack
+ fallback
+
+Buffer-planning alternative to the settled guard: sharpPlan tries a 13%
+coverage margin (just above the 12% early-repaint inset) between the
+20% and zero-margin fallbacks, so budget-limited coverage keeps real
+slack when it fits. Quackles Lab candidate on top of Q1-C 1b637ed1.
+Not for promotion.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014RvgE21Cg9C77BBH5USAp9
+---
+ lib/sequence/render.ts | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/lib/sequence/render.ts b/lib/sequence/render.ts
+index 7eb2d3b..2718abb 100644
+--- a/lib/sequence/render.ts
++++ b/lib/sequence/render.ts
+@@ -180,7 +180,9 @@ export function sharpPlan(
+   const tight = detailPlan(variants, desiredWidth, crop, budget, 0);
+   if (!tight) return null;
+   const floor = tight.variant.width;
+-  for (const margin of [0.4, 0.2, 0]) {
++  // 0.13: when the 20% buffer does not fit the budget, still try for slack just above the 12% early-repaint inset before
++  // falling back to coverage == crop (zero slack: every render at rest then "escapes" and repaints, #53 W2A).
++  for (const margin of [0.4, 0.2, 0.13, 0]) {
+     const coverage = margin === 0 ? crop : fittedBuffer(cssWidth, cssHeight, crop, dpr, DETAIL_CANVAS_CAP, margin);
+     const plan = detailPlan(variants, floor, coverage, budget, margin > 0 ? overscan : 0, Number.POSITIVE_INFINITY, floor);
+     if (plan) return { ...plan, coverage };
+-- 
+2.43.0
+

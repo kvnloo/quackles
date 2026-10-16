@@ -1,0 +1,122 @@
+From 6f2ef5d216e9d24633a6ad62000912ac0c4e7e08 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 12 Oct 2026 12:00:00 +0000
+Subject: [PATCH] lab(#53 w1 challenger): no repaint inset on coverage sides at
+ the image edge
+
+The detail layer repainted whenever cropInside(crop, coverage, 12% inset)
+failed. Coverage is clamped to the image, so below ~1.32x zoom, or with
+the crop on an image edge, that test can never pass: every render()
+repainted the full detail canvas with identical coverage and tiles (lab
+trace: 22 back-to-back ~100 ms repaints at rest, zoom 1.19).
+
+cropEscapes() keeps the inset on interior sides and drops it on sides
+already at the image boundary. Experimental candidate for Quackles Lab;
+not for promotion without phone evidence.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014RvgE21Cg9C77BBH5USAp9
+---
+ components/sequence/SequencePlayer.tsx |  4 ++--
+ lib/sequence/render.ts                 |  9 ++++++++
+ package.json                           |  3 ++-
+ scripts/detail-escape-contracts.mjs    | 31 ++++++++++++++++++++++++++
+ 4 files changed, 44 insertions(+), 3 deletions(-)
+ create mode 100644 scripts/detail-escape-contracts.mjs
+
+diff --git a/components/sequence/SequencePlayer.tsx b/components/sequence/SequencePlayer.tsx
+index 14998e3..5c56bfb 100644
+--- a/components/sequence/SequencePlayer.tsx
++++ b/components/sequence/SequencePlayer.tsx
+@@ -7,7 +7,7 @@ import { FrameCache } from "@/lib/sequence/cache";
+ import { imageAt, isImage, parseManifest, spanAt, THEME_IDS, type ImageAsset, type SequenceManifest, type ThemeId, type TileAsset, type Variant } from "@/lib/sequence/manifest";
+ import { applyHiddenPolicy, applyInspectionPolicy, describeInspectionSources, HIDDEN_POLICY, type InspectionSourcesReceipt } from "@/lib/sequence/inspection-source";
+ import { mayWarm, warmPlan, WARM_SETTLE_MS } from "@/lib/sequence/warm-plan";
+-import { placeDetail, cropInside, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
++import { placeDetail, cropEscapes, detailPlan, eggWeight, inspectionCrop, paintBase, paintDetail, paintEgg, sharpPlan, tileAssets, viewportCrop, type Crop } from "@/lib/sequence/render";
+ import { probeTier, tierKnown } from "@/lib/sequence/tier-probe";
+ import { inspectionSnapshot, setInspectionMaxZoom, subscribeInspection } from "@/lib/sequence/inspection";
+ import { sequencePerfProfile, type SequencePerfProfile } from "@/lib/sequence/perf-profile";
+@@ -271,7 +271,7 @@ export function SequencePlayer() {
+         const primaryReady = ready(decoded[0]);
+         const mixChanged = Math.abs(showMix - paintedMix) > 0.001;
+         const upgrade = layers[0].plan.variant.width > state.detailWidth;
+-        const escaping = !paintedCoverage || !cropInside(crop, paintedCoverage, crop.width * 0.12);
++        const escaping = !paintedCoverage || cropEscapes(crop, paintedCoverage, crop.width * 0.12);
+         const paintLayers = allReady ? decoded : primaryReady && paintedMix <= 0.001 ? [decoded[0]] : null;
+         if (paintLayers && (allReady ? mixChanged || upgrade || escaping || !detailKey : upgrade || escaping || !detailKey)) {
+           // First appearance of the sharp layer (it was hidden/released): dissolve it in. Repaints of a visible layer do not re-fade.
+diff --git a/lib/sequence/render.ts b/lib/sequence/render.ts
+index 3219f5a..7eb2d3b 100644
+--- a/lib/sequence/render.ts
++++ b/lib/sequence/render.ts
+@@ -132,6 +132,15 @@ export function cropInside(inner: Crop, outer: Crop, inset = 0): boolean {
+ export const DETAIL_CANVAS_CAP = 4096;
+ 
+ /** Grow the painted source rect until the backing store would exceed the cap. */
++/** Does a pan need a fresh detail paint? The inset repaints early, before the crop reaches the painted edge; a coverage side
++ * already on the image boundary has nothing beyond it, so it takes no inset (else low zoom or an edge crop repaints forever). */
++export function cropEscapes(inner: Crop, outer: Crop, inset = 0): boolean {
++  const atStart = (v: number) => v <= 1e-9, atEnd = (v: number) => v >= 1 - 1e-9;
++  const left = atStart(outer.x) ? 0 : inset, top = atStart(outer.y) ? 0 : inset;
++  const right = atEnd(outer.x + outer.width) ? 0 : inset, bottom = atEnd(outer.y + outer.height) ? 0 : inset;
++  return inner.x < outer.x + left || inner.y < outer.y + top
++    || inner.x + inner.width > outer.x + outer.width - right || inner.y + inner.height > outer.y + outer.height - bottom;
++}
+ export function fittedBuffer(cssWidth: number, cssHeight: number, crop: Crop, dpr: number, cap = DETAIL_CANVAS_CAP, margin = 0.4): Crop {
+   let pad = margin;
+   while (pad > 0.001) {
+diff --git a/package.json b/package.json
+index f796250..9a11857 100644
+--- a/package.json
++++ b/package.json
+@@ -44,7 +44,8 @@
+     "test:inspection": "node scripts/inspection-browser.mjs",
+     "test:inspection:static": "node scripts/run-inspection-static.mjs",
+     "verify:deployed": "node scripts/hosting/verify.mjs",
+-    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs"
++    "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs",
++    "test:detail-escape": "node --import ./scripts/register-ts-resolve.mjs scripts/detail-escape-contracts.mjs"
+   },
+   "dependencies": {
+     "@base-ui/react": "^1.8.0",
+diff --git a/scripts/detail-escape-contracts.mjs b/scripts/detail-escape-contracts.mjs
+new file mode 100644
+index 0000000..3a879db
+--- /dev/null
++++ b/scripts/detail-escape-contracts.mjs
+@@ -0,0 +1,31 @@
++#!/usr/bin/env node
++/** #53 contract: the detail layer repaints for a pan only when the crop can leave the painted coverage. A side of the coverage
++ * that already reaches the image edge has nothing beyond it, so it needs no early-repaint inset. Before this, the 12% inset
++ * on every side made a zoom < ~1.32 crop (or any crop on an image edge) "escape" forever: a full repaint on every render. */
++import assert from "node:assert/strict";
++import { bufferedCrop, cropEscapes, inspectionCrop } from "../lib/sequence/render.ts";
++let n = 0; const test = (name, fn) => { fn(); n++; console.log("PASS", name); };
++const inset = (crop) => crop.width * 0.12;
++const painted = (zoom, x, y) => { const crop = inspectionCrop(zoom, x, y); return { crop, coverage: bufferedCrop(crop, 0.4) }; };
++
++test("low zoom: coverage spans the whole image, the same crop does not escape", () => {
++  for (const zoom of [1.02, 1.19, 1.3]) { const { crop, coverage } = painted(zoom, 0.5, 0.5); assert.equal(cropEscapes(crop, coverage, inset(crop)), false, `zoom ${zoom}`); }
++});
++test("crop on an image edge at 8x does not escape its own coverage", () => {
++  for (const [x, y] of [[0, 0.5], [1, 0.5], [0.5, 0], [0.5, 1], [0, 0], [1, 1]]) { const { crop, coverage } = painted(8, x, y); assert.equal(cropEscapes(crop, coverage, inset(crop)), false, `${x},${y}`); }
++});
++test("interior sides keep the early-repaint inset", () => {
++  const { crop, coverage } = painted(8, 0.5, 0.5);
++  assert.equal(cropEscapes(crop, coverage, inset(crop)), false);
++  const pad = coverage.x + coverage.width - (crop.x + crop.width); // room to the right edge of the coverage
++  const nearRight = { ...crop, x: crop.x + pad - inset(crop) / 2 }; // inside coverage but within the inset
++  assert.equal(cropEscapes(nearRight, coverage, inset(crop)), true);
++  const edgeCov = painted(8, 0, 0.5); // coverage at the left image edge: the right side is interior
++  const r = edgeCov.coverage.x + edgeCov.coverage.width - (edgeCov.crop.x + edgeCov.crop.width);
++  assert.equal(cropEscapes({ ...edgeCov.crop, x: edgeCov.crop.x + r - inset(edgeCov.crop) / 2 }, edgeCov.coverage, inset(edgeCov.crop)), true);
++});
++test("a crop outside the coverage always escapes", () => {
++  const { crop, coverage } = painted(8, 0.2, 0.2);
++  assert.equal(cropEscapes({ ...crop, x: crop.x + 0.3 }, coverage, inset(crop)), true);
++});
++console.log(`${n} passed`);
+-- 
+2.43.0
+

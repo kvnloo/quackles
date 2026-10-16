@@ -1,0 +1,312 @@
+From 1b637ed1e7128789419a06d46d62a7f044a46a02 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 13 Oct 2026 13:00:00 +0000
+Subject: [PATCH] lab(#53 Q1-C): bounded admission on top of priority-aware
+ eviction
+
+A decode job now starts only if strictly less useful (or unwanted)
+decoded images free enough room; otherwise it evicts nothing and waits.
+Equally useful work no longer swaps places, which was the at-rest
+decode/evict cycle (lab probe: ~33 decodes/s at rest, zero network).
+
+- Deferred jobs keep their asset compressed via the existing idle warm
+  path, so admission later costs a decode, not a fetch.
+- Deferred work is reconsidered only when demand changes (retain/pin with
+  a different set or priorities) or capacity changes (a job finishes):
+  identical per-frame retain/pin calls no longer re-run admission.
+- stats(): deferred, admissionPasses.
+
+Regression checks in sequence-contracts (#53 Q1): wanted bytes over the
+budget, low priority displacing useful images, forward/reverse scroll
+priorities, deferred dedupe/stale/compressed/resolve, identical demand,
+and decoded + reserved <= budget sampled every 1 ms. The existing detail
+serialization check now expects the over-budget equal-priority remainder
+to wait (intentional behaviour change). The fetch fixture accepts a
+missing init, as the warm path calls fetch(url).
+
+Q1 arm C for Quackles Lab, on top of 99a629f9 (B) and 6f2ef5d2 (W1).
+Not for promotion.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014RvgE21Cg9C77BBH5USAp9
+---
+ lib/sequence/cache.ts          |  40 +++++++---
+ scripts/sequence-contracts.mjs | 139 ++++++++++++++++++++++++++++++++-
+ 2 files changed, 166 insertions(+), 13 deletions(-)
+
+diff --git a/lib/sequence/cache.ts b/lib/sequence/cache.ts
+index f5cc138..105794f 100644
+--- a/lib/sequence/cache.ts
++++ b/lib/sequence/cache.ts
+@@ -9,7 +9,7 @@ export type FrameCacheOptions = {
+   maxActiveJobs?: number;
+ };
+ export type Decoded = { key: string; asset: ImageAsset; bitmap: ImageBitmap; bytes: number; touched: number };
+-type Job = { asset: ImageAsset; priority: number; bytes: number; reserved: boolean; controller: AbortController; resolve: (image: Decoded) => void; reject: (error: Error) => void; promise: Promise<Decoded>; active: boolean };
++type Job = { asset: ImageAsset; priority: number; bytes: number; reserved: boolean; controller: AbortController; resolve: (image: Decoded) => void; reject: (error: Error) => void; promise: Promise<Decoded>; active: boolean; deferred?: boolean };
+ 
+ class CompressedCache {
+   private cache: Promise<Cache | null>;
+@@ -94,6 +94,7 @@ export class FrameCache {
+   private warming = new Set<string>();
+   private warmQueue: ImageAsset[] = [];
+   private warmActive = 0;
++  private admissionPasses = 0;
+   constructor(revision: string, options: FrameCacheOptions = {}) {
+     this.decodedBudgetBytes = options.decodedBudgetBytes ?? DECODED_BUDGET;
+     this.maxActiveJobs = options.maxActiveJobs ?? 3;
+@@ -107,14 +108,20 @@ export class FrameCache {
+     if (image) image.touched = performance.now();
+     return image;
+   }
+-  pin(keys: Iterable<string>) { this.pinned = new Set(keys); this.pump(); }
++  pin(keys: Iterable<string>) {
++    const next = new Set(keys);
++    if (next.size === this.pinned.size && [...next].every((key) => this.pinned.has(key))) return; // same demand: nothing to reconsider
++    this.pinned = next; this.pump();
++  }
+   /** The wanted set with its current priorities (bare URLs count as priority 0). Priorities change as the story moves. */
+   retain(entries: Iterable<string | readonly [string, number]>) {
+-    this.wanted = new Map();
++    const next = new Map<string, number>();
+     for (const entry of entries) {
+       const [key, priority] = typeof entry === "string" ? [entry, 0] : entry;
+-      this.wanted.set(key, Math.max(priority, this.wanted.get(key) ?? -Infinity));
++      next.set(key, Math.max(priority, next.get(key) ?? -Infinity));
+     }
++    if (next.size === this.wanted.size && [...next].every(([key, priority]) => this.wanted.get(key) === priority)) return;
++    this.wanted = next;
+     for (const [key, job] of this.jobs) {
+       if (this.wanted.has(key)) job.priority = this.wanted.get(key)!;
+       if (this.wanted.has(key) || this.pinned.has(key)) continue;
+@@ -138,7 +145,12 @@ export class FrameCache {
+     return promise;
+   }
+   warm(asset: ImageAsset) {
+-    if (this.disposed || this.decoded.has(asset.url) || this.jobs.has(asset.url) || this.warming.has(asset.url)) return;
++    if (this.disposed || this.decoded.has(asset.url) || this.jobs.has(asset.url)) return;
++    this.keepCompressed(asset);
++  }
++  /** Fetch into the compressed cache only (no decode), when the network is otherwise idle. */
++  private keepCompressed(asset: ImageAsset) {
++    if (this.warming.has(asset.url)) return;
+     this.warming.add(asset.url);
+     this.warmQueue.push(asset);
+     this.pumpWarm();
+@@ -166,9 +178,12 @@ export class FrameCache {
+   /** Current usefulness: pinned (on screen) > wanted by priority > not wanted at all. */
+   private demand(key: string) { return this.pinned.has(key) ? Infinity : this.wanted.get(key) ?? -Infinity; }
+   private room(bytes: number, priority: number) {
+-    // A job may evict only images no more useful than itself: unwanted first, then the least useful, then LRU.
+-    const evictable = [...this.decoded.values()].filter((image) => this.demand(image.key) <= priority)
++    // Admission: a job may evict only images strictly less useful than itself (unwanted first, then the least useful,
++    // then LRU), and evicts nothing unless that frees enough room. Equally useful work waits instead of swapping places.
++    const evictable = [...this.decoded.values()].filter((image) => this.demand(image.key) < priority)
+       .sort((a, b) => this.demand(a.key) - this.demand(b.key) || a.touched - b.touched);
++    const free = this.decodedBudgetBytes - this.used - this.reserved;
++    if (free < bytes && free + evictable.reduce((sum, image) => sum + image.bytes, 0) < bytes) return false;
+     while (this.used + this.reserved + bytes > this.decodedBudgetBytes && evictable.length) {
+       const image = evictable.shift()!;
+       this.decoded.delete(image.key); this.used -= image.bytes; this.close(image.bitmap);
+@@ -177,11 +192,18 @@ export class FrameCache {
+   }
+   private pump() {
+     if (this.disposed) return;
++    this.admissionPasses++;
+     const pending = [...this.jobs.values()].filter((job) => !job.active).sort((a, b) => b.priority - a.priority);
+     for (const job of pending) {
+       if (this.active >= this.maxActiveJobs) break;
+       const high = job.bytes >= HIGH_TIER;
+-      if ((high && this.highActive) || !this.room(job.bytes, this.pinned.has(job.asset.url) ? Infinity : job.priority)) continue;
++      if (high && this.highActive) continue;
++      if (!this.room(job.bytes, this.pinned.has(job.asset.url) ? Infinity : job.priority)) {
++        // Deferred until demand or capacity changes (the next retain/pin change or job completion re-runs this pass).
++        // Meanwhile keep it compressed, so admission later costs a decode, not a fetch.
++        if (!job.deferred) { job.deferred = true; this.keepCompressed(job.asset); }
++        continue;
++      }
+       job.active = true; this.active++; if (high) this.highActive++;
+       this.maxInflight = Math.max(this.maxInflight, this.active); this.maxHighTierInflight = Math.max(this.maxHighTierInflight, this.highActive);
+       job.reserved = true; this.reserved += job.bytes; this.maxBytes = Math.max(this.maxBytes, this.used + this.reserved);
+@@ -225,7 +247,7 @@ export class FrameCache {
+   }
+   private close(bitmap: ImageBitmap) { bitmap.close(); this.closedBitmaps++; }
+   stats() {
+-    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
++    return { decodedBytes: this.used, reservedBytes: this.reserved, totalBytes: this.used + this.reserved, budgetBytes: this.decodedBudgetBytes, maxBytes: this.maxBytes, pinnedBytes: [...this.pinned].reduce((sum, key) => sum + (this.decoded.get(key)?.bytes ?? 0), 0), entries: this.decoded.size, inflight: this.active, maxInflight: this.maxInflight, queued: this.jobs.size - this.active, highTierInflight: this.highActive, maxHighTierInflight: this.maxHighTierInflight, decoding: this.decoding, maxDecoding: this.maxDecoding, networkRequests: this.networkRequests, completedDecodes: this.completedDecodes, closedBitmaps: this.closedBitmaps, staleDiscard: this.staleDiscard, failures: this.failures, deferred: [...this.jobs.values()].filter((job) => job.deferred && !job.active).length, admissionPasses: this.admissionPasses, compressedBytes: this.disk.bytes, compressedBudgetBytes: this.disk.budgetBytes, maxActiveJobs: this.maxActiveJobs };
+   }
+   dispose() {
+     this.disposed = true;
+diff --git a/scripts/sequence-contracts.mjs b/scripts/sequence-contracts.mjs
+index 977f44d..15656d6 100644
+--- a/scripts/sequence-contracts.mjs
++++ b/scripts/sequence-contracts.mjs
+@@ -50,13 +50,13 @@ function environment(options = {}) {
+   globalThis.window = { caches: storage };
+   globalThis.caches = storage;
+   globalThis.Response = ResponseFixture;
+-  globalThis.fetch = async (url, { signal }) => {
++  globalThis.fetch = async (url, { signal } = {}) => { // warm/compressed-only fetches pass no init
+     const asset = options.assets?.get(url) ?? { width: 1024, height: 1536 };
+     const record = { url, signal, attempt: requests.filter(row => row.url === url).length + 1 };
+     requests.push(record); activeFetch++; maxFetch = Math.max(maxFetch, activeFetch);
+     try {
+       if (options.fetchGate) await options.fetchGate.promise;
+-      signal.throwIfAborted();
++      signal?.throwIfAborted();
+       if (options.failFirst && record.attempt === 1) throw new TypeError('Injected network failure');
+       return new ResponseFixture({ asset, size: options.encodedBytes ?? 1200, type: 'image/webp' });
+     } finally { activeFetch--; }
+@@ -110,9 +110,12 @@ await check('serialize high detail work and count decode reservations', async ()
+   const jobs = assets.map(row => cache.load(row));
+   await until(() => env.activeDecode === 1, 'first detail decode');
+   const pending = bounded(cache); assert.equal(pending.reservedBytes, 24 * MiB); assert.equal(pending.highTierInflight, 1);
+-  gate.resolve(); await Promise.all(jobs); await sleep(5);
+-  const result = bounded(cache); assert.equal(env.maxDecode, 1);
++  // 6 x 24 MiB of equally wanted detail exceeds the 96 MiB budget: the first four decode, the other two wait (#53 Q1:
++  // equal priorities no longer evict each other in a decode/evict cycle) and are rejected when the player is disposed.
++  gate.resolve(); await Promise.all(jobs.slice(0, 4)); await sleep(5);
++  const result = bounded(cache); assert.equal(env.maxDecode, 1); assert.equal(result.deferred, 2); assert.equal(result.closedBitmaps, 0);
+   cache.dispose(); assert.ok(env.bitmaps.every(bitmap => bitmap.closed));
++  assert.deepEqual((await Promise.allSettled(jobs.slice(4))).map(row => row.reason?.name), ['AbortError', 'AbortError']);
+   return { pending, final: result, maxSimultaneousDecodes: env.maxDecode };
+ });
+ await check('evict old frames while the currently drawn bitmap remains pinned', async () => {
+@@ -175,6 +178,134 @@ await check('reject a full master larger than decoded budget', async () => {
+   await assert.rejects(cache.load(asset('too-large', 8192)), /use tiles/);
+   assert.equal(env.requests.length, 0); cache.dispose(); return { budgetBytes: DECODED_BUDGET };
+ });
++// ---- #53 Q1: bounded admission + priority-aware eviction ---------------------------------------------------------------
++// A player-like demand loop: retain the wanted set (with priorities), request what is neither decoded nor already waiting,
++// and re-render when a request settles (SequencePlayer.request/schedule). Q1_LEGACY_RETAIN=1 retains bare URLs (v1 API).
++const PLATE = 1024 * 1536 * 4;
++const legacyRetain = process.env.Q1_LEGACY_RETAIN === '1';
++function demand(cache, wanted) {
++  const waiting = new Set(); let renders = 0, scheduled = false;
++  const render = () => {
++    scheduled = false; renders++;
++    const rows = wanted();
++    cache.pin(rows.filter(row => row.pinned).map(row => row.asset.url));
++    cache.retain(legacyRetain ? rows.map(row => row.asset.url) : rows.map(row => [row.asset.url, row.priority]));
++    for (const { asset: row, priority } of rows) {
++      if (cache.peek(row.url) || waiting.has(row.url)) continue;
++      waiting.add(row.url);
++      cache.load(row, priority).catch(() => {}).finally(() => { waiting.delete(row.url); schedule(); });
++    }
++  };
++  const schedule = () => { if (!scheduled && renders < 400) { scheduled = true; setTimeout(render, 0); } };
++  render();
++  return { get renders() { return renders; }, waiting, rerender: () => schedule() };
++}
++// Decoded + reserved bytes sampled every millisecond while a check runs.
++function budgetWatch(cache) {
++  let max = 0; const timer = setInterval(() => { max = Math.max(max, cache.stats().totalBytes); }, 1); timer.unref?.(); // a failed check must not keep the process alive
++  return { stop() { clearInterval(timer); max = Math.max(max, cache.stats().totalBytes); return max; } };
++}
++// Quiet = no new decode for `ms`: what "at rest" means for the cache.
++async function quiet(env, ms = 60, cap = 3000) {
++  let last = env.bitmaps.length, since = performance.now(); const start = since;
++  while (performance.now() - start < cap) { await sleep(5); if (env.bitmaps.length !== last) { last = env.bitmaps.length; since = performance.now(); } else if (performance.now() - since >= ms) return true; }
++  return false;
++}
++const plates = (prefix, n) => Array.from({ length: n }, (_, i) => asset(`${prefix}-${i}`));
++
++await check('Q1: wanted bytes exceeding the decoded budget settle without a decode/evict cycle', async () => {
++  const env = environment(), cache = new FrameCache('q1-over', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
++  const rows = plates('spec', 6).map(row => ({ asset: row, priority: 19 }));      // six equal speculative plates, room for four
++  const loop = demand(cache, () => rows);
++  const settled = await quiet(env); const decodes = env.bitmaps.length, renders = loop.renders;
++  await sleep(150);                                                               // stay at rest: nothing may churn
++  const max = watch.stop(), stats = cache.stats();
++  assert.ok(settled, `cache never went quiet: ${env.bitmaps.length} decodes in 3 s`);
++  assert.equal(env.bitmaps.length, decodes, 'decodes continued at rest');
++  assert.ok(decodes <= rows.length, `${decodes} decodes for ${rows.length} wanted assets`);
++  assert.equal(stats.closedBitmaps, 0, 'a wanted, equally useful image was evicted');
++  assert.ok(max <= 4 * PLATE, `decoded + reserved ${max} > budget`);
++  cache.dispose(); return { decodes, renders, maxBytes: max, entries: stats.entries, queued: stats.queued };
++});
++
++await check('Q1: low-priority work never displaces an immediately useful image', async () => {
++  const env = environment(), cache = new FrameCache('q1-useful', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
++  const useful = plates('tile', 4).map(row => ({ asset: row, priority: 90 }));
++  let rows = useful; const loop = demand(cache, () => rows);
++  await quiet(env); const first = useful.map(row => cache.peek(row.asset.url));
++  assert.ok(first.every(Boolean), 'useful images decoded');
++  const spec = asset('speculative'); rows = [...useful, { asset: spec, priority: 19 }]; loop.rerender();
++  await quiet(env); await sleep(50);
++  const max = watch.stop();
++  assert.ok(useful.every(row => cache.peek(row.asset.url) && !cache.peek(row.asset.url).bitmap.closed), 'a useful image was evicted for speculative work');
++  assert.equal(cache.peek(spec.url), undefined, 'speculative plate decoded without capacity');
++  assert.ok(max <= 4 * PLATE);
++  const stats = cache.stats();
++  assert.equal(stats.closedBitmaps, 0, `${stats.closedBitmaps} bitmaps closed: useful images were displaced (and re-decoded) on the way`);
++  cache.dispose();
++  return { decodes: env.bitmaps.length, closed: stats.closedBitmaps, maxBytes: max };
++});
++
++await check('Q1: priorities that change during forward and reverse story scrolling keep the current frame fed without churn', async () => {
++  const env = environment(), cache = new FrameCache('q1-scroll', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
++  const frames = plates('frame', 9); let center = 2;
++  // SequencePlayer: current frame pinned (required), adjacent frames +1,-1,+2,+3 at 19,19,18,17 (speculative).
++  const wanted = () => [{ asset: frames[center], priority: 100, pinned: true },
++    ...[[1, 19], [-1, 19], [2, 18], [3, 17]].filter(([o]) => frames[center + o]).map(([o, p]) => ({ asset: frames[center + o], priority: p }))];
++  const loop = demand(cache, wanted); const steps = [];
++  for (const next of [3, 4, 5, 4, 3, 2]) {
++    center = next; loop.rerender();
++    const t0 = performance.now(); await until(() => cache.peek(frames[center].url), `current frame ${center} decoded`);
++    const fed = performance.now() - t0;
++    const settled = await quiet(env); const decodes = env.bitmaps.length; await sleep(80);
++    steps.push({ center, fedMs: Math.round(fed), settled, churnAtRest: env.bitmaps.length - decodes });
++  }
++  const max = watch.stop();
++  assert.ok(steps.every(step => step.settled && step.churnAtRest === 0), `churn at rest: ${JSON.stringify(steps)}`);
++  assert.ok(max <= 4 * PLATE, `decoded + reserved ${max} > budget`);
++  assert.ok(env.bitmaps.length <= 6 * 5, `${env.bitmaps.length} decodes for 6 steps`);
++  cache.dispose(); return { steps, decodes: env.bitmaps.length, maxBytes: max };
++});
++
++await check('Q1: deferred requests dedupe, abort when stale, stay compressed, and resolve when capacity frees (no timers)', async () => {
++  const env = environment(), cache = new FrameCache('q1-deferred', { decodedBudgetBytes: 4 * PLATE }), watch = budgetWatch(cache);
++  const useful = plates('busy', 4);
++  cache.retain(useful.map(row => [row.url, 90])); await Promise.all(useful.map(row => cache.load(row, 90)));
++  const spec = asset('later'), stale = asset('stale');
++  cache.retain([...useful.map(row => [row.url, 90]), [spec.url, 19], [stale.url, 19]]);
++  const first = cache.load(spec, 19), again = cache.load(spec, 19);
++  assert.equal(first, again, 'duplicate request created a second job');
++  const staleJob = cache.load(stale, 19).then(() => 'resolved', error => error.name);
++  let settledSpec = false; first.then(() => { settledSpec = true; }, () => { settledSpec = true; });
++  await sleep(40);
++  assert.equal(settledSpec, false, 'deferred request resolved without capacity');
++  assert.equal(cache.peek(spec.url), undefined);
++  assert.ok(env.cacheStores.get('quackles-sequence-q1-deferred')?.entries.has(spec.url), 'deferred speculative asset not kept compressed');
++  cache.retain([...useful.map(row => [row.url, 90]), [spec.url, 19]]);                       // stale drops out of demand
++  assert.equal(await staleJob, 'AbortError');
++  const requestsBefore = env.requests.filter(row => row.url === spec.url).length;
++  cache.retain([...useful.slice(1).map(row => [row.url, 90]), [spec.url, 19]]);             // demand change frees capacity
++  const image = await first;
++  const max = watch.stop();
++  assert.equal(image.bitmap.closed, false);
++  assert.equal(env.requests.filter(row => row.url === spec.url).length, requestsBefore, 'admitted deferred job re-fetched instead of reading the compressed copy');
++  assert.equal(cache.stats().queued, 0, 'unresolved deferred work left behind');
++  assert.ok(max <= 4 * PLATE);
++  cache.dispose(); return { maxBytes: max, specRequests: requestsBefore };
++});
++
++await check('Q1: identical demand does not re-run admission (reconsider only on demand or capacity change)', async () => {
++  const env = environment(), cache = new FrameCache('q1-idle', { decodedBudgetBytes: 2 * PLATE });
++  const rows = plates('idle', 3); const tuples = rows.map(row => [row.url, 19]);
++  cache.retain(tuples); rows.forEach(row => cache.load(row, 19).catch(() => {})); await quiet(env);
++  const before = cache.stats().admissionPasses;
++  assert.equal(typeof before, 'number', 'cache does not count admission passes');
++  for (let i = 0; i < 100; i++) { cache.retain(tuples); cache.pin([]); }
++  assert.equal(cache.stats().admissionPasses, before, 'identical retain/pin re-ran admission');
++  cache.retain([...tuples.slice(1)]); assert.ok(cache.stats().admissionPasses > before, 'a demand change did not reconsider deferred work');
++  cache.dispose(); return { before, after: cache.stats().admissionPasses };
++});
++
+ await check('explicit nonuniform frame positions and static reduced motion frames', async () => {
+   const themeIds = ['day', 'white', 'blue', 'dark', 'night'];
+   const fixture = { version: 1, id: 'fixture-only', aspect: [2, 3], defaultTheme: 'white', themes: themeIds.map(id => ({ id, label: id, palette: { paper: '#ffffff', deep: '#eeeeee', ink: '#111111', cobalt: '#2222ff' } })), frames: [0, .45, .56, .84, 1].map((progress, i) => ({ id: `f${i}`, progress, phase: 'fixture', windPhase: progress, assets: Object.fromEntries(themeIds.map(id => [id, [asset(`${id}-${i}`)]])) })), reducedMotion: [{ from: 0, frameId: 'f0' }, { from: .56, frameId: 'f4' }] };
+-- 
+2.43.0
+

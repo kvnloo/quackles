@@ -1,0 +1,31 @@
+{
+  "schema": "quackles-lab.tape.v1",
+  "id": "smoke-inspect",
+  "seed": 1,
+  "description": "Smoke tape (#53 tapes 1+2, desktop subset): cold load -> first app-reported paint -> 3 s idle, then scripted viewport targets 1x->4x->8x (clamped to the build's maxZoom) with a rapid pan reversal while refinement jobs are stale, back to 1x, then real CDP wheel input in and out at a fixed anchor. t is ms from tape start; x/y are fractions of the .poster-frame box. setTarget drives window.__QUACKLES_INSPECTION__.setTarget (exact viewport transform); wheel/mouseMove are trusted CDP input.",
+  "warmupMs": 3000,
+  "steps": [
+    { "t": 0, "action": "mark", "label": "tape-start" },
+    { "t": 0, "action": "setTarget", "zoom": 4, "x": 0.5, "y": 0.45 },
+    { "t": 3000, "action": "setTarget", "zoom": 8, "x": 0.6, "y": 0.4, "measure": "sharp" },
+    { "t": 7000, "action": "setTarget", "zoom": 8, "x": 0.35, "y": 0.6, "label": "pan" },
+    { "t": 7250, "action": "setTarget", "zoom": 8, "x": 0.65, "y": 0.35, "label": "reverse" },
+    { "t": 7500, "action": "setTarget", "zoom": 8, "x": 0.35, "y": 0.6, "label": "reverse" },
+    { "t": 7750, "action": "setTarget", "zoom": 8, "x": 0.5, "y": 0.5, "label": "churn-settle" },
+    { "t": 11000, "action": "setTarget", "zoom": 1, "x": 0.5, "y": 0.5 },
+    { "t": 13000, "action": "mouseMove", "x": 0.6, "y": 0.5 },
+    { "t": 13100, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": -120 },
+    { "t": 13150, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": -120 },
+    { "t": 13200, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": -120 },
+    { "t": 13250, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": -120 },
+    { "t": 13300, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": -120 },
+    { "t": 13350, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": -120 },
+    { "t": 16000, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": 120 },
+    { "t": 16050, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": 120 },
+    { "t": 16100, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": 120 },
+    { "t": 16150, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": 120 },
+    { "t": 16200, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": 120 },
+    { "t": 16250, "action": "wheel", "x": 0.6, "y": 0.5, "deltaY": 120 },
+    { "t": 19000, "action": "mark", "label": "tape-end" }
+  ]
+}

@@ -1,0 +1,2822 @@
+{
+  "schema": "quackles-lab.branches.v1",
+  "issue": "https://github.com/kvnloo/quackles/issues/53",
+  "remote": "origin",
+  "control": {
+    "ref": "nightly",
+    "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c"
+  },
+  "inventoriedAt": "2026-10-12T01:43:55.456Z",
+  "note": "Inventory only. Branch names are hypotheses; build/run status is 'not-verified' until a lab receipt exists. Never merge or rewrite these refs for a ranking.",
+  "refs": [
+    {
+      "ref": "ci/avrea-cache-pilot",
+      "sha": "fd5e6a4b206200944b81e500db1d4e130a21ef4b",
+      "sameShaAs": [],
+      "subject": "ci: pilot Avrea on verify lane",
+      "committedAt": "2026-10-02T01:42:28-05:00",
+      "tipAuthor": "Kevin Rajan",
+      "parents": [
+        "13da0af20d773ac42ce7b6fe1269a9937561a33d"
+      ],
+      "lane": "excluded",
+      "hypothesis": "excluded: CI cache pilot, not a renderer (#53)",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "ec47ed5478596f5ed06a34f6a62a5db689cfb971",
+        "ahead": 2,
+        "behind": 85,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "Kevin Rajan",
+            "commits": 1
+          },
+          {
+            "name": "kvnloo",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 1
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 7,
+        "areas": {
+          ".github/": 5,
+          "public/": 2
+        },
+        "sample": [
+          ".github/workflows/automerge-preview.yml",
+          ".github/workflows/kick-pages.yml",
+          ".github/workflows/pages.yml",
+          ".github/workflows/promote-preview.yml",
+          ".github/workflows/verify.yml",
+          "public/nightly/index.html",
+          "public/preview-scene/sequence/manifest.json"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 8
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "not-comparable"
+      ]
+    },
+    {
+      "ref": "claude/deterministic-benchmarks-pr1-870e75",
+      "sha": "13da0af20d773ac42ce7b6fe1269a9937561a33d",
+      "sameShaAs": [
+        "main"
+      ],
+      "subject": "main: five scenes, low-res plates only (v0 feel build ec47ed5) + one Pages publisher",
+      "committedAt": "2026-09-30T11:49:20-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "ec47ed5478596f5ed06a34f6a62a5db689cfb971"
+      ],
+      "lane": "excluded",
+      "hypothesis": "excluded: harness branch (this lab), not an experiment",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "ec47ed5478596f5ed06a34f6a62a5db689cfb971",
+        "ahead": 1,
+        "behind": 85,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 1
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 7,
+        "areas": {
+          ".github/": 5,
+          "public/": 2
+        },
+        "sample": [
+          ".github/workflows/automerge-preview.yml",
+          ".github/workflows/kick-pages.yml",
+          ".github/workflows/pages.yml",
+          ".github/workflows/promote-preview.yml",
+          ".github/workflows/verify.yml",
+          "public/nightly/index.html",
+          "public/preview-scene/sequence/manifest.json"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 8
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "not-comparable"
+      ]
+    },
+    {
+      "ref": "dependabot/github_actions/actions/configure-pages-6",
+      "sha": "e230530a63cdc845e7af45a383c219abe4762724",
+      "sameShaAs": [],
+      "subject": "chore(deps): bump actions/configure-pages from 5 to 6",
+      "committedAt": "2026-09-30T18:48:18+00:00",
+      "tipAuthor": "dependabot[bot]",
+      "parents": [
+        "13da0af20d773ac42ce7b6fe1269a9937561a33d"
+      ],
+      "lane": "excluded",
+      "hypothesis": "excluded: Dependabot dependency bump (#53)",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "ec47ed5478596f5ed06a34f6a62a5db689cfb971",
+        "ahead": 2,
+        "behind": 85,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "dependabot[bot]",
+            "commits": 1
+          },
+          {
+            "name": "kvnloo",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 1
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 7,
+        "areas": {
+          ".github/": 5,
+          "public/": 2
+        },
+        "sample": [
+          ".github/workflows/automerge-preview.yml",
+          ".github/workflows/kick-pages.yml",
+          ".github/workflows/pages.yml",
+          ".github/workflows/promote-preview.yml",
+          ".github/workflows/verify.yml",
+          "public/nightly/index.html",
+          "public/preview-scene/sequence/manifest.json"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 8
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "not-comparable"
+      ]
+    },
+    {
+      "ref": "dependabot/github_actions/actions/setup-node-7",
+      "sha": "5f58573786cd93baf5edc0e7755dece57008b335",
+      "sameShaAs": [],
+      "subject": "chore(deps): bump actions/setup-node from 4 to 7",
+      "committedAt": "2026-09-30T18:54:49+00:00",
+      "tipAuthor": "dependabot[bot]",
+      "parents": [
+        "13da0af20d773ac42ce7b6fe1269a9937561a33d"
+      ],
+      "lane": "excluded",
+      "hypothesis": "excluded: Dependabot dependency bump (#53)",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "ec47ed5478596f5ed06a34f6a62a5db689cfb971",
+        "ahead": 2,
+        "behind": 85,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "dependabot[bot]",
+            "commits": 1
+          },
+          {
+            "name": "kvnloo",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 1
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 7,
+        "areas": {
+          ".github/": 5,
+          "public/": 2
+        },
+        "sample": [
+          ".github/workflows/automerge-preview.yml",
+          ".github/workflows/kick-pages.yml",
+          ".github/workflows/pages.yml",
+          ".github/workflows/promote-preview.yml",
+          ".github/workflows/verify.yml",
+          "public/nightly/index.html",
+          "public/preview-scene/sequence/manifest.json"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 8
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "not-comparable"
+      ]
+    },
+    {
+      "ref": "dependabot/github_actions/actions/stale-11",
+      "sha": "c7c429831acb0c270634dc930b828e982e13a0e5",
+      "sameShaAs": [],
+      "subject": "Bump actions/stale from 9 to 11",
+      "committedAt": "2026-09-15T03:57:14+00:00",
+      "tipAuthor": "dependabot[bot]",
+      "parents": [
+        "10328ea893cb4f6cabcdba608053eb8f4d99c30b"
+      ],
+      "lane": "excluded",
+      "hypothesis": "excluded: Dependabot dependency bump (#53)",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": null,
+        "ahead": 49,
+        "behind": 211,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "Cursor Agent",
+            "commits": 46
+          },
+          {
+            "name": "dependabot[bot]",
+            "commits": 1
+          },
+          {
+            "name": "Kevin Rajan",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "veeman961",
+            "commits": 46
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 0,
+        "areas": {},
+        "sample": []
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/fps-harness.mjs"
+        ],
+        "testScripts": 2
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "not-comparable",
+        "no-static-server-script"
+      ]
+    },
+    {
+      "ref": "dependabot/github_actions/actions/upload-pages-artifact-5",
+      "sha": "22a34547515e10b329507af56cb81a212aa24698",
+      "sameShaAs": [],
+      "subject": "chore(deps): bump actions/upload-pages-artifact from 3 to 5",
+      "committedAt": "2026-09-30T18:55:20+00:00",
+      "tipAuthor": "dependabot[bot]",
+      "parents": [
+        "13da0af20d773ac42ce7b6fe1269a9937561a33d"
+      ],
+      "lane": "excluded",
+      "hypothesis": "excluded: Dependabot dependency bump (#53)",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "ec47ed5478596f5ed06a34f6a62a5db689cfb971",
+        "ahead": 2,
+        "behind": 85,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "dependabot[bot]",
+            "commits": 1
+          },
+          {
+            "name": "kvnloo",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 1
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 7,
+        "areas": {
+          ".github/": 5,
+          "public/": 2
+        },
+        "sample": [
+          ".github/workflows/automerge-preview.yml",
+          ".github/workflows/kick-pages.yml",
+          ".github/workflows/pages.yml",
+          ".github/workflows/promote-preview.yml",
+          ".github/workflows/verify.yml",
+          "public/nightly/index.html",
+          "public/preview-scene/sequence/manifest.json"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 8
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "not-comparable"
+      ]
+    },
+    {
+      "ref": "dependabot/github_actions/ossf/scorecard-action-2.4.4",
+      "sha": "ef73cabe870410c7e5dbc07ae7d7b2f30168b153",
+      "sameShaAs": [],
+      "subject": "Bump ossf/scorecard-action from 2.4.2 to 2.4.4",
+      "committedAt": "2026-09-15T03:57:13+00:00",
+      "tipAuthor": "dependabot[bot]",
+      "parents": [
+        "10328ea893cb4f6cabcdba608053eb8f4d99c30b"
+      ],
+      "lane": "excluded",
+      "hypothesis": "excluded: Dependabot dependency bump (#53)",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": null,
+        "ahead": 49,
+        "behind": 211,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "Cursor Agent",
+            "commits": 46
+          },
+          {
+            "name": "dependabot[bot]",
+            "commits": 1
+          },
+          {
+            "name": "Kevin Rajan",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "veeman961",
+            "commits": 46
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 0,
+        "areas": {},
+        "sample": []
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/fps-harness.mjs"
+        ],
+        "testScripts": 2
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "not-comparable",
+        "no-static-server-script"
+      ]
+    },
+    {
+      "ref": "dev",
+      "sha": "2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2",
+      "sameShaAs": [
+        "preview/touch-pan"
+      ],
+      "subject": "perf(zoom): no decode starts and no detail repaint inside camera motion",
+      "committedAt": "2026-09-30T14:32:02-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "5aba31a57b91510a61f094cac24cc5cdd5416bef"
+      ],
+      "lane": "production-control",
+      "hypothesis": "Integration branch; compare against nightly, not a control by itself.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 3,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 3
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 3
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 11,
+        "areas": {
+          "app/": 1,
+          "components/": 4,
+          "lib/": 4,
+          "package.json": 1,
+          "scripts/": 1
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "package.json",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 34
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "fix/direct-touch-p0-resume-20261008",
+      "sha": "d4a9838d56ee20baadce10722c247dc5708f865a",
+      "sameShaAs": [],
+      "subject": "test: require rendered pinch state to track touch directly",
+      "committedAt": "2026-10-08T12:27:30-05:00",
+      "tipAuthor": "Kevin Rajan",
+      "parents": [
+        "45a5430163fd48a304c41f7e8cf89709afa20b5e"
+      ],
+      "lane": "input",
+      "hypothesis": "Direct touch owns the camera during contact (#50 D). PR #52 was closed unmerged: not landed.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 2,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "Kevin Rajan",
+            "commits": 2
+          }
+        ],
+        "coAuthors": []
+      },
+      "changedPaths": {
+        "count": 2,
+        "areas": {
+          "components/": 1,
+          "scripts/": 1
+        },
+        "sample": [
+          "components/sequence/HeroInspection.tsx",
+          "scripts/touch-input-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 33
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "main",
+      "sha": "13da0af20d773ac42ce7b6fe1269a9937561a33d",
+      "sameShaAs": [
+        "claude/deterministic-benchmarks-pr1-870e75"
+      ],
+      "subject": "main: five scenes, low-res plates only (v0 feel build ec47ed5) + one Pages publisher",
+      "committedAt": "2026-09-30T11:49:20-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "ec47ed5478596f5ed06a34f6a62a5db689cfb971"
+      ],
+      "lane": "infrastructure",
+      "hypothesis": "Pages publisher / five low-res scenes (v0 feel build); infrastructure, NOT the product control.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "ec47ed5478596f5ed06a34f6a62a5db689cfb971",
+        "ahead": 1,
+        "behind": 85,
+        "containsControl": false,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 1
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 1
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 7,
+        "areas": {
+          ".github/": 5,
+          "public/": 2
+        },
+        "sample": [
+          ".github/workflows/automerge-preview.yml",
+          ".github/workflows/kick-pages.yml",
+          ".github/workflows/pages.yml",
+          ".github/workflows/promote-preview.yml",
+          ".github/workflows/verify.yml",
+          "public/nightly/index.html",
+          "public/preview-scene/sequence/manifest.json"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 8
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "not-verified"
+      },
+      "flags": [
+        "separate-suite"
+      ]
+    },
+    {
+      "ref": "nightly",
+      "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "sameShaAs": [],
+      "subject": "ci: nightly no longer deploys Pages; kick main's single publisher instead",
+      "committedAt": "2026-09-30T11:49:59-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "d4ce5620164002a33bed4410820987724cdda80c"
+      ],
+      "lane": "production-control",
+      "hypothesis": "Current product control (#41/#50 product authority).",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 0,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": true
+      },
+      "credit": {
+        "authors": [],
+        "coAuthors": []
+      },
+      "changedPaths": {
+        "count": 0,
+        "areas": {},
+        "sample": []
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 33
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/blue-chrome",
+      "sha": "cc56f9b0e2112d786fb8acd634f5e20abd77d109",
+      "sameShaAs": [],
+      "subject": "fix(chrome): Blue theme is a full-bleed #0000f2 field again (I10)",
+      "committedAt": "2026-09-30T19:11:17-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2"
+      ],
+      "lane": "visual-other",
+      "hypothesis": "Separate visual/cast suites; not part of the GP performance ranking.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 4,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 4
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 4
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 12,
+        "areas": {
+          "app/": 1,
+          "components/": 4,
+          "lib/": 4,
+          "package.json": 1,
+          "scripts/": 2
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "package.json",
+          "scripts/blue-chrome-browser.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "separate-suite",
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/chromecast",
+      "sha": "d85a841525c7225c98147a783798891e146eef5e",
+      "sameShaAs": [],
+      "subject": "fix(cast): second adversarial pass (stop/debounce race, stale errors, landscape note)",
+      "committedAt": "2026-09-30T21:27:07-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "91a7ad9a1155c850210bcf72fbc5147e5cdd8ac6"
+      ],
+      "lane": "visual-other",
+      "hypothesis": "Separate visual/cast suites; not part of the GP performance ranking.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 10,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 10
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 10
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 33,
+        "areas": {
+          "app/": 2,
+          "components/": 8,
+          "docs/": 1,
+          "lib/": 12,
+          "next.config.ts": 1,
+          "package.json": 1,
+          "scripts/": 8
+        },
+        "sample": [
+          "app/cast-receiver/page.cast.tsx",
+          "app/globals.css",
+          "components/cast/CastLanding.tsx",
+          "components/cast/CastReceiver.tsx",
+          "components/cast/CastSender.tsx",
+          "components/cast/cast.module.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "docs/CAST.md",
+          "lib/cast/config.ts",
+          "lib/cast/engine/perf-profile.ts",
+          "lib/cast/engine/tier-probe.ts",
+          "lib/cast/media.ts",
+          "lib/cast/protocol.ts",
+          "lib/cast/receiver.ts",
+          "lib/cast/sender.ts",
+          "lib/cast/transport.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "next.config.ts",
+          "package.json",
+          "scripts/cast-basic-contracts.mjs",
+          "scripts/cast-fake-sender-sdk.js",
+          "scripts/cast-flag-off-check.mjs",
+          "scripts/cast-media-live-check.mjs",
+          "scripts/cast-mirror-browser.mjs",
+          "scripts/cast-protocol-contracts.mjs",
+          "scripts/cast-sender-e2e-browser.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 37
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "separate-suite",
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/cleanup",
+      "sha": "c0a84364ad535195af1804547ec887831d493554",
+      "sameShaAs": [],
+      "subject": "refactor(camera): drop dead cinematic handoff and write-only settle flags; one camera-zoom helper",
+      "committedAt": "2026-09-30T19:08:31-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2"
+      ],
+      "lane": "input-scroll",
+      "hypothesis": "Finger-to-camera latency, reversals, pacing, state integrity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 4,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 4
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 4
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 15,
+        "areas": {
+          "app/": 1,
+          "components/": 5,
+          "lib/": 5,
+          "package.json": 1,
+          "scripts/": 3
+        },
+        "sample": [
+          "app/globals.css",
+          "components/experience/CinematicHandoffController.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/camera-zoom.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "package.json",
+          "scripts/cinematic-browser.mjs",
+          "scripts/cleanup-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/gigapixel-single",
+      "sha": "fefde8396bf7de06c9ebfc95a3d2e0a9324035d0",
+      "sameShaAs": [],
+      "subject": "fix(gigapixel-single): start on the preview's own scene, full-bleed 2:3 viewer",
+      "committedAt": "2026-10-01T11:33:14-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "6bb3a9efc9eb56d4aa18a6cfd180360cb8a568d7"
+      ],
+      "lane": "source-lod",
+      "hypothesis": "Single 1GP source family per scene (candidate pyramid, not production-quality Blue).",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 23,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 22
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 22
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 28,
+        "areas": {
+          "app/": 2,
+          "components/": 6,
+          "lib/": 11,
+          "package.json": 1,
+          "scripts/": 8
+        },
+        "sample": [
+          "app/globals.css",
+          "app/layout.tsx",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/motion-quality.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "lib/sequence/tier-probe.ts",
+          "lib/sequence/tile-surface.ts",
+          "package.json",
+          "scripts/full-bleed-browser.mjs",
+          "scripts/gigapixel-engine-contracts.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/inspection-browser.mjs",
+          "scripts/only-white-browser.mjs",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": "gigapixel-single",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/gigapixel-feel-browser.mjs",
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/gp-all",
+      "sha": "244a824528ac781eef324e31ddbd39515325ed94",
+      "sameShaAs": [],
+      "subject": "feat(gigapixel): PROPOSED RULE - a bounded decode budget while the camera moves",
+      "committedAt": "2026-09-30T19:17:19-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "19692c428df54022bb27ddc3f8462ad8352b0676"
+      ],
+      "lane": "gp-scheduling",
+      "hypothesis": "Combination of GP changes: a combo control, not proof each component helped.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 28,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 27
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 27
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 32,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 12,
+          "package.json": 1,
+          "scripts/": 12
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/camera-settle.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/motion-quality.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "lib/sequence/tier-probe.ts",
+          "lib/sequence/tile-surface.ts",
+          "package.json",
+          "scripts/camera-settle-contracts.mjs",
+          "scripts/fuzz-browser.mjs",
+          "scripts/gigapixel-engine-contracts.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/inspection-browser.mjs",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/profile-browser.mjs",
+          "scripts/sequence-browser.mjs",
+          "scripts/sequence-contracts.mjs",
+          "scripts/touch-feel-browser.mjs",
+          "scripts/wiring-contracts.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": "gigapixel-single",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/gigapixel-feel-browser.mjs",
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/gp-motion-decode",
+      "sha": "5f90a4108e5b852f7826a2d48eadfcb553220569",
+      "sameShaAs": [],
+      "subject": "feat(gigapixel): PROPOSED RULE - a bounded decode budget while the camera moves",
+      "committedAt": "2026-09-30T19:15:45-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "6bb3a9efc9eb56d4aa18a6cfd180360cb8a568d7"
+      ],
+      "lane": "gp-scheduling",
+      "hypothesis": "Decode during camera motion.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 23,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 22
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 22
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 26,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 11,
+          "package.json": 1,
+          "scripts/": 7
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/motion-quality.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "lib/sequence/tier-probe.ts",
+          "lib/sequence/tile-surface.ts",
+          "package.json",
+          "scripts/gigapixel-engine-contracts.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/inspection-browser.mjs",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/touch-feel-browser.mjs",
+          "scripts/wiring-contracts.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": "gigapixel-single",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/gigapixel-feel-browser.mjs",
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/gp-net6",
+      "sha": "671c774cba5fda1ed9b0c1bf2257bf164c7c3360",
+      "sameShaAs": [],
+      "subject": "test: PROPOSED RULE (gp-net6) - browser contracts cap decodes at maxActiveJobs and fetches at maxFetches apart",
+      "committedAt": "2026-09-30T19:13:31-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "4c0fed49ac8afcfd8570fcb07638c4bb0c403804"
+      ],
+      "lane": "gp-scheduling",
+      "hypothesis": "Network concurrency 6.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 24,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 23
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 23
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 29,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 11,
+          "package.json": 1,
+          "scripts/": 10
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/motion-quality.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "lib/sequence/tier-probe.ts",
+          "lib/sequence/tile-surface.ts",
+          "package.json",
+          "scripts/fuzz-browser.mjs",
+          "scripts/gigapixel-engine-contracts.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/inspection-browser.mjs",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/profile-browser.mjs",
+          "scripts/sequence-browser.mjs",
+          "scripts/sequence-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": "gigapixel-single",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/gigapixel-feel-browser.mjs",
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/gp-settle",
+      "sha": "9bdc48512808b99427d20bcc197df9b1a02d38bc",
+      "sameShaAs": [],
+      "subject": "fix(camera): PROPOSED RULE - settle by screen speed only near the target, not on the first frames of a glide",
+      "committedAt": "2026-09-30T19:08:02-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "2c99ff025f19ab6ed45f47a1fc7df1fdf57fbd4d"
+      ],
+      "lane": "gp-scheduling",
+      "hypothesis": "Settle detection before refinement.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 25,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 24
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 24
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 27,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 12,
+          "package.json": 1,
+          "scripts/": 7
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/camera-settle.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/motion-quality.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "lib/sequence/tier-probe.ts",
+          "lib/sequence/tile-surface.ts",
+          "package.json",
+          "scripts/camera-settle-contracts.mjs",
+          "scripts/gigapixel-engine-contracts.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/inspection-browser.mjs",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": "gigapixel-single",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/gigapixel-feel-browser.mjs",
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/rfc-001-compiler",
+      "sha": "e127edd7ada8039837cbec4002a13257f33c1556",
+      "sameShaAs": [],
+      "subject": "fix(compiler): close gaps found by blind adversarial review (#44)",
+      "committedAt": "2026-09-30T19:49:17-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "74ea4ef8278f423814956c8213256b654ed80602"
+      ],
+      "lane": "independent-research",
+      "hypothesis": "RFC spike; report separately, never in a single-score ranking.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 5,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 5
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 5
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 48,
+        "areas": {
+          "app/": 1,
+          "components/": 4,
+          "docs/": 1,
+          "lib/": 4,
+          "package.json": 1,
+          "scripts/": 1,
+          "tools/": 36
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "docs/rfcs/001-implementation-notes.md",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "package.json",
+          "scripts/touch-feel-browser.mjs",
+          "tools/compiler/bootstrap.sh",
+          "tools/compiler/compile.py",
+          "tools/compiler/qcompiler/__init__.py",
+          "tools/compiler/qcompiler/api.py",
+          "tools/compiler/qcompiler/colour.py",
+          "tools/compiler/qcompiler/derive.py",
+          "tools/compiler/qcompiler/gate.py",
+          "tools/compiler/qcompiler/ledger.py",
+          "tools/compiler/qcompiler/masters.py",
+          "tools/compiler/qcompiler/report.py",
+          "tools/compiler/qcompiler/store.py",
+          "tools/compiler/registry/masters/blue-1gp-r1.json",
+          "tools/compiler/registry/masters/blue-201mp.json",
+          "tools/compiler/registry/masters/dark-1gp-r1.json",
+          "tools/compiler/registry/masters/day-1gp-r1.json",
+          "tools/compiler/registry/masters/mushroom-1gp-r1.json",
+          "tools/compiler/registry/masters/night-1gp-r1.json",
+          "tools/compiler/registry/masters/white-1gp-r1.json",
+          "tools/compiler/registry/promoted.json",
+          "tools/compiler/registry/proofs/blue-1gp-r1-refuse-4acba7a534.json",
+          "tools/compiler/registry/proofs/blue-1gp-r1-refuse-4acba7a534.md",
+          "tools/compiler/registry/proofs/blue-201mp-accept-f17b72170a.json",
+          "tools/compiler/registry/proofs/blue-201mp-accept-f17b72170a.md",
+          "tools/compiler/registry/proofs/dark-1gp-r1-refuse-8dd4ba4630.json",
+          "tools/compiler/registry/proofs/dark-1gp-r1-refuse-8dd4ba4630.md",
+          "tools/compiler/registry/proofs/day-1gp-r1-refuse-61f6bfe999.json",
+          "tools/compiler/registry/proofs/day-1gp-r1-refuse-61f6bfe999.md",
+          "tools/compiler/registry/proofs/mushroom-1gp-r1-accept-59477c0042.json"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": null,
+      "evidenceDocs": [
+        "docs/rfcs/001-implementation-notes.md"
+      ],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "separate-suite",
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/rfc-002-refine",
+      "sha": "88e4b396e9961cf5cb54e60eaca1d42d1dbf1829",
+      "sameShaAs": [],
+      "subject": "fix(refine): un-blank on the first publish that carries tiles, flip or not (E5 crash recovery left the layer hidden) (RFC-002 #45)",
+      "committedAt": "2026-09-30T21:35:20-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "cdeaec71da6d647b41d9c2d071f1e7a50f66c9d9"
+      ],
+      "lane": "gp-scheduling",
+      "hypothesis": "Async refinement (RFC-002).",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 28,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 27
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 27
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 35,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 18,
+          "package.json": 1,
+          "scripts/": 9
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/lock-fade.ts",
+          "lib/sequence/motion-quality.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/refine-core.ts",
+          "lib/sequence/refine-mode.ts",
+          "lib/sequence/refine-protocol.ts",
+          "lib/sequence/refine-runtime.ts",
+          "lib/sequence/refine.worker.ts",
+          "lib/sequence/remote-surface.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "lib/sequence/tier-probe.ts",
+          "lib/sequence/tile-surface.ts",
+          "package.json",
+          "scripts/gigapixel-engine-contracts.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/inspection-browser.mjs",
+          "scripts/lock-fade-browser.mjs",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/refine-runtime-contracts.mjs",
+          "scripts/refine-worker-browser.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/gigapixel-feel-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 35
+      },
+      "previewId": "gigapixel-single",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/gigapixel-feel-browser.mjs",
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/rfc-003-realtime",
+      "sha": "ccfa7aff6e03599b6d34e17c9e527d18034fbdfe",
+      "sameShaAs": [],
+      "subject": "research(rfc-003): Blue real-time parity spike — baked/PBR/VT vs plate + 201MP",
+      "committedAt": "2026-09-30T22:23:10-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2"
+      ],
+      "lane": "independent-research",
+      "hypothesis": "RFC spike; report separately, never in a single-score ranking.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 4,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 4
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 4
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 19,
+        "areas": {
+          "app/": 1,
+          "components/": 4,
+          "docs/": 1,
+          "lib/": 4,
+          "package.json": 1,
+          "scripts/": 8
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "docs/rfcs/003-spike-results.md",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "package.json",
+          "scripts/rfc-003-spike/analyze.py",
+          "scripts/rfc-003-spike/blender_export.py",
+          "scripts/rfc-003-spike/build_vt.py",
+          "scripts/rfc-003-spike/capture.mjs",
+          "scripts/rfc-003-spike/index.html",
+          "scripts/rfc-003-spike/main.mjs",
+          "scripts/rfc-003-spike/serve.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 34
+      },
+      "previewId": null,
+      "evidenceDocs": [
+        "docs/rfcs/003-spike-results.md"
+      ],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "separate-suite",
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/rfc-005-gaussian",
+      "sha": "8d926a595ef3a816f76925dc82763a989990be0f",
+      "sameShaAs": [],
+      "subject": "docs(rfc-005): static 3DGS Blue spike results (#47)",
+      "committedAt": "2026-09-30T20:36:47-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2"
+      ],
+      "lane": "independent-research",
+      "hypothesis": "RFC spike; report separately, never in a single-score ranking.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 4,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 4
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 4
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 30,
+        "areas": {
+          "app/": 1,
+          "components/": 4,
+          "docs/": 19,
+          "lib/": 4,
+          "package.json": 1,
+          "scripts/": 1
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "docs/rfcs/005-spike-results.md",
+          "docs/rfcs/assets/005-spike/bench-sf15k-100k.json",
+          "docs/rfcs/assets/005-spike/bench-sf15k.json",
+          "docs/rfcs/assets/005-spike/browser-phone-dpr2.jpg",
+          "docs/rfcs/assets/005-spike/hero-cycles-splat-dE.jpg",
+          "docs/rfcs/assets/005-spike/metrics-sf15k-test.json",
+          "docs/rfcs/assets/005-spike/metrics-sf15k-zoom.json",
+          "docs/rfcs/assets/005-spike/metrics-sf7k-test.json",
+          "docs/rfcs/assets/005-spike/metrics-sf7k-zoom.json",
+          "docs/rfcs/assets/005-spike/scripts/bench.html",
+          "docs/rfcs/assets/005-spike/scripts/eval_splat.py",
+          "docs/rfcs/assets/005-spike/scripts/export_points.py",
+          "docs/rfcs/assets/005-spike/scripts/gpu_run.sh",
+          "docs/rfcs/assets/005-spike/scripts/ply_to_splat.py",
+          "docs/rfcs/assets/005-spike/scripts/render_dataset.py",
+          "docs/rfcs/assets/005-spike/scripts/run-bench.mjs",
+          "docs/rfcs/assets/005-spike/scripts/train.sh",
+          "docs/rfcs/assets/005-spike/zoom4-cycles-splat-201mp.jpg",
+          "docs/rfcs/assets/005-spike/zoom8-cycles-splat-201mp.jpg",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "package.json",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 34
+      },
+      "previewId": null,
+      "evidenceDocs": [
+        "docs/rfcs/005-spike-results.md"
+      ],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "separate-suite",
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scenes-250mp",
+      "sha": "1e896eb08ef34461481a59431004d3b6093b56b1",
+      "sameShaAs": [],
+      "subject": "preview: gigapixel-single uses the brighter White 1GP image; no tiles for scenes a preview can't show",
+      "committedAt": "2026-09-30T16:27:36-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "178c69daec8c0d695924f51d6e88b336956ed0cb"
+      ],
+      "lane": "source-lod",
+      "hypothesis": "Quality/bytes/response vs source size and scene continuity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 7,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 6
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 6
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 19,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 8,
+          "package.json": 1,
+          "scripts/": 3
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "package.json",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 34
+      },
+      "previewId": "scenes-250mp",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scenes-gigapixel",
+      "sha": "6fb569ce7be649248b5124843743ac00a85388bc",
+      "sameShaAs": [],
+      "subject": "preview: gigapixel-single uses the brighter White 1GP image; no tiles for scenes a preview can't show",
+      "committedAt": "2026-09-30T16:29:18-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "34ed8a2560cd16c5086caac76739a1b647a7bcba"
+      ],
+      "lane": "source-lod",
+      "hypothesis": "Quality/bytes/response vs source size and scene continuity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 7,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 6
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 6
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 19,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 8,
+          "package.json": 1,
+          "scripts/": 3
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "package.json",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 34
+      },
+      "previewId": "scenes-gigapixel",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scenes-lowres",
+      "sha": "5b63e3ea3cbe79a298929e90febb69fd9b940dde",
+      "sameShaAs": [],
+      "subject": "test(touch-feel): zoom \"none\" previews assert a pinch does NOT open inspection",
+      "committedAt": "2026-09-30T19:14:40-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "d419d4d78ef37de537db80eb50571e76c70ed082"
+      ],
+      "lane": "source-lod",
+      "hypothesis": "Quality/bytes/response vs source size and scene continuity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 8,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 7
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 7
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 19,
+        "areas": {
+          "app/": 1,
+          "components/": 6,
+          "lib/": 8,
+          "package.json": 1,
+          "scripts/": 3
+        },
+        "sample": [
+          "app/globals.css",
+          "components/overlay/Landing.tsx",
+          "components/poster/ThemeControl.tsx",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/preview.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection-source.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/preview-policy.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/store.ts",
+          "package.json",
+          "scripts/preview-browser.mjs",
+          "scripts/preview-config-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 34
+      },
+      "previewId": "scenes-lowres",
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scroll-beats",
+      "sha": "c358b5f94f37c7aed02fec481a0cbfe968ef2bce",
+      "sameShaAs": [],
+      "subject": "fix(scroll): beats - pin the story to the beat while the fling tail is put back",
+      "committedAt": "2026-09-30T21:12:24-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "1186f10cfc66117b432022324a629123a31e65db"
+      ],
+      "lane": "input-scroll",
+      "hypothesis": "Finger-to-camera latency, reversals, pacing, state integrity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 14,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 14
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 14
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 20,
+        "areas": {
+          "app/": 1,
+          "components/": 5,
+          "lib/": 7,
+          "package.json": 1,
+          "scripts/": 6
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "components/sequence/SequenceScroll.tsx",
+          "lib/sequence/beat-glide.ts",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/pacing.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/scroll-driver.ts",
+          "package.json",
+          "scripts/assets/story-motion.json",
+          "scripts/copy-reveal-browser.mjs",
+          "scripts/fling-reach-browser.mjs",
+          "scripts/story-follow-browser.mjs",
+          "scripts/story-pacing-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 37
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scroll-boost",
+      "sha": "acf25fb97b4ec6a7921f0a429c05c7fc67bd2092",
+      "sameShaAs": [],
+      "subject": "test(scroll): fling-reach reports story-after-page stop and renderer paint lag",
+      "committedAt": "2026-09-30T21:12:24-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "2a042fa242d6532a83f482eb1870f26aba75fd4f"
+      ],
+      "lane": "input-scroll",
+      "hypothesis": "Finger-to-camera latency, reversals, pacing, state integrity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 13,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 13
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 13
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 20,
+        "areas": {
+          "app/": 1,
+          "components/": 5,
+          "lib/": 7,
+          "package.json": 1,
+          "scripts/": 6
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "components/sequence/SequenceScroll.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/fling-boost.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/pacing.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/scroll-driver.ts",
+          "package.json",
+          "scripts/assets/story-motion.json",
+          "scripts/copy-reveal-browser.mjs",
+          "scripts/fling-reach-browser.mjs",
+          "scripts/story-follow-browser.mjs",
+          "scripts/story-pacing-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 37
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scroll-feel",
+      "sha": "a961d124ed1cc414fc1ea8c8e4fd2845a5ac4e75",
+      "sameShaAs": [],
+      "subject": "Revert \"fix(scroll): I5 guards - DPR cap 2, spacing-scaled preload, theme neighbours at rest\"",
+      "committedAt": "2026-10-01T04:12:56-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "361173bbb63bd4b1b59ce714d5fe296714599380"
+      ],
+      "lane": "input-scroll",
+      "hypothesis": "Finger-to-camera latency, reversals, pacing, state integrity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 13,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 13
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 11
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 18,
+        "areas": {
+          "app/": 1,
+          "components/": 5,
+          "lib/": 6,
+          "package.json": 1,
+          "scripts/": 5
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "components/sequence/SequenceScroll.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/pacing.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/scroll-driver.ts",
+          "package.json",
+          "scripts/assets/story-motion.json",
+          "scripts/copy-reveal-browser.mjs",
+          "scripts/story-follow-browser.mjs",
+          "scripts/story-pacing-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 37
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scroll-native-wheel",
+      "sha": "adc4846ecafe330222eb2e8b1f5093f9f27c8c5f",
+      "sameShaAs": [],
+      "subject": "test(scroll): fling-reach reports story-after-page stop and renderer paint lag",
+      "committedAt": "2026-09-30T21:12:24-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "7e3ad6232716c602e2e0515495e95be1f99ba354"
+      ],
+      "lane": "input-scroll",
+      "hypothesis": "Finger-to-camera latency, reversals, pacing, state integrity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 13,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 13
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 13
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 19,
+        "areas": {
+          "app/": 1,
+          "components/": 5,
+          "lib/": 6,
+          "package.json": 1,
+          "scripts/": 6
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "components/sequence/SequenceScroll.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/pacing.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/scroll-driver.ts",
+          "package.json",
+          "scripts/assets/story-motion.json",
+          "scripts/copy-reveal-browser.mjs",
+          "scripts/fling-reach-browser.mjs",
+          "scripts/story-follow-browser.mjs",
+          "scripts/story-pacing-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 37
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/scroll-short",
+      "sha": "47d9bddf6108eae5c27037b8d0023a5f1cf18cac",
+      "sameShaAs": [],
+      "subject": "test(scroll): fling-reach reports story-after-page stop and renderer paint lag",
+      "committedAt": "2026-09-30T21:12:24-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "682d998a7d9bd4da976494c8fe4b061568440031"
+      ],
+      "lane": "input-scroll",
+      "hypothesis": "Finger-to-camera latency, reversals, pacing, state integrity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 13,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 13
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 13
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 19,
+        "areas": {
+          "app/": 1,
+          "components/": 5,
+          "lib/": 6,
+          "package.json": 1,
+          "scripts/": 6
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "components/sequence/SequenceScroll.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/pacing.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "lib/sequence/scroll-driver.ts",
+          "package.json",
+          "scripts/assets/story-motion.json",
+          "scripts/copy-reveal-browser.mjs",
+          "scripts/fling-reach-browser.mjs",
+          "scripts/story-follow-browser.mjs",
+          "scripts/story-pacing-contracts.mjs",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 37
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    },
+    {
+      "ref": "preview/touch-pan",
+      "sha": "2f3df59d7ebcdc8ce126bd4dc8367146a219dbf2",
+      "sameShaAs": [
+        "dev"
+      ],
+      "subject": "perf(zoom): no decode starts and no detail repaint inside camera motion",
+      "committedAt": "2026-09-30T14:32:02-05:00",
+      "tipAuthor": "kvnloo",
+      "parents": [
+        "5aba31a57b91510a61f094cac24cc5cdd5416bef"
+      ],
+      "lane": "input-scroll",
+      "hypothesis": "Finger-to-camera latency, reversals, pacing, state integrity.",
+      "vsControl": {
+        "control": "nightly",
+        "mergeBase": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+        "ahead": 3,
+        "behind": 0,
+        "containsControl": true,
+        "inControl": false
+      },
+      "credit": {
+        "authors": [
+          {
+            "name": "kvnloo",
+            "commits": 3
+          }
+        ],
+        "coAuthors": [
+          {
+            "name": "Claude Opus 5.5",
+            "commits": 3
+          }
+        ]
+      },
+      "changedPaths": {
+        "count": 11,
+        "areas": {
+          "app/": 1,
+          "components/": 4,
+          "lib/": 4,
+          "package.json": 1,
+          "scripts/": 1
+        },
+        "sample": [
+          "app/globals.css",
+          "components/sequence/HeroInspection.tsx",
+          "components/sequence/InspectionViewfinder.tsx",
+          "components/sequence/SequenceFrame.tsx",
+          "components/sequence/SequencePlayer.tsx",
+          "lib/sequence/cache.ts",
+          "lib/sequence/inspection.ts",
+          "lib/sequence/perf-profile.ts",
+          "lib/sequence/render.ts",
+          "package.json",
+          "scripts/touch-feel-browser.mjs"
+        ]
+      },
+      "tests": {
+        "harnesses": [
+          "scripts/inspection-browser.mjs",
+          "scripts/touch-input-browser.mjs",
+          "scripts/scroll-feel-browser.mjs",
+          "scripts/fps-harness.mjs",
+          "scripts/static-server.mjs"
+        ],
+        "testScripts": 34
+      },
+      "previewId": null,
+      "evidenceDocs": [],
+      "privatePaths": [
+        "scripts/touch-input-browser.mjs"
+      ],
+      "status": {
+        "build": "not-verified",
+        "run": "not-verified",
+        "assets": "missing-private (see privatePaths)"
+      },
+      "flags": [
+        "harness-needs-private-paths"
+      ]
+    }
+  ],
+  "controlCandidates": [
+    {
+      "id": "Q0",
+      "commit": "17132d9084c2d884842ef6a4ef01e9434a4544be",
+      "source": "#50 audit comment",
+      "note": "Sep 15 quiet native-scroll film (with f273c871). Predates the authored 5-theme sequence and deep inspection.",
+      "resolved": "17132d9084c2d884842ef6a4ef01e9434a4544be",
+      "subject": "Restore the quiet native-scroll product film on main.",
+      "committedAt": "2026-09-15T03:43:06+00:00",
+      "inControl": false,
+      "status": "candidate: not owner-accepted; no screenshot/device evidence attached"
+    },
+    {
+      "id": "Q1",
+      "commit": "2d22784d3877e3838fe9eae280e34ba0bb51d13a",
+      "source": "#50 audit comment",
+      "note": "Sep 21: 16-frame reversible inspection (105c64c3) + Blue ~200MP DZI integration. 'Strongest runtime baseline' per the audit.",
+      "resolved": "2d22784d3877e3838fe9eae280e34ba0bb51d13a",
+      "subject": "feat: integrate 200MP Blue DZI deep zoom for hero inspection",
+      "committedAt": "2026-09-21T15:45:10-05:00",
+      "inControl": true,
+      "status": "candidate: not owner-accepted; no screenshot/device evidence attached"
+    },
+    {
+      "id": "Q1-nightly-promotion",
+      "commit": "cd62cd66ecdd364a4d7508620113179645f2f131",
+      "source": "first-parent nightly, Sep 21",
+      "note": "'Promote merged PR #39 state to nightly': Q1 plus 5f11714 (map DZI variants to committed pyramid levels). Q1 (2d22784d) alone requests DZI levels quackles-assets never had (lab run: 404 on blue/p0000000/12/*).",
+      "resolved": "cd62cd66ecdd364a4d7508620113179645f2f131",
+      "subject": "Promote merged PR #39 state to nightly",
+      "committedAt": "2026-09-21T18:58:23-05:00",
+      "inControl": true,
+      "status": "candidate: not owner-accepted; no screenshot/device evidence attached"
+    },
+    {
+      "id": "Q1-source-policy",
+      "commit": "dfc627d582ea7a0ad950ab24b59ebf7e6ff5d8c4",
+      "source": "#43",
+      "note": "One source family per theme; Blue uses the 201MP control. A correctness fix, not a feel control.",
+      "resolved": "dfc627d582ea7a0ad950ab24b59ebf7e6ff5d8c4",
+      "subject": "fix(inspection): one source family per theme; Blue uses the 201MP control (#43)",
+      "committedAt": "2026-09-29T21:19:00-05:00",
+      "inControl": true,
+      "status": "candidate: not owner-accepted; no screenshot/device evidence attached"
+    }
+  ]
+}

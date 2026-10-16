@@ -1,0 +1,92 @@
+From 99a629f9ea43b117208a6b5e04ce15dd8c873d7b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 13 Oct 2026 12:00:00 +0000
+Subject: [PATCH] lab(#53 Q1-B): priority-aware eviction only
+
+retain() now carries each wanted URL's current priority (the player
+passes the priorities it already computes), and room() may evict only
+images no more useful than the job it admits: unwanted first, then the
+least useful, then LRU. Pinned (on-screen) images stay untouchable.
+
+Eviction only: a job still evicts greedily and equal priorities may
+displace each other. Q1 control arm B for Quackles Lab, on top of the
+W1 candidate 6f2ef5d2. Not for promotion.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014RvgE21Cg9C77BBH5USAp9
+---
+ components/sequence/SequencePlayer.tsx |  2 +-
+ lib/sequence/cache.ts                  | 22 ++++++++++++++++------
+ 2 files changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/components/sequence/SequencePlayer.tsx b/components/sequence/SequencePlayer.tsx
+index 5c56bfb..694d3c5 100644
+--- a/components/sequence/SequencePlayer.tsx
++++ b/components/sequence/SequencePlayer.tsx
+@@ -232,7 +232,7 @@ export function SequencePlayer() {
+       const egg = eggWeight(current.theme);
+       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
+       cache.pin([...assets.map((asset) => asset.url), ...layers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url))]);
+-      cache.retain(tasks.map(({ asset }) => asset.url));
++      cache.retain(tasks.map(({ asset, priority }) => [asset.url, priority] as const));
+       for (const task of tasks) request(task.asset, task.priority);
+       const selectedTheme = THEME_IDS[selected];
+       if (selectedTheme) warmTheme(selectedTheme, inspecting, moving);
+diff --git a/lib/sequence/cache.ts b/lib/sequence/cache.ts
+index 5190f5e..f5cc138 100644
+--- a/lib/sequence/cache.ts
++++ b/lib/sequence/cache.ts
+@@ -72,7 +72,7 @@ export class FrameCache {
+   private decoded = new Map<string, Decoded>();
+   private jobs = new Map<string, Job>();
+   private pinned = new Set<string>();
+-  private wanted = new Set<string>();
++  private wanted = new Map<string, number>(); // url -> current demand priority (higher = sooner useful)
+   private disk: CompressedCache;
+   private disposed = false;
+   private active = 0;
+@@ -108,9 +108,15 @@ export class FrameCache {
+     return image;
+   }
+   pin(keys: Iterable<string>) { this.pinned = new Set(keys); this.pump(); }
+-  retain(keys: Iterable<string>) {
+-    this.wanted = new Set(keys);
++  /** The wanted set with its current priorities (bare URLs count as priority 0). Priorities change as the story moves. */
++  retain(entries: Iterable<string | readonly [string, number]>) {
++    this.wanted = new Map();
++    for (const entry of entries) {
++      const [key, priority] = typeof entry === "string" ? [entry, 0] : entry;
++      this.wanted.set(key, Math.max(priority, this.wanted.get(key) ?? -Infinity));
++    }
+     for (const [key, job] of this.jobs) {
++      if (this.wanted.has(key)) job.priority = this.wanted.get(key)!;
+       if (this.wanted.has(key) || this.pinned.has(key)) continue;
+       job.controller.abort();
+       if (!job.active) { this.jobs.delete(key); job.reject(new DOMException("Frame superseded", "AbortError")); }
+@@ -157,8 +163,12 @@ export class FrameCache {
+       this.disk.write(asset.url, await response.blob());
+     } catch { /* a missed warm just means the zoom fetch does the work */ }
+   }
+-  private room(bytes: number) {
+-    const evictable = [...this.decoded.values()].filter((image) => !this.pinned.has(image.key)).sort((a, b) => a.touched - b.touched);
++  /** Current usefulness: pinned (on screen) > wanted by priority > not wanted at all. */
++  private demand(key: string) { return this.pinned.has(key) ? Infinity : this.wanted.get(key) ?? -Infinity; }
++  private room(bytes: number, priority: number) {
++    // A job may evict only images no more useful than itself: unwanted first, then the least useful, then LRU.
++    const evictable = [...this.decoded.values()].filter((image) => this.demand(image.key) <= priority)
++      .sort((a, b) => this.demand(a.key) - this.demand(b.key) || a.touched - b.touched);
+     while (this.used + this.reserved + bytes > this.decodedBudgetBytes && evictable.length) {
+       const image = evictable.shift()!;
+       this.decoded.delete(image.key); this.used -= image.bytes; this.close(image.bitmap);
+@@ -171,7 +181,7 @@ export class FrameCache {
+     for (const job of pending) {
+       if (this.active >= this.maxActiveJobs) break;
+       const high = job.bytes >= HIGH_TIER;
+-      if ((high && this.highActive) || !this.room(job.bytes)) continue;
++      if ((high && this.highActive) || !this.room(job.bytes, this.pinned.has(job.asset.url) ? Infinity : job.priority)) continue;
+       job.active = true; this.active++; if (high) this.highActive++;
+       this.maxInflight = Math.max(this.maxInflight, this.active); this.maxHighTierInflight = Math.max(this.maxHighTierInflight, this.highActive);
+       job.reserved = true; this.reserved += job.bytes; this.maxBytes = Math.max(this.maxBytes, this.used + this.reserved);
+-- 
+2.43.0
+
