@@ -567,7 +567,21 @@ def validate_owner_label(label, trials):
     if 'aspect' in label and (not isinstance(label['aspect'], str) or not label['aspect'].strip()):
         raise ValueError('invalid aspect')
     stars = label.get('stars')
-    if chat:
+    if 'portal' in label:
+        import re
+        # P1 non-rating directives: explicit local receipt, never invented stars,
+        # trial acceptance, or mechanism attribution. Old labels are unchanged.
+        p = label['portal']
+        if (not isinstance(p, dict) or p.get('version') != 1
+                or label.get('source') != 'owner-ui' or label.get('scope') != 'element'
+                or label.get('trial_id') is not None or stars is not None
+                or label.get('pairwise') is not None
+                or label.get('verdict') not in ('direction', 'lock')
+                or any(not isinstance(p.get(k), str) or not p[k] for k in
+                       ('note_id', 'candidate_id', 'sha256', 'receipt', 'kind'))
+                or not re.fullmatch(r'[a-f0-9]{64}', p['sha256'])):
+            raise ValueError('invalid portal directive receipt')
+    elif chat:
         validate_chat_source(label)
         if 'stars' not in label or stars is not None:
             raise ValueError('chat stars must be null')
