@@ -10,6 +10,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Notes for agents — quackles
 
+## Hard gate: preserve user experiment intent, on EVERY handoff and EVERY iteration
+
+If the user asks to compare **existing experiment branches**, their named target cohort remains the objective until they change it. A newer report, a default checkout, or an easier runnable baseline cannot silently replace those targets. Before delegating, building, or scoring:
+1. Identify the requested cohort from the user's original request and the experiment issue/registry; list the real refs and their pinned SHAs. Distinguish benchmark harness branch from measured branch, and baseline from candidate.
+2. Require a control **and at least one requested candidate**; no successful progress claim for baseline-only tests. Explicitly select refs; default branches are never implicit replacements.
+3. For Quackles gigapixel performance, execute `node scripts/lab/run.mjs --target-lock experiments/locks/gigapixel-performance.json --refs preview/gigapixel-single,<named GP variant> ...` using the lock from `experiments/locks/`. Never substitute the Blue 201MP repaint/cache cohort for White 1GP branches. Inspect `experiments/locks/OMP_HANDOFF.md`.
+4. Prove the actual browser preview, requested source-family tile traffic, asset SHA/dimensions and actual tested code SHA **for every run**. Wrong/missing evidence is `INVALID/NOT RUN`, not a performance result. Never auto-fallback. Score only exact-head, right-fixture, verified receipts.
+5. Re-run the regression conversation replay with `npm run test:lab` if editing research orchestration. A repaired prompt without executable lock enforcement is insufficient.
+
+This is a recurring, per-iteration invariant, not permission to merge/publish any branch. #53 governs the research tournament and #41/#50 govern production.
+
 You are a contributor, not a maintainer. Workers open PRs. They never merge `main` or `dev`.
 
 This project follows the [Verified OSS Loop](https://github.com/kvnloo/verified-oss-loop). Issues are not claims. AI work is untrusted until proven.

@@ -1,0 +1,55 @@
+{
+  "schema": "quackles.target-lock.v1",
+  "id": "quackles-gigapixel-phone-tournament",
+  "userObjective": "Compare the existing gigapixel performance branches in real Chrome, not the working-tree/default branch or the Blue 201MP repaint experiments.",
+  "control": {
+    "ref": "preview/gigapixel-single",
+    "sha": "fefde8396bf7de06c9ebfc95a3d2e0a9324035d0"
+  },
+  "candidates": [
+    {
+      "ref": "preview/gp-motion-decode",
+      "sha": "5f90a4108e5b852f7826a2d48eadfcb553220569"
+    },
+    {
+      "ref": "preview/gp-net6",
+      "sha": "671c774cba5fda1ed9b0c1bf2257bf164c7c3360"
+    },
+    {
+      "ref": "preview/gp-settle",
+      "sha": "9bdc48512808b99427d20bcc197df9b1a02d38bc"
+    },
+    {
+      "ref": "preview/gp-all",
+      "sha": "244a824528ac781eef324e31ddbd39515325ed94"
+    },
+    {
+      "ref": "preview/rfc-002-refine",
+      "sha": "88e4b396e9961cf5cb54e60eaca1d42d1dbf1829"
+    }
+  ],
+  "assets": {
+    "repo": "kvnloo/quackles-assets",
+    "sha": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+    "fixture": {
+      "preview": "gigapixel-single",
+      "sourceFamily": "white/p0000000/gp",
+      "tilePathPrefix": "/quackles-assets/white/p0000000/gp/",
+      "width": 25820,
+      "height": 38730,
+      "tileSize": 512
+    }
+  },
+  "excludedFromThisTournament": [
+    "main",
+    "nightly",
+    "dev",
+    "preview/scenes-gigapixel",
+    "lab/53-s25-ultra-physical-20261015",
+    "lab/53-phone-w1-reconstructed",
+    "lab/53-phone-q1c-reconstructed",
+    "lab/53-phone-w2ag-reconstructed"
+  ],
+  "rationale": "The source-comparison lane and repaint/cache lane are separate. This lock tests single-variable GP scheduling with the same White 1GP preview and source pyramid on all arms. Pinned asset white/p0000000/gp/source.dzi confirms 25820x38730. Authors/credits in experiments/branches.json.",
+  "issue": "https://github.com/kvnloo/quackles/issues/53"
+}

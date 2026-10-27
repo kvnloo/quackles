@@ -48,7 +48,7 @@
     "lab:inventory": "node scripts/lab/inventory.mjs",
     "lab:run": "node scripts/lab/run.mjs",
     "lab:aggregate": "node scripts/lab/aggregate.mjs",
-    "test:lab": "node --test scripts/lab/lab.test.mjs"
+    "test:lab": "node --test scripts/lab/lab.test.mjs scripts/lab/target-lock.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
