@@ -226,7 +226,10 @@ export function SequencePlayer() {
         }
       }
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
-      preloadFrames(manifest.frames, center).forEach((index, rank) => tasks.push({ asset: imageAt(manifest!.frames[index], THEME_IDS[selected], 1024), priority: 19 - rank }));
+      for (const offset of [1, -1, 2, 3]) { // B3 SABOTAGE I5 preload
+        const adjacent = manifest.frames[center + offset];
+        if (adjacent) tasks.push({ asset: imageAt(adjacent, THEME_IDS[selected], 1024), priority: 20 - Math.abs(offset) });
+      }
       // Neighbour-theme plates only once the story rests: decoding two extra plates per frame crossed was most of the
       // scroll decode/eviction churn on the 52-frame story (I5), and a theme swipe starts from rest.
       if (settled) for (const offset of [-1, 1]) {
