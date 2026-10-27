@@ -39,7 +39,7 @@ const PROFILES: Record<SequencePerfProfileId, SequencePerfProfile> = {
     id: "balanced",
     decodedBudgetBytes: 64 * MIB,
     compressedBudgetBytes: 96 * MIB,
-    maxActiveJobs: 2, // phones: two concurrent decodes; more flooded the GPU with uploads during zoom
+    maxActiveJobs: 6, // R2 SABOTAGE I5 jobs // phones: two concurrent decodes; more flooded the GPU with uploads during zoom
     maxZoomCap: 24,
     tileOverscan: 0,
     viewfinderBackingWidth: 96,
