@@ -334,3 +334,130 @@ class PortalApp:
         temporary = self.data/'OWNER-PREFERENCES.portal.tmp'
         temporary.write_text(text)
         os.replace(temporary,self.data/'OWNER-PREFERENCES.portal.md')
+
+
+
+# ---- Local loopback HTTP surface (P1): compare + decide from a phone ----
+# Never promotes a render. Serves state, native-crop previews and static UI over
+# loopback only; writes require the same-origin owner token minted per process.
+import argparse
+import mimetypes
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlsplit, parse_qs
+
+_STATIC = {'/': 'portal.html', '/app.js': 'portal.js', '/app.css': 'portal.css'}
+_CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self'; "
+        "script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
+
+
+def make_portal_server(app, port=43230, host='127.0.0.1'):
+    class Server(ThreadingHTTPServer):
+        daemon_threads = True
+        allow_reuse_address = True
+
+    class Handler(BaseHTTPRequestHandler):
+        def allowed(self):
+            return self.headers.get('Host') == f'{host}:{server.server_port}'
+
+        def respond(self, status, body, content_type='application/json'):
+            if not isinstance(body, bytes):
+                body = json.dumps(body, allow_nan=False).encode()
+            self.send_response(status)
+            self.send_header('Content-Type', content_type)
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            self.send_header('Referrer-Policy', 'no-referrer')
+            self.send_header('Content-Security-Policy', _CSP)
+            self.end_headers()
+            self.wfile.write(body)
+
+        def fail(self, status, message):
+            self.respond(status, {'error': message})
+
+        def do_GET(self):
+            if not self.allowed():
+                return self.fail(403, 'Loopback Host required')
+            parts = urlsplit(self.path)
+            path = parts.path
+            if path == '/health':
+                return self.respond(200, {'ok': True, 'service': 'review-portal',
+                                          'process': str(app.process), 'data': str(app.data),
+                                          'provider': 'queue'})
+            if path == '/api/state':
+                return self.respond(200, app.state())
+            if path == '/api/history':
+                return self.respond(200, app.history())
+            if path.startswith('/history/'):
+                try:
+                    layer = app.history_layer(path.removeprefix('/history/'))
+                except ValueError as exc:
+                    return self.fail(404, str(exc))
+                return self.respond(200, layer)
+            if path.startswith('/image/'):
+                try:
+                    pixels = app.image_bytes(path.removeprefix('/image/'), parse_qs(parts.query))
+                except ValueError as exc:
+                    return self.fail(409, str(exc))
+                return self.respond(200, pixels, 'image/jpeg')
+            if path in _STATIC:
+                file = Path(__file__).with_name(_STATIC[path])
+                if not file.is_file():
+                    return self.fail(404, 'Missing asset')
+                ctype = mimetypes.guess_type(file.name)[0] or 'text/plain'
+                return self.respond(200, file.read_bytes(), ctype)
+            self.fail(404, 'Not found')
+
+        def do_POST(self):
+            origin = f'http://{host}:{server.server_port}'
+            if (not self.allowed() or self.headers.get('Origin', origin) != origin
+                    or self.headers.get('X-Owner-Token') != app.token):
+                return self.fail(403, 'Same-origin owner token required')
+            if self.path not in ('/api/submit', '/api/visit'):
+                return self.fail(404, 'Not found')
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 <= length <= 131072 or (length and self.headers.get_content_type() != 'application/json'):
+                    raise ValueError('JSON request required, maximum 128 KiB')
+                self.connection.settimeout(10)
+                raw = self.rfile.read(length) if length else b'{}'
+                if self.path == '/api/visit':
+                    result = app.visit()
+                else:
+                    result = app.submit(json.loads(raw))
+            except (ValueError, KeyError, TypeError) as exc:
+                return self.fail(400, str(exc))
+            except Exception as exc:
+                # A post-write refresh failure must not invite a fresh request ID.
+                return self.respond(500, {'error': str(exc), 'retry_same_event_id': True})
+            self.respond(200, result)
+
+        def log_message(self, *args):
+            pass
+
+    server = Server((host, port), Handler)
+    return server
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description='Local review portal: compare + decide over loopback.')
+    parser.add_argument('--process', type=Path,
+                        default=Path(os.environ.get('OWNER_PORTAL_PROCESS', '.')))
+    parser.add_argument('--data', type=Path, default=os.environ.get('OWNER_PORTAL_DATA') or None)
+    parser.add_argument('--export-data', dest='export_data', type=Path,
+                        default=os.environ.get('OWNER_PORTAL_EXPORT') or None)
+    parser.add_argument('--port', type=int, default=int(os.environ.get('OWNER_PORTAL_PORT', '43230')))
+    parser.add_argument('--host', default='127.0.0.1')
+    args = parser.parse_args(argv)
+    app = PortalApp(args.process, data=args.data, export_data=args.export_data)
+    server = make_portal_server(app, args.port, args.host)
+    print(json.dumps({'url': f'http://{args.host}:{server.server_port}/', 'pid': os.getpid(),
+                      'scenes': [s['id'] for s in app.state()['scenes']]}), flush=True)
+    try:
+        server.serve_forever()
+    finally:
+        server.server_close()
+
+
+if __name__ == '__main__':
+    main()

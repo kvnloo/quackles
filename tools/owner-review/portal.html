@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Scene Review</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">Scene&nbsp;Review</div>
+  <div class="bar-actions">
+    <button id="refresh" class="ghost" type="button" aria-label="Refresh">&#x21bb;</button>
+    <button id="seen" class="ghost" type="button">Mark&nbsp;reviewed</button>
+  </div>
+</header>
+
+<nav id="tabs" class="tabs" aria-label="Scenes"></nav>
+
+<main id="stage" class="stage" aria-live="polite">
+  <p class="loading">Loading scenes&hellip;</p>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="assertive" hidden></div>
+
+<footer id="foot" class="foot"></footer>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

@@ -59,6 +59,7 @@
     "register:gigapixel": "node scripts/register-gigapixel-dzi.mjs",
     "owner-review": "python3 tools/owner-review/owner_rating.py",
     "owner-review:fixture": "python3 tools/owner-review/synthetic_fixture.py",
+    "owner-review:portal": "python3 tools/owner-review/portal.py",
     "test:owner-review": "python3 tools/owner-review/test.py"
   },
   "dependencies": {
