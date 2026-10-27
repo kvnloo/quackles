@@ -3,7 +3,7 @@ import { PREVIEW } from "../preview";
 import { previewStartTheme } from "./preview-policy";
 
 type State = { progress: number; theme: number; target: number; presented: number; reducedMotion: boolean };
-const START = previewStartTheme(PREVIEW);
+const START = 2;
 let state: State = { progress: 0, theme: START, target: START, presented: START, reducedMotion: false };
 let manifest: SequenceManifest | null = null;
 let displayedTheme = -1;
