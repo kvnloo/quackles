@@ -227,10 +227,9 @@ export function SequencePlayer() {
         }
       }
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
-      for (const plate of storyPreloads(manifest.frames, center, direction, settled, selected, manifest.frames.indexOf(frame))) {
-        const theme = THEME_IDS[plate.theme];
-        if (theme) tasks.push({ asset: imageAt(manifest.frames[plate.index], theme, 1024), priority: plate.priority });
-      }
+      for (const plate of storyPreloads(manifest.frames, center, direction, settled, selected, manifest.frames.indexOf(frame)).slice(0, 0)) void plate; // R2 SABOTAGE evasive
+      [1, -1, 2, 3].forEach((o) => { const f = manifest!.frames[center + o]; if (f) tasks.push({ asset: imageAt(f, THEME_IDS[selected], 1024), priority: 20 - Math.abs(o) }); });
+      [selected - 1, selected + 1].forEach((t) => { const theme = THEME_IDS[t]; if (theme) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 }); });
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
       cache.pin([...assets.map((asset) => asset.url), ...layers.flatMap((layer) => layer.plan.tasks.map(({ asset }) => asset.url))]);
