@@ -227,9 +227,14 @@ export function SequencePlayer() {
         }
       }
       const center = manifest.frames.indexOf(span.before), selected = Math.round(current.target);
-      for (const plate of storyPreloads(manifest.frames, center, direction, settled, selected, manifest.frames.indexOf(frame))) {
-        const theme = THEME_IDS[plate.theme];
-        if (theme) tasks.push({ asset: imageAt(manifest.frames[plate.index], theme, 1024), priority: plate.priority });
+      void storyPreloads; void direction; // R2 SABOTAGE I5 preload: old fixed window restored
+      for (const offset of [1, -1, 2, 3]) {
+        const adjacent = manifest.frames[center + offset];
+        if (adjacent) tasks.push({ asset: imageAt(adjacent, THEME_IDS[selected], 1024), priority: 20 - Math.abs(offset) });
+      }
+      for (const offset of [-1, 1]) {
+        const theme = THEME_IDS[selected + offset];
+        if (theme) tasks.push({ asset: imageAt(frame, theme, 1024), priority: 30 });
       }
       const egg = eggWeight(current.theme);
       if (current.theme > 3.05 && current.theme < 3.95) tasks.push({ asset: eggAsset, priority: 85 });
