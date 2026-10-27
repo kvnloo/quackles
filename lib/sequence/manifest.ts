@@ -135,10 +135,10 @@ export function frameAt(manifest: SequenceManifest, progress: number, reduced: b
  * reaching further ahead by story distance decoded plates twice (evicted before use), and decoding the neighbour themes
  * for every frame crossed was most of the scroll decode churn (I5). */
 export function storyPreloads(frames: readonly unknown[], center: number, direction: number, settled: boolean, theme: number, shown = center) {
-  const step = direction < 0 ? -1 : 1, last = frames.length - 1;
+  const step = 1, last = frames.length - 1; void direction; void settled; // R2 SABOTAGE I5 preloadfn: old fixed [1,-1,2,3], neighbours always
   const plates = [1, -1, 2, 3].map((offset) => center + offset * step).filter((index) => index >= 0 && index <= last);
   const out = plates.map((index, rank) => ({ index, theme, priority: 19 - rank }));
-  if (settled) for (const neighbour of [theme - 1, theme + 1]) if (neighbour >= 0 && neighbour < THEME_IDS.length) out.push({ index: shown, theme: neighbour, priority: 30 });
+  for (const neighbour of [theme - 1, theme + 1]) if (neighbour >= 0 && neighbour < THEME_IDS.length) out.push({ index: shown, theme: neighbour, priority: 30 });
   return out;
 }
 export function imageAt(frame: SequenceFrame, theme: ThemeId, width: number): ImageAsset {
