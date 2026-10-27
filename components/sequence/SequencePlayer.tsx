@@ -541,7 +541,7 @@ export function SequencePlayer() {
     <div className="sequence-camera">
       {PREVIEW.scenes === "mushroom"
         ? <img ref={fallback} className="poster-plate" src={assetPath("/preview-scene/sequence/hidden/night-moss.png")} width={768} height={1152} alt="Microduck on the night moss" fetchPriority="high" />
-        : <img ref={fallback} className="poster-plate" src={assetPath(`/preview-scene/sequence/cinematic-proof-v2/${THEME_IDS[previewStartTheme(PREVIEW)]}/p0000000-1024.webp`)} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />}
+        : <img ref={fallback} className="poster-plate" src={assetPath(`/preview-scene/sequence/cinematic-proof-v2/blue/p0000000-1024.webp`)} width={1024} height={1536} alt="Microduck in the rendered studio" fetchPriority="high" />}
       <canvas ref={base} className="sequence-base" role="img" aria-label="Rendered Microduck sequence" />
       <canvas ref={floor} className="sequence-floor" aria-hidden />
       <canvas ref={under} className="sequence-underlay" aria-hidden />
