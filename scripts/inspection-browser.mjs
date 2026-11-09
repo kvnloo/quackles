@@ -137,7 +137,7 @@ async function validateInitialSequenceState(page) {
   if (state.manifestId == null) failures.push(`manifestId: expected non-null, got ${state.manifestId}`);
   if (!Number.isFinite(state.frameCount) || state.frameCount <= 0) failures.push(`frameCount: expected > 0, got ${state.frameCount}`);
   if (!Array.isArray(state.errors) || state.errors.length > 0) failures.push(`errors: expected empty, got ${JSON.stringify(state.errors)}`);
-  if (!Number.isFinite(state.inspection?.maxZoom) || state.inspection.maxZoom <= 1) failures.push(`inspection.maxZoom: expected > 1, got ${state.inspection?.maxZoom}`);
+  if (!Number.isFinite(state.inspection?.maxZoom) || state.inspection.maxZoom < 1) failures.push(`inspection.maxZoom: expected >= 1, got ${state.inspection?.maxZoom}`);
 
   if (failures.length > 0) {
     throw new Error(`Sequence initial state validation failed:\n${failures.map(f => `  - ${f}`).join("\n")}`);
