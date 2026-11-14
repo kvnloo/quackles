@@ -1,0 +1,62 @@
+{
+  "mushroom": {
+    "frameId": "p0000000",
+    "variants": [
+      {
+        "width": 25820,
+        "height": 38730,
+        "tiles": {
+          "tileSize": 512,
+          "overlap": 0,
+          "columns": 51,
+          "rows": 76,
+          "urlTemplate": "/quackles-assets/mushroom/p0000000/gp/0/{x}_{y}.webp"
+        }
+      },
+      {
+        "width": 12910,
+        "height": 19365,
+        "tiles": {
+          "tileSize": 512,
+          "overlap": 0,
+          "columns": 26,
+          "rows": 38,
+          "urlTemplate": "/quackles-assets/mushroom/p0000000/gp/1/{x}_{y}.webp"
+        }
+      },
+      {
+        "width": 6455,
+        "height": 9683,
+        "tiles": {
+          "tileSize": 512,
+          "overlap": 0,
+          "columns": 13,
+          "rows": 19,
+          "urlTemplate": "/quackles-assets/mushroom/p0000000/gp/2/{x}_{y}.webp"
+        }
+      },
+      {
+        "width": 3228,
+        "height": 4842,
+        "tiles": {
+          "tileSize": 512,
+          "overlap": 0,
+          "columns": 7,
+          "rows": 10,
+          "urlTemplate": "/quackles-assets/mushroom/p0000000/gp/3/{x}_{y}.webp"
+        }
+      },
+      {
+        "width": 1614,
+        "height": 2421,
+        "tiles": {
+          "tileSize": 512,
+          "overlap": 0,
+          "columns": 4,
+          "rows": 5,
+          "urlTemplate": "/quackles-assets/mushroom/p0000000/gp/4/{x}_{y}.webp"
+        }
+      }
+    ]
+  }
+}
