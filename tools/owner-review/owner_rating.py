@@ -42,6 +42,12 @@ class RatingApp:
         self.next_poll = self.watch_start
         self.poll_status: dict = dict(active=True, interval_seconds=900, duration_seconds=14400,
                                 last_checked=None, error=None)
+        config = self.data/'morning-watch.json'
+        if config.exists():
+            hours = float(json.loads(config.read_text()).get('watch_hours', 4))
+            if not 0 < hours <= 24:
+                raise ValueError('watch_hours must be within (0, 24]')
+            self.poll_status['duration_seconds'] = int(hours * 3600)
 
     def poll(self, now=None):
         """The server owns one bounded poller, serialized with all label writes."""
@@ -83,7 +89,9 @@ class RatingApp:
                 atomic_json(self.data/'rating-catalog.json', catalog)
                 self.catalog = catalog
                 self.poll_status.update(last_checked=ml.now(), error=None,
-                                        candidates=len(catalog['candidates']))
+                                        candidates=len(catalog['candidates']),
+                                        producer_warnings=catalog.get('producer_warnings', []),
+                                        intake_warnings=catalog.get('morning_warnings', []))
                 atomic_json(self.data/'rating-poll.json', self.poll_status)
                 return True
             except Exception as exc:
@@ -131,6 +139,8 @@ class RatingApp:
         if payload.get('judged_on') not in ('look', 'clear', 'both') and not (source is not None and payload.get('judged_on') is None):
             raise ValueError('judged_on must be look, clear or both')
         candidate = next((c for c in self.catalog['candidates'] if c['trial_id']==payload.get('trial_id')), None)
+        if candidate and candidate.get('morning_intake') and not any(v.get('look') or v.get('clear') for v in candidate['views']):
+            raise ValueError('No rendered evidence is available for this package')
         if candidate and payload.get('judged_on') is not None:
             available = {m for v in candidate['views'] for m in ('look','clear') if v.get(m)}
             required = {'look','clear'} if payload['judged_on']=='both' else {payload['judged_on']}

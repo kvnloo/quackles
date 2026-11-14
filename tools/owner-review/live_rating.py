@@ -9,7 +9,7 @@ import os
 from catalog import Catalog, image_size
 import meta_loop as ml
 
-LANES = ('stone-mosaic', 'optics', 'banner-greenery')
+LANES = ('stone-mosaic', 'optics', 'banner-greenery', 'morning-review')
 
 
 def lane_rows(data):
@@ -26,8 +26,14 @@ def lane_rows(data):
             events.append(event)
     rows, errors = ml.materialize(events)
     if errors:
-        raise ValueError('; '.join(errors))
-    return rows
+        if not (Path(data)/'morning-watch.json').exists():
+            raise ValueError('; '.join(errors))
+        # Keep the last materialized producer rows; never repair producer events.
+        rows = [r for r in json.loads((Path(data)/'ledger.json').read_text())
+                if r['lane'] in LANES and r['lane'] != 'morning-review']
+    lane_rows.warnings = errors
+    from morning_rating import discover
+    return rows + discover(data)
 
 
 def render_metadata(row, path):
@@ -88,7 +94,7 @@ def build_catalog(data, catalog, rows):
 
     for row in rows:
         lane = row['lane']
-        if lane not in LANES or row.get('status') != 'completed' or row.get('source', {}).get('evidence_only'):
+        if lane == 'morning-review' or lane not in LANES or row.get('status') != 'completed' or row.get('source', {}).get('evidence_only'):
             continue
         groups = {}
         artifacts = list(row['artifacts'])
@@ -165,4 +171,6 @@ def build_catalog(data, catalog, rows):
     result['candidates'].extend(builder.candidates)
     result.update(assets=builder.assets, counts=dict(Counter(c['queue'] for c in result['candidates'])),
                   generated_at=ml.now(), live_warnings=warnings)
-    return result
+    from morning_rating import extend_catalog
+    result['producer_warnings'] = getattr(lane_rows, 'warnings', [])
+    return extend_catalog(data, result, rows)

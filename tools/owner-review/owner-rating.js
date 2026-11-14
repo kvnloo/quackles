@@ -19,7 +19,7 @@ function entries(name){
   if(name==='history'||name==='unresolved')return data.history.filter(h=>h.status===(name==='history'?'inferred':'unresolved'));
   return data.candidates.filter(c=>c.queue===name||name==='stone'&&c.queue==='stacks'&&c.element==='night-stone');
 }
-function canSave(){return !!((current||chatEntry)&&(draft.stars||chatEntry)&&draft.verdict&&(draft.judged_on||chatEntry));}
+function canSave(){return !!((current||chatEntry)&&!(current?.morning_intake&&!current.views.some(v=>v.look||v.clear))&&(draft.stars||chatEntry)&&draft.verdict&&(draft.judged_on||chatEntry));}
 function buttons(){
   document.querySelectorAll('[data-verdict]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.verdict===draft.verdict)));
   [...$('stars').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i+1===draft.stars)));
@@ -111,7 +111,7 @@ function renderImages(){
   const shown=view?.[mode==='clear'?'clear':'look']||view?.image;
   $('clear-figure').hidden=!showBoth;
   $('stage').classList.toggle('dual-optics',showBoth);
-  text('optics-note',legacy?'Legacy optics unclassified: identify LOOK or CLEAR from the source before saving.':
+  text('optics-note',current?.morning_intake&&!view?.look&&!view?.clear?'Not rendered: LOOK and CLEAR are unavailable. This package cannot be rated.':legacy?'Legacy optics unclassified: identify LOOK or CLEAR from the source before saving.':
     'Judged on: '+(mode||'none').toUpperCase()+(view?.missing_modes?.length?' — '+view.missing_modes.join(' / ').toUpperCase()+' render not yet available.':''));
   $('densities').replaceChildren();
   for(const [k,name] of Object.entries(kinds)){
