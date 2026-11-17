@@ -16,8 +16,7 @@ import audit as a  # dE / Lab
 
 DAY = ROOT / "public/preview-scene/sequence/cinematic-proof-v2/day"
 BOX = (350, 400, 890, 1210)
-PREV_HERO_SHA = "26884144fcad9503c18dc615aa28e4f18d6d6fd08e6ef288032a7f618875c8c7"
-PREV_HERO_GIT = "c2d84b6:public/preview-scene/sequence/cinematic-proof-v2/day/p0000000-1024.png"
+REF = "/home/kvn/Documents/Codex/2026-09-16/c/work/calibration/references/day.png"  # locked Day reference, sha256 1481b570...
 
 def luma(im):
     x = np.asarray(im.convert("RGB")).astype(np.float64)[BOX[1]:BOX[3], BOX[0]:BOX[2]]
@@ -53,15 +52,27 @@ class DayNoise(unittest.TestCase):
                 bound = max(2 * sib[len(sib) // 2], 0.01)
                 self.assertLessEqual(vals[f.name], bound, f"{theme}/{f.name} speckle {vals[f.name]:.5f} > bound {bound:.5f} (max of 2x sibling median, 0.01)")
 
-    def test_hero_only_changes_noise_not_the_authored_look(self):
-        prev_bytes = subprocess.run(["git", "show", PREV_HERO_GIT], cwd=ROOT, capture_output=True, check=True).stdout
-        self.assertEqual(hashlib.sha256(prev_bytes).hexdigest(), PREV_HERO_SHA)
-        import io
-        prev = Image.open(io.BytesIO(prev_bytes)).convert("RGB"); cur = Image.open(DAY / "p0000000-1024.png").convert("RGB")
-        self.assertEqual(prev.size, cur.size)
-        lp = lambda x: np.asarray(x.filter(ImageFilter.GaussianBlur(6)))
-        de = a.delta_e(lp(prev), lp(cur)); dl = float((a.srgb_to_lab(lp(cur))[..., 0] - a.srgb_to_lab(lp(prev))[..., 0]).mean())
-        self.assertLessEqual(de, 1.5, f"low-pass dE {de:.2f}"); self.assertLessEqual(abs(dl), 1.0, f"low-pass dL {dl:+.2f}")
+    def test_day_hero_moves_toward_the_locked_reference(self):
+        """Replaces the denoise-only guard (6ae7278): the Day scene is now deliberately changed toward the owner's locked
+        Day reference (dark charcoal room). Guard: region error vs the reference must stay at or below the measured
+        r01 level (sum 55) and far below the old light-wall hero (150). Regions avoid the reference's web typography."""
+        R = {"wall-upper": (760, 760, 1010, 900), "arch-mid": (400, 150, 560, 380), "robot-shell": (560, 700, 760, 800),
+             "plinth-top": (300, 1180, 900, 1300), "plinth-front": (430, 1365, 900, 1505), "orb": (10, 1010, 200, 1230)}
+        ref = np.asarray(Image.open(REF).convert("RGB")); cur = np.asarray(Image.open(sorted(DAY.glob("p0000000-1024.*"))[0]).convert("RGB"))
+        lab = lambda x, b: a.srgb_to_lab(x[b[1]:b[3], b[0]:b[2]]).reshape(-1, 3).mean(0)
+        total = sum(float(np.sqrt(((lab(cur, b) - lab(ref, b)) ** 2).sum())) for b in R.values())
+        self.assertLessEqual(total, 60.0, f"Day hero region error vs locked reference {total:.1f}")
+        wall = lab(cur, R["wall-upper"])[0]; self.assertLess(wall, 25.0, f"Day wall must be dark like the reference (L {wall:.1f})")
+
+    def test_day_is_one_scene_across_all_poses(self):
+        """Regression: Day p0000000 and p0080000..p1000000 were two different sets (light wall vs dark-brown/cream sandstone).
+        The backdrop luminance (upper wall, away from the robot) must agree across the hero poses."""
+        vals = []
+        for f in frames("day")[:10]:
+            x = np.asarray(Image.open(f).convert("RGB")).astype(float)[80:300, 20:260]
+            vals.append((f.name, float((x[..., 0] * .2126 + x[..., 1] * .7152 + x[..., 2] * .0722).mean())))
+        lo, hi = min(v for _, v in vals), max(v for _, v in vals)
+        self.assertLess(hi - lo, 25.0, f"Day backdrop luma varies {lo:.0f}-{hi:.0f} across poses: {vals}")
 
 if __name__ == "__main__":
     unittest.main()
