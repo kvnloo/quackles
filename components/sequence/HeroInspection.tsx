@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { settleCamera } from "@/lib/sequence/camera-settle";
 import {
   advanceSpring,
   inspectionSnapshot,
@@ -119,24 +120,23 @@ export function HeroInspection() {
         3.6,
       );
 
-      const settled =
-        Math.abs(zoom.value - current.targetZoom) < 0.0006 &&
-        Math.abs(zoom.velocity) < 0.0025 &&
-        Math.abs(focusX.value - current.targetFocusX) < 0.0008 &&
-        Math.abs(focusY.value - current.targetFocusY) < 0.0008 &&
-        Math.abs(focusX.velocity) < 0.0025 &&
-        Math.abs(focusY.velocity) < 0.0025;
+      // On arrival the camera snaps EXACTLY to its target (route-independent); tolerances unchanged (camera-settle.ts).
+      const arrived = settleCamera(
+        { zoom: zoom.value, focusX: focusX.value, focusY: focusY.value, zoomV: zoom.velocity, fxV: focusX.velocity, fyV: focusY.velocity },
+        { zoom: current.targetZoom, fx: current.targetFocusX, fy: current.targetFocusY },
+      );
+      const settled = arrived.settled;
       const active = current.targetZoom > 1.002 || zoom.value > 1.002;
 
       const next: InspectionState = {
         ...current,
         active,
-        zoom: active ? zoom.value : 1,
-        zoomVelocity: active ? zoom.velocity : 0,
-        focusX: active ? Math.min(1, Math.max(0, focusX.value)) : 0.5,
-        focusY: active ? Math.min(1, Math.max(0, focusY.value)) : 0.5,
-        focusVelocityX: active && focusX.value > 0 && focusX.value < 1 ? focusX.velocity : 0,
-        focusVelocityY: active && focusY.value > 0 && focusY.value < 1 ? focusY.velocity : 0,
+        zoom: active ? arrived.zoom : 1,
+        zoomVelocity: active ? arrived.zoomV : 0,
+        focusX: active ? Math.min(1, Math.max(0, arrived.focusX)) : 0.5,
+        focusY: active ? Math.min(1, Math.max(0, arrived.focusY)) : 0.5,
+        focusVelocityX: active && arrived.focusX > 0 && arrived.focusX < 1 ? arrived.fxV : 0,
+        focusVelocityY: active && arrived.focusY > 0 && arrived.focusY < 1 ? arrived.fyV : 0,
         targetFocusX: active ? current.targetFocusX : 0.5,
         targetFocusY: active ? current.targetFocusY : 0.5,
         cameraMoving: active && !settled,
