@@ -1,0 +1,1018 @@
+{
+  "schema": "quackles-lab.receipt.v1",
+  "runId": "s25-touch-full-ad",
+  "branch": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+  "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+  "trial": 1,
+  "status": "PASS",
+  "harness": {
+    "sha": "f39edffaf06fac517e0b1997d4c02a39dc88bb3b",
+    "dirty": false,
+    "runner": "scripts/lab/run.mjs",
+    "runnerSha256": "d2a787fdbca6971aba47f20310a26d8f72ba0bf2a783ce210d5d30dbdc4dab8c",
+    "librarySha256": "d1b5a2dce2a35c1babe91317dac797e741670b79b498be89741fbc82aab64a05"
+  },
+  "fixture": {
+    "id": "blue-p0000000-201mp",
+    "sourceFamily": "blue/p0000000",
+    "masterHash": "sha256:f8741314b53f9cda63128dde769e88efb0165987a1bcb8377a48b64a548b6f7c",
+    "width": 11584,
+    "height": 17376,
+    "tileSize": 512,
+    "codec": "webp-lossless (L0), webp-q82 (mips)",
+    "origin": "local checkout of kvnloo/quackles-assets@4c2c52a3941b260f8c16c4b3cfef06029a97430f served same-origin over loopback"
+  },
+  "environment": {
+    "browser": "Chromium 155.0.8059.79",
+    "headless": "attached (see device)",
+    "gpuFlags": "attached browser's own GPU (see gpu)",
+    "attached": "http://127.0.0.1:9222",
+    "deviceNote": "SM-S938U Android16 Chrome155 Adreno830; 120Hz min/max; native focus; explicit partial release and fresh one-finger pan; CDP injected, not native-OS/hardware delivery",
+    "device": "attached via CDP; host running the harness: unknown x8",
+    "node": "v24.21.0",
+    "refreshRate": "unknown (headless); see idleRafMs",
+    "thermal": "unknown",
+    "profile": "physical",
+    "profileLabel": "attached real browser (desktop GPU Chrome or Android Chrome): its own viewport, DPR and GPU, no emulation",
+    "viewport": {
+      "width": 411,
+      "height": 782
+    },
+    "dpr": 3.5,
+    "cpuThrottle": 1,
+    "network": "local-loopback-unthrottled; external hosts unresolvable",
+    "cache": "cold",
+    "instrumentation": "normal",
+    "gpu": "ANGLE (Qualcomm, Adreno (TM) 830, OpenGL ES 3.2)",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36",
+    "screen": "412x892",
+    "appProfile": "balanced",
+    "idleRafMs": 8.3,
+    "androidBefore": {
+      "capturedAt": "2026-10-15T14:47:05.555Z",
+      "batteryPercent": 67,
+      "batteryTemperatureC": 31.9,
+      "batteryStatus": 3,
+      "thermalStatus": 0,
+      "temperaturesC": {
+        "AP": 35,
+        "BAT": 31.9,
+        "PA": 35.6,
+        "SKIN": 32.9,
+        "SUBBAT": 0,
+        "USB": 29.5
+      },
+      "chromeForeground": true,
+      "keyguardShowing": false,
+      "screenAwake": true
+    },
+    "androidAfter": {
+      "capturedAt": "2026-10-15T14:47:19.102Z",
+      "batteryPercent": 67,
+      "batteryTemperatureC": 31.9,
+      "batteryStatus": 3,
+      "thermalStatus": 0,
+      "temperaturesC": {
+        "AP": 35.6,
+        "BAT": 31.9,
+        "PA": 36.1,
+        "SKIN": 33.1,
+        "SUBBAT": 0,
+        "USB": 29.5
+      },
+      "chromeForeground": true,
+      "keyguardShowing": false,
+      "screenAwake": true
+    }
+  },
+  "scenario": {
+    "id": "physical-touch-continuity",
+    "mode": "A",
+    "modeLabel": "normal pipeline, cold context",
+    "seed": 53,
+    "tapeHash": "sha256:c2ef64c49f07935c42bfbfc0be67375e5453ce51ee6be419166faf40ff334e6c",
+    "tape": "scripts/lab/tapes/physical-touch-continuity.json"
+  },
+  "metrics": {
+    "rafP50Ms": 8.3,
+    "rafP95Ms": 9.3,
+    "rafP99Ms": 13.2,
+    "maxFrameMs": 84.8,
+    "framesOver33Ms": 2,
+    "framesOver50Ms": 2,
+    "inputToCameraMs": 32.4,
+    "requests": 110,
+    "transferredBytes": 1662759,
+    "abortCount": 6,
+    "staleWorkCount": 0,
+    "blankFrames": 0,
+    "decodedPeakBytes": 67108864,
+    "gpuResidentBytesEstimate": 46628164,
+    "firstCorrectVisualMs": null,
+    "timeToSharpMs": null,
+    "staleVisibleFrames": null,
+    "sourcePops": null
+  },
+  "metricNotes": {
+    "firstCorrectVisualMs": "not pixel-verified in PR 1; see extra.firstPaintReportedMs (navigation start -> first app-reported paint, drawCount > 0, rAF-polled)",
+    "inputToCameraMs": "CDP-injected browser touch: median over 10/24 observed touch events, event.timeStamp -> first rAF callback whose .sequence-camera transform differs before the next touch event. Lifecycle/stationary events are not movement samples; unobserved events remain null with reasons in trace. Observational, not causal or input-to-photon; excludes physical-finger, touchscreen hardware and native OS delivery.",
+    "timeToSharpMs": "tape has no measure:'sharp' step",
+    "transferredBytes": "Playwright request.sizes() body+headers over loopback (uncompressed local server, not CDN wire bytes)",
+    "staleWorkCount": "app-reported cache.staleDiscard + stalePaints",
+    "blankFrames": "50 ms polls with no visible plate/base/detail layer (sampled, not every frame)",
+    "staleVisibleFrames": "needs pixel/generation instrumentation (PR 2+)",
+    "sourcePops": "needs pixel/generation instrumentation (PR 2+); see extra.sourceFamilies for request-level family mixing",
+    "decodedPeakBytes": "app-reported cache.decodedBytes, max over 50 ms polls",
+    "gpuResidentBytesEstimate": "ESTIMATE: app-reported canvas backing-store bytes (w x h x 4), max over polls; excludes textures/compositor. GPU memory is not directly measured; see environment.gpu"
+  },
+  "extra": {
+    "screenWakeLock": true,
+    "firstPaintReportedMs": 239.6,
+    "maxZoom": 8.044444103476456,
+    "measuredApp": {
+      "decodes": 447,
+      "networkRequests": 112,
+      "closedBitmaps": 404,
+      "staleDiscard": 0
+    },
+    "settles": [
+      {
+        "label": "initial-rest",
+        "reached": true,
+        "waitedMs": 3334
+      },
+      {
+        "label": "refined",
+        "reached": true,
+        "waitedMs": 1511
+      }
+    ],
+    "frames": 1564,
+    "frameThresholds": {
+      "over8.3Ms": 745,
+      "over16.7Ms": 8,
+      "over25Ms": 2,
+      "over33Ms": 2,
+      "over50Ms": 2
+    },
+    "visibility": [
+      [
+        4041.4000000059605,
+        "visible"
+      ]
+    ],
+    "focus": [
+      [
+        4041.4000000059605,
+        true
+      ]
+    ],
+    "phases": [
+      {
+        "from": "measured-start",
+        "to": "initial-rest:end",
+        "ms": 3343.3,
+        "frames": 387,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.5,
+        "rafP99Ms": 16.7,
+        "maxFrameMs": 84.8,
+        "framesOver33Ms": 1,
+        "framesOver50Ms": 1,
+        "appDecodes": 109,
+        "evictions": 60,
+        "perAsset": {
+          "decodes": 109,
+          "redecodes": 55,
+          "repeatedAssets": 5,
+          "maxPerAsset": 27
+        },
+        "maxQueued": 54,
+        "detailPaints": 1,
+        "cpu": {
+          "mainThreadTaskMs": 984.75,
+          "scriptMs": 204.85,
+          "layoutStyleMs": 367.12,
+          "processCpuMs": 270
+        }
+      },
+      {
+        "from": "initial-rest:end",
+        "to": "pinch-before",
+        "ms": 96.2,
+        "frames": 11,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9,
+        "rafP99Ms": 9,
+        "maxFrameMs": 9,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 3,
+        "evictions": 3,
+        "perAsset": {
+          "decodes": 4,
+          "redecodes": 4,
+          "repeatedAssets": 2,
+          "maxPerAsset": 2
+        },
+        "maxQueued": 5,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 20.8,
+          "scriptMs": 7.17,
+          "layoutStyleMs": 0,
+          "processCpuMs": 10
+        }
+      },
+      {
+        "from": "pinch-before",
+        "to": "pinch-in",
+        "ms": 552.8,
+        "frames": 61,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 10.8,
+        "rafP99Ms": 22.6,
+        "maxFrameMs": 22.6,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 37,
+        "evictions": 58,
+        "perAsset": {
+          "decodes": 36,
+          "redecodes": 36,
+          "repeatedAssets": 24,
+          "maxPerAsset": 6
+        },
+        "maxQueued": 23,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 193.18,
+          "scriptMs": 64.43,
+          "layoutStyleMs": 45.13,
+          "processCpuMs": 50
+        }
+      },
+      {
+        "from": "pinch-in",
+        "to": "pinch-out",
+        "ms": 450.4,
+        "frames": 53,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.1,
+        "rafP99Ms": 9.4,
+        "maxFrameMs": 9.4,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 0,
+        "evictions": 0,
+        "perAsset": {
+          "decodes": 0,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 0
+        },
+        "maxQueued": 0,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 150.25,
+          "scriptMs": 45.9,
+          "layoutStyleMs": 64.43,
+          "processCpuMs": 20
+        }
+      },
+      {
+        "from": "pinch-out",
+        "to": "two-finger-hold-start",
+        "ms": 373.9,
+        "frames": 44,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.2,
+        "rafP95Ms": 9.5,
+        "rafP99Ms": 11.3,
+        "maxFrameMs": 11.3,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 45,
+        "evictions": 45,
+        "perAsset": {
+          "decodes": 45,
+          "redecodes": 45,
+          "repeatedAssets": 16,
+          "maxPerAsset": 8
+        },
+        "maxQueued": 5,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 155.96,
+          "scriptMs": 40.71,
+          "layoutStyleMs": 43.74,
+          "processCpuMs": 40
+        }
+      },
+      {
+        "from": "two-finger-hold-start",
+        "to": "two-to-one-before",
+        "ms": 1124,
+        "frames": 133,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9,
+        "rafP99Ms": 11.9,
+        "maxFrameMs": 17.3,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 0,
+        "evictions": 0,
+        "perAsset": {
+          "decodes": 0,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 0
+        },
+        "maxQueued": 0,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 363.28,
+          "scriptMs": 108.42,
+          "layoutStyleMs": 151.69,
+          "processCpuMs": 10
+        }
+      },
+      {
+        "from": "two-to-one-before",
+        "to": "two-to-one-after",
+        "ms": 198.6,
+        "frames": 23,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.2,
+        "rafP95Ms": 8.9,
+        "rafP99Ms": 9.2,
+        "maxFrameMs": 9.2,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 0,
+        "evictions": 0,
+        "perAsset": {
+          "decodes": 0,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 0
+        },
+        "maxQueued": 0,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 59.75,
+          "scriptMs": 12.4,
+          "layoutStyleMs": 28.57,
+          "processCpuMs": 10
+        }
+      },
+      {
+        "from": "two-to-one-after",
+        "to": "two-to-one-held",
+        "ms": 301,
+        "frames": 34,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 8.9,
+        "rafP99Ms": 19,
+        "maxFrameMs": 19,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 0,
+        "evictions": 0,
+        "perAsset": {
+          "decodes": 0,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 0
+        },
+        "maxQueued": 0,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 100.94,
+          "scriptMs": 17.51,
+          "layoutStyleMs": 53.44,
+          "processCpuMs": 0
+        }
+      },
+      {
+        "from": "two-to-one-held",
+        "to": "survivor-pan-after",
+        "ms": 900.2,
+        "frames": 98,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.5,
+        "rafP99Ms": 75.3,
+        "maxFrameMs": 75.3,
+        "framesOver33Ms": 1,
+        "framesOver50Ms": 1,
+        "appDecodes": 54,
+        "evictions": 33,
+        "perAsset": {
+          "decodes": 54,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 1
+        },
+        "maxQueued": 54,
+        "detailPaints": 1,
+        "cpu": {
+          "mainThreadTaskMs": 147.12,
+          "scriptMs": 39.05,
+          "layoutStyleMs": 23.34,
+          "processCpuMs": 220
+        }
+      },
+      {
+        "from": "survivor-pan-after",
+        "to": "one-finger-pan-before",
+        "ms": 202.5,
+        "frames": 24,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.4,
+        "rafP95Ms": 8.8,
+        "rafP99Ms": 8.9,
+        "maxFrameMs": 8.9,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 0,
+        "evictions": 0,
+        "perAsset": {
+          "decodes": 0,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 0
+        },
+        "maxQueued": 5,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 17.08,
+          "scriptMs": 3.98,
+          "layoutStyleMs": 0,
+          "processCpuMs": 10
+        }
+      },
+      {
+        "from": "one-finger-pan-before",
+        "to": "one-finger-pan-after",
+        "ms": 549.6,
+        "frames": 65,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.5,
+        "rafP99Ms": 9.7,
+        "maxFrameMs": 9.7,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 0,
+        "evictions": 0,
+        "perAsset": {
+          "decodes": 0,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 0
+        },
+        "maxQueued": 5,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 49.17,
+          "scriptMs": 12.44,
+          "layoutStyleMs": 1.29,
+          "processCpuMs": 30
+        }
+      },
+      {
+        "from": "one-finger-pan-after",
+        "to": "refined:end",
+        "ms": 1656.9,
+        "frames": 197,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.4,
+        "rafP99Ms": 12,
+        "maxFrameMs": 13.2,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 59,
+        "evictions": 65,
+        "perAsset": {
+          "decodes": 60,
+          "redecodes": 52,
+          "repeatedAssets": 3,
+          "maxPerAsset": 25
+        },
+        "maxQueued": 13,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 274.21,
+          "scriptMs": 93.75,
+          "layoutStyleMs": 0.61,
+          "processCpuMs": 130
+        }
+      },
+      {
+        "from": "refined:end",
+        "to": "stationary-end",
+        "ms": 1001,
+        "frames": 120,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.3,
+        "rafP99Ms": 10.6,
+        "maxFrameMs": 11.6,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 30,
+        "evictions": 30,
+        "perAsset": {
+          "decodes": 30,
+          "redecodes": 30,
+          "repeatedAssets": 2,
+          "maxPerAsset": 15
+        },
+        "maxQueued": 5,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 174.34,
+          "scriptMs": 53.69,
+          "layoutStyleMs": 0,
+          "processCpuMs": 60
+        }
+      },
+      {
+        "from": "stationary-end",
+        "to": "measured-end",
+        "ms": 2594.1,
+        "frames": 301,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 8.9,
+        "rafP99Ms": 9.3,
+        "maxFrameMs": 10.4,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 114,
+        "evictions": 114,
+        "perAsset": {
+          "decodes": 114,
+          "redecodes": 114,
+          "repeatedAssets": 2,
+          "maxPerAsset": 57
+        },
+        "maxQueued": 5,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 396.8,
+          "scriptMs": 121.38,
+          "layoutStyleMs": 0,
+          "processCpuMs": 160
+        }
+      }
+    ],
+    "run": {
+      "perAsset": {
+        "decodes": 452,
+        "redecodes": 336,
+        "repeatedAssets": 35,
+        "maxPerAsset": 138
+      },
+      "cpu": {
+        "mainThreadTaskMs": 3087.63,
+        "scriptMs": 825.67,
+        "layoutStyleMs": 779.36,
+        "processCpuMs": 1020
+      },
+      "jsHeapUsedBytesEnd": 6347200
+    },
+    "stationary": {
+      "from": "refined:end",
+      "to": "stationary-end",
+      "ms": 1001,
+      "frames": 120,
+      "droppedIntervals": 0,
+      "rafP50Ms": 8.3,
+      "rafP95Ms": 9.3,
+      "rafP99Ms": 10.6,
+      "maxFrameMs": 11.6,
+      "framesOver33Ms": 0,
+      "framesOver50Ms": 0,
+      "appDecodes": 30,
+      "evictions": 30,
+      "perAsset": {
+        "decodes": 30,
+        "redecodes": 30,
+        "repeatedAssets": 2,
+        "maxPerAsset": 15
+      },
+      "maxQueued": 5,
+      "detailPaints": 0,
+      "cpu": {
+        "mainThreadTaskMs": 174.34,
+        "scriptMs": 53.69,
+        "layoutStyleMs": 0,
+        "processCpuMs": 60
+      },
+      "refinedReached": true
+    },
+    "detailPaints": {
+      "n": 2,
+      "whileMoving": 0,
+      "atRest": 2,
+      "backingMPMedian": 10.08,
+      "backingMPMax": 10.08,
+      "tilesMedian": 0,
+      "longFrames": 2,
+      "longFramesWithPaint": 0,
+      "paintFrameMsMedian": 11,
+      "paintFrameMsMax": 20.6
+    },
+    "loaf": {
+      "n": 2,
+      "durationMs": 163,
+      "blockingMs": 0,
+      "scriptMs": 0,
+      "forcedStyleLayoutMs": 0
+    },
+    "tapeJitterP95Ms": 14.02,
+    "inputToCameraP95Ms": 41,
+    "wheelInputToCamera": {
+      "events": 0,
+      "observed": 0,
+      "medianMs": null,
+      "p95Ms": null
+    },
+    "touchInputToCamera": {
+      "events": 24,
+      "movementEvents": 18,
+      "observed": 10,
+      "medianMs": 32.4,
+      "p95Ms": 41,
+      "reason": null
+    },
+    "touchTransport": [
+      {
+        "t": 200,
+        "type": "touchStart",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 300,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 400,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 500,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 750,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 850,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 950,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 1200,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 1300,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 1400,
+        "type": "touchMove",
+        "expectedIds": [
+          1,
+          2
+        ],
+        "observedIds": [
+          1,
+          2
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 2700,
+        "type": "touchEnd",
+        "expectedIds": [
+          1
+        ],
+        "observedIds": [
+          1
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 3200,
+        "type": "touchMove",
+        "expectedIds": [
+          1
+        ],
+        "observedIds": [
+          1
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 3300,
+        "type": "touchMove",
+        "expectedIds": [
+          1
+        ],
+        "observedIds": [
+          1
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 3400,
+        "type": "touchMove",
+        "expectedIds": [
+          1
+        ],
+        "observedIds": [
+          1
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 3500,
+        "type": "touchMove",
+        "expectedIds": [
+          1
+        ],
+        "observedIds": [
+          1
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 3600,
+        "type": "touchMove",
+        "expectedIds": [
+          1
+        ],
+        "observedIds": [
+          1
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 4100,
+        "type": "touchEnd",
+        "expectedIds": [],
+        "observedIds": [],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 4250,
+        "type": "touchStart",
+        "expectedIds": [
+          3
+        ],
+        "observedIds": [
+          3
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 4350,
+        "type": "touchMove",
+        "expectedIds": [
+          3
+        ],
+        "observedIds": [
+          3
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 4450,
+        "type": "touchMove",
+        "expectedIds": [
+          3
+        ],
+        "observedIds": [
+          3
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 4550,
+        "type": "touchMove",
+        "expectedIds": [
+          3
+        ],
+        "observedIds": [
+          3
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 4650,
+        "type": "touchMove",
+        "expectedIds": [
+          3
+        ],
+        "observedIds": [
+          3
+        ],
+        "valid": true,
+        "reason": null
+      },
+      {
+        "t": 4800,
+        "type": "touchEnd",
+        "expectedIds": [],
+        "observedIds": [],
+        "valid": true,
+        "reason": null
+      }
+    ],
+    "sourceFamilies": [
+      "blue/p0000000"
+    ],
+    "inspectionSources": {
+      "blue": {
+        "selected": "legacy-201mp",
+        "status": "production-201-250mp",
+        "revision": "2026-09-30.2"
+      },
+      "day": {
+        "selected": "gp-1gp",
+        "status": "candidate-1gp",
+        "revision": "2026-09-30.2"
+      },
+      "white": {
+        "selected": null,
+        "status": "disabled",
+        "revision": "2026-09-30.2"
+      },
+      "dark": {
+        "selected": null,
+        "status": "disabled",
+        "revision": "2026-09-30.2"
+      },
+      "night": {
+        "selected": null,
+        "status": "disabled",
+        "revision": "2026-09-30.2"
+      },
+      "hidden": {
+        "mushroom": {
+          "selected": "gp-1gp",
+          "status": "production-1gp",
+          "revision": "2026-09-30.2"
+        }
+      }
+    },
+    "unsupportedSteps": []
+  },
+  "validation": {
+    "passed": [
+      "no-page-errors",
+      "no-app-errors",
+      "no-external-network",
+      "no-http-errors",
+      "no-failed-requests",
+      "decoded-within-budget",
+      "single-source-family",
+      "no-blank-polls"
+    ],
+    "failed": [],
+    "notRun": [
+      "collector-overhead-calibration (no uninstrumented control yet)",
+      "gpu-completion (JS timings only)",
+      "human blind feel review",
+      "pixel-fidelity/source-pop checks"
+    ]
+  },
+  "limitations": [
+    "attached browser: the host-resolver network fence is not applied; external requests are detected (no-external-network gate), not blocked",
+    "Touch is CDP Input.dispatchTouchEvent injection into the real browser, not physical-finger/hardware/native-OS input or input-to-photon evidence. Partial release uses nonempty touchEnd containing the RELEASED IDs, supported by Chromium's legacy CDP touch path but rejected by its synthetic-pointer path. Actual contact IDs are checked after each dispatch within 500 ms; mismatch/rejection is invalid touch transport (NOT RUN), not application performance loss. Mode D replays camera transforms rather than touch.",
+    "timeToSharpMs trusts the build's own detailWidth report; its meaning can differ between builds"
+  ],
+  "artifacts": {
+    "trace": "results/s25-touch-full-ad/traces/71c9813ae8c216abe96740d96efd745a0ae3c77c-physical-touch-continuity-A-physical-t1.json",
+    "screenshots": [
+      "results/s25-touch-full-ad/screens/71c9813ae8c216abe96740d96efd745a0ae3c77c-physical-touch-continuity-A-physical-t1.png"
+    ],
+    "buildLog": "results/s25-preflight-build-logs/71c9813ae8c216abe96740d96efd745a0ae3c77c-build.log"
+  }
+}

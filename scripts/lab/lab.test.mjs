@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { checkReceipt, frameStats, METRIC_KEYS, percentile, RECEIPT_SCHEMA, sourceFamilies, stableStringify, summarize, tapeHash, validateTape } from "./lib.mjs";
+import { checkReceipt, frameStats, inspectionTargetMatches, METRIC_KEYS, offlineReplayCoverage, percentile, RECEIPT_SCHEMA, sourceFamilies, stableStringify, summarize, tapeHash, validateTape } from "./lib.mjs";
 
 const tape = JSON.parse(fs.readFileSync(new URL("./tapes/smoke-inspect.json", import.meta.url), "utf8"));
 
@@ -29,6 +29,84 @@ test("shipped tape is valid; bad tapes are refused", () => {
   assert.throws(() => validateTape({ ...tape, steps: [{ t: 10, action: "wait" }, { t: 5, action: "wait" }] }), /non-decreasing/);
   assert.throws(() => validateTape({ ...tape, steps: [{ t: 0, action: "teleport" }] }), /unknown action/);
   assert.throws(() => validateTape({ ...tape, steps: [{ t: 0, action: "wheel", x: 1.5 }] }), /frame fraction/);
+});
+
+test("inspection replay rejects ignored targets without rejecting declared zoom clamps", () => {
+  assert.equal(inspectionTargetMatches(8, 1, 8.044), false);
+  assert.equal(inspectionTargetMatches(4, 4, 8.044), true);
+  assert.equal(inspectionTargetMatches(8, 4, 4), true);
+  assert.equal(inspectionTargetMatches(1, 1, 8.044), true);
+  assert.equal(inspectionTargetMatches(8, null, 8.044), false);
+  assert.equal(inspectionTargetMatches(8, NaN, 8.044), false);
+  assert.equal(inspectionTargetMatches(Infinity, 8, 8.044), false);
+});
+
+const offlineEvidence = (requests = [], overrides = {}) => ({
+  networkEnabled: true, offlineAcknowledged: true, navigatorOnlineAtStart: false, navigatorOnlineAtEnd: false,
+  requests, pendingAtStart: [], unknownEvents: [], observationErrors: [], ...overrides,
+});
+const cachedRequest = (overrides = {}) => ({
+  requestId: "tile-1", hop: 0, owned: true, path: "/quackles-assets/blue/p0000000/gp/3/0_0.webp",
+  servedFromCache: false, response: { status: 200, fromDiskCache: true, fromServiceWorker: false },
+  completion: { kind: "loadingFinished", encodedDataLength: 0 }, failure: null, ...overrides,
+});
+
+test("offline replay accepts no requests or positively completed HTTP-cache hits, not fetch-count folklore", () => {
+  assert.deepEqual(offlineReplayCoverage(offlineEvidence(), 0), { valid: true, cacheServed: 0, requestCount: 0, reasons: [] });
+  const requests = [
+    cachedRequest(),
+    cachedRequest({ requestId: "tile-2", servedFromCache: true, response: { status: 200 } }),
+    cachedRequest({ requestId: "tile-3", response: { status: 200, fromPrefetchCache: true } }),
+  ];
+  // The app fetch counter is deliberately irrelevant to this consumer gate: three attempts can all hit HTTP cache.
+  assert.deepEqual(offlineReplayCoverage(offlineEvidence(requests), 3), { valid: true, cacheServed: 3, requestCount: 3, reasons: [] });
+});
+
+test("offline replay rejects real failures and non-cache responses even if response size is zero", () => {
+  const failed = offlineReplayCoverage(offlineEvidence([cachedRequest({
+    response: null, completion: null, failure: { errorText: "net::ERR_INTERNET_DISCONNECTED", canceled: false },
+  })]), 1);
+  assert.equal(failed.valid, false);
+  assert.match(failed.reasons.join("; "), /failed \(net::ERR_INTERNET_DISCONNECTED\)/);
+  const uncached = offlineReplayCoverage(offlineEvidence([cachedRequest({ response: { status: 200 }, completion: { kind: "loadingFinished", encodedDataLength: 0 } })]), 1);
+  assert.equal(uncached.valid, false);
+  assert.match(uncached.reasons.join("; "), /no positive HTTP-cache evidence/);
+  const cacheThenFailed = offlineReplayCoverage(offlineEvidence([cachedRequest({ failure: { errorText: "net::ERR_ABORTED", canceled: true } })]), 1);
+  assert.equal(cacheThenFailed.valid, false);
+  assert.equal(cacheThenFailed.cacheServed, 0);
+});
+
+test("offline replay rejects missing or incomplete observation rather than guessing cache coverage", () => {
+  for (const [request, expected] of [
+    [cachedRequest({ completion: null }), /completion not observed/],
+    [cachedRequest({ response: null, servedFromCache: true }), /response not observed/],
+    [cachedRequest({ response: { status: 404, fromDiskCache: true } }), /HTTP status 404/],
+    [cachedRequest({ response: { status: 200, fromDiskCache: true, fromServiceWorker: true } }), /service-worker response/],
+    [cachedRequest({ owned: false, path: null }), /not to the owned fixture origin/],
+  ]) {
+    const coverage = offlineReplayCoverage(offlineEvidence([request]), 1);
+    assert.equal(coverage.valid, false);
+    assert.match(coverage.reasons.join("; "), expected);
+  }
+  assert.match(offlineReplayCoverage(offlineEvidence(), 1).reasons.join("; "), /coverage mismatch/);
+  assert.match(offlineReplayCoverage(offlineEvidence([cachedRequest()]), 0).reasons.join("; "), /coverage mismatch/);
+  const boundary = offlineReplayCoverage(offlineEvidence([], {
+    pendingAtStart: [{ requestId: "prep-1" }],
+    unknownEvents: [{ event: "loadingFinished", requestId: "unseen-1" }],
+    observationErrors: ["page CDP session disconnected during measurement"],
+  }), 0);
+  assert.equal(boundary.valid, false);
+  assert.match(boundary.reasons.join("; "), /in flight at measured start/);
+  assert.match(boundary.reasons.join("; "), /unmatched loadingFinished for request unseen-1/);
+  assert.match(boundary.reasons.join("; "), /disconnected/);
+});
+
+test("offline replay requires acknowledged controls and false onLine at both boundaries, even with no requests", () => {
+  for (const overrides of [
+    { networkEnabled: false }, { offlineAcknowledged: false },
+    { navigatorOnlineAtStart: true }, { navigatorOnlineAtStart: null },
+    { navigatorOnlineAtEnd: true }, { navigatorOnlineAtEnd: null },
+  ]) assert.equal(offlineReplayCoverage(offlineEvidence([], overrides), 0).valid, false);
 });
 
 test("touch tape retains stable IDs through stationary holds and two-to-one boundaries", () => {

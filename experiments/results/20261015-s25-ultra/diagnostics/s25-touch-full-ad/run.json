@@ -1,0 +1,71 @@
+{
+  "runId": "s25-touch-full-ad",
+  "startedAt": "2026-10-15T14:47:01.168Z",
+  "command": "node scripts/lab/run.mjs --android --cdp http://127.0.0.1:9222 --profiles physical --prepared-builds results/s25-prepared-phone-builds.json --refs 71c9813ae8c216abe96740d96efd745a0ae3c77c,e312e21be58a6a9c92d1667f854ac4c56c74de3a --modes A --balanced --trials 1 --tape scripts/lab/tapes/physical-touch-continuity.json --device-note SM-S938U Android16 Chrome155 Adreno830; 120Hz min/max; native focus; explicit partial release and fresh one-finger pan; CDP injected, not native-OS/hardware delivery",
+  "tape": {
+    "id": "physical-touch-continuity",
+    "path": "scripts/lab/tapes/physical-touch-continuity.json",
+    "hash": "sha256:c2ef64c49f07935c42bfbfc0be67375e5453ce51ee6be419166faf40ff334e6c"
+  },
+  "trials": 1,
+  "profiles": [
+    "physical"
+  ],
+  "assets": {
+    "repo": "kvnloo/quackles-assets",
+    "sha": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+    "dirty": false
+  },
+  "harness": {
+    "sha": "f39edffaf06fac517e0b1997d4c02a39dc88bb3b",
+    "dirty": false,
+    "runner": "scripts/lab/run.mjs",
+    "runnerSha256": "d2a787fdbca6971aba47f20310a26d8f72ba0bf2a783ce210d5d30dbdc4dab8c",
+    "librarySha256": "d1b5a2dce2a35c1babe91317dac797e741670b79b498be89741fbc82aab64a05"
+  },
+  "environment": {
+    "browser": "Chromium 155.0.8059.79",
+    "headless": "attached (see device)",
+    "gpuFlags": "attached browser's own GPU (see gpu)",
+    "attached": "http://127.0.0.1:9222",
+    "deviceNote": "SM-S938U Android16 Chrome155 Adreno830; 120Hz min/max; native focus; explicit partial release and fresh one-finger pan; CDP injected, not native-OS/hardware delivery",
+    "device": "attached via CDP; host running the harness: unknown x8",
+    "node": "v24.21.0",
+    "refreshRate": "unknown (headless); see idleRafMs",
+    "thermal": "unknown"
+  },
+  "builds": [
+    {
+      "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "status": "built",
+      "port": 47940,
+      "durationMs": 15569,
+      "ref": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "externallyServed": true
+    },
+    {
+      "sha": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+      "status": "built",
+      "port": 47943,
+      "durationMs": 15454,
+      "ref": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+      "externallyServed": true
+    }
+  ],
+  "modes": [
+    "A"
+  ],
+  "orderPolicy": "balanced permutations",
+  "order": [
+    [
+      "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "e312e21be58a6a9c92d1667f854ac4c56c74de3a"
+    ]
+  ],
+  "modeOrder": [
+    [
+      "A"
+    ]
+  ],
+  "finishedAt": "2026-10-15T14:47:38.417Z"
+}

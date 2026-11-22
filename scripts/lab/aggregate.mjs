@@ -80,7 +80,9 @@ const md = [
   "- Times in ms; bytes are loopback body+headers (not CDN wire bytes). `first paint (app)` is the app-reported first paint, not a pixel-verified correct visual.",
   "- `input->camera` = wheel `event.timeStamp` to the first rAF whose camera transform changed. Not photon latency; no GPU completion.",
   "- `surface est.` = canvas backing-store estimate, not measured GPU memory. `blank polls` are 50 ms samples, not every frame.",
-  "- Headless desktop Chromium on a shared host. No physical-device, emulated-vs-physical, or feel claim follows from these numbers.",
+  env.profile === "physical"
+    ? "- Physical attached-browser replay; no viewport or CPU emulation. Native foreground/thermal and GP identity gates are recorded per receipt. This is not a human blind feel review."
+    : `- ${env.headless ? "Headless" : "Locally launched"} Chromium on the recorded host; no physical-device conclusion follows from these numbers.`,
   "",
 ].filter((l) => l !== null).join("\n");
 

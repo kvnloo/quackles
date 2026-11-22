@@ -1,0 +1,175 @@
+{
+  "schema": "quackles-lab.branch-scope-correction.v1",
+  "issue": "https://github.com/kvnloo/quackles/issues/53",
+  "reason": "User clarified that the intended target is preview/gigapixel-single and its GP performance-settings variants, not the nightly-derived W1/Q1/W2A renderer candidates.",
+  "previousPhoneRuns": {
+    "scope": "Blue 201MP nightly-derived W1/Q1/W2A research",
+    "answersRequestedGpComparison": false,
+    "disposition": "Preserve raw receipts; exclude from GP branch/settings comparisons. No GP branch has been phone-measured in this session."
+  },
+  "baseline": {
+    "branch": "preview/gigapixel-single",
+    "sha": "fefde8396bf7de06c9ebfc95a3d2e0a9324035d0",
+    "preview": {
+      "id": "gigapixel-single",
+      "scenes": [
+        "white"
+      ],
+      "story": false,
+      "zoom": "1gp"
+    },
+    "source": "https://github.com/kvnloo/quackles/blob/fefde8396bf7de06c9ebfc95a3d2e0a9324035d0/lib/preview.ts"
+  },
+  "commonAncestor": "6bb3a9efc9eb56d4aa18a6cfd180360cb8a568d7",
+  "variants": [
+    {
+      "branch": "preview/gp-motion-decode",
+      "sha": "5f90a4108e5b852f7826a2d48eadfcb553220569",
+      "comparisonStatus": "diverged",
+      "aheadOfBaseline": 1,
+      "behindBaseline": 1,
+      "mergeBase": "6bb3a9efc9eb56d4aa18a6cfd180360cb8a568d7",
+      "commits": [
+        {
+          "sha": "5f90a4108e5b852f7826a2d48eadfcb553220569",
+          "subject": "feat(gigapixel): PROPOSED RULE - a bounded decode budget while the camera moves"
+        }
+      ],
+      "changedPaths": [
+        "components/sequence/SequencePlayer.tsx",
+        "lib/sequence/cache.ts",
+        "lib/sequence/render.ts",
+        "scripts/gigapixel-engine-contracts.mjs",
+        "scripts/wiring-contracts.mjs"
+      ],
+      "compareUrl": "https://github.com/kvnloo/quackles/compare/fefde8396bf7de06c9ebfc95a3d2e0a9324035d0...5f90a4108e5b852f7826a2d48eadfcb553220569"
+    },
+    {
+      "branch": "preview/gp-net6",
+      "sha": "671c774cba5fda1ed9b0c1bf2257bf164c7c3360",
+      "comparisonStatus": "diverged",
+      "aheadOfBaseline": 2,
+      "behindBaseline": 1,
+      "mergeBase": "6bb3a9efc9eb56d4aa18a6cfd180360cb8a568d7",
+      "commits": [
+        {
+          "sha": "4c0fed49ac8afcfd8570fcb07638c4bb0c403804",
+          "subject": "feat(gigapixel): PROPOSED RULE - six fetches in flight, decodes still capped at maxActiveJobs"
+        },
+        {
+          "sha": "671c774cba5fda1ed9b0c1bf2257bf164c7c3360",
+          "subject": "test: PROPOSED RULE (gp-net6) - browser contracts cap decodes at maxActiveJobs and fetches at maxFetches apart"
+        }
+      ],
+      "changedPaths": [
+        "lib/sequence/cache.ts",
+        "scripts/fuzz-browser.mjs",
+        "scripts/gigapixel-engine-contracts.mjs",
+        "scripts/profile-browser.mjs",
+        "scripts/sequence-browser.mjs",
+        "scripts/sequence-contracts.mjs"
+      ],
+      "compareUrl": "https://github.com/kvnloo/quackles/compare/fefde8396bf7de06c9ebfc95a3d2e0a9324035d0...671c774cba5fda1ed9b0c1bf2257bf164c7c3360"
+    },
+    {
+      "branch": "preview/gp-settle",
+      "sha": "9bdc48512808b99427d20bcc197df9b1a02d38bc",
+      "comparisonStatus": "diverged",
+      "aheadOfBaseline": 3,
+      "behindBaseline": 1,
+      "mergeBase": "6bb3a9efc9eb56d4aa18a6cfd180360cb8a568d7",
+      "commits": [
+        {
+          "sha": "31bf5124af30f9b47a9a535968f463774b5eea9c",
+          "subject": "test(camera): PROPOSED RULE - a camera under 2 px/frame on screen counts as settled (red)"
+        },
+        {
+          "sha": "2c99ff025f19ab6ed45f47a1fc7df1fdf57fbd4d",
+          "subject": "PROPOSAL (not for push without owner sign-off): settle by on-screen speed"
+        },
+        {
+          "sha": "9bdc48512808b99427d20bcc197df9b1a02d38bc",
+          "subject": "fix(camera): PROPOSED RULE - settle by screen speed only near the target, not on the first frames of a glide"
+        }
+      ],
+      "changedPaths": [
+        "components/sequence/HeroInspection.tsx",
+        "lib/sequence/camera-settle.ts",
+        "scripts/camera-settle-contracts.mjs"
+      ],
+      "compareUrl": "https://github.com/kvnloo/quackles/compare/fefde8396bf7de06c9ebfc95a3d2e0a9324035d0...9bdc48512808b99427d20bcc197df9b1a02d38bc"
+    },
+    {
+      "branch": "preview/gp-all",
+      "sha": "244a824528ac781eef324e31ddbd39515325ed94",
+      "comparisonStatus": "diverged",
+      "aheadOfBaseline": 6,
+      "behindBaseline": 1,
+      "mergeBase": "6bb3a9efc9eb56d4aa18a6cfd180360cb8a568d7",
+      "commits": [
+        {
+          "sha": "31bf5124af30f9b47a9a535968f463774b5eea9c",
+          "subject": "test(camera): PROPOSED RULE - a camera under 2 px/frame on screen counts as settled (red)"
+        },
+        {
+          "sha": "2c99ff025f19ab6ed45f47a1fc7df1fdf57fbd4d",
+          "subject": "PROPOSAL (not for push without owner sign-off): settle by on-screen speed"
+        },
+        {
+          "sha": "9bdc48512808b99427d20bcc197df9b1a02d38bc",
+          "subject": "fix(camera): PROPOSED RULE - settle by screen speed only near the target, not on the first frames of a glide"
+        },
+        {
+          "sha": "993a3d904110baeabdc1be674a45d8dfc930c638",
+          "subject": "feat(gigapixel): PROPOSED RULE - six fetches in flight, decodes still capped at maxActiveJobs"
+        },
+        {
+          "sha": "19692c428df54022bb27ddc3f8462ad8352b0676",
+          "subject": "test: PROPOSED RULE (gp-net6) - browser contracts cap decodes at maxActiveJobs and fetches at maxFetches apart"
+        },
+        {
+          "sha": "244a824528ac781eef324e31ddbd39515325ed94",
+          "subject": "feat(gigapixel): PROPOSED RULE - a bounded decode budget while the camera moves"
+        }
+      ],
+      "changedPaths": [
+        "components/sequence/HeroInspection.tsx",
+        "components/sequence/SequencePlayer.tsx",
+        "lib/sequence/cache.ts",
+        "lib/sequence/camera-settle.ts",
+        "lib/sequence/render.ts",
+        "scripts/camera-settle-contracts.mjs",
+        "scripts/fuzz-browser.mjs",
+        "scripts/gigapixel-engine-contracts.mjs",
+        "scripts/profile-browser.mjs",
+        "scripts/sequence-browser.mjs",
+        "scripts/sequence-contracts.mjs",
+        "scripts/wiring-contracts.mjs"
+      ],
+      "compareUrl": "https://github.com/kvnloo/quackles/compare/fefde8396bf7de06c9ebfc95a3d2e0a9324035d0...244a824528ac781eef324e31ddbd39515325ed94"
+    }
+  ],
+  "baselineOnlyDelta": {
+    "sha": "fefde8396bf7de06c9ebfc95a3d2e0a9324035d0",
+    "subject": "fix(gigapixel-single): start on the preview's own scene, full-bleed 2:3 viewer",
+    "paths": [
+      "app/globals.css",
+      "app/layout.tsx",
+      "components/poster/ThemeControl.tsx",
+      "components/sequence/SequencePlayer.tsx",
+      "lib/sequence/preview-policy.ts",
+      "lib/sequence/store.ts",
+      "scripts/full-bleed-browser.mjs",
+      "scripts/only-white-browser.mjs",
+      "scripts/preview-config-contracts.mjs"
+    ],
+    "comparisonCaveat": "Current GP baseline tip additionally fixes initial scene selection and viewer layout. Exact branch-head comparisons are not strictly settings-only; preserve this distinction rather than silently rewriting branches."
+  },
+  "verification": {
+    "remoteHeadsFetched": true,
+    "actualDiffsInspected": true,
+    "gpPhoneTrialsRun": false,
+    "gpAssetsAndServedBuildNotYetVerified": true
+  },
+  "promotion": false
+}

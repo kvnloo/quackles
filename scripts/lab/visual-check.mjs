@@ -19,6 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { connectOwnedBrowser } from "./cdp.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), REPO = path.resolve(HERE, "../..");
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
@@ -144,7 +145,7 @@ try {
   }
   if (servers.length) await sleep(1500);
   const CHROME = process.env.CHROME || "/opt/pw-browsers/chromium";
-  browser = CDP ? await chromium.connectOverCDP(CDP, { noDefaults: true }) : await chromium.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox", "--no-proxy-server", "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost"] });
+  browser = CDP ? await connectOwnedBrowser(CDP) : await chromium.launch({ executablePath: CHROME, headless: true, args: ["--no-sandbox", "--no-proxy-server", "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost"] });
   for (const state of STATES) {
     const shots = {};
     for (const sha of new Set([base, ...cands])) shots[sha] = await shoot(browser, sha, sources[sha].url, state);

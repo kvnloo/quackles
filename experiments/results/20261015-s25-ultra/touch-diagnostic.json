@@ -1,0 +1,179 @@
+{
+  "schema": "quackles-lab.touch-diagnostic.v1",
+  "runId": "s25-touch-full-ad",
+  "scope": "CDP-injected browser touch on the physical Android device; not native-OS delivery, touchscreen hardware or input-to-photon evidence",
+  "arms": [
+    {
+      "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "harness": {
+        "sha": "f39edffaf06fac517e0b1997d4c02a39dc88bb3b",
+        "dirty": false,
+        "runner": "scripts/lab/run.mjs",
+        "runnerSha256": "d2a787fdbca6971aba47f20310a26d8f72ba0bf2a783ce210d5d30dbdc4dab8c",
+        "librarySha256": "d1b5a2dce2a35c1babe91317dac797e741670b79b498be89741fbc82aab64a05"
+      },
+      "genericSmokeStatus": "PASS",
+      "transportChecks": 23,
+      "allExpectedContactIdsMatched": true,
+      "partialRelease": {
+        "before": [
+          1,
+          2
+        ],
+        "after": [
+          1
+        ],
+        "held": [
+          1
+        ],
+        "targetZoomUnchanged": true,
+        "maxObservedTranslationStepCssPx": 0.1334,
+        "maxObservedZoomStep": 0.00036,
+        "observationWindowMs": [
+          -100,
+          200
+        ]
+      },
+      "freshPan": {
+        "translationCssPx": [
+          82.286,
+          49.372
+        ],
+        "note": "During direct drag the camera matrix moves before targetFocus is published; targetFocus alone is not a movement check."
+      },
+      "survivingFingerPan": {
+        "transformBefore": "matrix(3.99955, 0, 0, 3.99955, -617.05, -925.574)",
+        "transformAfter": "matrix(4, 0, 0, 4, -617.143, -925.715)",
+        "observed": "No pan displacement beyond completion of residual zoom settling; a fresh contact is required to pan in this replay. Complete surviving-contact pan behavior is not accepted."
+      },
+      "browserTouchLatency": {
+        "events": 24,
+        "movementEvents": 18,
+        "observed": 10,
+        "medianMs": 32.4,
+        "p95Ms": 41,
+        "reason": null
+      },
+      "stationary": {
+        "from": "refined:end",
+        "to": "stationary-end",
+        "ms": 1001,
+        "frames": 120,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.3,
+        "rafP99Ms": 10.6,
+        "maxFrameMs": 11.6,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 30,
+        "evictions": 30,
+        "perAsset": {
+          "decodes": 30,
+          "redecodes": 30,
+          "repeatedAssets": 2,
+          "maxPerAsset": 15
+        },
+        "maxQueued": 5,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 174.34,
+          "scriptMs": 53.69,
+          "layoutStyleMs": 0,
+          "processCpuMs": 60
+        },
+        "refinedReached": true
+      },
+      "hardwareInputLatencyMs": null,
+      "hardwareInputLatencyReason": "No touchscreen/native-OS delivery measurement",
+      "transientVisualCorrectness": null,
+      "transientVisualCorrectnessReason": "No per-frame pixel/generation proof; bounded camera observations only"
+    },
+    {
+      "sha": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+      "harness": {
+        "sha": "f39edffaf06fac517e0b1997d4c02a39dc88bb3b",
+        "dirty": false,
+        "runner": "scripts/lab/run.mjs",
+        "runnerSha256": "d2a787fdbca6971aba47f20310a26d8f72ba0bf2a783ce210d5d30dbdc4dab8c",
+        "librarySha256": "d1b5a2dce2a35c1babe91317dac797e741670b79b498be89741fbc82aab64a05"
+      },
+      "genericSmokeStatus": "PASS",
+      "transportChecks": 23,
+      "allExpectedContactIdsMatched": true,
+      "partialRelease": {
+        "before": [
+          1,
+          2
+        ],
+        "after": [
+          1
+        ],
+        "held": [
+          1
+        ],
+        "targetZoomUnchanged": true,
+        "maxObservedTranslationStepCssPx": 0.1334,
+        "maxObservedZoomStep": 0.00036,
+        "observationWindowMs": [
+          -100,
+          200
+        ]
+      },
+      "freshPan": {
+        "translationCssPx": [
+          82.286,
+          49.372
+        ],
+        "note": "During direct drag the camera matrix moves before targetFocus is published; targetFocus alone is not a movement check."
+      },
+      "survivingFingerPan": {
+        "transformBefore": "matrix(3.99955, 0, 0, 3.99955, -617.049, -925.574)",
+        "transformAfter": "matrix(4, 0, 0, 4, -617.143, -925.715)",
+        "observed": "No pan displacement beyond completion of residual zoom settling; a fresh contact is required to pan in this replay. Complete surviving-contact pan behavior is not accepted."
+      },
+      "browserTouchLatency": {
+        "events": 24,
+        "movementEvents": 18,
+        "observed": 10,
+        "medianMs": 32.2,
+        "p95Ms": 51.1,
+        "reason": null
+      },
+      "stationary": {
+        "from": "refined:end",
+        "to": "stationary-end",
+        "ms": 998.2,
+        "frames": 119,
+        "droppedIntervals": 0,
+        "rafP50Ms": 8.3,
+        "rafP95Ms": 9.1,
+        "rafP99Ms": 9.2,
+        "maxFrameMs": 9.8,
+        "framesOver33Ms": 0,
+        "framesOver50Ms": 0,
+        "appDecodes": 0,
+        "evictions": 0,
+        "perAsset": {
+          "decodes": 0,
+          "redecodes": 0,
+          "repeatedAssets": 0,
+          "maxPerAsset": 0
+        },
+        "maxQueued": 4,
+        "detailPaints": 0,
+        "cpu": {
+          "mainThreadTaskMs": 32.25,
+          "scriptMs": 10.43,
+          "layoutStyleMs": 0,
+          "processCpuMs": 10
+        },
+        "refinedReached": true
+      },
+      "hardwareInputLatencyMs": null,
+      "hardwareInputLatencyReason": "No touchscreen/native-OS delivery measurement",
+      "transientVisualCorrectness": null,
+      "transientVisualCorrectnessReason": "No per-frame pixel/generation proof; bounded camera observations only"
+    }
+  ]
+}

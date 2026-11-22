@@ -1,0 +1,53 @@
+{
+  "schema": "quackles-lab.context-surface-diagnostic.v1",
+  "scope": "Standalone context/surface diagnostic, not a timed performance trial",
+  "sourceSha": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+  "assetsRevision": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+  "target": {
+    "zoom": 8,
+    "x": 0.9,
+    "y": 0.95
+  },
+  "context": {
+    "pageBelongsToRequestedContext": true,
+    "nativeAnchorFound": true,
+    "pageUsesNativeDefaultContext": false,
+    "liveAutomationContexts": 1,
+    "pageContextListed": true
+  },
+  "page": {
+    "focus": true,
+    "visibility": "visible",
+    "zoom": 8,
+    "viewport": [
+      411,
+      782
+    ],
+    "dpr": 3.5
+  },
+  "nativeWindow": {
+    "chromeForeground": true,
+    "flagsHex": "81812180",
+    "flagSecure": true,
+    "viewVisibility": "0x0",
+    "haveFrame": true,
+    "obscured": false,
+    "hasSurface": true,
+    "readyForDisplay": true,
+    "onScreen": true
+  },
+  "nativeCapture": {
+    "appearance": "Black in the inspected app-content crop",
+    "pixelCorrectness": null,
+    "pixelCorrectnessReason": "FLAG_SECURE is enabled on this isolated/incognito Chrome window; the native crop is not eligible for pixel/blank-frame acceptance. Secure flags were not disabled or bypassed.",
+    "screenAwake": null,
+    "screenAwakeReason": "Not sampled in this standalone diagnostic; controlled performance passes separately sample awake/keyguard/native-window state before and after."
+  },
+  "probeSource": "import { chromium } from 'playwright-core'; import { execFileSync } from 'node:child_process'; import sharp from 'sharp'; const b=await chromium.connectOverCDP('http://127.0.0.1:9222',{noDefaults:true}); let c,p; try { c=await b.newContext({viewport:null,serviceWorkers:'block'}); p=await c.newPage(); const d=await c.newCDPSession(p); await d.send('Emulation.setFocusEmulationEnabled',{enabled:false}); await p.goto('http://127.0.0.1:47943/',{waitUntil:'load'}); await p.bringToFront(); await p.waitForFunction(()=>window.__QUACKLES_SEQUENCE__?.getState?.().drawCount>0); await p.evaluate(()=>window.__QUACKLES_INSPECTION__.setTarget(8,0.9,0.95)); await p.waitForFunction(()=>{const s=window.__QUACKLES_INSPECTION__.getState();return s.zoom>7.99&&!s.cameraMoving},{},{timeout:15000}); await p.waitForTimeout(1500); const root=await b.newBrowserCDPSession(); const anchor=(await root.send('Target.getTargets')).targetInfos.find(t=>t.url.includes('lab-native-surface=1')); const own=(await d.send('Target.getTargetInfo')).targetInfo; const contexts=(await root.send('Target.getBrowserContexts')).browserContextIds; console.log(JSON.stringify({pageBelongsToRequestedContext:p.context()===c,nativeAnchorFound:!!anchor,pageUsesNativeDefaultContext:own.browserContextId===anchor?.browserContextId,liveAutomationContexts:contexts.length,pageContextListed:contexts.includes(own.browserContextId)})); console.log(JSON.stringify(await p.evaluate(()=>({focus:document.hasFocus(),visibility:document.visibilityState,zoom:window.__QUACKLES_INSPECTION__.getState().zoom,viewport:[innerWidth,innerHeight],dpr:devicePixelRatio})))); const display=execFileSync('adb',['shell','dumpsys','window','displays'],{encoding:'utf8'}); const focused=display.split('\\n').find(l=>l.includes('mCurrentFocus=')); const token=focused?.match(/Window\\{([^ ]+)/)?.[1]; const windows=execFileSync('adb',['shell','dumpsys','window','windows'],{encoding:'utf8'}); const start=token?windows.indexOf('Window{'+token+' '):-1; const section=start>=0?windows.slice(start).split(/\\n  Window #/)[0]:''; console.log(JSON.stringify({nativeChromeForeground:!!focused&&/com\\.android\\.chrome\\//.test(focused),nativeWindowFields:section.split('\\n').filter(l=>/mAttrs=|\\bfl=|mHasSurface=|isOnScreen=|mViewVisibility=/.test(l)).map(l=>l.trim())})); await p.screenshot({path:'results/s25-isolated-context-cdp.png'}); execFileSync('adb',['shell','screencap','-p','/data/local/tmp/quackles-isolated-context.png']); execFileSync('adb',['pull','/data/local/tmp/quackles-isolated-context.png','results/s25-isolated-context-native-raw.png'],{stdio:'pipe'}); execFileSync('adb',['shell','rm','/data/local/tmp/quackles-isolated-context.png']); await sharp('results/s25-isolated-context-native-raw.png').extract({left:0,top:128,width:1440,height:2734}).toFile('results/s25-isolated-context-native.png'); await import('node:fs/promises').then(f=>f.unlink('results/s25-isolated-context-native-raw.png')); } finally { if(p)await p.close().catch(()=>{}); if(c)await c.close(); } process.exit(0);",
+  "probeSourceSha256": "39b46027c1121b306be9fa9204dce84b0aed4231aa911d14d5cee1926a25c051",
+  "artifacts": [
+    "results/s25-isolated-context-native.png",
+    "results/s25-isolated-context-cdp.png"
+  ],
+  "conclusion": "Fresh context creation and private-profile identity are confirmed. No stacked-counter failure was observed. CDP images and protected native images must not be conflated; neither this probe nor a black secure capture proves input-to-photon or GPU completion."
+}

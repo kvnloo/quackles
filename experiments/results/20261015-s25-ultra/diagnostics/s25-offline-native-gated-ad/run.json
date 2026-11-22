@@ -1,0 +1,69 @@
+{
+  "runId": "s25-offline-native-gated-ad",
+  "startedAt": "2026-10-15T14:26:51.866Z",
+  "command": "node scripts/lab/run.mjs --android --cdp http://127.0.0.1:9222 --profiles physical --prepared-builds results/s25-prepared-phone-builds.json --refs 71c9813ae8c216abe96740d96efd745a0ae3c77c,e312e21be58a6a9c92d1667f854ac4c56c74de3a --modes E --balanced --trials 1 --tape scripts/lab/tapes/smoke-inspect.json --device-note SM-S938U; Android 16; physical Chrome; Adreno 830; OS min/max refresh 120 Hz; no focus emulation",
+  "tape": {
+    "id": "smoke-inspect",
+    "path": "scripts/lab/tapes/smoke-inspect.json",
+    "hash": "sha256:1026b24d74b6c2f33d11cb88054b1e0bad203fe2696b4e0e113f590c7e62ba76"
+  },
+  "trials": 1,
+  "profiles": [
+    "physical"
+  ],
+  "assets": {
+    "repo": "kvnloo/quackles-assets",
+    "sha": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+    "dirty": false
+  },
+  "harness": {
+    "sha": "3b885e675434334a788b90fece57d4ad1a95b684",
+    "dirty": true,
+    "runner": "scripts/lab/run.mjs"
+  },
+  "environment": {
+    "browser": "Chromium 155.0.8059.79",
+    "headless": "attached (see device)",
+    "gpuFlags": "attached browser's own GPU (see gpu)",
+    "attached": "http://127.0.0.1:9222",
+    "deviceNote": "SM-S938U; Android 16; physical Chrome; Adreno 830; OS min/max refresh 120 Hz; no focus emulation",
+    "device": "attached via CDP; host running the harness: unknown x8",
+    "node": "v24.21.0",
+    "refreshRate": "unknown (headless); see idleRafMs",
+    "thermal": "unknown"
+  },
+  "builds": [
+    {
+      "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "status": "built",
+      "port": 47940,
+      "durationMs": 15569,
+      "ref": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "externallyServed": true
+    },
+    {
+      "sha": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+      "status": "built",
+      "port": 47943,
+      "durationMs": 15454,
+      "ref": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+      "externallyServed": true
+    }
+  ],
+  "modes": [
+    "E"
+  ],
+  "orderPolicy": "balanced permutations",
+  "order": [
+    [
+      "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+      "e312e21be58a6a9c92d1667f854ac4c56c74de3a"
+    ]
+  ],
+  "modeOrder": [
+    [
+      "E"
+    ]
+  ],
+  "finishedAt": "2026-10-15T14:28:34.595Z"
+}

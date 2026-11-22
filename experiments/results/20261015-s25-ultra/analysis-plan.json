@@ -1,0 +1,52 @@
+{
+  "schema": "quackles-lab.analysis-plan.v1",
+  "registration": "Recorded before reading continuation outcomes or computing combined performance comparisons. Selection is based on completed paired cells and contender-order balance, not timing results.",
+  "harness": "f39edffaf06fac517e0b1997d4c02a39dc88bb3b",
+  "baseline": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+  "challenger": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+  "challengerIdentity": "Reconstructed verified patch postimages; not the unavailable original historical commit object",
+  "assetsRevision": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+  "tape": "scripts/lab/tapes/smoke-inspect.json",
+  "tapeSeed": 1,
+  "targetPairsPerMode": 12,
+  "modes": {
+    "A": "cold isolated browser context",
+    "C": "warm same-document replay with budget-limited decoded cache",
+    "E": "explicit page-network offline after preparation; request attempts invalidate coverage"
+  },
+  "cohorts": [
+    {
+      "runId": "s25-paired-ad-12-native",
+      "state": "operator-interrupted; completed receipts retained unchanged",
+      "contenderArguments": ["baseline", "challenger"],
+      "selectedOriginalTrials": {"A": [1, 2, 3, 4], "C": [1, 2, 3, 4, 5], "E": [1, 2, 3, 4, 5]},
+      "derivedPairIndex": "original trial",
+      "excluded": "Baseline-only A-mode trial 5 has no matching challenger receipt."
+    },
+    {
+      "runId": "s25-paired-ad-continuation-7",
+      "contenderArguments": ["challenger", "baseline"],
+      "selectedOriginalTrials": {"A": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7]},
+      "derivedPairIndex": {"A": "original trial + 4", "C": "original trial + 5", "E": "original trial + 5"}
+    },
+    {
+      "runId": "s25-paired-ad-cold-final-1",
+      "contenderArguments": ["baseline", "challenger"],
+      "selectedOriginalTrials": {"A": [1]},
+      "derivedPairIndex": {"A": 12}
+    }
+  ],
+  "plannedContenderBalancePerMode": {"baselineFirst": 6, "challengerFirst": 6},
+  "pairing": "Only same original runId + original trial + cache mode + physical profile. Derived comparison-input trial indices are unique within each mode; original identifiers, paths and SHA256 remain attached. Raw receipts are never renumbered or overwritten.",
+  "eligibility": "Only matched PASS receipts enter performance estimates. All FAIL and NOT RUN receipts remain published; failures and exclusions are reported separately. Invalid offline timings never enter a speed comparison.",
+  "estimation": "Reuse scripts/lab/compare.mjs: candidate-minus-baseline paired differences, nearest-rank median, 10000 seeded bootstrap resamples (seed 53), 95% CI and baseline MAD. Beyond noise requires CI excluding zero and absolute median difference greater than baseline MAD.",
+  "scopeLimits": [
+    "Cohort interruption and owned-anchor cleanup are explicit; this is not one uninterrupted hardware window.",
+    "The controller and local asset servers run on the phone; their overhead is not calibrated.",
+    "rAF and browser-event latency are JS observations, not GPU completion or input-to-photon measurements.",
+    "Secure incognito native screenshots cannot provide native pixel acceptance; settled owned-page CDP captures are a separate diagnostic.",
+    "Unproven transient pixels, source pops, hardware input latency and GPU memory remain null with reasons.",
+    "Neither the production baseline nor the previously verified software lab incumbent is promoted, merged or silently replaced."
+  ],
+  "promotionAuthorized": false
+}

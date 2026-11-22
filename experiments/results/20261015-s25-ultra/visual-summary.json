@@ -1,0 +1,25 @@
+{
+  "schema": "quackles-lab.visual-summary.v1",
+  "scope": "Historical Blue 201MP A/D diagnostic on physical Android Chrome. Owned-page CDP captures, not native screen captures or timed performance trials.",
+  "baseline": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+  "challenger": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+  "assetsRevision": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+  "sourceReportSha256": "cf888298fb4e96aaa5cebbfc28dbc98cd5637a7d8c04b5340e0704937e320c88",
+  "browserVersion": "155.0.8059.79",
+  "viewport": {"width": 411, "height": 782, "dpr": 3.5},
+  "settleRule": "Camera at rest, sufficient detail, and more than 1500 ms without repaint; 25000 ms timeout.",
+  "comparison": "Maximum absolute per-channel RGB difference against the same-run baseline, not an independent golden reference.",
+  "checkpoints": [
+    {"state": "low-zoom-1.19", "target": {"zoom": 1.19, "x": 0.5, "y": 0.5}, "baselineSettled": false, "challengerSettled": true, "pixels": 3108240, "maxDiff": 0, "meanDiff": 0, "pctOver8": 0},
+    {"state": "edge-2.5x", "target": {"zoom": 2.5, "x": 0, "y": 0.5}, "baselineSettled": false, "challengerSettled": true, "pixels": 3108240, "maxDiff": 0, "meanDiff": 0, "pctOver8": 0},
+    {"state": "interior-8x", "target": {"zoom": 8, "x": 0.6, "y": 0.4}, "baselineSettled": true, "challengerSettled": true, "pixels": 3108240, "maxDiff": 0, "meanDiff": 0, "pctOver8": 0},
+    {"state": "corner-6x", "target": {"zoom": 6, "x": 0.9, "y": 0.95}, "baselineSettled": true, "challengerSettled": true, "pixels": 3108240, "maxDiff": 0, "meanDiff": 0, "pctOver8": 0},
+    {"state": "story-0.12", "target": {"progress": 0.12}, "baselineSettled": true, "challengerSettled": true, "pixels": 3108240, "maxDiff": 0, "meanDiff": 0, "pctOver8": 0}
+  ],
+  "limitations": [
+    "Only three checkpoints settled in both arms. Matching pixels do not establish absolute fidelity, source identity, or transient blank/stale/tier-pop behavior.",
+    "Prepared-build identities were caller-supplied; the challenger is the reconstructed build, not the historical commit object.",
+    "The captures and full raw report are not published."
+  ],
+  "promotionAuthorized": false
+}

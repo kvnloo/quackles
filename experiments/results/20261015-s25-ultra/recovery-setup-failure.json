@@ -1,0 +1,12 @@
+{
+  "runId": "s25-smoke-ad-resume",
+  "status": "INVALID",
+  "stage": "Chrome CDP attachment before any measured trial",
+  "reason": "Playwright connected to the browser WebSocket but connectOverCDP initialization exceeded 30000 ms. No trial receipts or comparison were produced by this attempt.",
+  "metrics": null,
+  "metricNotes": "No rendering measurements were obtained. Do not substitute the earlier baseline receipt or zeros for this attempt.",
+  "excludedFromPairedComparisons": true,
+  "recovery": "ADB pairing remained trusted. The device was rediscovered through its advertised connection service and reconnected. After explicitly waking/foregrounding Chrome, raw Browser.getVersion responded with Chrome/155.0.8059.79. A separate fresh smoke attempt was started.",
+  "causeEstablished": false,
+  "privacy": "No pairing credential, device serial, or unrelated browser target was retained."
+}

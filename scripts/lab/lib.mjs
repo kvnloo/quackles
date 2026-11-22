@@ -87,6 +87,44 @@ export function validateTape(tape) {
   return tape;
 }
 
+/** A replay must not accept an inspection target silently ignored while the story is scrolled. */
+export function inspectionTargetMatches(requestedZoom, actualTargetZoom, maxZoom) {
+  const expected = Math.min(requestedZoom, maxZoom ?? requestedZoom);
+  return Number.isFinite(requestedZoom) && requestedZoom >= 1 && Number.isFinite(actualTargetZoom) && Math.abs(actualTargetZoom - expected) <= 1e-6;
+}
+
+/**
+ * E proves page-scoped offline replay only with acknowledged emulation and complete CDP HTTP-cache evidence.
+ * Request/fetch counts are attempts, not wire IO; even zero attempts needs confirmed offline controls.
+ */
+export function offlineReplayCoverage(evidence, requestCount) {
+  const reasons = [];
+  if (evidence?.networkEnabled !== true) reasons.push("CDP Network.enable was not acknowledged");
+  if (evidence?.offlineAcknowledged !== true) reasons.push("CDP offline emulation was not acknowledged");
+  if (evidence?.navigatorOnlineAtStart !== false) reasons.push("navigator.onLine was not false at measured start");
+  if (evidence?.navigatorOnlineAtEnd !== false) reasons.push("navigator.onLine was not false at measured end");
+  const requests = evidence?.requests ?? [];
+  if (!Number.isInteger(requestCount) || requestCount !== requests.length) reasons.push(`request coverage mismatch: Playwright=${requestCount ?? "unknown"}, CDP=${requests.length}`);
+  if (evidence?.pendingAtStart?.length) reasons.push(`${evidence.pendingAtStart.length} requests were still in flight at measured start`);
+  for (const event of evidence?.unknownEvents ?? []) reasons.push(`unmatched ${event.event} for request ${event.requestId}`);
+  for (const error of evidence?.observationErrors ?? []) reasons.push(error);
+  let cacheServed = 0;
+  for (const request of requests) {
+    const label = `${request.requestId}/${request.hop} ${request.path ?? "[non-owned URL omitted]"}`;
+    if (request.owned !== true) reasons.push(`${label}: request was not to the owned fixture origin`);
+    if (request.failure) reasons.push(`${label}: failed (${request.failure.errorText ?? "unknown"})`);
+    if (!request.completion) reasons.push(`${label}: completion not observed`);
+    if (!request.response) reasons.push(`${label}: response not observed`);
+    else if (!(request.response.status >= 200 && request.response.status < 400)) reasons.push(`${label}: HTTP status ${request.response.status}`);
+    // A service-worker response is not proof of an HTTP-cache hit, even if another cache flag is present.
+    const cached = request.servedFromCache === true || request.response?.fromDiskCache === true || request.response?.fromPrefetchCache === true;
+    if (request.response?.fromServiceWorker === true) reasons.push(`${label}: service-worker response is not verified HTTP-cache service`);
+    if (!cached) reasons.push(`${label}: no positive HTTP-cache evidence`);
+    if (cached && request.owned === true && !request.failure && request.completion && request.response?.status >= 200 && request.response.status < 400 && request.response.fromServiceWorker !== true) cacheServed++;
+  }
+  return { valid: reasons.length === 0, cacheServed, requestCount: requests.length, reasons };
+}
+
 /** Frame intervals in ms. Keep long foreground stalls; the runner invalidates hidden-page trials separately. */
 export function frameStats(timestamps) {
   const dts = [];
