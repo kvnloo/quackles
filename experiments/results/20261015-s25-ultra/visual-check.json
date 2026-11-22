@@ -1,0 +1,938 @@
+{
+ "viewport": "native; recorded per capture, no viewport/DPR override",
+ "cdp": "http://127.0.0.1:9222",
+ "browser": "155.0.8059.79",
+ "provenance": {
+  "note": "Physical SM-S938U Android16 Chrome155 Adreno830 DPR3.5; A exact incumbent; D reconstructed verified postimages, not historical hash; clean assets 4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+  "manifest": {
+   "file": "/root/workspace/quackles-phone-lab/results/s25-prepared-phone-builds.json",
+   "sha256": "ec740f372e6972fcc773a0f63e173d795ea013df405b1fdb3fdb69ec46db7d48",
+   "assets": {
+    "sha": "4c2c52a3941b260f8c16c4b3cfef06029a97430f",
+    "dirty": false
+   }
+  },
+  "verification": "Build/source and asset identities are caller-supplied provenance, not independently verified by this visual diagnostic. Build hashes are not assumed to be original historical candidate hashes."
+ },
+ "sources": {
+  "71c9813ae8c216abe96740d96efd745a0ae3c77c": {
+   "url": "http://127.0.0.1:47940/",
+   "build": {
+    "sha": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+    "status": "built",
+    "port": 47940,
+    "worktree": "/mnt/zer0models/quackles-phone-builds-20261015/worktrees/71c9813ae8c216abe96740d96efd745a0ae3c77c",
+    "log": "/root/workspace/quackles-phone-lab/results/s25-preflight-build-logs/71c9813ae8c216abe96740d96efd745a0ae3c77c-build.log",
+    "durationMs": 15569
+   },
+   "identity": "supplied prepared-build head"
+  },
+  "e312e21be58a6a9c92d1667f854ac4c56c74de3a": {
+   "url": "http://127.0.0.1:47943/",
+   "build": {
+    "sha": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+    "status": "built",
+    "port": 47943,
+    "worktree": "/mnt/zer0models/quackles-phone-builds-20261015/worktrees/e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+    "log": "/root/workspace/quackles-phone-lab/results/s25-preflight-build-logs/e312e21be58a6a9c92d1667f854ac4c56c74de3a-build.log",
+    "durationMs": 15454
+   },
+   "identity": "supplied prepared-build head"
+  }
+ },
+ "comparison": {
+  "reference": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+  "kind": "same-run incumbent/base screenshots, not an independent golden reference",
+  "thresholds": "per-pixel maximum RGB channel difference; count pixels >8; no aggregate pass threshold",
+  "scope": "Separate settled captures only; not timed performance trials. Transient blank frames, stale content and tier pops between captures remain unproven. Matching pixels cannot establish source identity or absolute visual correctness."
+ },
+ "limitations": [
+  "Existing native cache/storage retained; not cold-context evidence.",
+  "Visibility/document focus gates do not independently verify Android foreground ownership or screen lock/awake state; operator must ensure native Chrome owns an unlocked, awake display.",
+  "Attached browser has no desktop network fence; prepared URL/assets provenance is caller-supplied."
+ ],
+ "states": [
+  {
+   "id": "low-zoom-1.19",
+   "zoom": 1.19,
+   "x": 0.5,
+   "y": 0.5
+  },
+  {
+   "id": "edge-2.5x",
+   "zoom": 2.5,
+   "x": 0,
+   "y": 0.5
+  },
+  {
+   "id": "interior-8x",
+   "zoom": 8,
+   "x": 0.6,
+   "y": 0.4
+  },
+  {
+   "id": "corner-6x",
+   "zoom": 6,
+   "x": 0.9,
+   "y": 0.95
+  },
+  {
+   "id": "story-0.12",
+   "progress": 0.12
+  }
+ ],
+ "results": [
+  {
+   "state": "low-zoom-1.19",
+   "target": {
+    "id": "low-zoom-1.19",
+    "zoom": 1.19,
+    "x": 0.5,
+    "y": 0.5
+   },
+   "base": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+   "cand": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1714,
+    "busy": 4,
+    "quietMs": 9,
+    "detailWidth": 2896,
+    "zoom": 1.19,
+    "camera": {
+     "active": true,
+     "zoom": 1.19,
+     "targetZoom": 1.19,
+     "zoomVelocity": 0,
+     "focusX": 0.5,
+     "focusY": 0.5,
+     "targetFocusX": 0.5,
+     "targetFocusY": 0.5,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false,
+    "timedOut": true
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1714,
+    "busy": 4,
+    "quietMs": 1608.0999999940395,
+    "detailWidth": 2896,
+    "zoom": 1.19,
+    "camera": {
+     "active": true,
+     "zoom": 1.19,
+     "targetZoom": 1.19,
+     "zoomVelocity": 0,
+     "focusX": 0.5,
+     "focusY": 0.5,
+     "targetFocusX": 0.5,
+     "targetFocusY": 0.5,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false
+   },
+   "status": "unproven: settling timed out",
+   "diff": {
+    "pixels": 3108240,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "captures": {
+    "base": {
+     "file": "results/visual/low-zoom-1.19-71c9813a.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 1714,
+      "busy": 4,
+      "quietMs": 9,
+      "detailWidth": 2896,
+      "zoom": 1.19,
+      "camera": {
+       "active": true,
+       "zoom": 1.19,
+       "targetZoom": 1.19,
+       "zoomVelocity": 0,
+       "focusX": 0.5,
+       "focusY": 0.5,
+       "targetFocusX": 0.5,
+       "targetFocusY": 0.5,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false,
+      "timedOut": true
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47940/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    },
+    "cand": {
+     "file": "results/visual/low-zoom-1.19-e312e21b.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 1714,
+      "busy": 4,
+      "quietMs": 1608.0999999940395,
+      "detailWidth": 2896,
+      "zoom": 1.19,
+      "camera": {
+       "active": true,
+       "zoom": 1.19,
+       "targetZoom": 1.19,
+       "zoomVelocity": 0,
+       "focusX": 0.5,
+       "focusY": 0.5,
+       "targetFocusX": 0.5,
+       "targetFocusY": 0.5,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47943/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    }
+   },
+   "files": [
+    "results/visual/low-zoom-1.19-71c9813a.png",
+    "results/visual/low-zoom-1.19-e312e21b.png"
+   ]
+  },
+  {
+   "state": "edge-2.5x",
+   "target": {
+    "id": "edge-2.5x",
+    "zoom": 2.5,
+    "x": 0,
+    "y": 0.5
+   },
+   "base": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+   "cand": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 3601,
+    "busy": 5,
+    "quietMs": 0.5999999940395355,
+    "detailWidth": 5792,
+    "zoom": 2.5,
+    "camera": {
+     "active": true,
+     "zoom": 2.5,
+     "targetZoom": 2.5,
+     "zoomVelocity": 0,
+     "focusX": 0,
+     "focusY": 0.5,
+     "targetFocusX": 0,
+     "targetFocusY": 0.5,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false,
+    "timedOut": true
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 3601,
+    "busy": 2,
+    "quietMs": 1522.4000000059605,
+    "detailWidth": 5792,
+    "zoom": 2.5,
+    "camera": {
+     "active": true,
+     "zoom": 2.5,
+     "targetZoom": 2.5,
+     "zoomVelocity": 0,
+     "focusX": 0,
+     "focusY": 0.5,
+     "targetFocusX": 0,
+     "targetFocusY": 0.5,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false
+   },
+   "status": "unproven: settling timed out",
+   "diff": {
+    "pixels": 3108240,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "captures": {
+    "base": {
+     "file": "results/visual/edge-2.5x-71c9813a.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 3601,
+      "busy": 5,
+      "quietMs": 0.5999999940395355,
+      "detailWidth": 5792,
+      "zoom": 2.5,
+      "camera": {
+       "active": true,
+       "zoom": 2.5,
+       "targetZoom": 2.5,
+       "zoomVelocity": 0,
+       "focusX": 0,
+       "focusY": 0.5,
+       "targetFocusX": 0,
+       "targetFocusY": 0.5,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false,
+      "timedOut": true
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47940/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    },
+    "cand": {
+     "file": "results/visual/edge-2.5x-e312e21b.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 3601,
+      "busy": 2,
+      "quietMs": 1522.4000000059605,
+      "detailWidth": 5792,
+      "zoom": 2.5,
+      "camera": {
+       "active": true,
+       "zoom": 2.5,
+       "targetZoom": 2.5,
+       "zoomVelocity": 0,
+       "focusX": 0,
+       "focusY": 0.5,
+       "targetFocusX": 0,
+       "targetFocusY": 0.5,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47943/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    }
+   },
+   "files": [
+    "results/visual/edge-2.5x-71c9813a.png",
+    "results/visual/edge-2.5x-e312e21b.png"
+   ]
+  },
+  {
+   "state": "interior-8x",
+   "target": {
+    "id": "interior-8x",
+    "zoom": 8,
+    "x": 0.6,
+    "y": 0.4
+   },
+   "base": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+   "cand": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 11521,
+    "busy": 5,
+    "quietMs": 1618.9000000059605,
+    "detailWidth": 11584,
+    "zoom": 8,
+    "camera": {
+     "active": true,
+     "zoom": 8,
+     "targetZoom": 8,
+     "zoomVelocity": 0,
+     "focusX": 0.6,
+     "focusY": 0.4,
+     "targetFocusX": 0.6,
+     "targetFocusY": 0.4,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 11521,
+    "busy": 4,
+    "quietMs": 1534.7000000029802,
+    "detailWidth": 11584,
+    "zoom": 8,
+    "camera": {
+     "active": true,
+     "zoom": 8,
+     "targetZoom": 8,
+     "zoomVelocity": 0,
+     "focusX": 0.6,
+     "focusY": 0.4,
+     "targetFocusX": 0.6,
+     "targetFocusY": 0.4,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false
+   },
+   "status": "settled checkpoint comparison only; not a visual PASS",
+   "diff": {
+    "pixels": 3108240,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "captures": {
+    "base": {
+     "file": "results/visual/interior-8x-71c9813a.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 11521,
+      "busy": 5,
+      "quietMs": 1618.9000000059605,
+      "detailWidth": 11584,
+      "zoom": 8,
+      "camera": {
+       "active": true,
+       "zoom": 8,
+       "targetZoom": 8,
+       "zoomVelocity": 0,
+       "focusX": 0.6,
+       "focusY": 0.4,
+       "targetFocusX": 0.6,
+       "targetFocusY": 0.4,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47940/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    },
+    "cand": {
+     "file": "results/visual/interior-8x-e312e21b.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 11521,
+      "busy": 4,
+      "quietMs": 1534.7000000029802,
+      "detailWidth": 11584,
+      "zoom": 8,
+      "camera": {
+       "active": true,
+       "zoom": 8,
+       "targetZoom": 8,
+       "zoomVelocity": 0,
+       "focusX": 0.6,
+       "focusY": 0.4,
+       "targetFocusX": 0.6,
+       "targetFocusY": 0.4,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47943/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    }
+   },
+   "files": [
+    "results/visual/interior-8x-71c9813a.png",
+    "results/visual/interior-8x-e312e21b.png"
+   ]
+  },
+  {
+   "state": "corner-6x",
+   "target": {
+    "id": "corner-6x",
+    "zoom": 6,
+    "x": 0.9,
+    "y": 0.95
+   },
+   "base": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+   "cand": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 8641,
+    "busy": 5,
+    "quietMs": 1627,
+    "detailWidth": 11584,
+    "zoom": 6,
+    "camera": {
+     "active": true,
+     "zoom": 6,
+     "targetZoom": 6,
+     "zoomVelocity": 0,
+     "focusX": 0.9,
+     "focusY": 0.95,
+     "targetFocusX": 0.9,
+     "targetFocusY": 0.95,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 8641,
+    "busy": 5,
+    "quietMs": 1746.2000000029802,
+    "detailWidth": 11584,
+    "zoom": 6,
+    "camera": {
+     "active": true,
+     "zoom": 6,
+     "targetZoom": 6,
+     "zoomVelocity": 0,
+     "focusX": 0.9,
+     "focusY": 0.95,
+     "targetFocusX": 0.9,
+     "targetFocusY": 0.95,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 8.044444103476456,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0,
+    "scrollY": 0,
+    "nativeLost": false
+   },
+   "status": "settled checkpoint comparison only; not a visual PASS",
+   "diff": {
+    "pixels": 3108240,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "captures": {
+    "base": {
+     "file": "results/visual/corner-6x-71c9813a.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 8641,
+      "busy": 5,
+      "quietMs": 1627,
+      "detailWidth": 11584,
+      "zoom": 6,
+      "camera": {
+       "active": true,
+       "zoom": 6,
+       "targetZoom": 6,
+       "zoomVelocity": 0,
+       "focusX": 0.9,
+       "focusY": 0.95,
+       "targetFocusX": 0.9,
+       "targetFocusY": 0.95,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47940/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    },
+    "cand": {
+     "file": "results/visual/corner-6x-e312e21b.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 8641,
+      "busy": 5,
+      "quietMs": 1746.2000000029802,
+      "detailWidth": 11584,
+      "zoom": 6,
+      "camera": {
+       "active": true,
+       "zoom": 6,
+       "targetZoom": 6,
+       "zoomVelocity": 0,
+       "focusX": 0.9,
+       "focusY": 0.95,
+       "targetFocusX": 0.9,
+       "targetFocusY": 0.95,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 8.044444103476456,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0,
+      "scrollY": 0,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47943/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    }
+   },
+   "files": [
+    "results/visual/corner-6x-71c9813a.png",
+    "results/visual/corner-6x-e312e21b.png"
+   ]
+  },
+  {
+   "state": "story-0.12",
+   "target": {
+    "id": "story-0.12",
+    "progress": 0.12
+   },
+   "base": "71c9813ae8c216abe96740d96efd745a0ae3c77c",
+   "cand": "e312e21be58a6a9c92d1667f854ac4c56c74de3a",
+   "baseSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1441,
+    "busy": 0,
+    "quietMs": 1561.2999999970198,
+    "detailWidth": 0,
+    "zoom": 1,
+    "camera": {
+     "active": false,
+     "zoom": 1,
+     "targetZoom": 1,
+     "zoomVelocity": 0,
+     "focusX": 0.5,
+     "focusY": 0.5,
+     "targetFocusX": 0.5,
+     "targetFocusY": 0.5,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 1,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0.11999817771753234,
+    "scrollY": 375.71429443359375,
+    "nativeLost": false
+   },
+   "candSettled": {
+    "moving": false,
+    "sharp": true,
+    "need": 1441,
+    "busy": 0,
+    "quietMs": 1570.5,
+    "detailWidth": 0,
+    "zoom": 1,
+    "camera": {
+     "active": false,
+     "zoom": 1,
+     "targetZoom": 1,
+     "zoomVelocity": 0,
+     "focusX": 0.5,
+     "focusY": 0.5,
+     "targetFocusX": 0.5,
+     "targetFocusY": 0.5,
+     "focusVelocityX": 0,
+     "focusVelocityY": 0,
+     "maxZoom": 1,
+     "cameraMoving": false
+    },
+    "sequenceProgress": 0.11999817771753234,
+    "scrollY": 375.71429443359375,
+    "nativeLost": false
+   },
+   "status": "settled checkpoint comparison only; not a visual PASS",
+   "diff": {
+    "pixels": 3108240,
+    "maxDiff": 0,
+    "meanDiff": 0,
+    "pctOver8": 0
+   },
+   "captures": {
+    "base": {
+     "file": "results/visual/story-0.12-71c9813a.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 1441,
+      "busy": 0,
+      "quietMs": 1561.2999999970198,
+      "detailWidth": 0,
+      "zoom": 1,
+      "camera": {
+       "active": false,
+       "zoom": 1,
+       "targetZoom": 1,
+       "zoomVelocity": 0,
+       "focusX": 0.5,
+       "focusY": 0.5,
+       "targetFocusX": 0.5,
+       "targetFocusY": 0.5,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 1,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0.11999817771753234,
+      "scrollY": 375.71429443359375,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47940/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    },
+    "cand": {
+     "file": "results/visual/story-0.12-e312e21b.png",
+     "settled": {
+      "moving": false,
+      "sharp": true,
+      "need": 1441,
+      "busy": 0,
+      "quietMs": 1570.5,
+      "detailWidth": 0,
+      "zoom": 1,
+      "camera": {
+       "active": false,
+       "zoom": 1,
+       "targetZoom": 1,
+       "zoomVelocity": 0,
+       "focusX": 0.5,
+       "focusY": 0.5,
+       "targetFocusX": 0.5,
+       "targetFocusY": 0.5,
+       "focusVelocityX": 0,
+       "focusVelocityY": 0,
+       "maxZoom": 1,
+       "cameraMoving": false
+      },
+      "sequenceProgress": 0.11999817771753234,
+      "scrollY": 375.71429443359375,
+      "nativeLost": false
+     },
+     "environment": {
+      "visibility": "visible",
+      "hasFocus": true,
+      "viewport": {
+       "width": 411,
+       "height": 782,
+       "dpr": 3.5
+      },
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36"
+     },
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 411.4285888671875,
+      "height": 617.1428833007812
+     },
+     "url": "http://127.0.0.1:47943/",
+     "contextPolicy": "shared default context; fresh owned page, existing cache/storage retained"
+    }
+   },
+   "files": [
+    "results/visual/story-0.12-71c9813a.png",
+    "results/visual/story-0.12-e312e21b.png"
+   ]
+  }
+ ]
+}
