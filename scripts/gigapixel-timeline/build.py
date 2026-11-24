@@ -225,6 +225,7 @@ def contact_sheet(tiles, output):
     draw.text((12, 38), f"{len(tiles)} iterations · oldest first · read left to right",
               font=small, fill="#91e6d3")
     for index, (sha, image, kind) in enumerate(tiles):
+        label = {"Changed image": "Image", "Scene replay": "Replay", "No visual": "No visual"}[kind]
         x, y = (index % cols) * width, 62 + (index // cols) * height
         draw.rounded_rectangle((x + 4, y + 4, x + width - 4, y + height - 4),
                                radius=6, fill="#19222c")
@@ -236,7 +237,7 @@ def contact_sheet(tiles, output):
         else:
             draw.text((x + width // 2, y + 60), "No visual", font=small,
                       fill="#b8c7d6", anchor="mm")
-        draw.text((x + 12, y + 117), f"{index + 1:03}  {sha[:8]} · {kind}",
+        draw.text((x + 12, y + 117), f"{index + 1:03}  {sha[:8]} · {label}",
                   font=small, fill="#edf2f7")
     sheet.save(output, optimize=True)
 
